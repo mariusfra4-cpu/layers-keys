@@ -177,13 +177,17 @@ static CFDictionaryRef make_state(LKAU *a) {
     v = (SInt32)LK_MANUF;   n = CFNumberCreate(NULL, kCFNumberSInt32Type, &v); CFDictionarySetValue(d, CFSTR(kAUPresetManufacturerKey), n); CFRelease(n);
     CFDictionarySetValue(d, CFSTR(kAUPresetNameKey), CFSTR("Layers Keys"));
     int len = 0;
+    tr("make_state: avant lkGetState");
     void *p = lkGetState(a->h, &len);
+    tr("make_state: lkGetState len=%d p=%p", len, p);
     if (p && len > 0) {
         CFDataRef data = CFDataCreate(NULL, (const UInt8 *)p, len);
+        tr("make_state: data=%p", (const void *)data);
         CFDictionarySetValue(d, CFSTR(kAUPresetDataKey), data);
         CFRelease(data);
     }
     free(p);
+    tr("make_state: fini");
     return d;
 }
 
@@ -273,8 +277,12 @@ static OSStatus au_setprop(void *self, AudioUnitPropertyID id, AudioUnitScope sc
         CFPropertyListRef pl = *(CFPropertyListRef const *)in;
         if (!pl || CFGetTypeID(pl) != CFDictionaryGetTypeID()) return kAudioUnitErr_InvalidPropertyValue;
         CFTypeRef data = CFDictionaryGetValue((CFDictionaryRef)pl, CFSTR(kAUPresetDataKey));
-        if (data && CFGetTypeID(data) == CFDataGetTypeID() && CFDataGetLength((CFDataRef)data) > 0)
+        tr("setprop ClassInfo: data=%p", (const void *)data);
+        if (data && CFGetTypeID(data) == CFDataGetTypeID() && CFDataGetLength((CFDataRef)data) > 0) {
+            tr("setprop ClassInfo: lkSetState len=%ld", (long)CFDataGetLength((CFDataRef)data));
             lkSetState(a->h, (void *)CFDataGetBytePtr((CFDataRef)data), (int)CFDataGetLength((CFDataRef)data));
+            tr("setprop ClassInfo: lkSetState fini");
+        }
         return noErr;
     }
     case kAudioUnitProperty_StreamFormat: {
