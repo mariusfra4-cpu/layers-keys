@@ -120,6 +120,9 @@ static OSStatus au_reset(void *self, AudioUnitScope scope, AudioUnitElement elem
 /* ---- propriétés */
 static OSStatus prop_info(LKAU *a, AudioUnitPropertyID id, AudioUnitScope scope, AudioUnitElement elem, UInt32 *size, Boolean *w) {
     (void)a;
+    UInt32 dsz = 0; Boolean dw = 0;
+    if (!size) size = &dsz;
+    if (!w) w = &dw;
     *w = 0;
     switch (id) {
     case kAudioUnitProperty_ClassInfo:
