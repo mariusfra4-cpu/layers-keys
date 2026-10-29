@@ -38,7 +38,16 @@ jobs:
           cp -R dist/mac/LayersKeys.component ~/Library/Audio/Plug-Ins/Components/
           killall -9 AudioComponentRegistrar 2>/dev/null || true
           sleep 3
-          auval -v aumu Lkys JBPr 2>&1 | tee dist/auval.txt /tmp/lklogs/05_auval.txt | tail -60
+          set +e
+          auval -v aumu Lkys JBPr > dist/auval.txt 2>&1
+          echo "auval EXIT=$?" >> dist/auval.txt
+          cp dist/auval.txt /tmp/lklogs/05_auval.txt
+          sleep 2
+          for f in $(ls -t ~/Library/Logs/DiagnosticReports/* /Library/Logs/DiagnosticReports/* 2>/dev/null | head -3); do
+            echo "=== rapport de plantage $f" >> /tmp/lklogs/05b_crash.txt
+            head -c 12000 "$f" >> /tmp/lklogs/05b_crash.txt
+          done
+          tail -40 dist/auval.txt
       - name: Test de démarrage du plugin VST3 (chargement + fabrique)
         continue-on-error: true
         run: |
