@@ -106,31 +106,22 @@ func (a *macApp) AudioPanel() {}
 
 // lettre écrite sur la touche (selon le clavier du Mac : AZERTY, QWERTY…)
 func (a *macApp) KeyLabel(sc uint32, fallback string) string {
-	if tisCopyCurrentLayout == nil || ucKeyTranslate == nil || kTISUnicodeLayoutKey == 0 {
+	if cgEventCreateKeyboardEvent == nil || cgEventKeyboardGetUnicode == nil {
 		return fallback
 	}
 	code, ok := macKeyCodeForScan(sc)
 	if !ok {
 		return fallback
 	}
-	src := tisCopyCurrentLayout()
-	if src == 0 {
+	ev := cgEventCreateKeyboardEvent(0, uint16(code), true)
+	if ev == 0 {
 		return fallback
 	}
-	defer cfRelease(src)
-	data := tisGetProperty(src, kTISUnicodeLayoutKey)
-	if data == 0 {
-		return fallback
-	}
-	layout := cfDataGetBytePtr(data)
-	if layout == 0 {
-		return fallback
-	}
-	var dead uint32
+	defer cfRelease(ev)
 	var n uintptr
 	var buf [8]uint16
-	st := ucKeyTranslate(layout, uint16(code), 3 /* kUCKeyActionDisplay */, 0, cgEventSourceGetKbdType(1), 1, &dead, 4, &n, &buf[0])
-	if st != 0 || n == 0 || n > 4 {
+	cgEventKeyboardGetUnicode(ev, 4, &n, &buf[0])
+	if n == 0 || n > 4 {
 		return fallback
 	}
 	rs := make([]rune, 0, 4)
@@ -138,7 +129,7 @@ func (a *macApp) KeyLabel(sc uint32, fallback string) string {
 		rs = append(rs, rune(buf[i]))
 	}
 	s := strings.TrimSpace(strings.ToUpper(string(rs)))
-	if s == "" {
+	if s == "" || s[0] < 32 {
 		return fallback
 	}
 	return s

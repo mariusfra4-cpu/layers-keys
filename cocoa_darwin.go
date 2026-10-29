@@ -21,14 +21,15 @@ type nsRect struct {
 }
 
 var (
-	libCocoa, libCG, libQuartz, libCF, libCarbon, libMIDI uintptr
+	libCocoa, libCG, libQuartz, libCF, libMIDI uintptr
 
 	cgColorSpaceCreateDeviceRGB func() uintptr
 	cgBitmapContextCreate       func(data, w, h, bpc, bpr, cs uintptr, info uint32) uintptr
 	cgBitmapContextCreateImage  func(ctx uintptr) uintptr
 	cgImageRelease              func(img uintptr)
 	cgContextRelease            func(ctx uintptr)
-	cgEventSourceGetKbdType     func(state int32) uint32
+	cgEventCreateKeyboardEvent  func(src uintptr, key uint16, down bool) uintptr
+	cgEventKeyboardGetUnicode   func(ev uintptr, maxLen uintptr, actual *uintptr, buf *uint16)
 
 	cfRelease          func(p uintptr)
 	cfStringGetCString func(s uintptr, buf *byte, size int, enc uint32) bool
@@ -58,7 +59,6 @@ func cocoaInit() error {
 		libCG = open(fw("CoreGraphics"))
 		libQuartz = open(fw("QuartzCore"))
 		libCF = open(fw("CoreFoundation"))
-		libCarbon = open(fw("Carbon"))
 		libMIDI = open(fw("CoreMIDI"))
 		if cocoaErr != nil {
 			return
@@ -68,20 +68,14 @@ func cocoaInit() error {
 		purego.RegisterLibFunc(&cgBitmapContextCreateImage, libCG, "CGBitmapContextCreateImage")
 		purego.RegisterLibFunc(&cgImageRelease, libCG, "CGImageRelease")
 		purego.RegisterLibFunc(&cgContextRelease, libCG, "CGContextRelease")
-		purego.RegisterLibFunc(&cgEventSourceGetKbdType, libCG, "CGEventSourceGetKeyboardType")
-		purego.RegisterLibFunc(&cfRelease, libCF, "CFRelease")
-		purego.RegisterLibFunc(&cfStringGetCString, libCF, "CFStringGetCString")
-		purego.RegisterLibFunc(&cfDataGetBytePtr, libCF, "CFDataGetBytePtr")
-		// ces deux-là sont facultatives : sans elles, les lettres des touches du piano restent celles par défaut
+		// lettre écrite sur une touche, selon le clavier actif : facultatif (sinon lettres par défaut)
 		func() {
 			defer func() { recover() }()
-			purego.RegisterLibFunc(&tisCopyCurrentLayout, libCarbon, "TISCopyCurrentKeyboardLayoutInputSource")
-			purego.RegisterLibFunc(&tisGetProperty, libCarbon, "TISGetInputSourceProperty")
-			purego.RegisterLibFunc(&ucKeyTranslate, libCarbon, "UCKeyTranslate")
-			if p, err := purego.Dlsym(libCarbon, "kTISPropertyUnicodeKeyLayoutData"); err == nil && p != 0 {
-				kTISUnicodeLayoutKey = peek(p)
-			}
+			purego.RegisterLibFunc(&cgEventCreateKeyboardEvent, libCG, "CGEventCreateKeyboardEvent")
+			purego.RegisterLibFunc(&cgEventKeyboardGetUnicode, libCG, "CGEventKeyboardGetUnicodeString")
 		}()
+		purego.RegisterLibFunc(&cfRelease, libCF, "CFRelease")
+		purego.RegisterLibFunc(&cfStringGetCString, libCF, "CFStringGetCString")
 	})
 	return cocoaErr
 }
