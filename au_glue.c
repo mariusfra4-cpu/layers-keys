@@ -332,6 +332,7 @@ static OSStatus au_render(void *self, AudioUnitRenderActionFlags *flags, const A
     { static int cnt = 0; if (cnt < 3) { cnt++; tr("render bus=%u frames=%u nbuf=%u", (unsigned)bus, (unsigned)nframes, io ? (unsigned)io->mNumberBuffers : 0u); } }
     if (!a->initialized) return kAudioUnitErr_Uninitialized;
     if (bus != 0) return kAudioUnitErr_InvalidElement;
+    if (a->maxFrames && n > a->maxFrames) return kAudioUnitErr_TooManyFramesToProcess;
     if (!io || io->mNumberBuffers < 2) return kAudioUnitErr_FormatNotSupported;
     if (a->sn < n) {
         free(a->sl); free(a->sr);
