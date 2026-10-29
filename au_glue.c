@@ -105,10 +105,11 @@ static OSStatus au_initialize(void *self) {
     a->initialized = 1;
     return noErr;
 }
-static OSStatus au_uninitialize(void *self) { ((LKAU *)self)->initialized = 0; return noErr; }
+static OSStatus au_uninitialize(void *self) { tr("uninitialize"); ((LKAU *)self)->initialized = 0; return noErr; }
 
 static OSStatus au_reset(void *self, AudioUnitScope scope, AudioUnitElement elem) {
     LKAU *a = (LKAU *)self;
+    tr("reset");
     (void)scope; (void)elem;
     lkMidi(a->h, 0xB0, 64, 0);   /* relâche la pédale */
     lkMidi(a->h, 0xB0, 120, 0);  /* tout son coupé */
@@ -164,6 +165,7 @@ static OSStatus prop_info(LKAU *a, AudioUnitPropertyID id, AudioUnitScope scope,
 }
 
 static OSStatus au_getpropinfo(void *self, AudioUnitPropertyID id, AudioUnitScope scope, AudioUnitElement elem, UInt32 *size, Boolean *w) {
+    tr("getpropinfo %u scope=%u elem=%u", (unsigned)id, (unsigned)scope, (unsigned)elem);
     return prop_info((LKAU *)self, id, scope, elem, size, w);
 }
 
@@ -308,16 +310,16 @@ static OSStatus au_setprop(void *self, AudioUnitPropertyID id, AudioUnitScope sc
     }
 }
 
-static OSStatus au_addlistener(void *self, AudioUnitPropertyID id, AudioUnitPropertyListenerProc proc, void *ud) { (void)self; (void)id; (void)proc; (void)ud; return noErr; }
-static OSStatus au_remlistener(void *self, AudioUnitPropertyID id, AudioUnitPropertyListenerProc proc) { (void)self; (void)id; (void)proc; return noErr; }
-static OSStatus au_remlistener2(void *self, AudioUnitPropertyID id, AudioUnitPropertyListenerProc proc, void *ud) { (void)self; (void)id; (void)proc; (void)ud; return noErr; }
-static OSStatus au_addnotify(void *self, AURenderCallback cb, void *ref) { (void)self; (void)cb; (void)ref; return noErr; }
-static OSStatus au_remnotify(void *self, AURenderCallback cb, void *ref) { (void)self; (void)cb; (void)ref; return noErr; }
+static OSStatus au_addlistener(void *self, AudioUnitPropertyID id, AudioUnitPropertyListenerProc proc, void *ud) { tr("addlistener %u", (unsigned)id); (void)self; (void)id; (void)proc; (void)ud; return noErr; }
+static OSStatus au_remlistener(void *self, AudioUnitPropertyID id, AudioUnitPropertyListenerProc proc) { tr("remlistener %u", (unsigned)id); (void)self; (void)id; (void)proc; return noErr; }
+static OSStatus au_remlistener2(void *self, AudioUnitPropertyID id, AudioUnitPropertyListenerProc proc, void *ud) { tr("remlistener2 %u", (unsigned)id); (void)self; (void)id; (void)proc; (void)ud; return noErr; }
+static OSStatus au_addnotify(void *self, AURenderCallback cb, void *ref) { tr("addnotify"); (void)self; (void)cb; (void)ref; return noErr; }
+static OSStatus au_remnotify(void *self, AURenderCallback cb, void *ref) { tr("remnotify"); (void)self; (void)cb; (void)ref; return noErr; }
 
 /* ---- paramètres : aucun (les potards se règlent avec MIDI Learn dans le logiciel) */
-static OSStatus au_getparam(void *self, AudioUnitParameterID id, AudioUnitScope s, AudioUnitElement e, AudioUnitParameterValue *v) { (void)self; (void)id; (void)s; (void)e; (void)v; return kAudioUnitErr_InvalidParameter; }
-static OSStatus au_setparam(void *self, AudioUnitParameterID id, AudioUnitScope s, AudioUnitElement e, AudioUnitParameterValue v, UInt32 off) { (void)self; (void)id; (void)s; (void)e; (void)v; (void)off; return kAudioUnitErr_InvalidParameter; }
-static OSStatus au_schedparams(void *self, const AudioUnitParameterEvent *ev, UInt32 n) { (void)self; (void)ev; (void)n; return noErr; }
+static OSStatus au_getparam(void *self, AudioUnitParameterID id, AudioUnitScope s, AudioUnitElement e, AudioUnitParameterValue *v) { tr("getparam %u", (unsigned)id); (void)self; (void)id; (void)s; (void)e; (void)v; return kAudioUnitErr_InvalidParameter; }
+static OSStatus au_setparam(void *self, AudioUnitParameterID id, AudioUnitScope s, AudioUnitElement e, AudioUnitParameterValue v, UInt32 off) { tr("setparam %u", (unsigned)id); (void)self; (void)id; (void)s; (void)e; (void)v; (void)off; return kAudioUnitErr_InvalidParameter; }
+static OSStatus au_schedparams(void *self, const AudioUnitParameterEvent *ev, UInt32 n) { tr("schedparams"); (void)self; (void)ev; (void)n; return noErr; }
 
 /* ---- son */
 static OSStatus au_render(void *self, AudioUnitRenderActionFlags *flags, const AudioTimeStamp *ts, UInt32 bus, UInt32 n, AudioBufferList *io) {
@@ -346,6 +348,7 @@ static OSStatus au_render(void *self, AudioUnitRenderActionFlags *flags, const A
 
 /* ---- MIDI (instrument) */
 static OSStatus au_midi(void *self, UInt32 status, UInt32 d1, UInt32 d2, UInt32 offset) {
+    tr("midi %x %u %u", (unsigned)status, (unsigned)d1, (unsigned)d2);
     (void)offset;
     lkMidi(((LKAU *)self)->h, (int)(status & 0xFF), (int)(d1 & 0x7F), (int)(d2 & 0x7F));
     return noErr;
