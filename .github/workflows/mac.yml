@@ -1,0 +1,68 @@
+# Construit gratuitement la version Mac (application + plugins VST3 et Audio Unit) sur un vrai Mac de GitHub,
+# puis fait un test de démarrage. Lancer : onglet « Actions » > « Layers Keys Mac » > « Run workflow ».
+name: Layers Keys Mac
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+jobs:
+  mac:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+      - name: Tests
+        continue-on-error: true
+        run: go test . 2>&1 | tail -20
+      - name: Application Mac
+        run: ./build_mac.sh
+      - name: Plugin VST3 Mac
+        run: ./build_mac_vst3.sh
+      - name: Plugin Audio Unit Mac
+        run: ./build_mac_au.sh
+      - name: Test officiel Apple de l'Audio Unit (auval)
+        continue-on-error: true
+        run: |
+          mkdir -p ~/Library/Audio/Plug-Ins/Components
+          cp -R dist/mac/LayersKeys.component ~/Library/Audio/Plug-Ins/Components/
+          killall -9 AudioComponentRegistrar 2>/dev/null || true
+          sleep 3
+          auval -v aumu Lkys JBPr 2>&1 | tee dist/auval.txt | tail -60
+      - name: Test de démarrage du plugin (chargement + fabrique VST3)
+        continue-on-error: true
+        run: |
+          python3 - <<'PY'
+          import ctypes
+          lib = ctypes.CDLL("dist/mac/LayersKeys.vst3/Contents/MacOS/LayersKeys")
+          f = lib.GetPluginFactory
+          f.restype = ctypes.c_void_p
+          assert f(), "fabrique VST3 vide"
+          print("Plugin chargé : fabrique VST3 OK")
+          PY
+      - name: Test de démarrage de l'application (5 secondes sans plantage)
+        continue-on-error: true
+        run: |
+          "dist/mac/app/Layers Keys.app/Contents/MacOS/LayersKeys" &
+          PID=$!
+          sleep 5
+          kill -0 $PID && echo "Application toujours en marche : OK" && kill $PID
+      - name: Installateur .pkg
+        run: ./build_mac_pkg.sh
+      - name: Paquet
+        run: |
+          cd dist && rm -rf paquet && mkdir paquet
+          cp -R mac/app/"Layers Keys.app" paquet/
+          cp -R mac/LayersKeys.vst3 paquet/
+          cp -R mac/LayersKeys.component paquet/
+          cp auval.txt paquet/ 2>/dev/null || true
+          cp ../mac/LISEZMOI_Mac.txt paquet/
+          ditto -c -k --keepParent paquet LayersKeys_Mac_complet.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LayersKeys_Mac
+          path: |
+            dist/LayersKeys_Mac_complet.zip
+            dist/LayersKeys_Mac_Installer.pkg
+            dist/auval.txt

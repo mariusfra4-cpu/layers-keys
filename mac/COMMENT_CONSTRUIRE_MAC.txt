@@ -1,0 +1,27 @@
+COMMENT OBTENIR LES PLUGINS VST3 ET AUDIO UNIT (AU) POUR MAC (sans avoir de Mac de développement)
+==========================================================================
+
+Un plugin Mac ne peut être construit que sur un Mac. GitHub prête gratuitement un vrai Mac pour ça.
+Le dossier contient déjà tout (fichier .github/workflows/mac.yml). Étapes :
+
+ 1. Crée un compte gratuit sur github.com, puis un nouveau dépôt PRIVÉ (bouton « New »).
+ 2. Décompresse LayersKeys_Source.zip, puis dépose tout le contenu du dossier « LayersKeys-source »
+    dans le dépôt (« Add file » > « Upload files »). Pense aux dossiers cachés (.github) : le plus simple
+    est de glisser le dossier entier avec le dossier « .github » dedans.
+ 3. Onglet « Actions » > « Layers Keys Mac » > « Run workflow ».
+ 4. Après environ 5 minutes, ouvre l'exécution terminée : en bas, « Artifacts » > LayersKeys_Mac.
+    Tu télécharges un zip avec l'application « Layers Keys.app », le plugin VST3 « LayersKeys.vst3 »
+    ET le plugin Audio Unit « LayersKeys.component » (pour Logic Pro, GarageBand, MainStage).
+    Le fichier auval.txt est le résultat du test officiel d'Apple pour l'Audio Unit.
+ 5. Si tu as un Mac : glisse LayersKeys.vst3 dans  ~/Bibliothèque/Audio/Plug-Ins/VST3
+    (ou Macintosh HD > Bibliothèque > Audio > Plug-Ins > VST3), puis dans le Terminal :
+        xattr -cr ~/Library/Audio/Plug-Ins/VST3/LayersKeys.vst3
+    Pour Logic / GarageBand : glisse LayersKeys.component dans  ~/Bibliothèque/Audio/Plug-Ins/Components
+    puis :  xattr -cr ~/Library/Audio/Plug-Ins/Components/LayersKeys.component
+    Dans Logic : l'instrument s'appelle « JB Praise: Layers Keys » (catégorie Instrument AU).
+    Relance ton DAW et actualise la liste des plugins.
+
+Si tu as un Mac avec Go installé :  ./build_mac_vst3.sh install  ou  ./build_mac_au.sh install  fait tout d'un coup.
+
+Les deux petits tests de démarrage du workflow (chargement du plugin, démarrage de l'application)
+s'affichent dans le journal de l'exécution : s'ils échouent, envoie-moi le texte du journal, je corrige.

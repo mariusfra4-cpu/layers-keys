@@ -1,0 +1,49 @@
+LAYERS KEYS pour Mac  ·  By JB Praise  ·  version 1.0.0
+==========================================================
+
+CE QUE C'EST
+  Le logiciel autonome (« standalone ») : 8 pistes, SF2 / SF3 / WAV / MP3, presets,
+  projets .lkeys, détection d'accords, MIDI Learn, français / anglais / espagnol.
+  Un seul fichier pour les deux types de Mac : Apple Silicon (M1, M2, M3, M4…) et Intel.
+  Il faut macOS 11 (Big Sur) ou plus récent.
+
+INSTALLATION
+  1. Double-clique sur LayersKeys_Mac.zip pour le décompresser.
+  2. Glisse « Layers Keys » dans le dossier « Applications ».
+  3. PREMIER LANCEMENT : l'application n'est pas encore signée par Apple, donc macOS
+     refuse de l'ouvrir en double-cliquant. Fais :
+        clic droit sur « Layers Keys »  →  Ouvrir  →  Ouvrir
+     (une seule fois ; ensuite elle s'ouvre normalement.)
+     Si macOS affiche « endommagé » ou bloque encore, ouvre le Terminal et tape :
+        xattr -cr "/Applications/Layers Keys.app"
+     puis refais clic droit → Ouvrir.
+
+SON
+  Le son sort sur la sortie choisie dans Réglages Système > Son.
+  Réglages > Sortie audio : le tampon par défaut est 512 échantillons (latence réelle de l'ordre de 20 ms).
+  Plus petit = moins de latence mais risque de craquements. Pour changer le tampon ou la
+  fréquence, relance le logiciel après avoir modifié le réglage.
+
+CLAVIER MIDI
+  Branche-le avant ou après le lancement ; « Actualiser MIDI » dans les réglages si besoin.
+
+RACCOURCIS
+  Les raccourcis Ctrl du Windows sont sur la touche Commande : Cmd+S enregistrer,
+  Cmd+Maj+S enregistrer sous, Cmd+O ouvrir, Cmd+N nouveau. Cmd+Q quitte.
+  Les notes du clavier d'ordinateur suivent la POSITION des touches (comme sur Windows),
+  les lettres affichées s'adaptent à ton clavier (AZERTY, QWERTY…).
+
+LIMITES DE CETTE VERSION (honnêtement)
+  - Version de départ : écrite et vérifiée par compilation, mais pas encore essayée sur un
+    vrai Mac. Si quelque chose ne va pas (fenêtre, son, MIDI), dis-le précisément :
+    c'est facile à corriger.
+  - Plugin VST3 Mac (Ableton Live, Reaper, Cubase, Studio One…) : le code est écrit, mais il doit être
+    construit sur un Mac (voir COMMENT_CONSTRUIRE_MAC.txt, GitHub le fait gratuitement) et n'a pas encore
+    été essayé dans un vrai DAW.
+  - Plugin Audio Unit (Logic Pro, GarageBand, MainStage) : même principe, même mode d'emploi. Pas de
+    réglages exposés au DAW (les potards se règlent avec MIDI Learn dans le logiciel).
+  - Pas encore signé ni « notarisé » par Apple (d'où l'étape clic droit → Ouvrir).
+  - Sur écran Retina l'interface est affichée en taille standard (un peu moins nette).
+
+RÉGLAGES ET PROJETS
+  Les réglages sont dans  ~/Bibliothèque/Application Support/LayersKeys/
