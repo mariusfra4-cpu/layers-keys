@@ -46,6 +46,8 @@ typedef struct LKAU {
     int initialized;
     float *sl, *sr;   /* tampons de secours si l'hôte ne fournit pas les siens */
     UInt32 sn;
+    struct { AudioUnitPropertyID id; AudioUnitPropertyListenerProc proc; void *ud; } ls[32];
+    int nls;
 } LKAU;
 
 /* ---- table instance système -> instance Go (pour la fenêtre de l'éditeur) */
@@ -118,6 +120,10 @@ static OSStatus au_reset(void *self, AudioUnitScope scope, AudioUnitElement elem
 }
 
 /* ---- propriétés */
+static void fire_prop(LKAU *a, AudioUnitPropertyID id, AudioUnitScope scope, AudioUnitElement elem) {
+    for (int i = 0; i < a->nls; i++)
+        if (a->ls[i].id == id && a->ls[i].proc) a->ls[i].proc(a->ls[i].ud, a->ci, id, scope, elem);
+}
 static OSStatus prop_info(LKAU *a, AudioUnitPropertyID id, AudioUnitScope scope, AudioUnitElement elem, UInt32 *size, Boolean *w) {
     (void)a;
     UInt32 dsz = 0; Boolean dw = 0;
@@ -152,6 +158,9 @@ static OSStatus prop_info(LKAU *a, AudioUnitPropertyID id, AudioUnitScope scope,
     case kAudioUnitProperty_CocoaUI:
         if (scope != kAudioUnitScope_Global) return kAudioUnitErr_InvalidScope;
         *size = sizeof(AudioUnitCocoaViewInfo); return noErr;
+    case kAudioUnitProperty_PresentPreset:
+        if (scope != kAudioUnitScope_Global) return kAudioUnitErr_InvalidScope;
+        *size = sizeof(AUPreset); *w = 1; return noErr;
     case kAudioUnitProperty_LastRenderError:
         if (scope != kAudioUnitScope_Global) return kAudioUnitErr_InvalidScope;
         *size = sizeof(OSStatus); return noErr;
@@ -251,6 +260,12 @@ static OSStatus au_getprop(void *self, AudioUnitPropertyID id, AudioUnitScope sc
         info->mCocoaAUViewClass[0] = CFStringCreateCopy(NULL, CFSTR("LKAUViewFactory"));
         return noErr;
     }
+    case kAudioUnitProperty_PresentPreset: {
+        AUPreset *pr = (AUPreset *)out;
+        pr->presetNumber = -1;
+        pr->presetName = CFSTR("Layers Keys");
+        return noErr;
+    }
     case kAudioUnitProperty_LastRenderError:
         *(OSStatus *)out = noErr;
         return noErr;
@@ -307,15 +322,30 @@ static OSStatus au_setprop(void *self, AudioUnitPropertyID id, AudioUnitScope sc
     case kAudioUnitProperty_MaximumFramesPerSlice:
         if (a->initialized) return kAudioUnitErr_Initialized;
         a->maxFrames = *(const UInt32 *)in;
+        fire_prop(a, id, scope, elem);
+        return noErr;
+    case kAudioUnitProperty_PresentPreset:
+        fire_prop(a, id, scope, elem);
         return noErr;
     default:
         return noErr; /* RenderQuality, OfflineRender, HostCallbacks : acceptés, sans effet */
     }
 }
 
-static OSStatus au_addlistener(void *self, AudioUnitPropertyID id, AudioUnitPropertyListenerProc proc, void *ud) { tr("addlistener %u", (unsigned)id); (void)self; (void)id; (void)proc; (void)ud; return noErr; }
-static OSStatus au_remlistener(void *self, AudioUnitPropertyID id, AudioUnitPropertyListenerProc proc) { tr("remlistener %u", (unsigned)id); (void)self; (void)id; (void)proc; return noErr; }
-static OSStatus au_remlistener2(void *self, AudioUnitPropertyID id, AudioUnitPropertyListenerProc proc, void *ud) { tr("remlistener2 %u", (unsigned)id); (void)self; (void)id; (void)proc; (void)ud; return noErr; }
+static OSStatus au_addlistener(void *self, AudioUnitPropertyID id, AudioUnitPropertyListenerProc proc, void *ud) {
+    LKAU *a = (LKAU *)self;
+    tr("addlistener %u", (unsigned)id);
+    if (a->nls < 32) { a->ls[a->nls].id = id; a->ls[a->nls].proc = proc; a->ls[a->nls].ud = ud; a->nls++; }
+    return noErr;
+}
+static void rem_listener(LKAU *a, AudioUnitPropertyID id, AudioUnitPropertyListenerProc proc, void *ud, int useud) {
+    for (int i = 0; i < a->nls; i++)
+        if (a->ls[i].id == id && a->ls[i].proc == proc && (!useud || a->ls[i].ud == ud)) {
+            a->ls[i] = a->ls[a->nls - 1]; a->nls--; i--;
+        }
+}
+static OSStatus au_remlistener(void *self, AudioUnitPropertyID id, AudioUnitPropertyListenerProc proc) { rem_listener((LKAU *)self, id, proc, NULL, 0); return noErr; }
+static OSStatus au_remlistener2(void *self, AudioUnitPropertyID id, AudioUnitPropertyListenerProc proc, void *ud) { rem_listener((LKAU *)self, id, proc, ud, 1); return noErr; }
 static OSStatus au_addnotify(void *self, AURenderCallback cb, void *ref) { tr("addnotify"); (void)self; (void)cb; (void)ref; return noErr; }
 static OSStatus au_remnotify(void *self, AURenderCallback cb, void *ref) { tr("remnotify"); (void)self; (void)cb; (void)ref; return noErr; }
 
