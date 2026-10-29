@@ -39,9 +39,11 @@ jobs:
           killall -9 AudioComponentRegistrar 2>/dev/null || true
           sleep 3
           set +e
-          auval -v aumu Lkys JBPr > dist/auval.txt 2>&1
+          rm -f /tmp/lk_au_trace.txt
+          LK_TRACE=1 auval -v aumu Lkys JBPr > dist/auval.txt 2>&1
           echo "auval EXIT=$?" >> dist/auval.txt
           cp dist/auval.txt /tmp/lklogs/05_auval.txt
+          cp /tmp/lk_au_trace.txt /tmp/lklogs/05c_trace.txt 2>/dev/null || true
           sleep 2
           for f in $(ls -t ~/Library/Logs/DiagnosticReports/* /Library/Logs/DiagnosticReports/* 2>/dev/null | head -3); do
             echo "=== rapport de plantage $f" >> /tmp/lklogs/05b_crash.txt

@@ -26,6 +26,16 @@ typedef void *HINSTANCE;
 #include <stddef.h>
 #include "vst3inc/vst3_c_api.h"
 #include "_cgo_export.h"
+#ifndef _WIN32
+
+/* Une bibliothèque Go ne peut pas être déchargée : si le logiciel hôte tente un dlclose, tout planterait.
+   On demande donc au système de la garder en mémoire (RTLD_NODELETE). */
+#include <dlfcn.h>
+__attribute__((constructor)) static void lk_pin_library(void) {
+    Dl_info info;
+    if (dladdr((void *)&lk_pin_library, &info) && info.dli_fname) dlopen(info.dli_fname, RTLD_LAZY | RTLD_NODELETE);
+}
+#endif
 
 #define OK Steinberg_kResultOk
 #define NOTOK 1            /* kResultFalse */

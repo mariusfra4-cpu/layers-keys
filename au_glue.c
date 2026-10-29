@@ -10,6 +10,25 @@
 #include <stdlib.h>
 #include <string.h>
 #include "_cgo_export.h"
+#include <stdarg.h>
+#include <stdio.h>
+
+/* Une bibliothèque Go ne peut pas être déchargée : si le logiciel hôte tente un dlclose, tout planterait.
+   On demande donc au système de la garder en mémoire (RTLD_NODELETE). */
+#include <dlfcn.h>
+__attribute__((constructor)) static void lk_pin_library(void) {
+    Dl_info info;
+    if (dladdr((void *)&lk_pin_library, &info) && info.dli_fname) dlopen(info.dli_fname, RTLD_LAZY | RTLD_NODELETE);
+}
+
+/* journal de diagnostic : actif seulement si la variable d'environnement LK_TRACE est définie */
+static void tr(const char *fmt, ...) {
+    if (!getenv("LK_TRACE")) return;
+    FILE *f = fopen("/tmp/lk_au_trace.txt", "a");
+    if (!f) return;
+    va_list ap; va_start(ap, fmt); vfprintf(f, fmt, ap); va_end(ap);
+    fputc('\n', f); fclose(f);
+}
 
 #define LK_EXPORT __attribute__((visibility("default")))
 #define BUNDLE_ID "com.jbpraise.layerskeys.component"
@@ -55,8 +74,10 @@ static void reg(LKAU *a, int on) {
 /* ---- ouverture / fermeture */
 static OSStatus au_open(void *self, AudioComponentInstance ci) {
     LKAU *a = (LKAU *)self;
+    tr("open ci=%p", (void *)ci);
     a->ci = ci;
     a->h = lkNew();
+    tr("open h=%lu", (unsigned long)a->h);
     if (!a->h) return kAudioUnitErr_FailedInitialization;
     a->rate = 44100.0;
     a->maxFrames = 4096;
@@ -66,17 +87,20 @@ static OSStatus au_open(void *self, AudioComponentInstance ci) {
 
 static OSStatus au_close(void *self) {
     LKAU *a = (LKAU *)self;
+    tr("close h=%lu", (unsigned long)a->h);
     reg(a, 0);
     if (a->h) lkRelease(a->h);
     free(a->sl);
     free(a->sr);
     free(a);
+    tr("close done");
     return noErr;
 }
 
 /* ---- initialisation */
 static OSStatus au_initialize(void *self) {
     LKAU *a = (LKAU *)self;
+    tr("initialize rate=%g max=%u", a->rate, (unsigned)a->maxFrames);
     lkSetup(a->h, a->rate, (int)a->maxFrames);
     a->initialized = 1;
     return noErr;
@@ -165,6 +189,7 @@ static CFDictionaryRef make_state(LKAU *a) {
 
 static OSStatus au_getprop(void *self, AudioUnitPropertyID id, AudioUnitScope scope, AudioUnitElement elem, void *out, UInt32 *ioSize) {
     LKAU *a = (LKAU *)self;
+    tr("getprop %u scope=%u elem=%u", (unsigned)id, (unsigned)scope, (unsigned)elem);
     UInt32 need = 0;
     Boolean w = 0;
     OSStatus st = prop_info(a, id, scope, elem, &need, &w);
@@ -236,6 +261,7 @@ static OSStatus au_getprop(void *self, AudioUnitPropertyID id, AudioUnitScope sc
 
 static OSStatus au_setprop(void *self, AudioUnitPropertyID id, AudioUnitScope scope, AudioUnitElement elem, const void *in, UInt32 size) {
     LKAU *a = (LKAU *)self;
+    tr("setprop %u scope=%u elem=%u size=%u", (unsigned)id, (unsigned)scope, (unsigned)elem, (unsigned)size);
     UInt32 need = 0;
     Boolean w = 0;
     OSStatus st = prop_info(a, id, scope, elem, &need, &w);
@@ -287,8 +313,10 @@ static OSStatus au_schedparams(void *self, const AudioUnitParameterEvent *ev, UI
 
 /* ---- son */
 static OSStatus au_render(void *self, AudioUnitRenderActionFlags *flags, const AudioTimeStamp *ts, UInt32 bus, UInt32 n, AudioBufferList *io) {
+    UInt32 nframes = n;
     LKAU *a = (LKAU *)self;
     (void)flags; (void)ts;
+    { static int cnt = 0; if (cnt < 3) { cnt++; tr("render bus=%u frames=%u nbuf=%u", (unsigned)bus, (unsigned)nframes, io ? (unsigned)io->mNumberBuffers : 0u); } }
     if (!a->initialized) return kAudioUnitErr_Uninitialized;
     if (bus != 0) return kAudioUnitErr_InvalidElement;
     if (!io || io->mNumberBuffers < 2) return kAudioUnitErr_FormatNotSupported;
@@ -318,6 +346,7 @@ static OSStatus au_sysex(void *self, const UInt8 *data, UInt32 len) { (void)self
 
 /* ---- table des fonctions demandées par le système */
 static AudioComponentMethod au_lookup(SInt16 sel) {
+    tr("lookup %d", (int)sel);
     switch (sel) {
     case kAudioUnitInitializeSelect:                   return (AudioComponentMethod)au_initialize;
     case kAudioUnitUninitializeSelect:                 return (AudioComponentMethod)au_uninitialize;
