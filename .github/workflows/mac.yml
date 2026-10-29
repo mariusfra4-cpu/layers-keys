@@ -1,27 +1,36 @@
-# Construit gratuitement la version Mac (application + plugins VST3 et Audio Unit) sur un vrai Mac de GitHub,
-# puis fait un test de démarrage. Lancer : onglet « Actions » > « Layers Keys Mac » > « Run workflow ».
+# Construit la version Mac (application + plugins VST3 et Audio Unit + installateur .pkg) sur un vrai Mac de GitHub,
+# puis fait des tests de démarrage. Lancer : onglet « Actions » > « Layers Keys Mac » > « Run workflow ».
+# Les journaux de chaque étape sont publiés dans la branche « ci-logs ».
 name: Layers Keys Mac
 on:
   workflow_dispatch:
   push:
     branches: [main]
+permissions:
+  contents: write
 jobs:
   mac:
     runs-on: macos-latest
+    defaults:
+      run:
+        shell: bash -eo pipefail {0}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
           go-version: "1.24"
+          cache: false
+      - name: Préparation
+        run: mkdir -p /tmp/lklogs && sw_vers | tee /tmp/lklogs/00_systeme.txt && go version | tee -a /tmp/lklogs/00_systeme.txt
       - name: Tests
         continue-on-error: true
-        run: go test . 2>&1 | tail -20
+        run: go test . 2>&1 | tee /tmp/lklogs/01_tests.txt | tail -20
       - name: Application Mac
-        run: ./build_mac.sh
+        run: ./build_mac.sh 2>&1 | tee /tmp/lklogs/02_app.txt | tail -20
       - name: Plugin VST3 Mac
-        run: ./build_mac_vst3.sh
+        run: ./build_mac_vst3.sh 2>&1 | tee /tmp/lklogs/03_vst3.txt | tail -30
       - name: Plugin Audio Unit Mac
-        run: ./build_mac_au.sh
+        run: ./build_mac_au.sh 2>&1 | tee /tmp/lklogs/04_au.txt | tail -60
       - name: Test officiel Apple de l'Audio Unit (auval)
         continue-on-error: true
         run: |
@@ -29,11 +38,11 @@ jobs:
           cp -R dist/mac/LayersKeys.component ~/Library/Audio/Plug-Ins/Components/
           killall -9 AudioComponentRegistrar 2>/dev/null || true
           sleep 3
-          auval -v aumu Lkys JBPr 2>&1 | tee dist/auval.txt | tail -60
-      - name: Test de démarrage du plugin (chargement + fabrique VST3)
+          auval -v aumu Lkys JBPr 2>&1 | tee dist/auval.txt /tmp/lklogs/05_auval.txt | tail -60
+      - name: Test de démarrage du plugin VST3 (chargement + fabrique)
         continue-on-error: true
         run: |
-          python3 - <<'PY'
+          python3 - <<'PY' 2>&1 | tee /tmp/lklogs/06_vst3_charge.txt
           import ctypes
           lib = ctypes.CDLL("dist/mac/LayersKeys.vst3/Contents/MacOS/LayersKeys")
           f = lib.GetPluginFactory
@@ -44,12 +53,12 @@ jobs:
       - name: Test de démarrage de l'application (5 secondes sans plantage)
         continue-on-error: true
         run: |
-          "dist/mac/app/Layers Keys.app/Contents/MacOS/LayersKeys" &
+          "dist/mac/app/Layers Keys.app/Contents/MacOS/LayersKeys" > /tmp/lklogs/07_app_run.txt 2>&1 &
           PID=$!
           sleep 5
-          kill -0 $PID && echo "Application toujours en marche : OK" && kill $PID
+          kill -0 $PID && echo "Application toujours en marche : OK" | tee -a /tmp/lklogs/07_app_run.txt && kill $PID
       - name: Installateur .pkg
-        run: ./build_mac_pkg.sh
+        run: ./build_mac_pkg.sh 2>&1 | tee /tmp/lklogs/08_pkg.txt | tail -20
       - name: Paquet
         run: |
           cd dist && rm -rf paquet && mkdir paquet
@@ -66,3 +75,15 @@ jobs:
             dist/LayersKeys_Mac_complet.zip
             dist/LayersKeys_Mac_Installer.pkg
             dist/auval.txt
+      - name: Publier les journaux (branche ci-logs)
+        if: always()
+        run: |
+          mkdir -p /tmp/lklogs
+          git config user.name "ci"; git config user.email "ci@users.noreply.github.com"
+          git checkout --orphan ci-logs-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          cp /tmp/lklogs/* . 2>/dev/null || true
+          echo "run $GITHUB_RUN_ID" > run.txt
+          git add -A
+          git commit -m "journaux de construction $GITHUB_RUN_ID"
+          git push -f origin HEAD:refs/heads/ci-logs
