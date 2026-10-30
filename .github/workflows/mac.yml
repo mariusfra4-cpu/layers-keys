@@ -25,8 +25,17 @@ jobs:
       - name: Tests
         continue-on-error: true
         run: go test . 2>&1 | tee /tmp/lklogs/01_tests.txt | tail -20
+      # Go 1.23 et plus récent : la version Intel (x86_64) de l'application plante au démarrage. Go 1.22 est sûr.
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+          cache: false
       - name: Application Mac
         run: ./build_mac.sh 2>&1 | tee /tmp/lklogs/02_app.txt | tail -20
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+          cache: false
       - name: Plugin VST3 Mac
         run: ./build_mac_vst3.sh 2>&1 | tee /tmp/lklogs/03_vst3.txt | tail -30
       - name: Plugin Audio Unit Mac
@@ -61,13 +70,18 @@ jobs:
           assert f(), "fabrique VST3 vide"
           print("Plugin chargé : fabrique VST3 OK")
           PY
-      - name: Test de démarrage de l'application (5 secondes sans plantage)
+      - name: Test de démarrage de l'application (Apple et Intel, 5 secondes sans plantage)
         continue-on-error: true
+        shell: bash {0}
         run: |
-          "dist/mac/app/Layers Keys.app/Contents/MacOS/LayersKeys" > /tmp/lklogs/07_app_run.txt 2>&1 &
-          PID=$!
-          sleep 5
-          kill -0 $PID && echo "Application toujours en marche : OK" | tee -a /tmp/lklogs/07_app_run.txt && kill $PID
+          B="dist/mac/app/Layers Keys.app/Contents/MacOS/LayersKeys"
+          lipo -archs "$B" | tee /tmp/lklogs/07_app_run.txt
+          for a in arm64 x86_64; do
+            arch -$a "$B" > /tmp/lklogs/07_run_$a.txt 2>&1 &
+            P=$!
+            sleep 6
+            if kill -0 $P 2>/dev/null; then echo "$a : application en marche après 6 s : OK" | tee -a /tmp/lklogs/07_app_run.txt; kill $P; else wait $P; echo "$a : PLANTÉ code $?" | tee -a /tmp/lklogs/07_app_run.txt; fi
+          done
       - name: Installateur .pkg
         run: ./build_mac_pkg.sh 2>&1 | tee /tmp/lklogs/08_pkg.txt | tail -20
       - name: Paquet
