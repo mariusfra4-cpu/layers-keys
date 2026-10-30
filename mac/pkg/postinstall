@@ -1,9 +1,0 @@
-#!/bin/bash
-# Après l'installation : enlève la « quarantaine » de macOS et rafraîchit la liste des Audio Units.
-for p in "/Applications/Layers Keys.app" \
-         "/Library/Audio/Plug-Ins/VST3/LayersKeys.vst3" \
-         "/Library/Audio/Plug-Ins/Components/LayersKeys.component"; do
-  [ -e "$p" ] && xattr -cr "$p" 2>/dev/null
-done
-killall -9 AudioComponentRegistrar 2>/dev/null
-exit 0

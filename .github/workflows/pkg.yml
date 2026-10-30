@@ -1,0 +1,106 @@
+# Assemble et teste l'installateur Mac à partir des programmes déjà construits (branche ci-logs, dossier dist/mac).
+name: Installateur Mac
+on:
+  workflow_dispatch:
+  push:
+    paths: ['mac/pkg/**', 'mac/pkgres/**', 'mac/uninstall/**', 'build_mac_pkg.sh', '.github/workflows/pkg.yml']
+permissions:
+  contents: write
+jobs:
+  pkg:
+    runs-on: macos-latest
+    defaults:
+      run:
+        shell: bash -o pipefail {0}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: ci-logs
+          path: cibin
+      - name: Construction
+        run: |
+          mkdir -p /tmp/lk dist/mac
+          cp -R cibin/dist/mac/app cibin/dist/mac/LayersKeys.vst3 cibin/dist/mac/LayersKeys.component dist/mac/
+          chmod +x "dist/mac/app/Layers Keys.app/Contents/MacOS/LayersKeys"
+          chmod +x dist/mac/LayersKeys.vst3/Contents/MacOS/LayersKeys dist/mac/LayersKeys.component/Contents/MacOS/LayersKeys
+          chmod +x build_mac_pkg.sh
+          ./build_mac_pkg.sh 2>&1 | tee /tmp/lk/01_construction.txt
+      - name: Contenu
+        run: |
+          {
+            ls -la dist/Layers-Keys-1.0.0.pkg
+            pkgutil --check-signature dist/Layers-Keys-1.0.0.pkg
+            rm -rf /tmp/exp && pkgutil --expand dist/Layers-Keys-1.0.0.pkg /tmp/exp
+            echo "=== composants"; ls /tmp/exp
+            echo "=== ressources"; ls /tmp/exp/Resources
+            for c in app vst3 au; do
+              echo "=== contenu $c"; pkgutil --payload-files /tmp/exp/LayersKeys_$c.pkg | grep -v "/Contents/.*/" | head -30
+              echo "--- scripts $c"; ls /tmp/exp/LayersKeys_$c.pkg/Scripts 2>/dev/null
+            done
+            echo "=== distribution"; cat /tmp/exp/Distribution
+          } 2>&1 | tee /tmp/lk/02_contenu.txt
+      - name: Installation complète
+        run: |
+          {
+            D="$HOME/Library/Application Support/LayersKeys"
+            mkdir -p "$D" && echo '{"test":"preset"}' > "$D/config.json"
+            sudo installer -pkg dist/Layers-Keys-1.0.0.pkg -target / -verbose 2>&1 | tail -15
+            for x in "/Applications/Layers Keys.app/Contents/MacOS/LayersKeys" "/Applications/Désinstaller Layers Keys.app/Contents/Resources/desinstaller.sh" "/Library/Audio/Plug-Ins/VST3/LayersKeys.vst3/Contents/MacOS/LayersKeys" "/Library/Audio/Plug-Ins/Components/LayersKeys.component/Contents/MacOS/LayersKeys"; do
+              [ -e "$x" ] && echo "présent : $x" || echo "ABSENT : $x"
+            done
+            ls -l "/Applications/Désinstaller Layers Keys.app/Contents/MacOS/"
+            pkgutil --pkgs | grep jbpraise
+            lipo -archs "/Applications/Layers Keys.app/Contents/MacOS/LayersKeys"
+            "/Applications/Layers Keys.app/Contents/MacOS/LayersKeys" >/tmp/lk/app.out 2>&1 &
+            sleep 5
+            pgrep -x LayersKeys >/dev/null && echo "application en marche après installation : OUI" || echo "application en marche : NON"
+            echo "=== mise à jour pendant que l'application est ouverte"
+            sudo installer -pkg dist/Layers-Keys-1.0.0.pkg -target / 2>&1 | tail -3
+            pgrep -x LayersKeys >/dev/null && echo "application encore ouverte après mise à jour : OUI (problème)" || echo "application fermée par la mise à jour : OUI"
+            [ -e "/Applications/Layers Keys.app/Contents/MacOS/LayersKeys" ] && echo "application présente après mise à jour : OUI"
+            [ -e "$D/config.json" ] && echo "données conservées après mise à jour : OUI" || echo "données conservées : NON"
+          } 2>&1 | tee /tmp/lk/03_installation.txt
+      - name: Désinstallation
+        run: |
+          {
+            D="$HOME/Library/Application Support/LayersKeys"
+            sudo "/Applications/Désinstaller Layers Keys.app/Contents/Resources/desinstaller.sh" --silent --home "$HOME"
+            for x in "/Applications/Layers Keys.app" "/Applications/Désinstaller Layers Keys.app" "/Library/Audio/Plug-Ins/VST3/LayersKeys.vst3" "/Library/Audio/Plug-Ins/Components/LayersKeys.component"; do
+              [ -e "$x" ] && echo "ENCORE PRÉSENT : $x" || echo "retiré : $x"
+            done
+            [ -e "$D/config.json" ] && echo "données conservées après désinstallation (attendu) : OUI" || echo "données conservées : NON"
+            pkgutil --pkgs | grep jbpraise || echo "plus aucun reçu d'installation"
+          } 2>&1 | tee /tmp/lk/04_desinstallation.txt
+      - name: Installation partielle (sans VST3 ni AU)
+        run: |
+          {
+            cat > /tmp/choix.xml <<'XML'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><array>
+          <dict><key>attributeSetting</key><integer>0</integer><key>choiceAttribute</key><string>selected</string><key>choiceIdentifier</key><string>vst3</string></dict>
+          <dict><key>attributeSetting</key><integer>0</integer><key>choiceAttribute</key><string>selected</string><key>choiceIdentifier</key><string>au</string></dict>
+          </array></plist>
+          XML
+            sudo installer -pkg dist/Layers-Keys-1.0.0.pkg -target / -applyChoiceChangesXML /tmp/choix.xml 2>&1 | tail -3
+            [ -e "/Applications/Layers Keys.app" ] && echo "application installée : OUI"
+            [ -e "/Library/Audio/Plug-Ins/VST3/LayersKeys.vst3" ] && echo "VST3 installé (inattendu)" || echo "VST3 non installé : OUI (attendu)"
+            [ -e "/Library/Audio/Plug-Ins/Components/LayersKeys.component" ] && echo "AU installé (inattendu)" || echo "AU non installé : OUI (attendu)"
+            sudo "/Applications/Désinstaller Layers Keys.app/Contents/Resources/desinstaller.sh" --silent --home "$HOME" --data
+            [ -e "$HOME/Library/Application Support/LayersKeys" ] && echo "données encore là (inattendu)" || echo "données effacées avec --data : OUI"
+          } 2>&1 | tee /tmp/lk/05_partielle.txt
+      - name: Publier
+        if: always()
+        run: |
+          mkdir -p /tmp/o && cp /tmp/lk/* /tmp/o/ 2>/dev/null || true
+          cp dist/Layers-Keys-1.0.0.pkg /tmp/o/ 2>/dev/null || true
+          git config user.name "ci"; git config user.email "ci@users.noreply.github.com"
+          git checkout --orphan ci-pkg-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          rm -rf cibin
+          cp /tmp/o/* . 2>/dev/null || true
+          echo "run $GITHUB_RUN_ID" > run.txt
+          git add -A
+          git commit -m "installateur mac $GITHUB_RUN_ID"
+          git push -f origin HEAD:refs/heads/ci-pkg

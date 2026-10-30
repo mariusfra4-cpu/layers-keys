@@ -1,0 +1,5 @@
+#!/bin/bash
+# Enlève la quarantaine puis demande à macOS de relire la liste des Audio Units.
+[ -e "/Library/Audio/Plug-Ins/Components/LayersKeys.component" ] && xattr -cr "/Library/Audio/Plug-Ins/Components/LayersKeys.component" 2>/dev/null
+killall -9 AudioComponentRegistrar 2>/dev/null
+exit 0

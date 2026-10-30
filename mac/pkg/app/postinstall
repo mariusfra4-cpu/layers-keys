@@ -1,0 +1,6 @@
+#!/bin/bash
+# Après l'installation : enlève la « quarantaine » de macOS pour que l'application s'ouvre normalement.
+for p in "/Applications/Layers Keys.app" "/Applications/Désinstaller Layers Keys.app"; do
+  [ -e "$p" ] && xattr -cr "$p" 2>/dev/null
+done
+exit 0

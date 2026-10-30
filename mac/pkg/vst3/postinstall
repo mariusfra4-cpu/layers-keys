@@ -1,0 +1,3 @@
+#!/bin/bash
+[ -e "/Library/Audio/Plug-Ins/VST3/LayersKeys.vst3" ] && xattr -cr "/Library/Audio/Plug-Ins/VST3/LayersKeys.vst3" 2>/dev/null
+exit 0
