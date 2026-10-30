@@ -1,0 +1,92 @@
+name: Installateur Windows
+on:
+  push:
+    paths: ['nsis/**', '.github/workflows/win.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  win:
+    runs-on: windows-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: NSIS
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path C:\lklogs | Out-Null
+          if (-not (Test-Path "C:\Program Files (x86)\NSIS\makensis.exe")) { choco install nsis -y --no-progress | Out-Null }
+          $env:Path += ";C:\Program Files (x86)\NSIS"
+          makensis /VERSION | Tee-Object C:\lklogs\01_nsis_version.txt
+      - name: Construction
+        shell: pwsh
+        run: |
+          $env:Path += ";C:\Program Files (x86)\NSIS"
+          Set-Location nsis
+          makensis /V3 layerskeys.nsi 2>&1 | Tee-Object C:\lklogs\02_makensis.txt
+          Get-ChildItem *.exe | Format-Table Name,Length | Out-String | Tee-Object -Append C:\lklogs\02_makensis.txt
+      - name: Contenu et propriétés
+        shell: pwsh
+        run: |
+          Set-Location nsis
+          $f = Get-Item .\Layers-Keys-Setup-1.0.0.exe
+          $f.VersionInfo | Format-List ProductName,CompanyName,FileDescription,FileVersion,ProductVersion,LegalCopyright,OriginalFilename | Out-String | Tee-Object C:\lklogs\03_proprietes.txt
+          7z l .\Layers-Keys-Setup-1.0.0.exe | Tee-Object C:\lklogs\04_contenu.txt
+          $bytes = [IO.File]::ReadAllBytes("layerskeys.nsi")[0..2]
+          "BOM nsi: " + (($bytes | ForEach-Object { $_.ToString('X2') }) -join ' ') | Tee-Object -Append C:\lklogs\04_contenu.txt
+      - name: Test installation silencieuse
+        shell: pwsh
+        run: |
+          $log = "C:\lklogs\05_install.txt"
+          $setup = (Resolve-Path nsis\Layers-Keys-Setup-1.0.0.exe).Path
+          $data = Join-Path $env:APPDATA "LayersKeys"
+          New-Item -ItemType Directory -Force -Path $data | Out-Null
+          Set-Content -Path "$data\config.json" -Value '{"test":"preset"}'
+          $p = Start-Process $setup -ArgumentList "/S" -Wait -PassThru
+          "code installation: $($p.ExitCode)" | Tee-Object $log
+          $pf = ${env:ProgramFiles}
+          $cf = ${env:CommonProgramW6432}
+          $sm = "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\Layers Keys"
+          foreach ($x in @("$pf\Layers Keys\LayersKeys.exe","$pf\Layers Keys\LayersKeys.ico","$pf\Layers Keys\Desinstaller.exe","$cf\VST3\Layers Keys.vst3\Contents\x86_64-win\Layers Keys.vst3","$env:PUBLIC\Desktop\Layers Keys.lnk","$sm\Layers Keys.lnk","$sm\Désinstaller Layers Keys.lnk")) {
+            "{0} : {1}" -f $x, (Test-Path -LiteralPath $x) | Tee-Object -Append $log
+          }
+          $k = Get-ItemProperty "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\LayersKeys"
+          $k | Select-Object DisplayName,DisplayVersion,Publisher,DisplayIcon,UninstallString,InstallLocation | Format-List | Out-String | Tee-Object -Append $log
+          $app = Start-Process "$pf\Layers Keys\LayersKeys.exe" -PassThru
+          Start-Sleep 5
+          "application en marche après 5 s : " + (-not $app.HasExited) | Tee-Object -Append $log
+          $p = Start-Process $setup -ArgumentList "/S" -Wait -PassThru
+          "code mise à jour: $($p.ExitCode)" | Tee-Object -Append $log
+          "application fermée par la mise à jour : " + ($null -eq (Get-Process LayersKeys -ErrorAction SilentlyContinue)) | Tee-Object -Append $log
+          "données conservées après mise à jour : " + (Test-Path "$data\config.json") | Tee-Object -Append $log
+          "fichier exe présent après mise à jour : " + (Test-Path "$pf\Layers Keys\LayersKeys.exe") | Tee-Object -Append $log
+      - name: Test désinstallation
+        shell: pwsh
+        run: |
+          $log = "C:\lklogs\06_desinstall.txt"
+          $pf = ${env:ProgramFiles}
+          $cf = ${env:CommonProgramW6432}
+          $data = Join-Path $env:APPDATA "LayersKeys"
+          $p = Start-Process "$pf\Layers Keys\Desinstaller.exe" -ArgumentList "/S" -Wait -PassThru
+          Start-Sleep 5
+          "code désinstallation: $($p.ExitCode)" | Tee-Object $log
+          foreach ($x in @("$pf\Layers Keys\LayersKeys.exe","$cf\VST3\Layers Keys.vst3","$env:PUBLIC\Desktop\Layers Keys.lnk","$env:ProgramData\Microsoft\Windows\Start Menu\Programs\Layers Keys","HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\LayersKeys")) {
+            "{0} encore présent : {1}" -f $x, (Test-Path -LiteralPath $x) | Tee-Object -Append $log
+          }
+          "données conservées après désinstallation (attendu True) : " + (Test-Path "$data\config.json") | Tee-Object -Append $log
+      - name: Publier
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p /tmp/o
+          cp /c/lklogs/* /tmp/o/ 2>/dev/null || true
+          cp nsis/Layers-Keys-Setup-1.0.0.exe /tmp/o/ 2>/dev/null || true
+          git config user.name "ci"
+          git config user.email "ci@users.noreply.github.com"
+          git checkout --orphan ci-win-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          cp /tmp/o/* . 2>/dev/null || true
+          echo "run $GITHUB_RUN_ID" > run.txt
+          git add -A
+          git commit -m "installateur windows $GITHUB_RUN_ID"
+          git push -f origin HEAD:refs/heads/ci-win
