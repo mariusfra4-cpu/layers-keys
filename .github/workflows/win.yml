@@ -32,6 +32,20 @@ jobs:
           $f = Get-Item .\Layers-Keys-Setup-1.0.0.exe
           $f.VersionInfo | Format-List ProductName,CompanyName,FileDescription,FileVersion,ProductVersion,LegalCopyright,OriginalFilename | Out-String | Tee-Object C:\lklogs\03_proprietes.txt
           7z l .\Layers-Keys-Setup-1.0.0.exe | Tee-Object C:\lklogs\04_contenu.txt
+      - name: Capture de l'assistant
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          Add-Type -AssemblyName System.Windows.Forms,System.Drawing
+          $setup = (Resolve-Path nsis\Layers-Keys-Setup-1.0.0.exe).Path
+          $p = Start-Process $setup -PassThru
+          Start-Sleep 6
+          $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+          $bmp = New-Object System.Drawing.Bitmap $b.Width,$b.Height
+          $g = [System.Drawing.Graphics]::FromImage($bmp)
+          $g.CopyFromScreen($b.Location,[System.Drawing.Point]::Empty,$b.Size)
+          $bmp.Save("C:\lklogs\assistant_1_bienvenue.png")
+          Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
       - name: Test installation silencieuse
         shell: pwsh
         run: |
