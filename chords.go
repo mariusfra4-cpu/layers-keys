@@ -41,7 +41,7 @@ func (n ChordNamer) nm(pc int, sharp bool) string {
 }
 
 func (n ChordNamer) join(root, suf string) string {
-	if n.Spaced && suf != "" {
+	if suf != "" && (n.Spaced || strings.HasPrefix(suf, "Maj")) {
 		return root + " " + suf
 	}
 	return root + suf
@@ -62,199 +62,244 @@ func sharpFamily(root int, minor bool) bool {
 	return false
 }
 
-type cand struct {
-	name string
-	cost float64
-}
-
-// nameFrom construit le nom d'un accord pour une fondamentale donnée ; mask = intervalles présents (bit 0 = fondamentale).
-func nameFrom(mask uint16, hasRoot bool) (suffix string, minor bool, cost float64) {
+// describe donne le nom d'un accord pour une fondamentale choisie ; mask = intervalles présents (bit 0 = fondamentale).
+// Règle de vérité : CHAQUE note jouée doit être expliquée par le nom (tierce, quinte, septième, extension ou altération).
+// Si une note reste sans explication, ok = false : cette lecture est refusée, on ne cache jamais une note.
+func describe(mask uint16) (suffix string, minor bool, cost float64, ok bool) {
 	has := func(i int) bool { return mask&(1<<uint(i)) != 0 }
-	m3, M3 := has(3), has(4)
-	s2, s4 := has(2), has(5)
-	b5, p5, s5 := has(6), has(7), has(8)
-	d7, m7, M7 := has(9), has(10), has(11)
-	b9, n9, s9 := has(1), has(2), has(3)
-	n11, s11 := has(5), has(6)
-	_ = n9
-
-	var quality string // "", "m", "dim", "aug", "sus2", "sus4", "5"
-	third := true
-	switch {
-	case M3:
-		quality = ""
-	case m3:
-		quality = "m"
-	case s4:
-		quality, third = "sus4", false
-	case s2:
-		quality, third = "sus2", false
-	default:
-		third = false
-		if p5 && !(m7 || M7 || d7 || b9) {
-			return "5", false, 0.5
-		}
-		cost += 6 // pas de tierce : lecture peu naturelle
-	}
-	if m3 && M3 { // tierce mineure ET majeure : la mineure est une #9
-		quality = ""
-	}
-
-	// quinte
-	fifth := ""
-	switch {
-	case p5:
-	case b5 && !p5:
-		fifth = "b5"
-	case s5 && !p5:
-		fifth = "#5"
-	}
-	// septième
-	seventh := 0 // 0 aucune, 7 = b7, 11 = maj7, 6 = sixte, 9 = dim7
-	switch {
-	case m7:
-		seventh = 7
-	case M7:
-		seventh = 11
-	case d7 && quality == "m" && fifth == "b5" && !m7 && !M7:
-		seventh = 9
-	case d7:
-		seventh = 6
-	}
-
-	// extensions (9, 11, 13)
+	used := uint16(1)
+	use := func(i int) { used |= 1 << uint(i) }
 	var alts []string
-	ninth := false
-	top := 0             // 9, 11, 13
-	if has(2) && third { // 2 = 9 quand il y a une tierce
-		ninth = true
-		top = 9
-	}
-	if b9 {
-		alts = append(alts, "b9")
-		cost += 2
-		if !third {
-			cost += 5 // sus + b9 : c'est un cluster, pas un accord
+
+	// 1. tierce ou suspension
+	quality := ""
+	third := false
+	switch {
+	case has(4):
+		third = true
+		use(4)
+		if has(3) { // tierce mineure en plus de la majeure : c'est une #9
+			use(3)
+			alts = append(alts, "#9")
+			cost += 2.5
 		}
-	}
-	if s9 && M3 {
-		alts = append(alts, "#9")
-		cost += 2
-	}
-	if n11 && third {
-		top = 11
-		if seventh == 0 {
-			top = -11 // add11
-		}
+	case has(3):
+		quality, third = "m", true
+		use(3)
+	case has(5):
+		quality = "sus4"
+		use(5)
 		cost += 1
+	case has(2):
+		quality = "sus2"
+		use(2)
+		cost += 1
+	default:
+		if has(7) && mask&^(1|1<<7) == 0 {
+			return "5", false, 0.5, true
+		}
+		return "", false, 0, false
 	}
-	if s11 && (p5 || !b5) && third {
-		alts = append(alts, "#11")
-		cost += 2
+
+	// 2. quinte
+	five := ""
+	switch {
+	case has(7):
+		use(7)
+	case has(6):
+		five = "b5"
+		use(6)
+	case has(8):
+		five = "#5"
+		use(8)
 	}
-	if has(8) && p5 && (third || s11) { // b13 avec une quinte juste
-		alts = append(alts, "b13")
-		cost += 2
+	noFifth := five == "" && !has(7)
+
+	// 3. septième ou sixte
+	seventh := ""
+	sixth := false
+	switch {
+	case has(10) && !has(11):
+		seventh = "7"
+		use(10)
+	case has(11) && !has(10):
+		seventh = "maj7"
+		use(11)
+	case has(9) && quality == "m" && five == "b5":
+		seventh = "dim7"
+		use(9)
+	case has(9):
+		sixth = true
+		use(9)
 	}
-	thirteen := false
-	if has(9) && (seventh == 7 || seventh == 11) {
-		thirteen = true
+	hasSev := seventh == "7" || seventh == "maj7"
+
+	// 4. extensions et altérations
+	top := 0 // 9, 11 ou 13 : extension la plus haute
+	add := ""
+	if has(2) && quality != "sus2" {
+		use(2)
+		top = 9
+		if !third { // sus4 + 9
+			cost += 1
+		}
+	}
+	if has(5) && quality != "sus4" && third {
+		use(5)
+		top = 11
+		cost += 1.5
+	}
+	if has(9) && hasSev {
+		use(9)
 		top = 13
 		cost += 1.2
 	}
-	if ninth && top < 13 {
-		cost += 1
+	if has(1) { // b9
+		use(1)
+		alts = append(alts, "b9")
+		cost += 2
+		if !third {
+			cost += 5
+		}
+	}
+	if has(6) && five != "b5" { // #11 (avec quinte juste)
+		use(6)
+		alts = append(alts, "#11")
+		cost += 2
+	}
+	if has(8) && five != "#5" { // b13
+		use(8)
+		alts = append(alts, "b13")
+		cost += 4
+	}
+	if has(3) && !third { // m3 sans lecture : refusé
+		return "", false, 0, false
+	}
+	if used != mask {
+		return "", false, 0, false // une note n'est pas expliquée
 	}
 
-	// assemblage
+	// 5. assemblage du nom : tout ce qui a été « consommé » plus haut doit apparaître dans le nom
+	if has(1) || (has(3) && has(4)) {
+		if seventh != "7" { // b9 ou #9 sans septième de dominante : lecture peu naturelle
+			cost += 3
+		}
+	}
+	if top == 13 && !has(2) {
+		cost += 1.5 // 13 sans 9
+	}
+	if top == 11 && !has(2) && hasSev {
+		cost += 2 // 11 sans 9
+	}
 	var sb strings.Builder
-	isDim := quality == "m" && fifth == "b5"
-	isAug := quality == "" && fifth == "#5" && third
-	switch {
-	case isDim && seventh == 9:
-		sb.WriteString("dim7")
-		fifth = ""
-		cost += 1
-	case isDim && seventh == 7:
-		sb.WriteString("m7b5")
-		fifth = ""
-		cost += 1
-		if top >= 9 {
-			sb.WriteString(map[int]string{9: "(9)", 11: "(11)", 13: "(13)"}[top])
-			top = 0
-		}
-	case isDim && seventh == 0 && !ninth && top == 0:
-		sb.WriteString("dim")
-		fifth = ""
-		cost += 0.5
-	case isAug && seventh == 0 && top == 0:
-		sb.WriteString("aug")
-		fifth = ""
-		cost += 0.5
-	default:
-		base := quality
-		if quality == "sus4" || quality == "sus2" {
-			base = quality
-		}
-		switch {
-		case seventh == 6: // sixte
-			cost += 1.5
-			if !p5 {
-				cost += 2 // sixte sans quinte : on préfère le renversement (C E A = Am/C)
-			}
-			if quality == "sus4" || quality == "sus2" {
-				cost += 4
-			}
-			if ninth && top == 9 {
-				sb.WriteString(base + "6/9")
-				top = 0
-			} else {
-				sb.WriteString(base + "6")
-			}
-		case seventh == 7 || seventh == 11:
-			cost++
-			ext := 7
-			if top == 9 || top == 11 || top == 13 {
-				ext = top
-			}
-			mark := ""
-			if seventh == 11 {
-				mark = "maj"
-			}
-			if quality == "m" && seventh == 11 {
-				sb.WriteString("m(maj" + itoa(ext) + ")")
-			} else if quality == "m" || quality == "" {
-				sb.WriteString(quality + mark + itoa(ext))
-			} else {
-				sb.WriteString(mark + itoa(ext) + quality)
-			}
-			if thirteen && ext == 13 {
-				top = 0
-			}
-			top = 0
-		default:
-			sb.WriteString(base)
-			switch {
-			case top == 9:
-				sb.WriteString("(add9)")
-			case top == -11:
-				sb.WriteString("(add11)")
-			case top == 11:
-				sb.WriteString("(add11)")
-			}
+	isDim := quality == "m" && five == "b5"
+	isAug := quality == "" && third && five == "#5"
+	suffixExt := func() { // extension qui n'a pas de place dans le nom court : on l'écrit entre parenthèses
+		if top > 0 {
+			sb.WriteString("(" + itoa(top) + ")")
+			cost += 4.5
 			top = 0
 		}
 	}
-	if fifth != "" {
-		alts = append(alts, fifth)
+	switch {
+	case isDim && seventh == "dim7":
+		sb.WriteString("dim7")
+		five = ""
+		cost += 1
+		suffixExt()
+	case isDim && seventh == "7":
+		sb.WriteString("m7b5")
+		five = ""
+		cost += 1
+		suffixExt()
+	case isDim && seventh == "" && !sixth:
+		sb.WriteString("dim")
+		five = ""
+		cost += 0.5
+		suffixExt()
+	case isAug && seventh == "" && !sixth:
+		sb.WriteString("aug")
+		five = ""
+		cost += 0.5
+		suffixExt()
+	case hasSev:
+		cost++
+		ext := 7
+		if top > 0 {
+			ext = top
+		}
+		mark := ""
+		if seventh == "maj7" {
+			mark = "Maj"
+		}
+		switch {
+		case quality == "m" && seventh == "maj7":
+			sb.WriteString("m(Maj" + itoa(ext) + ")")
+			if ext > 7 {
+				cost += 2
+			}
+		case quality == "m" || quality == "":
+			sb.WriteString(quality + mark + itoa(ext))
+		default:
+			sb.WriteString(mark + itoa(ext) + quality)
+		}
+		top = 0
+	case sixth:
+		cost += 1.5
+		if noFifth {
+			cost += 2 // sixte sans quinte : on préfère le renversement (C E A = Am/C)
+		}
+		if quality == "sus4" || quality == "sus2" {
+			cost += 4
+		}
+		if top == 9 {
+			sb.WriteString(quality + "6/9")
+			top = 0
+		} else {
+			sb.WriteString(quality + "6")
+			if top == 11 {
+				sb.WriteString("(add11)")
+				cost += 2
+				top = 0
+			}
+		}
+	default:
+		sb.WriteString(quality)
+		switch top {
+		case 9:
+			add = "add9"
+			cost += 1.2
+		case 11:
+			add = "add11"
+			cost += 1
+		}
+		top = 0
+	}
+	if top != 0 {
+		return "", false, 0, false // sécurité : une extension serait cachée
+	}
+	if add != "" {
+		sb.WriteString("(" + add + ")")
+	}
+	if five != "" {
+		alts = append(alts, five)
 		cost += 3.5
+		if quality == "sus4" || quality == "sus2" {
+			cost += 6
+		} else if !hasSev {
+			cost += 3
+		}
 	}
 	if len(alts) > 0 {
 		sort.Strings(alts)
 		sb.WriteString("(" + strings.Join(alts, ",") + ")")
 	}
-	_ = hasRoot
-	return sb.String(), quality == "m", cost
+	if noFifth && !hasSev && !sixth && seventh == "" {
+		cost += 0.8 // triade sans quinte
+	} else if noFifth {
+		cost += 0.4
+	}
+	return sb.String(), quality == "m", cost, true
 }
 
 func itoa(n int) string {
@@ -265,6 +310,8 @@ func itoa(n int) string {
 }
 
 // Detect reconnaît l'accord formé par des notes MIDI tenues.
+// Il choisit la lecture la plus naturelle : fondamentale à la basse si possible, sinon accord sur basse (renversement, « /E »)
+// avec la vraie fondamentale. Il n'affiche jamais un nom qui cache une note jouée.
 func (n ChordNamer) Detect(notes []int) ChordResult {
 	if len(notes) == 0 {
 		return ChordResult{}
@@ -306,11 +353,11 @@ func (n ChordNamer) Detect(notes []int) ChordResult {
 		if root >= 0 && (bass == a || bass == b) {
 			sh := sharpFamily(root, false)
 			spell(sh)
-			res.Name = n.nm(root, sh) + "5"
+			res.Name = n.join(n.nm(root, sh), "5")
 		}
 		return res // deux notes quelconques : pas d'accord, on montre les notes
 	}
-	best := cand{cost: 1e9}
+	bestCost := 1e9
 	bestRoot, bestMinor, bestSuf := -1, false, ""
 	for root := 0; root < 12; root++ {
 		if !seen[root] {
@@ -320,16 +367,25 @@ func (n ChordNamer) Detect(notes []int) ChordResult {
 		for p := range seen {
 			mask |= 1 << uint((p-root+12)%12)
 		}
-		suf, minor, cost := nameFrom(mask, true)
-		if root != bass {
-			cost += 3
+		suf, minor, cost, ok := describe(mask)
+		if !ok {
+			continue
 		}
-		if cost < best.cost || (cost == best.cost && root == bass) {
-			best = cand{"", cost}
+		if root != bass {
+			// accord sur basse : petit coût si la basse est une note de l'accord (tierce, quinte, septième), plus grand sinon
+			switch (bass - root + 12) % 12 {
+			case 3, 4, 6, 7, 8, 10, 11:
+				cost += 1.5
+			default:
+				cost += 3.5
+			}
+		}
+		if cost < bestCost-1e-9 || (cost < bestCost+1e-9 && root == bass) {
+			bestCost = cost
 			bestRoot, bestMinor, bestSuf = root, minor, suf
 		}
 	}
-	if best.cost >= 6.5 { // amas de notes : aucun nom réaliste, on montre les notes
+	if bestRoot < 0 || bestCost >= 8 { // amas de notes : aucun nom réaliste, on montre les notes
 		return res
 	}
 	sh := sharpFamily(bestRoot, bestMinor)

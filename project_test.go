@@ -132,14 +132,14 @@ func TestSettingsLanguageAudioChords(t *testing.T) {
 		u.MidiMsg(0x90 | uint32(n)<<8 | 100<<16)
 	}
 	drawUI(u)
-	if u.chord.Name != "Do maj7" {
+	if u.chord.Name != "Do Maj7" {
 		t.Fatalf("accord affiché : %q", u.chord.Name)
 	}
 	for _, n := range []int{60, 64, 67, 71} {
 		u.MidiMsg(0x80 | uint32(n)<<8)
 	}
 	drawUI(u)
-	if u.chordLive || u.chord.Name != "Do maj7" {
+	if u.chordLive || u.chord.Name != "Do Maj7" {
 		t.Fatal("le dernier accord doit rester affiché")
 	}
 	_ = e
