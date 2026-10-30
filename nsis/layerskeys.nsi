@@ -44,7 +44,6 @@ VIAddVersionKey /LANG=1036 "OriginalFilename" "Layers-Keys-Setup-1.0.0.exe"
 
 !define MUI_WELCOMEPAGE_TITLE "Bienvenue dans Layers Keys"
 !define MUI_WELCOMEPAGE_TEXT "Layers Keys est un piano et sampler à couches pour musiciens d'église : jusqu'à 8 sons superposés, SoundFont (SF2), WAV et MP3, presets, reverb et clavier MIDI.$\r$\n$\r$\nCet assistant va l'installer sur votre ordinateur, avec le plugin VST3 pour Ableton et les autres logiciels de musique.$\r$\n$\r$\nBy JB Praise — for church musician."
-!define MUI_UNWELCOMEFINISHPAGE_BITMAP "side.bmp"
 !define MUI_COMPONENTSPAGE_SMALLDESC
 !define MUI_FINISHPAGE_TITLE "Layers Keys est installé"
 !define MUI_FINISHPAGE_RUN
