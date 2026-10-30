@@ -1,0 +1,4 @@
+=== arm64
+arm64 : toujours en marche après 6 s
+=== x86_64
+x86_64 : ARRÊTÉ, code 139

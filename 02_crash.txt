@@ -1,0 +1,119 @@
+=== /Users/runner/Library/Logs/DiagnosticReports/LayersKeys-2026-10-30-132255.ips
+{"app_name":"LayersKeys","timestamp":"2026-10-30 13:22:55.00 +0000","app_version":"1.0.0","slice_uuid":"8f538a8b-8973-3cfa-c979-641930071a1d","build_version":"1.0.0","platform":1,"bundleID":"com.jbpraise.layerskeys","share_with_app_devs":0,"is_first_party":0,"bug_type":"309","os_version":"macOS 26.6.2 (25G83)","roots_installed":0,"name":"LayersKeys","incident_id":"1EBB22C1-C6E2-4B28-9FB3-F1F915B80D1C"}
+{
+  "uptime" : 140,
+  "procRole" : "Unspecified",
+  "version" : 2,
+  "userID" : 501,
+  "deployVersion" : 210,
+  "modelCode" : "VirtualMac2,1",
+  "coalitionID" : 879,
+  "osVersion" : {
+    "train" : "macOS 26.6.2",
+    "build" : "25G83",
+    "releaseType" : "User"
+  },
+  "captureTime" : "2026-10-30 13:22:53.4872 +0000",
+  "codeSigningMonitor" : 0,
+  "incident" : "1EBB22C1-C6E2-4B28-9FB3-F1F915B80D1C",
+  "pid" : 1719,
+  "translated" : true,
+  "cpuType" : "X86-64",
+  "procLaunch" : "2026-10-30 13:22:52.8313 +0000",
+  "procStartAbsTime" : 3485752683,
+  "procExitAbsTime" : 3501311082,
+  "procName" : "LayersKeys",
+  "procPath" : "\/Users\/USER\/*\/Layers Keys.app\/Contents\/MacOS\/LayersKeys",
+  "bundleInfo" : {"CFBundleShortVersionString":"1.0.0","CFBundleVersion":"1.0.0","CFBundleIdentifier":"com.jbpraise.layerskeys"},
+  "storeInfo" : {"deviceIdentifierForVendor":"14F2211D-9428-594F-97E6-1D6794615798","thirdParty":true},
+  "parentProc" : "bash",
+  "parentPid" : 1596,
+  "coalitionName" : "runner-provisioner",
+  "crashReporterKey" : "50B57668-6D20-9E01-B90C-EBD9FCBB8833",
+  "appleIntelligenceStatus" : {"state":"unavailable","reasons":["deviceNotCapable","selectedSiriLanguageIneligibleInfo(und)","selectedSiriLanguageIneligible","countryLocationIneligible","countryBillingIneligible"]},
+  "developerMode" : 1,
+  "responsiblePid" : 995,
+  "responsibleProc" : "hosted-compute-agent",
+  "codeSigningID" : "",
+  "codeSigningTeamID" : "",
+  "codeSigningValidationCategory" : 0,
+  "codeSigningTrustLevel" : 4294967295,
+  "codeSigningAuxiliaryInfo" : 0,
+  "bootSessionUUID" : "3F639494-5601-4091-9227-0D0B20CD5CE0",
+  "sip" : "disabled",
+  "vmRegionInfo" : "0x2b4f000 is not in any region.  Bytes before following region: 16777216\n      REGION TYPE                    START - END         [ VSIZE] PRT\/MAX SHRMOD  REGION DETAIL\n      UNUSED SPACE AT START\n--->  \n      __TEXT                        3b4f000-3d3e000      [ 1980K] r-x\/rwx SM=COW  \/Users\/USER\/*\/Layers Keys.app\/Contents\/MacOS\/LayersKeys",
+  "exception" : {"codes":"0x0000000000000001, 0x0000000002b4f000","rawCodes":[1,45412352],"type":"EXC_BAD_ACCESS","signal":"SIGSEGV","subtype":"KERN_INVALID_ADDRESS at 0x0000000002b4f000"},
+  "termination" : {"flags":0,"code":11,"namespace":"SIGNAL","indicator":"Segmentation fault: 11","byProc":"exc handler","byPid":1719},
+  "vmregioninfo" : "0x2b4f000 is not in any region.  Bytes before following region: 16777216\n      REGION TYPE                    START - END         [ VSIZE] PRT\/MAX SHRMOD  REGION DETAIL\n      UNUSED SPACE AT START\n--->  \n      __TEXT                        3b4f000-3d3e000      [ 1980K] r-x\/rwx SM=COW  \/Users\/USER\/*\/Layers Keys.app\/Contents\/MacOS\/LayersKeys",
+  "extMods" : {"caller":{"thread_create":0,"thread_set_state":0,"task_for_pid":0},"system":{"thread_create":0,"thread_set_state":0,"task_for_pid":0},"targeted":{"thread_create":0,"thread_set_state":0,"task_for_pid":0},"warnings":0},
+  "faultingThread" : 0,
+  "threads" : [{"triggered":true,"id":9484,"threadState":{"r13":{"value":62667584},"rflags":{"value":514},"rax":{"value":0},"rosetta":{"tmp2":{"value":4294974960},"tmp1":{"value":45412352},"tmp0":{"value":0}},"r14":{"value":62189568},"rsi":{"value":3021663004792969698},"r8":{"value":0},"rdx":{"value":4754110797517312289},"r10":{"value":312},"r9":{"value":4300835264},"r15":{"value":0},"rbx":{"value":63036512},"r11":{"value":4365378384,"symbolLocation":8896,"symbol":"lsl::sPoolBytes"},"rip":{"value":45412352,"matchesCrashFrame":0},"rbp":{"value":8773399784},"rsp":{"value":8773399752},"r12":{"value":0},"rcx":{"value":3021663004792969698},"flavor":"x86_THREAD_STATE","rdi":{"value":4754110797517312289}},"queue":"com.apple.main-thread","frames":[{"imageOffset":4367492316,"region":"<translation info unavailable>","imageIndex":2},{"imageOffset":846482,"imageIndex":0},{"imageOffset":8773399872,"imageIndex":2},{"imageOffset":844645,"imageIndex":0},{"imageOffset":846202,"imageIndex":0},{"imageOffset":463665,"imageIndex":0},{"imageOffset":79072,"symbol":"dyld4::start(dyld4::KernelArgs*, void*, void*, unsigned long long)::$_0::operator()() const","symbolLocation":284,"imageIndex":1},{"imageOffset":78182,"symbol":"start","symbolLocation":3142,"imageIndex":1}]},{"id":9516,"name":"com.apple.rosetta.exceptionserver","threadState":{"flavor":"x86_THREAD_STATE","rbp":{"value":9908489551872},"r12":{"value":8589934592},"rosetta":{"tmp2":{"value":0},"tmp1":{"value":4582730108419},"tmp0":{"value":10337986281472}},"rbx":{"value":4582730108419},"r8":{"value":2307},"r15":{"value":4831842304},"r10":{"value":3},"rdx":{"value":0},"rdi":{"value":0},"r9":{"value":1},"r13":{"value":4295506544},"rflags":{"value":582},"rax":{"value":268451845},"rsp":{"value":10337986281472},"r11":{"value":0},"rcx":{"value":17314086914},"r14":{"value":4367492316,"region":"<translation info unavailable>"},"rsi":{"value":2616}},"frames":[]}],
+  "usedImages" : [
+  {
+    "source" : "P",
+    "arch" : "x86_64",
+    "base" : 62189568,
+    "CFBundleShortVersionString" : "1.0.0",
+    "CFBundleIdentifier" : "com.jbpraise.layerskeys",
+    "size" : 2027520,
+    "uuid" : "8f538a8b-8973-3cfa-c979-641930071a1d",
+    "path" : "\/Users\/USER\/*\/Layers Keys.app\/Contents\/MacOS\/LayersKeys",
+    "name" : "LayersKeys",
+    "CFBundleVersion" : "1.0.0"
+  },
+  {
+    "source" : "P",
+    "arch" : "x86_64",
+    "base" : 4364623872,
+    "size" : 708608,
+    "uuid" : "cf55ca34-3ecb-38f3-9e3e-e20592c197be",
+    "path" : "\/usr\/lib\/dyld",
+    "name" : "dyld"
+  },
+  {
+    "size" : 0,
+    "source" : "A",
+    "base" : 0,
+    "uuid" : "00000000-0000-0000-0000-000000000000"
+  }
+],
+  "sharedCache" : {
+  "base" : 140703290261504,
+  "size" : 30064771072,
+  "uuid" : "7bd04242-d730-3164-8eb8-8650f163ca21"
+},
+  "vmSummary" : "ReadOnly portion of Libraries: Total=159.5M resident=0K(0%) swapped_out_or_unallocated=159.5M(100%)\nWritable regions: Total=694.6M written=289K(0%) resident=289K(0%) swapped_out=0K(0%) unallocated=694.3M(100%)\n\n                                VIRTUAL   REGION \nREGION TYPE                        SIZE    COUNT (non-coalesced) \n===========                     =======  ======= \nKernel Alloc Once                    8K        1 \nMALLOC                           521.1M       11 \nMALLOC guard page                   96K        6 \nRosetta Arena                     4096K        2 \nRosetta Generic                   1052K      260 \nRosetta IndirectBranch              32K        1 \nRosetta JIT                      128.0M        1 \nRosetta Return Stack                20K        2 \nRosetta Thread Context              20K        2 \nStack                             8176K        1 \nStack Guard                       56.0M        1 \nVM_ALLOCATE                         48K        1 \nVM_ALLOCATE (reserved)              32K        4         reserved VM address space (unallocated)\n__DATA                            2678K       37 \n__DATA_CONST                      1714K       47 \n__DATA_DIRTY                        99K       37 \n__LINKEDIT                       151.3M        4 \n__OBJC_RO                         65.2M        1 \n__OBJC_RW                         2595K        1 \n__TEXT                            8448K       47 \n__TPRO_CONST                         8K        2 \nmapped file                       4796K       13 \npage table in kernel               289K        1 \nshared memory                       32K        1 \n===========                     =======  ======= \nTOTAL                            955.0M      484 \nTOTAL, minus reserved VM space   954.9M      484 \n",
+  "legacyInfo" : {
+  "threadTriggered" : {
+    "queue" : "com.apple.main-thread"
+  }
+},
+  "logWritingSignature" : "4fbbd53d283eff2d5fc7bfe161cadbda82fecd94",
+  "roots_installed" : 0,
+  "bug_type" : "309",
+  "trmStatus" : 2105344,
+  "trialInfo" : {
+  "rollouts" : [
+    {
+      "rolloutId" : "68095e8ecb2a9d1eaa8463c9",
+      "factorPackIds" : [
+        "68bf4eac9c31c5367e5529ca"
+      ],
+      "deploymentId" : 240000008
+    },
+    {
+      "rolloutId" : "645197bf528fbf3c3af54105",
+      "factorPackIds" : [
+        "663e65b4a1526e1ca0e288a1"
+      ],
+      "deploymentId" : 240000002
+    }
+  ],
+  "experiments" : [
+
+  ]
+},
+  "reportNotes" : [
+  "RIP register does not match crashing frame (0x2B4F000 vs 0x10452A4DC)"
+]
+}
