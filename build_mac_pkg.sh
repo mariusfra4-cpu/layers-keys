@@ -20,7 +20,8 @@ mk() { # nom identifiant
   pkgbuild --analyze --root "$P/$1" "$P/$1.plist" >/dev/null
   i=0
   while /usr/libexec/PlistBuddy -c "Print :$i:RootRelativeBundlePath" "$P/$1.plist" >/dev/null 2>&1; do
-    /usr/libexec/PlistBuddy -c "Set :$i:BundleIsRelocatable false" "$P/$1.plist"
+    /usr/libexec/PlistBuddy -c "Set :$i:BundleIsRelocatable false" "$P/$1.plist" 2>/dev/null || \
+      /usr/libexec/PlistBuddy -c "Add :$i:BundleIsRelocatable bool false" "$P/$1.plist"
     i=$((i+1))
   done
   pkgbuild --root "$P/$1" --component-plist "$P/$1.plist" --identifier "$2" --version "$VER" \
