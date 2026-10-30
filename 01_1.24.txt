@@ -1,0 +1,6 @@
+go 1.24 variante defaut : PLANTÉ code 1
+go 1.24 variante pie : PLANTÉ code 1
+go 1.24 variante sanssymboles_non : PLANTÉ code 139
+go 1.24 variante externe : PLANTÉ code 139
+arm64 natif :
+arm64 OK
