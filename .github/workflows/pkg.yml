@@ -90,6 +90,19 @@ jobs:
             sudo "/Applications/Désinstaller Layers Keys.app/Contents/Resources/desinstaller.sh" --silent --home "$HOME" --data
             [ -e "$HOME/Library/Application Support/LayersKeys" ] && echo "données encore là (inattendu)" || echo "données effacées avec --data : OUI"
           } 2>&1 | tee /tmp/lk/05_partielle.txt
+      - name: Capture de l'assistant (essai)
+        continue-on-error: true
+        run: |
+          open dist/Layers-Keys-1.0.0.pkg
+          sleep 8
+          screencapture -x /tmp/lk/assistant_1.png || true
+          osascript -e 'tell application "System Events" to keystroke return' || true
+          sleep 3
+          screencapture -x /tmp/lk/assistant_2.png || true
+          osascript -e 'tell application "System Events" to keystroke return' || true
+          sleep 3
+          screencapture -x /tmp/lk/assistant_3.png || true
+          pkill -x Installer || true
       - name: Publier
         if: always()
         run: |
