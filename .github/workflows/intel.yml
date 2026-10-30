@@ -11,6 +11,7 @@ jobs:
         with:
           ref: ci-logs
       - name: Test des deux versions
+        shell: bash {0}
         run: |
           mkdir -p /tmp/lk
           sw_vers | tee /tmp/lk/00.txt
@@ -24,9 +25,12 @@ jobs:
             arch -$a "$B" > /tmp/lk/run_$a.txt 2>&1 &
             P=$!
             sleep 6
-            if kill -0 $P 2>/dev/null; then echo "$a : toujours en marche après 6 s" | tee -a /tmp/lk/01.txt; kill $P; else wait $P; echo "$a : ARRÊTÉ, code $?" | tee -a /tmp/lk/01.txt; fi
+            if kill -0 $P 2>/dev/null; then echo "$a : toujours en marche après 6 s" | tee -a /tmp/lk/01.txt; kill $P; else wait $P; C=$?; echo "$a : ARRÊTÉ, code $C" | tee -a /tmp/lk/01.txt; fi
             head -c 3000 /tmp/lk/run_$a.txt | tee -a /tmp/lk/01.txt
           done
+          sleep 3
+          for f in $(ls -t ~/Library/Logs/DiagnosticReports/* 2>/dev/null | head -2); do echo "=== $f" >> /tmp/lk/02_crash.txt; head -c 9000 "$f" >> /tmp/lk/02_crash.txt; done
+          true
       - name: Publier
         if: always()
         run: |
