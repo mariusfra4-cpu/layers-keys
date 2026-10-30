@@ -6,37 +6,43 @@ permissions:
 jobs:
   intel:
     runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        go: ["1.22", "1.23", "1.24"]
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
         with:
-          ref: ci-logs
-      - name: Test des deux versions
+          go-version: ${{ matrix.go }}
+          cache: false
+      - name: Variantes amd64 sous Rosetta
         shell: bash {0}
         run: |
           mkdir -p /tmp/lk
-          sw_vers | tee /tmp/lk/00.txt
-          uname -m | tee -a /tmp/lk/00.txt
-          B="dist/mac/app/Layers Keys.app/Contents/MacOS/LayersKeys"
-          chmod +x "$B"
-          lipo -archs "$B" | tee -a /tmp/lk/00.txt
-          (/usr/bin/arch -x86_64 /usr/bin/true && echo "Rosetta : disponible" || echo "Rosetta : non disponible") 2>&1 | tee -a /tmp/lk/00.txt
-          for a in arm64 x86_64; do
-            echo "=== $a" | tee -a /tmp/lk/01.txt
-            arch -$a "$B" > /tmp/lk/run_$a.txt 2>&1 &
-            P=$!
-            sleep 6
-            if kill -0 $P 2>/dev/null; then echo "$a : toujours en marche après 6 s" | tee -a /tmp/lk/01.txt; kill $P; else wait $P; C=$?; echo "$a : ARRÊTÉ, code $C" | tee -a /tmp/lk/01.txt; fi
-            head -c 3000 /tmp/lk/run_$a.txt | tee -a /tmp/lk/01.txt
-          done
-          sleep 3
-          for f in $(ls -t ~/Library/Logs/DiagnosticReports/* 2>/dev/null | head -2); do echo "=== $f" >> /tmp/lk/02_crash.txt; head -c 9000 "$f" >> /tmp/lk/02_crash.txt; done
+          go version | tee /tmp/lk/00_${{ matrix.go }}.txt
+          run() { # nom, drapeaux
+            CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -trimpath $2 -o /tmp/b_$1 . 2>&1 | tail -3
+            arch -x86_64 /tmp/b_$1 > /tmp/o_$1.txt 2>&1 &
+            P=$!; sleep 5
+            if kill -0 $P 2>/dev/null; then R="en marche après 5 s : OK"; kill $P; else wait $P; R="PLANTÉ code $?"; fi
+            echo "go ${{ matrix.go }} variante $1 : $R" | tee -a /tmp/lk/01_${{ matrix.go }}.txt
+          }
+          run defaut '-ldflags=-s -w'
+          run pie '-buildmode=pie -ldflags=-s -w'
+          run sanssymboles_non '-ldflags=-w'
+          run externe '-ldflags=-linkmode=internal'
+          echo "arm64 natif :" | tee -a /tmp/lk/01_${{ matrix.go }}.txt
+          CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -trimpath -ldflags "-s -w" -o /tmp/b_arm .
+          /tmp/b_arm > /tmp/o_arm.txt 2>&1 & P=$!; sleep 5; kill -0 $P 2>/dev/null && echo "arm64 OK" | tee -a /tmp/lk/01_${{ matrix.go }}.txt && kill $P
           true
       - name: Publier
         if: always()
+        shell: bash {0}
         run: |
           git config user.name ci; git config user.email ci@users.noreply.github.com
-          git checkout --orphan ci-intel-tmp
+          git checkout --orphan t
           git rm -rf . >/dev/null 2>&1 || true
           cp /tmp/lk/* . 2>/dev/null || true
           git add -A; git commit -qm intel
-          git push -f origin HEAD:refs/heads/ci-intel
+          git push -f origin HEAD:refs/heads/ci-intel-${{ matrix.go }}
