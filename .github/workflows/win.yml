@@ -81,6 +81,11 @@ jobs:
           }
           $k = Get-ItemProperty "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\LayersKeys"
           $k | Select-Object DisplayName,DisplayVersion,Publisher,DisplayIcon,UninstallString,InstallLocation | Format-List | Out-String | Tee-Object -Append $log
+          $bin = [System.IO.File]::ReadAllBytes("$pf\Layers Keys\LayersKeys.exe")
+          $txt = [System.Text.Encoding]::Latin1.GetString($bin)
+          "ecran de licence present dans l'exe installe : " + $txt.Contains("Autoriser le logiciel") | Tee-Object -Append $log
+          $vb = [System.Text.Encoding]::Latin1.GetString([System.IO.File]::ReadAllBytes("$cf\VST3\Layers Keys.vst3\Contents\x86_64-win\Layers Keys.vst3"))
+          "ecran de licence present dans le VST3 installe : " + $vb.Contains("Autoriser le logiciel") | Tee-Object -Append $log
           $app = Start-Process "$pf\Layers Keys\LayersKeys.exe" -PassThru
           Start-Sleep 5
           "application en marche après 5 s : " + (-not $app.HasExited) | Tee-Object -Append $log
