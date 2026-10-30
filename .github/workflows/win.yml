@@ -32,8 +32,6 @@ jobs:
           $f = Get-Item .\Layers-Keys-Setup-1.0.0.exe
           $f.VersionInfo | Format-List ProductName,CompanyName,FileDescription,FileVersion,ProductVersion,LegalCopyright,OriginalFilename | Out-String | Tee-Object C:\lklogs\03_proprietes.txt
           7z l .\Layers-Keys-Setup-1.0.0.exe | Tee-Object C:\lklogs\04_contenu.txt
-          $bytes = [IO.File]::ReadAllBytes("layerskeys.nsi")[0..2]
-          "BOM nsi: " + (($bytes | ForEach-Object { $_.ToString('X2') }) -join ' ') | Tee-Object -Append C:\lklogs\04_contenu.txt
       - name: Test installation silencieuse
         shell: pwsh
         run: |
