@@ -184,6 +184,11 @@ func (u *UI) slider(c *Canvas, id string, x, y, w, h int, v float64, set func(fl
 
 func (u *UI) Draw(c *Canvas) {
 	u.regions = u.regions[:0]
+	if u.licShow {
+		u.drawLicense(c)
+		c.FlushText()
+		return
+	}
 	c.VGrad(0, 0, c.W, c.H, 0x0a101b, 0x05080e)
 	u.drawHeader(c)
 	u.drawPresets(c)
@@ -787,6 +792,10 @@ func (u *UI) drawFooter(c *Canvas) {
 	c.RRectHGrad(float64(mx+130), 718, 120, 2, 1, colGold, 0x05080e, 1)
 	c.Text(0, 708, c.W, 20, "By JB Praise", fontLg, colGold, 1)
 	c.Text(0, 727, c.W, 14, "for church musician", fontXs, colText2, 1)
+	if u.licSt.State == LicDemo {
+		r := rect{16, 712, 230, 26}
+		u.buttonC(c, "licpill", r, "Démo : "+FormatDemoLeft(u.licSt.DemoLeft)+" — Activer", false, colGold, colDark, fontSm, func() { u.licShow = true })
+	}
 }
 
 func (u *UI) drawToast(c *Canvas) {

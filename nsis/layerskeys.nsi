@@ -131,6 +131,14 @@ Section "Layers Keys" SecApp
   File "/oname=LayersKeys.ico" "layerskeys.ico"
   WriteUninstaller "$INSTDIR\Desinstaller.exe"
 
+  ; dossier commun de la licence (l'application et le VST3 partagent la même licence ; elle est conservée à la désinstallation)
+  ReadEnvStr $1 "ProgramData"
+  ${If} $1 != ""
+    CreateDirectory "$1\JB Praise\Layers Keys"
+    nsExec::Exec 'icacls "$1\JB Praise" /grant *S-1-5-32-545:(OI)(CI)M /T /C /Q'
+    Pop $2
+  ${EndIf}
+
   ; raccourcis
   CreateDirectory "$SMPROGRAMS\Layers Keys"
   Delete "$SMPROGRAMS\Layers Keys\Layers Keys.lnk"

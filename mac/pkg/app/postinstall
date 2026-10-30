@@ -3,4 +3,7 @@
 for p in "/Applications/Layers Keys.app" "/Applications/Désinstaller Layers Keys.app"; do
   [ -e "$p" ] && xattr -cr "$p" 2>/dev/null
 done
+# dossier commun de la licence (partagé par l'application, le VST3 et l'AU)
+mkdir -p "/Library/Application Support/JB Praise/Layers Keys" 2>/dev/null
+chmod 777 "/Library/Application Support/JB Praise" "/Library/Application Support/JB Praise/Layers Keys" 2>/dev/null
 exit 0

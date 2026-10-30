@@ -50,6 +50,12 @@ type Host interface {
 	KeyLabel(sc uint32, fallback string) string // lettre écrite sur une touche du clavier du PC
 }
 
+// Presse-papiers (facultatif : la plateforme peut ne pas le proposer)
+type Clipper interface {
+	ClipGet() string
+	ClipSet(s string)
+}
+
 type region struct {
 	r     rect
 	id    string
@@ -87,12 +93,20 @@ type overlay struct {
 }
 
 type UI struct {
-	Plugin  bool // vrai quand le logiciel tourne comme plugin VST3 dans un DAW
-	eng     *Engine
-	host    Host
-	cfg     *Config
-	cfgPath string
-	now     func() time.Time
+	lic      *License
+	licSt    LicStatus
+	licShow  bool   // l'écran « Autoriser le logiciel » est affiché
+	licKey   string // clé en cours de saisie
+	licMsg   string
+	licMsgOK bool
+	licNext  time.Time
+	licLeft  string
+	Plugin   bool // vrai quand le logiciel tourne comme plugin VST3 dans un DAW
+	eng      *Engine
+	host     Host
+	cfg      *Config
+	cfgPath  string
+	now      func() time.Time
 
 	mu       sync.Mutex
 	toast    string
@@ -214,6 +228,9 @@ func NewUI(eng *Engine, host Host, cfgPath string) *UI {
 	u.projPath, u.changed = u.cfg.Project, u.cfg.Changed
 	SetLang(langFromCode(u.cfg.Lang))
 	u.setNotation()
+	u.lic = licenseFactory()
+	u.refreshLicense()
+	u.licShow = u.licSt.State != LicLicensed
 	return u
 }
 
@@ -789,6 +806,10 @@ func (u *UI) Wheel(delta int) {
 // ---------------------------------------------------------------- événements : clavier de l'ordinateur
 
 func (u *UI) KeyDown(vk int, sc uint32, repeat, ext bool) {
+	if u.licShow {
+		u.licKeyDown(vk)
+		return
+	}
 	if vk == vkEscape && u.learnCancel() {
 		return
 	}
@@ -858,6 +879,10 @@ func (u *UI) KeyUp(vk int, sc uint32) {
 
 // caractère tapé (pour le filtre de la liste et la saisie d'un nom)
 func (u *UI) Char(r rune) {
+	if u.licShow {
+		u.licChar(r)
+		return
+	}
 	o := u.ov
 	if o == nil || r < 32 || r == 127 {
 		return
@@ -1045,6 +1070,9 @@ func (u *UI) midiMark(n int) {
 
 // appelé régulièrement (environ 25 fois par seconde) par la plateforme
 func (u *UI) Tick() {
+	if u.tickLicense() {
+		u.host.Invalidate()
+	}
 	redraw := false
 	u.mu.Lock()
 	if u.toast != "" && u.now().After(u.toastEnd) {

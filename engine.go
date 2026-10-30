@@ -140,15 +140,17 @@ func iVibIdx() int { return pVib }
 // ---------------------------------------------------------------- moteur
 
 type Engine struct {
-	Player     *Player
-	cpuBits    uint64 // charge moyenne du calcul audio (0..1, en 64 bits)
-	cpuPeak    uint64
-	voiceLimit int32 // nombre maximal de notes en même temps (baisse toute seule si le PC est surchargé)
-	calm       int
-	liveCount  int32
-	mu         sync.Mutex
-	ch         [nCh]*Channel
-	voices     []voiceI
+	licLocked   int32 // 1 : logiciel non autorisé, aucune note ne sonne
+	licDeadline int64 // fin de la démo (ns Unix), 0 = pas de limite
+	Player      *Player
+	cpuBits     uint64 // charge moyenne du calcul audio (0..1, en 64 bits)
+	cpuPeak     uint64
+	voiceLimit  int32 // nombre maximal de notes en même temps (baisse toute seule si le PC est surchargé)
+	calm        int
+	liveCount   int32
+	mu          sync.Mutex
+	ch          [nCh]*Channel
+	voices      []voiceI
 
 	master, cc7, cc11 float64
 	revAmt            float64
@@ -349,9 +351,36 @@ func (e *Engine) soloAny() bool {
 	return false
 }
 
+// SetLicenseGate : verrouille le son (licence absente ou démo finie) ou fixe l'heure de fin de démo.
+func (e *Engine) SetLicenseGate(locked bool, deadline time.Time) {
+	var l int32
+	if locked {
+		l = 1
+	}
+	var d int64
+	if !deadline.IsZero() {
+		d = deadline.UnixNano()
+	}
+	atomic.StoreInt64(&e.licDeadline, d)
+	atomic.StoreInt32(&e.licLocked, l)
+}
+
+func (e *Engine) soundAllowed() bool {
+	if atomic.LoadInt32(&e.licLocked) != 0 {
+		return false
+	}
+	if d := atomic.LoadInt64(&e.licDeadline); d != 0 && time.Now().UnixNano() > d {
+		return false
+	}
+	return true
+}
+
 func (e *Engine) NoteOn(note, vel, tag int) {
 	if vel <= 0 {
 		e.NoteOff(tag)
+		return
+	}
+	if !e.soundAllowed() {
 		return
 	}
 	if e.soft {

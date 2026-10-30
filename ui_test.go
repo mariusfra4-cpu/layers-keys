@@ -22,6 +22,7 @@ type fakeHost struct {
 	title       string
 	quit        int32
 	audio       []AudioCfg
+	clip        string
 }
 
 func (h *fakeHost) Invalidate()                         { atomic.AddInt32(&h.inval, 1) }
@@ -38,6 +39,9 @@ func (h *fakeHost) AudioOpen(c AudioCfg) (string, error) {
 func (h *fakeHost) AudioPanel()                                {}
 func (h *fakeHost) Quit()                                      { atomic.AddInt32(&h.quit, 1) }
 func (h *fakeHost) KeyLabel(sc uint32, fallback string) string { return fallback }
+
+func (h *fakeHost) ClipGet() string  { return h.clip }
+func (h *fakeHost) ClipSet(s string) { h.clip = s }
 
 func newTestUI(t *testing.T, cfgPath string) (*UI, *fakeHost, *Engine) {
 	e := NewEngine()
