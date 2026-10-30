@@ -8,7 +8,7 @@ permissions:
   contents: write
 jobs:
   pkg:
-    runs-on: macos-14
+    runs-on: macos-15
     defaults:
       run:
         shell: bash -o pipefail {0}
