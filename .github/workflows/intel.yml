@@ -1,0 +1,38 @@
+name: Test Intel
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  intel:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ci-logs
+      - name: Test des deux versions
+        run: |
+          mkdir -p /tmp/lk
+          sw_vers | tee /tmp/lk/00.txt
+          uname -m | tee -a /tmp/lk/00.txt
+          B="dist/mac/app/Layers Keys.app/Contents/MacOS/LayersKeys"
+          chmod +x "$B"
+          lipo -archs "$B" | tee -a /tmp/lk/00.txt
+          (/usr/bin/arch -x86_64 /usr/bin/true && echo "Rosetta : disponible" || echo "Rosetta : non disponible") 2>&1 | tee -a /tmp/lk/00.txt
+          for a in arm64 x86_64; do
+            echo "=== $a" | tee -a /tmp/lk/01.txt
+            arch -$a "$B" > /tmp/lk/run_$a.txt 2>&1 &
+            P=$!
+            sleep 6
+            if kill -0 $P 2>/dev/null; then echo "$a : toujours en marche après 6 s" | tee -a /tmp/lk/01.txt; kill $P; else wait $P; echo "$a : ARRÊTÉ, code $?" | tee -a /tmp/lk/01.txt; fi
+            head -c 3000 /tmp/lk/run_$a.txt | tee -a /tmp/lk/01.txt
+          done
+      - name: Publier
+        if: always()
+        run: |
+          git config user.name ci; git config user.email ci@users.noreply.github.com
+          git checkout --orphan ci-intel-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          cp /tmp/lk/* . 2>/dev/null || true
+          git add -A; git commit -qm intel
+          git push -f origin HEAD:refs/heads/ci-intel
