@@ -103,6 +103,22 @@ jobs:
           sleep 3
           screencapture -x /tmp/lk/assistant_3.png || true
           pkill -x Installer || true
+      - name: Plugin VST3 version Intel (sous Rosetta)
+        continue-on-error: true
+        shell: bash {0}
+        run: |
+          {
+            lipo -archs dist/mac/LayersKeys.vst3/Contents/MacOS/LayersKeys
+            lipo -archs dist/mac/LayersKeys.component/Contents/MacOS/LayersKeys
+            cat > /tmp/t.py <<'PY'
+          import ctypes, platform
+          lib = ctypes.CDLL("dist/mac/LayersKeys.vst3/Contents/MacOS/LayersKeys")
+          f = lib.GetPluginFactory; f.restype = ctypes.c_void_p
+          print(platform.machine(), "fabrique VST3 :", "OK" if f() else "VIDE")
+          PY
+            arch -x86_64 /usr/bin/python3 /tmp/t.py
+            arch -arm64 /usr/bin/python3 /tmp/t.py
+          } 2>&1 | tee /tmp/lk/06_vst3_intel.txt
       - name: Publier
         if: always()
         run: |
