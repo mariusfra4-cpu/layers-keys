@@ -37,15 +37,32 @@ jobs:
         continue-on-error: true
         run: |
           Add-Type -AssemblyName System.Windows.Forms,System.Drawing
+          $wsh = New-Object -ComObject WScript.Shell
+          function Snap($n) {
+            $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+            $bmp = New-Object System.Drawing.Bitmap $b.Width,$b.Height
+            $g = [System.Drawing.Graphics]::FromImage($bmp)
+            $g.CopyFromScreen($b.Location,[System.Drawing.Point]::Empty,$b.Size)
+            $bmp.Save("C:\lklogs\assistant_$n.png")
+          }
           $setup = (Resolve-Path nsis\Layers-Keys-Setup-1.0.0.exe).Path
           $p = Start-Process $setup -PassThru
           Start-Sleep 6
-          $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
-          $bmp = New-Object System.Drawing.Bitmap $b.Width,$b.Height
-          $g = [System.Drawing.Graphics]::FromImage($bmp)
-          $g.CopyFromScreen($b.Location,[System.Drawing.Point]::Empty,$b.Size)
-          $bmp.Save("C:\lklogs\assistant_1_bienvenue.png")
-          Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+          $null = $wsh.AppActivate($p.Id)
+          Snap "1_bienvenue"
+          $n = 2
+          foreach ($page in "2_composants","3_dossier") {
+            $null = $wsh.AppActivate($p.Id); Start-Sleep 1
+            $wsh.SendKeys("{ENTER}"); Start-Sleep 3
+            Snap $page
+          }
+          $null = $wsh.AppActivate($p.Id); Start-Sleep 1
+          $wsh.SendKeys("{ENTER}"); Start-Sleep 12
+          Snap "4_fin"
+          Stop-Process -Name Layers-Keys-Setup-1.0.0 -Force -ErrorAction SilentlyContinue
+          Get-Process LayersKeys -ErrorAction SilentlyContinue | Stop-Process -Force
+          $u = "$env:ProgramFiles\Layers Keys\Desinstaller.exe"
+          if (Test-Path $u) { Start-Process $u -ArgumentList "/S" -Wait }
       - name: Test installation silencieuse
         shell: pwsh
         run: |
