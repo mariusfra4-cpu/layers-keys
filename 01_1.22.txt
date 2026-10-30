@@ -1,0 +1,6 @@
+go 1.22 variante defaut : PLANTÉ code 1
+go 1.22 variante pie : PLANTÉ code 1
+go 1.22 variante sanssymboles_non : en marche après 5 s : OK
+go 1.22 variante externe : en marche après 5 s : OK
+arm64 natif :
+arm64 OK
