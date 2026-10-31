@@ -10,7 +10,7 @@ permissions:
   contents: write
 jobs:
   mac:
-    runs-on: macos-15
+    runs-on: macos-latest
     defaults:
       run:
         shell: bash -eo pipefail {0}

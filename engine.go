@@ -148,6 +148,10 @@ type Engine struct {
 	voiceLimit  int32 // nombre maximal de notes en même temps (baisse toute seule si le PC est surchargé)
 	calm        int
 	liveCount   int32
+	limDrop     float64 // réduction de gain actuelle du limiteur (0 = aucune)
+	limReq      []float64
+	xrun, cool  int
+	cutHeld     int64 // notes encore tenues qui ont dû être coupées (compteur de diagnostic)
 	mu          sync.Mutex
 	ch          [nCh]*Channel
 	voices      []voiceI
@@ -446,6 +450,9 @@ func (e *Engine) NoteOn(note, vel, tag int) {
 				}
 				ob := o.base()
 				if !ob.evicted && ob.released == (pass == 0) {
+					if pass == 1 {
+						atomic.AddInt64(&e.cutHeld, 1)
+					}
 					ob.evicted = true
 					ob.rel = 0.04
 					ob.release()
@@ -633,16 +640,71 @@ func softLimit(x float64) float64 {
 	return y
 }
 
+// limitBlock applique le volume général puis un limiteur « à anticipation » : quand un pic va dépasser 0,9, le volume
+// baisse en douceur AVANT le pic (sur ~40 échantillons), puis remonte lentement. Le son n'est donc plus écrasé d'un coup
+// (ce qui donne le son « qui arrache ») ; le softLimit final ne sert plus que de filet de sécurité.
+func (e *Engine) limitBlock(B int, g float64) {
+	const thr, W = 0.9, 48
+	mixL, mixR := e.mixL[:B], e.mixR[:B]
+	pk := 0.0
+	for i := 0; i < B; i++ {
+		a := math.Max(math.Abs(mixL[i]), math.Abs(mixR[i])) * g
+		if a > pk {
+			pk = a
+		}
+	}
+	gcur := 1 - e.limDrop
+	if pk <= thr && gcur > 0.9999 {
+		for i := 0; i < B; i++ {
+			mixL[i] *= g
+			mixR[i] *= g
+		}
+		return
+	}
+	if len(e.limReq) < B {
+		e.limReq = make([]float64, B)
+	}
+	req := e.limReq[:B]
+	for i := 0; i < B; i++ {
+		a := math.Max(math.Abs(mixL[i]), math.Abs(mixR[i])) * g
+		req[i] = 1
+		if a > thr {
+			req[i] = thr / a
+		}
+	}
+	rel := 1 - math.Exp(-1/(0.12*SR))
+	for i := 0; i < B; i++ {
+		t := 1.0
+		end := i + W
+		if end > B {
+			end = B
+		}
+		for j := i; j < end; j++ {
+			if req[j] < t {
+				t = req[j]
+			}
+		}
+		if t < gcur {
+			gcur += (t - gcur) * 0.12
+		} else {
+			gcur += (t - gcur) * rel
+		}
+		mixL[i] *= g * gcur
+		mixR[i] *= g * gcur
+	}
+	e.limDrop = 1 - gcur
+}
+
 func (e *Engine) Render(out []int16) {
 	t0 := time.Now()
 	B := len(out) / 2
 	defer e.measure(t0, B)
 	e.mixBlock(B)
 	mixL, mixR := e.mixL[:B], e.mixR[:B]
-	g := e.master * e.cc7 * e.cc11 * 1.414
+	e.limitBlock(B, e.master*e.cc7*e.cc11*1.414)
 	for i := 0; i < B; i++ {
-		out[2*i] = int16(softLimit(mixL[i]*g) * 32000)
-		out[2*i+1] = int16(softLimit(mixR[i]*g) * 32000)
+		out[2*i] = int16(softLimit(mixL[i]) * 32000)
+		out[2*i+1] = int16(softLimit(mixR[i]) * 32000)
 	}
 }
 
@@ -656,10 +718,10 @@ func (e *Engine) RenderF(l, r []float32) {
 	defer e.measure(t0, B)
 	e.mixBlock(B)
 	mixL, mixR := e.mixL[:B], e.mixR[:B]
-	g := e.master * e.cc7 * e.cc11 * 1.414
+	e.limitBlock(B, e.master*e.cc7*e.cc11*1.414)
 	for i := 0; i < B; i++ {
-		l[i] = float32(softLimit(mixL[i]*g) * (32000.0 / 32768))
-		r[i] = float32(softLimit(mixR[i]*g) * (32000.0 / 32768))
+		l[i] = float32(softLimit(mixL[i]) * (32000.0 / 32768))
+		r[i] = float32(softLimit(mixR[i]) * (32000.0 / 32768))
 	}
 }
 
@@ -684,10 +746,23 @@ func (e *Engine) mixBlock(B int) {
 	anySend := false
 	solo := e.soloAny()
 	var g0, g1, peak [nCh]float64
+	// plus il y a de pistes qui sonnent, plus on baisse chacune un peu : 8 pistes superposées ne doivent pas saturer
+	e.mu.Lock()
+	nAud := 0
+	for _, ch := range e.ch {
+		if ch.src != nil && !(ch.Mute || (solo && !ch.Solo)) && ch.Vol > -59.9 {
+			nAud++
+		}
+	}
+	e.mu.Unlock()
+	comp := 1.0
+	if nAud > 2 {
+		comp = 1 / math.Sqrt(float64(nAud)/2)
+	}
 	for i, ch := range e.ch {
 		t := 0.0
 		if !(ch.Mute || (solo && !ch.Solo)) && ch.Vol > -59.9 {
-			t = math.Pow(10, ch.Vol/20)
+			t = math.Pow(10, ch.Vol/20) * comp
 		}
 		g0[i], g1[i] = ch.curGain, t
 		ch.curGain = t
@@ -800,7 +875,7 @@ func (e *Engine) measure(t0 time.Time, frames int) {
 	budget := float64(frames) / SR
 	r := time.Since(t0).Seconds() / budget
 	old := math.Float64frombits(atomic.LoadUint64(&e.cpuBits))
-	avg := old*0.92 + r*0.08
+	avg := old*0.97 + r*0.03
 	atomic.StoreUint64(&e.cpuBits, math.Float64bits(avg))
 	pk := math.Float64frombits(atomic.LoadUint64(&e.cpuPeak))
 	if r > pk {
@@ -809,21 +884,33 @@ func (e *Engine) measure(t0 time.Time, frames int) {
 		pk = pk*0.995 + r*0.005
 	}
 	atomic.StoreUint64(&e.cpuPeak, math.Float64bits(pk))
+	// La protection ne réagit qu'à une vraie surcharge qui dure (pas à un simple à-coup du système) :
+	// elle baisse la limite de notes de 1/8 seulement, au plus une fois tous les quarts de seconde, sans jamais descendre sous 48.
 	lim := atomic.LoadInt32(&e.voiceLimit)
+	if r > 1.0 {
+		e.xrun++
+	} else if e.xrun > 0 && int(avg*1000)%7 == 0 {
+		e.xrun--
+	}
+	if e.cool > 0 {
+		e.cool--
+	}
 	switch {
-	case r > 0.8 || avg > 0.7: // trop chargé : on réduit tout de suite
-		if lim > 24 {
-			lim -= 8
-			if lim < 24 {
-				lim = 24
+	case (avg > 0.8 || e.xrun >= 3) && e.cool == 0:
+		if lim > 48 {
+			lim = lim - lim/8
+			if lim < 48 {
+				lim = 48
 			}
 			atomic.StoreInt32(&e.voiceLimit, lim)
 		}
+		e.xrun = 0
 		e.calm = 0
+		e.cool = int(0.25 * SR / float64(frames))
 	case avg < 0.45:
 		e.calm++
 		if e.calm > int(SR/float64(frames)) && lim < maxVoice { // 1 seconde de calme : on remonte
-			atomic.StoreInt32(&e.voiceLimit, int32(mini(int(lim)+8, maxVoice)))
+			atomic.StoreInt32(&e.voiceLimit, int32(mini(int(lim)+16, maxVoice)))
 			e.calm = 0
 		}
 	default:

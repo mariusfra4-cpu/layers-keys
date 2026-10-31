@@ -10,7 +10,7 @@ import (
 
 const (
 	twoPi    = 2 * math.Pi
-	maxVoice = 96
+	maxVoice = 320 // 8 pistes stéréo x accord de 8 notes = 128 voix ; on garde de la marge pour la pédale
 )
 
 // fréquence d'échantillonnage du moteur (change seulement quand le son est arrêté)
