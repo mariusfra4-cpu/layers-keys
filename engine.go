@@ -154,9 +154,11 @@ type Engine struct {
 	voiceLimit  int32 // nombre maximal de notes en même temps (baisse toute seule si le PC est surchargé)
 	calm        int
 	liveCount   int32
-	fxp         unsafe.Pointer // *FXCfg : réglages des effets (lus par le thread audio)
-	fx          *fxChain
-	limDrop     float64 // réduction de gain actuelle du limiteur (0 = aucune)
+	fxp         [nCh]unsafe.Pointer // *FXCfg par piste : réglages des effets (lus par le thread audio)
+	fx          [nCh]*fxChain
+	fxNew       [nCh]unsafe.Pointer // chaîne d'effets préparée par l'interface (évite d'allouer dans le thread audio)
+	chL, chR    [nCh][]float64      // sortie d'une piste qui a des effets, avant mélange
+	limDrop     float64             // réduction de gain actuelle du limiteur (0 = aucune)
 	limReq      []float64
 	xrun, cool  int
 	cutHeld     int64 // notes encore tenues qui ont dû être coupées (compteur de diagnostic)
@@ -780,6 +782,20 @@ func (e *Engine) mixBlock(B int) {
 		ch.curGain = t
 	}
 	dt := float64(B) / SR
+	// pistes avec effets : leur son passe d'abord par un tampon à elles
+	var fxc [nCh]*FXCfg
+	for ci := range e.ch {
+		if c := e.fxOf(ci); c != nil {
+			fxc[ci] = c
+			if len(e.chL[ci]) < B {
+				e.chL[ci], e.chR[ci] = make([]float64, B), make([]float64, B)
+			}
+			l, r := e.chL[ci][:B], e.chR[ci][:B]
+			for i := range l {
+				l[i], r[i] = 0, 0
+			}
+		}
+	}
 	e.mu.Lock()
 	alive := e.voices[:0]
 	for _, v := range e.voices {
@@ -827,10 +843,14 @@ func (e *Engine) mixBlock(B int) {
 			sendAmt = e.openFor(b)
 			anySend = anySend || sendAmt > 0.003
 		}
+		dL, dR := mixL, mixR
+		if fxc[ci] != nil {
+			dL, dR = e.chL[ci][:B], e.chR[ci][:B]
+		}
 		for i, s := range tmp {
 			y := s * (a0 + da*float64(i))
-			mixL[i] += y * gl
-			mixR[i] += y * gr
+			dL[i] += y * gl
+			dR[i] += y * gr
 			send[i] += y * sendAmt
 			if y > pk {
 				pk = y
@@ -843,6 +863,26 @@ func (e *Engine) mixBlock(B int) {
 	e.voices = alive
 	atomic.StoreInt32(&e.liveCount, int32(len(alive)))
 	e.mu.Unlock()
+	for ci, c := range fxc {
+		if c == nil {
+			if e.fx[ci] != nil {
+				e.fx[ci].clear()
+			}
+			continue
+		}
+		if p := atomic.SwapPointer(&e.fxNew[ci], nil); p != nil {
+			e.fx[ci] = (*fxChain)(p)
+		}
+		if e.fx[ci] == nil {
+			e.fx[ci] = newFXChain()
+		}
+		l, r := e.chL[ci][:B], e.chR[ci][:B]
+		e.fx[ci].process(l, r, c)
+		for i := range l {
+			mixL[i] += l[i]
+			mixR[i] += r[i]
+		}
+	}
 	for i, ch := range e.ch {
 		ch.peak = math.Max(ch.peak*0.88, peak[i])
 	}
@@ -856,14 +896,6 @@ func (e *Engine) mixBlock(B int) {
 			sd = send
 		}
 		e.rev.process(mixL, mixR, sd, e.revAmt, 0.9)
-	}
-	if p := atomic.LoadPointer(&e.fxp); p != nil {
-		if cfg := (*FXCfg)(p); cfg.anyOn() {
-			if e.fx == nil {
-				e.fx = newFXChain()
-			}
-			e.fx.process(mixL, mixR, cfg)
-		}
 	}
 	e.Player.mix(mixL, mixR)
 }
@@ -882,7 +914,11 @@ func (e *Engine) SetSampleRate(r int) {
 	e.cache = map[[2]int][]float32{}
 	e.cacheMu.Unlock()
 	e.rev = newReverb()
-	e.fx = nil
+	e.fx = [nCh]*fxChain{}
+	for i := range e.fxNew {
+		atomic.StorePointer(&e.fxNew[i], nil)
+	}
+	e.chL, e.chR = [nCh][]float64{}, [nCh][]float64{}
 }
 
 // Rate renvoie la fréquence de travail actuelle.

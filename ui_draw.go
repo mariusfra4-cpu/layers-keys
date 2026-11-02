@@ -586,7 +586,7 @@ func (u *UI) drawPanel(c *Canvas) {
 			u.Toast("L'aftertouch est désactivé dans les Paramètres.")
 		}
 	})
-	fx := u.fx()
+	fx := u.fxAt(u.sel)
 	u.button(c, "btnEQ", rect{px + 16, py + 324, bw, 30}, "EQ", fx.EQ.On, fontSm, u.OpenEQ)
 	fxLbl := "EFFETS"
 	if n := u.fxActiveCount(); n > 0 {

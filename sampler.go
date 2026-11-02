@@ -58,6 +58,51 @@ func (s *sampleSource) Spawn(e *Engine, ch *Channel, n, vel int) []voiceI {
 	return out
 }
 
+// runSteady produit dst[n:end] quand la voix est en sustain ou en relâchement (même résultat que la boucle générale, en plus rapide).
+func (v *sampVoice) runSteady(d []int16, dst []float64, n, end int, inc float64) {
+	level, gain, pos := v.level, v.gain, v.pos
+	rel := v.stage == stRelease
+	relMul := v.relMul
+	loop := v.loopActive
+	limit := v.endIdx
+	if loop {
+		limit = v.le
+	}
+	le, ll := float64(v.le), float64(v.ll)
+	stop := float64(v.endIdx - 1)
+	dst = dst[:end]
+	for ; n < end; n++ {
+		if rel {
+			level *= relMul
+			if level < 1e-4 {
+				v.done = true
+				break
+			}
+		}
+		i := int(pos)
+		fr := pos - float64(i)
+		var s0, s1, s2, s3 float64
+		if i >= 1 && i+2 < limit && i+2 < len(d) {
+			w := d[i-1 : i+3 : i+3]
+			s0, s1, s2, s3 = float64(w[0])*(1.0/32768), float64(w[1])*(1.0/32768), float64(w[2])*(1.0/32768), float64(w[3])*(1.0/32768)
+		} else {
+			s0, s1, s2, s3 = v.at(i-1), v.at(i), v.at(i+1), v.at(i+2)
+		}
+		y := s1 + 0.5*fr*(s2-s0+fr*(2*s0-5*s1+4*s2-s3+fr*(3*(s1-s2)+s3-s0)))
+		dst[n] = y * level * gain
+		pos += inc
+		if loop {
+			for pos >= le {
+				pos -= ll
+			}
+		} else if pos >= stop {
+			v.done = true
+			break
+		}
+	}
+	v.level, v.pos = level, pos
+}
+
 const (
 	stDelay = iota
 	stAttack
@@ -200,7 +245,7 @@ func (v *sampVoice) render(e *Engine, dst []float64) bool {
 		v.enterRelease()
 	}
 	d := v.r.Data
-	const chunk = 16
+	const chunk = 32
 	for off := 0; off < len(dst) && !v.done; off += chunk {
 		end := off + chunk
 		if end > len(dst) {
@@ -226,6 +271,10 @@ func (v *sampVoice) render(e *Engine, dst []float64) bool {
 		inc := v.baseInc * e.bendS * v.pitchMul
 
 		for n := off; n < end; n++ {
+			if v.stage >= stSustain { // niveau constant ou relâchement : boucle serrée, sans test d'étape
+				v.runSteady(d, dst, n, end, inc)
+				break
+			}
 			switch v.stage {
 			case stDelay:
 				v.cnt--

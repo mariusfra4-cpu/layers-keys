@@ -60,10 +60,15 @@ type biquad struct {
 	b0, b1, b2, a1, a2 float64
 	x1, x2, y1, y2     float64
 	init               bool
+	lastFc, lastQ      float64
 }
 
 // passe-bas 12 dB/octave ; qdB = résonance au-dessus du plat
 func (f *biquad) set(fc, qdB float64) {
+	if fc == f.lastFc && qdB == f.lastQ {
+		return // mêmes réglages qu'au bloc précédent : les coefficients sont déjà bons
+	}
+	f.lastFc, f.lastQ = fc, qdB
 	if fc < 20 {
 		fc = 20
 	}

@@ -107,6 +107,7 @@ type UI struct {
 	cfg      *Config
 	cfgPath  string
 	fxBand   int // point de l'égaliseur sélectionné
+	fxTr     int // piste dont les fenêtres EQ / EFFETS sont ouvertes
 	now      func() time.Time
 
 	mu       sync.Mutex

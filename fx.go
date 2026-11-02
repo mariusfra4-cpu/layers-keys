@@ -206,6 +206,7 @@ type fxChain struct {
 	dTime  float64
 	dLP    [2]float64
 	last   *FXCfg
+	clean  bool // tampons déjà vidés
 }
 
 func newFXChain() *fxChain {
@@ -218,7 +219,27 @@ func newFXChain() *fxChain {
 	return f
 }
 
+// clear vide les échos et filtres : un effet qu'on rallume ne rejoue pas d'anciens sons.
+func (f *fxChain) clear() {
+	if f.clean {
+		return
+	}
+	for ch := 0; ch < 2; ch++ {
+		for i := range f.cBuf[ch] {
+			f.cBuf[ch][i] = 0
+		}
+		for i := range f.dBuf[ch] {
+			f.dBuf[ch][i] = 0
+		}
+		f.dLP[ch] = 0
+	}
+	f.eqSt = [10]fxState{}
+	f.env = 0
+	f.clean = true
+}
+
 func (f *fxChain) process(l, r []float64, cfg *FXCfg) {
+	f.clean = false
 	B := len(l)
 	if cfg.Comp.On {
 		f.compress(l, r, &cfg.Comp)
@@ -379,17 +400,36 @@ func (f *fxChain) delay(l, r []float64, d *DelayCfg) {
 	}
 }
 
-// ---------------------------------------------------------------- liaison avec le moteur
+// ---------------------------------------------------------------- liaison avec le moteur (un jeu d'effets par piste)
 
-func (e *Engine) SetFX(c FXCfg) {
+// SetFX règle les effets de la piste ch (0 à 7).
+func (e *Engine) SetFX(ch int, c FXCfg) {
+	if ch < 0 || ch >= nCh {
+		return
+	}
 	c.sanitize()
-	atomic.StorePointer(&e.fxp, unsafePtr(&c))
+	if c.anyOn() && e.fx[ch] == nil && atomic.LoadPointer(&e.fxNew[ch]) == nil {
+		atomic.StorePointer(&e.fxNew[ch], unsafe.Pointer(newFXChain())) // tampons préparés ici, pas dans le thread audio
+	}
+	atomic.StorePointer(&e.fxp[ch], unsafePtr(&c))
 }
 
-// FX renvoie une copie des réglages d'effets actuels.
-func (e *Engine) FX() FXCfg {
-	if p := atomic.LoadPointer(&e.fxp); p != nil {
-		return *(*FXCfg)(p)
+// FX renvoie une copie des réglages d'effets de la piste ch.
+func (e *Engine) FX(ch int) FXCfg {
+	if ch >= 0 && ch < nCh {
+		if p := atomic.LoadPointer(&e.fxp[ch]); p != nil {
+			return *(*FXCfg)(p)
+		}
 	}
 	return defaultFX()
+}
+
+// fxOf renvoie les réglages actifs de la piste ch, ou nil si aucun effet n'est allumé (le thread audio ne fait alors aucun calcul).
+func (e *Engine) fxOf(ch int) *FXCfg {
+	if p := atomic.LoadPointer(&e.fxp[ch]); p != nil {
+		if c := (*FXCfg)(p); c.anyOn() {
+			return c
+		}
+	}
+	return nil
 }

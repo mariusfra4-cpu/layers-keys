@@ -9,35 +9,53 @@ import (
 
 // ---------------------------------------------------------------- accès aux réglages
 
-func (u *UI) fx() *FXCfg {
-	if u.cfg.FX == nil {
-		d := defaultFX()
-		u.cfg.FX = &d
+// fxAt renvoie les réglages d'effets de la piste i (créés à la demande).
+func (u *UI) fxAt(i int) *FXCfg {
+	if i < 0 || i >= nCh {
+		i = 0
 	}
-	return u.cfg.FX
+	for len(u.cfg.FXT) < nCh {
+		u.cfg.FXT = append(u.cfg.FXT, nil)
+	}
+	if u.cfg.FXT[i] == nil {
+		d := defaultFX()
+		u.cfg.FXT[i] = &d
+	}
+	return u.cfg.FXT[i]
 }
 
-// loadFX remplace les réglages d'effets (nil = valeurs d'origine).
-func (u *UI) loadFX(f *FXCfg) {
-	if f == nil {
-		d := defaultFX()
-		f = &d
+// fx : réglages de la piste dont les fenêtres EQ / EFFETS sont ouvertes (ou de la piste choisie)
+func (u *UI) fx() *FXCfg { return u.fxAt(u.fxTr) }
+
+// loadFX remplace les effets de toutes les pistes (nil = valeurs d'origine).
+func (u *UI) loadFX(t []*FXCfg) {
+	u.cfg.FXT = nil
+	for i := 0; i < nCh; i++ {
+		var cp FXCfg
+		if i < len(t) && t[i] != nil {
+			cp = *t[i]
+		} else {
+			cp = defaultFX()
+		}
+		cp.sanitize()
+		u.cfg.FXT = append(u.cfg.FXT, &cp)
 	}
-	cp := *f
-	cp.sanitize()
-	u.cfg.FX = &cp
 	u.applyFX()
 }
 
-// applyFX envoie les réglages de u.cfg.FX au moteur audio.
-func (u *UI) applyFX() { u.eng.SetFX(*u.fx()) }
+// applyFX envoie les réglages de chaque piste au moteur audio.
+func (u *UI) applyFX() {
+	for i := 0; i < nCh; i++ {
+		u.eng.SetFX(i, *u.fxAt(i))
+	}
+}
 
-// fxSet modifie un réglage d'effet, le contrôle, l'envoie au moteur et marque le projet modifié.
+// fxSet modifie un réglage d'effet de la piste en cours, le contrôle, l'envoie au moteur et marque le projet modifié.
 func (u *UI) fxSet(f func(c *FXCfg)) {
 	c := u.fx()
 	f(c)
 	c.sanitize()
-	u.applyFX()
+	u.eng.SetFX(u.fxTr, *c)
 	u.markDirty()
 	u.host.Invalidate()
 }
@@ -57,15 +75,12 @@ func (u *UI) fxReset(part string) {
 }
 
 func (u *UI) fxActiveCount() int {
-	c := u.fx()
+	c := u.fxAt(u.sel)
 	n := 0
 	for _, b := range []bool{c.Comp.On, c.Chorus.On, c.Delay.On, c.Trem.On} {
 		if b {
 			n++
 		}
-	}
-	if u.eng.revAmt > 0.02 {
-		n++
 	}
 	return n
 }
@@ -135,13 +150,15 @@ func eqBandPtr(c *FXCfg, i int) *EQBand {
 }
 
 func (u *UI) OpenEQ() {
-	u.ov = &overlay{title: "Égaliseur", hint: T("Glisse les points · molette sur un point = largeur · double-clic = valeur d'origine · Échap"), sel: -1}
+	u.fxTr = u.sel
+	u.ov = &overlay{title: Tf("Égaliseur · %s", u.trackTitle(u.fxTr)), hint: T("Glisse les points · molette sur un point = largeur · double-clic = valeur d'origine · Échap"), sel: -1}
 	u.ov.custom = u.drawEQ
 	u.host.Invalidate()
 }
 
 func (u *UI) OpenFXWin() {
-	u.ov = &overlay{title: "Effets", hint: T("Allume un effet, puis tourne les potards · double-clic = valeur d'origine · Échap pour fermer"), sel: -1}
+	u.fxTr = u.sel
+	u.ov = &overlay{title: Tf("Effets · %s", u.trackTitle(u.fxTr)), hint: T("Allume un effet, puis tourne les potards · double-clic = valeur d'origine · Échap pour fermer"), sel: -1}
 	u.ov.custom = u.drawFXWin
 	u.host.Invalidate()
 }
@@ -350,6 +367,7 @@ func (u *UI) drawFXWin(c *Canvas, r rect) {
 		func(v float64) { u.eng.SetReverb(v); u.markDirty() }, 0.15, false)
 	c.Text(x1+cw/2-34, y3+72+22, 68, 12, "Quantité", fontXs, colText2, 1)
 	c.Text(x1+cw/2-34, y3+72+35, 68, 14, pctT(u.eng.revAmt), fontSm, colGold, 1)
+	c.Text(x1+8, y3+ch-18, cw-16, 12, "commune à toutes les pistes", fontXs, colText2, 1)
 
 	// bas à droite : ordre des effets + remise à zéro
 	c.RRect(float64(x2), float64(y3), float64(cw), float64(ch), 8, 0x0d1424, 1)
@@ -357,8 +375,7 @@ func (u *UI) drawFXWin(c *Canvas, r rect) {
 	c.Text(x2+12, y3+28, cw-24, 14, "Compresseur → Égaliseur → Chorus", fontXs, colText2, 0)
 	c.Text(x2+12, y3+43, cw-24, 14, "→ Trémolo → Delay → Réverbération", fontXs, colText2, 0)
 	u.button(c, "fxEQ", rect{x2 + 12, y3 + 72, cw - 24, 26}, "OUVRIR L'ÉGALISEUR", fx.EQ.On, fontSm, u.OpenEQ)
-	u.button(c, "fxAll", rect{x2 + 12, y3 + 104, cw - 24, 26}, "TOUT REMETTRE À ZÉRO", false, fontSm, func() {
+	u.button(c, "fxAll", rect{x2 + 12, y3 + 104, cw - 24, 26}, "CETTE PISTE : TOUT À ZÉRO", false, fontSm, func() {
 		u.fxReset("all")
-		u.eng.SetReverb(0.15)
 	})
 }

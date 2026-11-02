@@ -125,7 +125,7 @@ func (u *UI) openProjectFile(path string) {
 		u.cfg.Presets, u.cfg.Cur = c.Presets, c.Cur
 		u.eng.SetMaster(c.Master)
 		u.eng.SetReverb(c.Reverb)
-		u.loadFX(c.FX)
+		u.loadFX(c.FXT)
 		for i := range u.eng.ch {
 			u.eng.ch[i].Solo = false
 		}

@@ -151,3 +151,41 @@ func TestLimiterSmooth(t *testing.T) {
 	}
 	t.Logf("crête %.3f, plus grand saut %.3f (fin de test %.2f)", pk, maxStep, tail)
 }
+
+// 8 pistes qui jouent, avec égaliseur, compresseur, chorus, delay et trémolo allumés sur chaque piste.
+func TestStress8WithFX(t *testing.T) {
+	e := stressEngine(8)
+	c := defaultFX()
+	c.EQ.On, c.Comp.On, c.Chorus.On, c.Delay.On, c.Trem.On = true, true, true, true, true
+	c.EQ.LS.G, c.EQ.P1.G, c.EQ.P2.G, c.EQ.HS.G = 4, -3, 3, 5
+	for i := 0; i < nCh; i++ {
+		e.SetFX(i, c)
+	}
+	out := make([]int16, 256)
+	chords := [][]int{{48, 55, 60, 64, 67, 72}, {45, 52, 57, 60, 64, 69}, {41, 53, 57, 60, 65, 69}, {43, 50, 55, 59, 62, 67}}
+	var times []time.Duration
+	const B = 128
+	per := int(0.6 * 48000 / B)
+	for blk := 0; blk < 4*48000/B; blk++ {
+		if blk%per == 0 {
+			e.SetSustain(false)
+			e.SetSustain(true)
+			for k, n := range chords[(blk/per)%4] {
+				e.NoteOn(n, 100, 1000+k)
+			}
+		}
+		if blk%per == per/2 {
+			for k := range chords[0] {
+				e.NoteOff(1000 + k)
+			}
+		}
+		a := time.Now()
+		e.Render(out)
+		times = append(times, time.Since(a))
+	}
+	sort.Slice(times, func(i, j int) bool { return times[i] < times[j] })
+	t.Logf("8 pistes avec tous les effets : médian %v, 95%% %v, pire %v (budget 2,67 ms)", times[len(times)/2], times[len(times)*95/100], times[len(times)-1])
+	if times[len(times)*95/100] > 2*time.Millisecond {
+		t.Errorf("trop lent avec les effets")
+	}
+}

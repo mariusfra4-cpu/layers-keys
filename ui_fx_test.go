@@ -3,6 +3,7 @@ package main
 import (
 	"math"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -16,14 +17,14 @@ func TestUIFXWindows(t *testing.T) {
 	r := u.find("btnEQ")
 	u.MouseDown(r.r.x+10, r.r.y+10)
 	u.MouseUp(0, 0)
-	if u.ov == nil || u.ov.title != "Égaliseur" {
+	if u.ov == nil || !strings.HasPrefix(u.ov.title, "Égaliseur") {
 		t.Fatal("fenêtre EQ non ouverte")
 	}
 	drawUI(u)
 	r = u.find("eqOn")
 	u.MouseDown(r.r.x+10, r.r.y+10)
 	u.MouseUp(0, 0)
-	if !e.FX().EQ.On {
+	if !e.FX(0).EQ.On {
 		t.Fatal("EQ non activé dans le moteur")
 	}
 	drawUI(u)
@@ -31,7 +32,7 @@ func TestUIFXWindows(t *testing.T) {
 	u.MouseDown(p.r.x+12, p.r.y+12)
 	u.MouseMove(p.r.x+12, p.r.y-30, true)
 	u.MouseUp(0, 0)
-	if g := e.FX().EQ.LS.G; g < 2 {
+	if g := e.FX(0).EQ.LS.G; g < 2 {
 		t.Fatalf("gain des basses après glissé : %.1f", g)
 	}
 	// effets
@@ -41,7 +42,7 @@ func TestUIFXWindows(t *testing.T) {
 	r = u.find("fxonCompresseur")
 	u.MouseDown(r.r.x+10, r.r.y+8)
 	u.MouseUp(0, 0)
-	if !e.FX().Comp.On {
+	if !e.FX(0).Comp.On {
 		t.Fatal("compresseur non activé")
 	}
 	// persistance : état → nouvelle interface
@@ -50,13 +51,13 @@ func TestUIFXWindows(t *testing.T) {
 	if !u2.SetStateBytes(st) {
 		t.Fatal("rechargement de l'état")
 	}
-	f := e2.FX()
-	if !f.EQ.On || !f.Comp.On || math.Abs(f.EQ.LS.G-e.FX().EQ.LS.G) > 1e-9 {
+	f := e2.FX(0)
+	if !f.EQ.On || !f.Comp.On || math.Abs(f.EQ.LS.G-e.FX(0).EQ.LS.G) > 1e-9 {
 		t.Fatalf("effets non conservés : %+v", f.EQ.LS)
 	}
 	// un fichier abîmé ne doit rien casser
-	u2.loadFX(&FXCfg{Delay: DelayCfg{On: true, Feedback: math.Inf(1), Time: -5}})
-	if d := e2.FX().Delay; d.Feedback > 0.9 || d.Time < 20 {
+	u2.loadFX([]*FXCfg{{Delay: DelayCfg{On: true, Feedback: math.Inf(1), Time: -5}}})
+	if d := e2.FX(0).Delay; d.Feedback > 0.9 || d.Time < 20 {
 		t.Fatalf("réglage non borné : %+v", d)
 	}
 	if dir := os.Getenv("VSHOTS"); dir != "" {
@@ -71,5 +72,42 @@ func TestUIFXWindows(t *testing.T) {
 		shotPNG(t, dir, "fx_eq", u)
 		u.OpenFXWin()
 		shotPNG(t, dir, "fx_fx", u)
+	}
+}
+
+// Allumer l'EQ sur une piste ne l'allume pas sur les autres.
+func TestUIFXPerTrack(t *testing.T) {
+	u, _, e := newTestUI(t, "")
+	u.sel = 2
+	drawUI(u)
+	u.OpenEQ()
+	drawUI(u)
+	r := u.find("eqOn")
+	u.MouseDown(r.r.x+10, r.r.y+10)
+	u.MouseUp(0, 0)
+	for i := 0; i < nCh; i++ {
+		if got, want := e.FX(i).EQ.On, i == 2; got != want {
+			t.Fatalf("piste %d : EQ allumé = %v (attendu %v)", i+1, got, want)
+		}
+	}
+	u.closeOverlay()
+	u.sel = 5
+	drawUI(u)
+	u.OpenFXWin()
+	drawUI(u)
+	r = u.find("fxonCompresseur")
+	u.MouseDown(r.r.x+10, r.r.y+8)
+	u.MouseUp(0, 0)
+	if !e.FX(5).Comp.On || e.FX(2).Comp.On || e.FX(0).Comp.On || !e.FX(2).EQ.On {
+		t.Fatal("les réglages des pistes se mélangent")
+	}
+	// sauvegarde / rechargement : chaque piste garde les siens
+	st := u.StateBytes()
+	u2, _, e2 := newTestUI(t, "")
+	if !u2.SetStateBytes(st) {
+		t.Fatal("rechargement")
+	}
+	if !e2.FX(2).EQ.On || e2.FX(5).EQ.On || !e2.FX(5).Comp.On || e2.FX(2).Comp.On {
+		t.Fatal("effets par piste non conservés")
 	}
 }

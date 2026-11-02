@@ -108,3 +108,45 @@ func TestTremoloPan(t *testing.T) {
 		t.Logf("niveaux G/D: %.3f %.3f", fxRMS(l), fxRMS(r))
 	}
 }
+
+// Les effets d'une piste ne touchent que cette piste.
+func TestFXPerTrack(t *testing.T) {
+	e := stressEngine(2)
+	e.revAmt = 0
+	level := func(muteCh int) float64 {
+		for i := range e.ch {
+			e.ch[i].Mute = i == muteCh
+		}
+		e.Panic()
+		e.NoteOn(57, 100, 1)
+		out := make([]int16, 512)
+		pk := 0.0
+		for b := 0; b < 60; b++ {
+			e.Render(out)
+			if b > 20 {
+				for _, v := range out {
+					pk = math.Max(pk, math.Abs(float64(v)))
+				}
+			}
+		}
+		e.NoteOff(1)
+		return pk
+	}
+	base0, base1 := level(1), level(0) // piste 0 seule, puis piste 1 seule
+	c := defaultFX()
+	c.EQ.On, c.EQ.HP = true, 500 // coupe-bas : le son de 220 Hz disparaît presque
+	e.SetFX(0, c)
+	fx0, fx1 := level(1), level(0)
+	if fx0 > base0*0.6 {
+		t.Errorf("piste 0 : l'effet n'agit pas (%.0f → %.0f)", base0, fx0)
+	}
+	if math.Abs(fx1-base1) > base1*0.02 {
+		t.Errorf("piste 1 : modifiée par l'effet de la piste 0 (%.0f → %.0f)", base1, fx1)
+	}
+	e.SetFX(0, defaultFX())
+	e.SetFX(1, c)
+	g0, g1 := level(1), level(0)
+	if math.Abs(g0-base0) > base0*0.02 || g1 > base1*0.6 {
+		t.Errorf("effet sur la piste 1 seule : piste0 %.0f→%.0f piste1 %.0f→%.0f", base0, g0, base1, g1)
+	}
+}

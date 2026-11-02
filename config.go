@@ -52,7 +52,8 @@ type Config struct {
 	Cur     int                 `json:"cur"`
 	Master  float64             `json:"master"`
 	Reverb  float64             `json:"reverb"`
-	FX      *FXCfg              `json:"fx,omitempty"` // égaliseur et effets
+	FX      *FXCfg              `json:"fx,omitempty"`  // ancien format (un seul jeu pour tout) : converti au chargement
+	FXT     []*FXCfg            `json:"fxt,omitempty"` // égaliseur et effets de chaque piste
 	Recent  []string            `json:"recent"`
 
 	Format     string   `json:"format,omitempty"`     // présent seulement dans un fichier projet
@@ -166,8 +167,20 @@ func (c *Config) sanitize() {
 	c.Cur = clamp(c.Cur, 0, nPresets-1)
 	c.Master = clampf(c.Master, 0, 1)
 	c.Reverb = clampf(c.Reverb, 0, 1)
-	if c.FX != nil {
-		c.FX.sanitize()
+	if len(c.FXT) == 0 && c.FX != nil { // ancien fichier : les mêmes effets sur toutes les pistes
+		for i := 0; i < nCh; i++ {
+			cp := *c.FX
+			c.FXT = append(c.FXT, &cp)
+		}
+	}
+	c.FX = nil
+	if len(c.FXT) > nCh {
+		c.FXT = c.FXT[:nCh]
+	}
+	for _, f := range c.FXT {
+		if f != nil {
+			f.sanitize()
+		}
 	}
 	if len(c.Recent) > 8 {
 		c.Recent = c.Recent[:8]
