@@ -27,7 +27,7 @@ const (
 	highNote = 96
 
 	rowX, rowY0, rowW, rowH, rowGap = 16, 124, 800, 48, 4
-	panX, panY, panW, panH          = 832, 124, 352, 412
+	panX, panY, panW, panH          = 832, 124, 352, 428
 )
 
 type rect struct{ x, y, w, h int }
@@ -106,6 +106,7 @@ type UI struct {
 	host     Host
 	cfg      *Config
 	cfgPath  string
+	fxBand   int // point de l'égaliseur sélectionné
 	now      func() time.Time
 
 	mu       sync.Mutex
@@ -222,6 +223,7 @@ func NewUI(eng *Engine, host Host, cfgPath string) *UI {
 	u.RefreshKeyLabels()
 	u.eng.SetMaster(u.cfg.Master)
 	u.eng.SetReverb(u.cfg.Reverb)
+	u.applyFX()
 	u.applyPlaying()
 	u.learnLoad(u.cfg.Learn)
 	u.applySetup(u.cfg.Setup)

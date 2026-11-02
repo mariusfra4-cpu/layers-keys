@@ -52,6 +52,7 @@ type Config struct {
 	Cur     int                 `json:"cur"`
 	Master  float64             `json:"master"`
 	Reverb  float64             `json:"reverb"`
+	FX      *FXCfg              `json:"fx,omitempty"` // égaliseur et effets
 	Recent  []string            `json:"recent"`
 
 	Format     string   `json:"format,omitempty"`     // présent seulement dans un fichier projet
@@ -165,6 +166,9 @@ func (c *Config) sanitize() {
 	c.Cur = clamp(c.Cur, 0, nPresets-1)
 	c.Master = clampf(c.Master, 0, 1)
 	c.Reverb = clampf(c.Reverb, 0, 1)
+	if c.FX != nil {
+		c.FX.sanitize()
+	}
 	if len(c.Recent) > 8 {
 		c.Recent = c.Recent[:8]
 	}

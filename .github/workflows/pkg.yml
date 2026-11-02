@@ -22,7 +22,7 @@ jobs:
       - name: Vérifier que ce sont les derniers programmes
         run: |
           B="cibin/dist/mac/app/Layers Keys.app/Contents/MacOS/LayersKeys"
-          for k in "Autoriser le logiciel" "limitBlock"; do
+          for k in "Autoriser le logiciel" "limitBlock" "fxChain"; do
             grep -aq "$k" "$B" && echo "OK : $k" || { echo "ERREUR : '$k' absent des programmes Mac (anciens fichiers ?)"; exit 1; }
           done
       - name: Construction

@@ -35,6 +35,7 @@ func (u *UI) SetStateBytes(b []byte) bool {
 	u.learnLoad(c.Learn)
 	u.eng.SetMaster(c.Master)
 	u.eng.SetReverb(c.Reverb)
+	u.loadFX(c.FX)
 	for i := range u.eng.ch {
 		u.eng.ch[i].Solo = false
 	}

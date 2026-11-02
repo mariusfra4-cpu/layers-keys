@@ -8,6 +8,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+	"unsafe"
 )
 
 const nCh = 8
@@ -148,6 +149,8 @@ type Engine struct {
 	voiceLimit  int32 // nombre maximal de notes en même temps (baisse toute seule si le PC est surchargé)
 	calm        int
 	liveCount   int32
+	fxp         unsafe.Pointer // *FXCfg : réglages des effets (lus par le thread audio)
+	fx          *fxChain
 	limDrop     float64 // réduction de gain actuelle du limiteur (0 = aucune)
 	limReq      []float64
 	xrun, cool  int
@@ -845,6 +848,14 @@ func (e *Engine) mixBlock(B int) {
 		}
 		e.rev.process(mixL, mixR, sd, e.revAmt, 0.9)
 	}
+	if p := atomic.LoadPointer(&e.fxp); p != nil {
+		if cfg := (*FXCfg)(p); cfg.anyOn() {
+			if e.fx == nil {
+				e.fx = newFXChain()
+			}
+			e.fx.process(mixL, mixR, cfg)
+		}
+	}
 	e.Player.mix(mixL, mixR)
 }
 
@@ -862,6 +873,7 @@ func (e *Engine) SetSampleRate(r int) {
 	e.cache = map[[2]int][]float32{}
 	e.cacheMu.Unlock()
 	e.rev = newReverb()
+	e.fx = nil
 }
 
 // Rate renvoie la fréquence de travail actuelle.

@@ -101,6 +101,7 @@ func (u *UI) resetProject() {
 	u.cfg.Presets, u.cfg.Cur = d.Presets, 0
 	u.eng.SetMaster(d.Master)
 	u.eng.SetReverb(d.Reverb)
+	u.loadFX(nil)
 	u.applySetup(d.Setup)
 	u.projPath, u.changed = "", false
 	u.dirty = true
@@ -124,6 +125,7 @@ func (u *UI) openProjectFile(path string) {
 		u.cfg.Presets, u.cfg.Cur = c.Presets, c.Cur
 		u.eng.SetMaster(c.Master)
 		u.eng.SetReverb(c.Reverb)
+		u.loadFX(c.FX)
 		for i := range u.eng.ch {
 			u.eng.ch[i].Solo = false
 		}

@@ -552,7 +552,7 @@ func (u *UI) drawPanel(c *Canvas) {
 		k := k
 		col, row := k%4, k/4
 		cx := float64(px + 16 + col*80 + 40)
-		cy := float64(py + 142 + row*88)
+		cy := float64(py + 142 + row*82)
 		u.knob(c, fmt.Sprintf("p%d", k), cx, cy, 20,
 			func() float64 { return ch.P[k] },
 			func(v float64) {
@@ -563,37 +563,45 @@ func (u *UI) drawPanel(c *Canvas) {
 		c.Text(int(cx)-40, int(cy)+40, 80, 14, paramText(k, ch.P[k]), fontSm, colGold, 1)
 	}
 	tw := (panW - 32 - 24) / 4
-	u.button(c, "tgPedal", rect{px + 16, py + 304, tw, 28}, "PÉDALE", ch.Pedal, fontSm, func() {
+	ty := py + 290
+	u.button(c, "tgPedal", rect{px + 16, ty, tw, 28}, "PÉDALE", ch.Pedal, fontSm, func() {
 		u.eng.SetPedalAware(sel, !ch.Pedal)
 		u.markDirty()
 	})
-	u.button(c, "tgFilter", rect{px + 24 + tw, py + 304, tw, 28}, "FILTRE", ch.Filter, fontSm, func() {
+	u.button(c, "tgFilter", rect{px + 24 + tw, ty, tw, 28}, "FILTRE", ch.Filter, fontSm, func() {
 		u.with(func() { ch.Filter = !ch.Filter })
 		u.markDirty()
 	})
-	u.button(c, "tgModFX", rect{px + 32 + 2*tw, py + 304, tw, 28}, "MOD FX", ch.ModFX, fontSm, func() {
+	u.button(c, "tgModFX", rect{px + 32 + 2*tw, ty, tw, 28}, "MOD FX", ch.ModFX, fontSm, func() {
 		u.with(func() { ch.ModFX = !ch.ModFX })
 		u.markDirty()
 		if ch.ModFX {
 			u.Toast("Effet planant activé : la molette de droite (MOD) ouvre le son de cette piste.")
 		}
 	})
-	u.button(c, "tgAT", rect{px + 40 + 3*tw, py + 304, tw, 28}, "AFTER", ch.AT && u.eng.atMode != 3, fontSm, func() {
+	u.button(c, "tgAT", rect{px + 40 + 3*tw, ty, tw, 28}, "AFTER", ch.AT && u.eng.atMode != 3, fontSm, func() {
 		u.with(func() { ch.AT = !ch.AT })
 		u.markDirty()
 		if ch.AT && u.eng.atMode == 3 {
 			u.Toast("L'aftertouch est désactivé dans les Paramètres.")
 		}
 	})
-	c.Rect(px+16, py+344, panW-32, 1, 0x2b3b57, 1)
-	c.Text(px+16, py+354, 110, 20, "Volume général", fontMd, colText, 0)
-	u.slider(c, "master", px+130, py+354, 160, 20, u.eng.master,
+	fx := u.fx()
+	u.button(c, "btnEQ", rect{px + 16, py + 324, bw, 30}, "EQ", fx.EQ.On, fontSm, u.OpenEQ)
+	fxLbl := "EFFETS"
+	if n := u.fxActiveCount(); n > 0 {
+		fxLbl = fmt.Sprintf("EFFETS · %d", n)
+	}
+	u.button(c, "btnFX", rect{px + 24 + bw, py + 324, bw, 30}, fxLbl, u.fxActiveCount() > 0, fontSm, u.OpenFXWin)
+	c.Rect(px+16, py+364, panW-32, 1, 0x2b3b57, 1)
+	c.Text(px+16, py+372, 110, 20, "Volume général", fontMd, colText, 0)
+	u.slider(c, "master", px+130, py+372, 160, 20, u.eng.master,
 		func(v float64) { u.eng.SetMaster(v); u.markDirty() }, 0.8)
-	c.Text(px+296, py+354, 40, 20, fmt.Sprintf("%d%%", int(math.Round(u.eng.master*100))), fontSm, colGold, 2)
-	c.Text(px+16, py+380, 110, 20, "Réverbération", fontMd, colText, 0)
-	u.slider(c, "reverb", px+130, py+380, 160, 20, u.eng.revAmt,
+	c.Text(px+296, py+372, 40, 20, fmt.Sprintf("%d%%", int(math.Round(u.eng.master*100))), fontSm, colGold, 2)
+	c.Text(px+16, py+394, 110, 20, "Réverbération", fontMd, colText, 0)
+	u.slider(c, "reverb", px+130, py+394, 160, 20, u.eng.revAmt,
 		func(v float64) { u.eng.SetReverb(v); u.markDirty() }, 0.15)
-	c.Text(px+296, py+380, 40, 20, fmt.Sprintf("%d%%", int(math.Round(u.eng.revAmt*100))), fontSm, colGold, 2)
+	c.Text(px+296, py+394, 40, 20, fmt.Sprintf("%d%%", int(math.Round(u.eng.revAmt*100))), fontSm, colGold, 2)
 }
 
 func (u *UI) drawKeyboard(c *Canvas) {
