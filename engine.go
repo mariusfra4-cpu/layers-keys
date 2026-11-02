@@ -30,9 +30,11 @@ const (
 var paramNames = [nParam]string{"CUTOFF", "BRILLANCE", "RÉSONANCE", "ATTAQUE", "RELÂCHEMENT", "DYNAMIQUE", "VIBRATO", "VITESSE"}
 var paramDefault = [nParam]float64{1, 0, 0, 0, 0, 0.5, 0, 0.4526}
 
-func cutoffHz(x float64) float64   { return 20 * math.Pow(1000, x) }
-func attackSec(x float64) float64  { return 2.0 * x * x }
-func releaseSec(x float64) float64 { return 3.0 * x * x }
+func cutoffHz(x float64) float64  { return 20 * math.Pow(1000, x) }
+func attackSec(x float64) float64 { return 2.0 * x * x }
+
+// durée ajoutée au relâchement (temps pour descendre de 60 dB) : 0 → rien, milieu ≈ 3,5 s, maximum 10 s
+func releaseSec(x float64) float64 { return 10.0 * math.Pow(clamp01(x), 1.5) }
 func dynDB(x float64) float64      { return 48 * x }
 func vibCents(x float64) float64   { return 60 * x }
 func rateHz(x float64) float64     { return 0.5 + 9.5*x }
@@ -59,6 +61,9 @@ func paramText(i int, x float64) string {
 	case pAttack:
 		return fmt.Sprintf("+%.0f ms", attackSec(x)*1000)
 	case pRelease:
+		if r := releaseSec(x); r >= 1 {
+			return fmt.Sprintf("+%.1f s", r)
+		}
 		return fmt.Sprintf("+%.0f ms", releaseSec(x)*1000)
 	case pDyn:
 		return fmt.Sprintf("%.0f dB", dynDB(x))
@@ -413,7 +418,11 @@ func (e *Engine) NoteOn(note, vel, tag int) {
 			b.tag = tag
 			b.keyDown = true
 			b.extraAtt = attackSec(ch.P[pAttack])
-			b.rel += releaseSec(ch.P[pRelease])
+			extra := releaseSec(ch.P[pRelease])
+			if _, ok := v.(*sampVoice); ok {
+				extra /= 0.6 // les échantillons descendent de 100 dB sur la durée : on convertit en durée « 60 dB »
+			}
+			b.rel += extra
 			nv = append(nv, v)
 		}
 	}

@@ -84,7 +84,7 @@ jobs:
           $txt = [System.Text.Encoding]::Latin1.GetString([System.IO.File]::ReadAllBytes("$pf\Layers Keys\LayersKeys.exe"))
           "ecran de licence present dans l'exe installe : " + $txt.Contains("Autoriser le logiciel") | Tee-Object -Append $log
           "moteur audio corrige (limiteur) dans l'exe installe : " + $txt.Contains("limitBlock") | Tee-Object -Append $log
-          "EQ et effets dans l'exe installe : " + $txt.Contains("fxChain") | Tee-Object -Append $log
+          "EQ et effets dans l'exe installe : " + ($txt.Contains("fxChain") -and $txt.Contains("+%.1f s")) | Tee-Object -Append $log
           $vb = [System.Text.Encoding]::Latin1.GetString([System.IO.File]::ReadAllBytes("$cf\VST3\Layers Keys.vst3\Contents\x86_64-win\Layers Keys.vst3"))
           "ecran de licence + limiteur dans le VST3 installe : " + ($vb.Contains("Autoriser le logiciel") -and $vb.Contains("limitBlock") -and $vb.Contains("fxChain")) | Tee-Object -Append $log
           $app = Start-Process "$pf\Layers Keys\LayersKeys.exe" -PassThru
