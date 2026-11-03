@@ -3,6 +3,8 @@ on:
   push:
     paths: ['android/**', '.github/workflows/apk.yml']
   workflow_dispatch:
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -11,7 +13,8 @@ jobs:
       - name: Vérification du calcul des clés (Java)
         run: |
           mkdir -p /tmp/jt && cd android
-          javac --release 8 -Xlint:-options -d /tmp/jt src/com/jbpraise/keygen/KeyCore.java test/KeyCoreTest.java test/MakeTestSecret.java test/PrintKey.java
+          javac --release 8 -Xlint:-options -d /tmp/jt8 src/com/jbpraise/keygen/KeyCore.java
+          javac -d /tmp/jt src/com/jbpraise/keygen/KeyCore.java test/KeyCoreTest.java test/MakeTestSecret.java test/PrintKey.java
           java -cp /tmp/jt KeyCoreTest 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f JBK-1A2B-3C4D-5E6F-7A8B BIBB67FT-U5AOFOQQ-EJRTD5S3-ZOOQ7ZBW-ZKCCYMUX-STXPDKG3-3EL2DAT4-PY5XNHOU-DCAXCE52-6KSQXBIW-FXDEK5F5-JLYASQKQ-JVWJIBY | tee /tmp/keycore.txt
       - name: Construction de l'APK
         run: |
