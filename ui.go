@@ -93,22 +93,24 @@ type overlay struct {
 }
 
 type UI struct {
-	lic      *License
-	licSt    LicStatus
-	licShow  bool   // l'écran « Autoriser le logiciel » est affiché
-	licKey   string // clé en cours de saisie
-	licMsg   string
-	licMsgOK bool
-	licNext  time.Time
-	licLeft  string
-	Plugin   bool // vrai quand le logiciel tourne comme plugin VST3 dans un DAW
-	eng      *Engine
-	host     Host
-	cfg      *Config
-	cfgPath  string
-	fxBand   int // point de l'égaliseur sélectionné
-	fxTr     int // piste dont les fenêtres EQ / EFFETS sont ouvertes
-	now      func() time.Time
+	lic         *License
+	licSt       LicStatus
+	licShow     bool   // l'écran « Autoriser le logiciel » est affiché
+	licKey      string // clé en cours de saisie
+	licMsg      string
+	licMsgOK    bool
+	licNext     time.Time
+	licLeft     string
+	Plugin      bool   // vrai quand le logiciel tourne comme plugin VST3 dans un DAW
+	OnPiano     func() // Android : ouvre le piano tactile (nil ailleurs)
+	OnBluetooth func() // Android : cherche un clavier MIDI Bluetooth
+	eng         *Engine
+	host        Host
+	cfg         *Config
+	cfgPath     string
+	fxBand      int // point de l'égaliseur sélectionné
+	fxTr        int // piste dont les fenêtres EQ / EFFETS sont ouvertes
+	now         func() time.Time
 
 	mu       sync.Mutex
 	toast    string
@@ -903,6 +905,14 @@ func (u *UI) Char(r rune) {
 		}
 	}
 	u.host.Invalidate()
+}
+
+// vrai quand l'interface attend du texte (champ de saisie, filtre, clé de licence) : Android ouvre alors le clavier
+func (u *UI) WantsText() bool {
+	if u.licShow {
+		return true
+	}
+	return u.ov != nil && (u.ov.input || u.ov.filterable)
 }
 
 func (u *UI) FocusLost() {

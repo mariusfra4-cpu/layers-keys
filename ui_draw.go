@@ -242,7 +242,12 @@ func (u *UI) drawHeader(c *Canvas) {
 		u.button(c, "psaveas", rect{512, 14, 72, 30}, "Sous…", false, fontSm, func() { u.SaveProjectAs() })
 	}
 
-	u.drawChordBox(c, rect{596, 6, 400, 46})
+	if u.OnPiano != nil { // Android : bouton du piano tactile
+		u.drawChordBox(c, rect{596, 6, 262, 46})
+		u.buttonC(c, "touchpiano", rect{866, 14, 140, 30}, "PIANO TACTILE", false, colGold, colDark, fontSm, func() { u.OnPiano() })
+	} else {
+		u.drawChordBox(c, rect{596, 6, 400, 46})
+	}
 
 	col := uint32(colRed)
 	if u.midiOK {

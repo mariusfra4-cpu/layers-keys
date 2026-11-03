@@ -272,6 +272,12 @@ func (u *UI) OpenSettings() {
 			}
 			u.OpenSettings()
 		}})
+		if u.OnBluetooth != nil { // Android : clavier MIDI Bluetooth à rechercher
+			items = append(items, olItem{text: T("Connecter un clavier MIDI Bluetooth…"), sub: T("USB : branche-le, il est reconnu tout seul"), action: func() {
+				u.ov = nil
+				u.OnBluetooth()
+			}})
+		}
 	}
 	u.ov = &overlay{title: T("Paramètres de Layers Keys"), items: items, hint: T("Clique sur un réglage · Échap pour fermer")}
 	u.ov.sel = u.ov.firstSelectable()

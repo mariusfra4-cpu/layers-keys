@@ -9,6 +9,7 @@ const (
 	apiASIO      = "asio"      // pilote ASIO de la carte son
 	apiMME       = "mme"       // ancien système Windows (compatibilité)
 	apiCoreAudio = "coreaudio" // Mac
+	apiAAudio    = "aaudio"    // Android
 )
 
 // AudioCfg : sortie audio choisie par l'utilisateur (enregistrée avec ses réglages).
@@ -22,7 +23,7 @@ type AudioCfg struct {
 
 func (a *AudioCfg) sanitize() {
 	switch a.API {
-	case apiAuto, apiWASAPI, apiWASAPX, apiASIO, apiMME, apiCoreAudio:
+	case apiAuto, apiWASAPI, apiWASAPX, apiASIO, apiMME, apiCoreAudio, apiAAudio:
 	default:
 		a.API = apiAuto
 	}
@@ -48,6 +49,8 @@ func apiLabel(a string) string {
 	switch a {
 	case apiCoreAudio:
 		return "CoreAudio"
+	case apiAAudio:
+		return "Android (AAudio)"
 	case apiASIO:
 		return "ASIO"
 	case apiWASAPX:

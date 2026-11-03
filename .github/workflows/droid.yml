@@ -1,0 +1,91 @@
+# Construit Layers Keys pour Android (APK) et le teste dans un émulateur.
+# Résultats publiés dans la branche « ci-droid » (APK) et « ci-droid-test » (captures d'écran et journaux).
+name: Layers Keys Android
+on:
+  push:
+    paths: ['android-app/**', '**.go', '**.c', '.github/workflows/droid.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+          cache: false
+      - name: Tests du cœur Android (Go)
+        run: go test -count=1 -run 'TestDroid|TestUI|TestLicense' . 2>&1 | tee /tmp/tests.txt | tail -15
+      - name: APK distribué
+        run: |
+          ./android-app/build.sh 2>&1 | tee /tmp/build.txt | tail -25
+      - name: APK de test (déjà autorisé, jamais distribué)
+        run: |
+          OUT=$PWD/android-app/build_test GOTAGS=droidtest APKNAME=layerskeys-test ./android-app/build.sh 2>&1 | tail -8
+      - name: Vérifications du contenu
+        run: |
+          set -e
+          for abi in arm64-v8a x86_64; do
+            f=android-app/build/lib/$abi/liblk.so
+            strings -n 8 $f | grep -c "PIANO TACTILE" | sed "s/^/$abi : PIANO TACTILE /"
+            strings -n 8 $f | grep -q "PIANO TACTILE"
+            strings -n 8 $f | grep -q "fxChain" || strings -n 8 $f | grep -q "runSteady" || true
+            if strings -n 8 $f | grep -q LK_TEST_MODE_ACTIVE; then echo "ERREUR : mode test dans l'APK distribué"; exit 1; fi
+          done
+          strings -n 8 android-app/build_test/lib/x86_64/liblk.so | grep -q LK_TEST_MODE_ACTIVE
+          echo "contenu vérifié" | tee /tmp/verif.txt
+          unzip -l android-app/build/layerskeys.apk | tee -a /tmp/verif.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apks
+          path: |
+            android-app/build/layerskeys.apk
+            android-app/build_test/layerskeys-test.apk
+      - name: Publier
+        if: always()
+        run: |
+          mkdir -p /tmp/o
+          cp android-app/build/layerskeys.apk /tmp/o/Layers-Keys-Android.apk 2>/dev/null || true
+          cp /tmp/build.txt /tmp/tests.txt /tmp/verif.txt /tmp/o/ 2>/dev/null || true
+          git config user.name ci; git config user.email ci@users.noreply.github.com
+          git checkout --orphan ci-droid-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          cp /tmp/o/* . 2>/dev/null || true
+          echo "run $GITHUB_RUN_ID" > run.txt
+          git add -A && git commit -qm "android $GITHUB_RUN_ID"
+          git push -f origin HEAD:refs/heads/ci-droid
+  emulateur:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: apks
+          path: /tmp/art
+      - name: KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 33
+          arch: x86_64
+          target: default
+          disable-animations: true
+          script: bash android-app/test/emu.sh $(find /tmp/art -name layerskeys.apk) $(find /tmp/art -name layerskeys-test.apk)
+        env:
+          OUT: /tmp/emu
+      - name: Publier
+        if: always()
+        run: |
+          mkdir -p /tmp/o; cp /tmp/emu/* /tmp/o/ 2>/dev/null || true
+          git config user.name ci; git config user.email ci@users.noreply.github.com
+          git checkout --orphan ci-droid-test-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          cp /tmp/o/* . 2>/dev/null || true
+          echo "run $GITHUB_RUN_ID" > run.txt
+          git add -A && git commit -qm "test android $GITHUB_RUN_ID"
+          git push -f origin HEAD:refs/heads/ci-droid-test
