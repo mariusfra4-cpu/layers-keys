@@ -61,7 +61,7 @@ public class MainActivity extends Activity {
 
     @Override public void onWindowFocusChanged(boolean f) {
         super.onWindowFocusChanged(f);
-        if (f) immersive();
+        if (f) { immersive(); syncClip(); }
     }
 
     @Override protected void onResume() {

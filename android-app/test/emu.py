@@ -63,6 +63,24 @@ check("audio ouvert" in log, "AAudio ouvert : " + (re.findall(r"audio ouvert[^\n
 crash = adb("logcat", "-d", "-s", "AndroidRuntime:E", "DEBUG:F")
 check(not crash.strip(), "pas de plantage au démarrage")
 
+# saisie au clavier, puis mode démo (3 jours) comme le fera l'utilisateur
+sc1 = Scr(w, h)
+adb("shell", "input", "text", "JBK1A2B3C4D")
+time.sleep(2)
+shot("1b_licence_saisie")
+sc1.tap(832, 609)  # « Mode démo — 3 jours »
+time.sleep(3)
+shot("1c_demo")
+sc1.tap(936, 29)  # PIANO TACTILE
+time.sleep(2)
+spd = Scr(w, h, 1200, max(460, min(744, 1200 * h // w)))
+for x in (200, 600, 900):
+    spd.tap(x, 330)
+    time.sleep(0.3)
+shot("1d_demo_piano")
+st = status(); print("état", st)
+check(st is not None and st[3] >= 3, "en mode démo, les touches jouent (notes : %s)" % (st and st[3]))
+
 # ---------------------------------------------------------------- 2. version de test (déjà autorisée)
 print("== APK de test")
 adb("install", "-r", TEST)
