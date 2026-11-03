@@ -67,6 +67,8 @@ type droidApp struct {
 	zoom   float64 // agrandissement de l'écran principal (1 = tout l'écran)
 	zl, zt float64
 
+	paused int32
+
 	renderCalls  int64
 	renderFrames int64
 	midiMsgs     int64
@@ -100,7 +102,12 @@ func newDroid(filesDir, androidID string, rate int) *droidApp {
 	SharedTextRenderer().Attach(d.cvPiano)
 	d.vw, d.vh = 2160, 1080
 	d.pn.init()
-	d.ui = NewUI(d.eng, d, filepath.Join(filesDir, "cfg", "config.json"))
+	cfg := filepath.Join(filesDir, "cfg", "config.json")
+	_, errCfg := os.Stat(cfg)
+	d.ui = NewUI(d.eng, d, cfg)
+	if errCfg != nil { // premier lancement : un piano est déjà chargé, on peut jouer tout de suite
+		d.ui.loadSource(0, SrcCfg{Kind: "builtin", Builtin: iGrand})
+	}
 	d.ui.OnPiano = func() { d.setPiano(true) }
 	d.ui.OnBluetooth = func() { d.push("ble") }
 	d.ui.OnRescan = func() { d.push("midiscan") }
@@ -121,6 +128,9 @@ func (d *droidApp) loop() {
 			d.safe(f)
 			d.after()
 		case <-t.C:
+			if atomic.LoadInt32(&d.paused) != 0 {
+				continue
+			}
 			n++
 			d.safe(func() {
 				d.ui.DrainMidi()
@@ -673,7 +683,14 @@ func (d *droidApp) Render(out []float32, frames int) {
 	atomic.AddInt64(&d.renderFrames, int64(frames))
 }
 
+// Resume : l'appli revient au premier plan
+func (d *droidApp) Resume() {
+	atomic.StoreInt32(&d.paused, 0)
+	d.post(func() { d.Invalidate() })
+}
+
 func (d *droidApp) Stop() {
+	atomic.StoreInt32(&d.paused, 1)
 	d.post(func() {
 		d.releaseAll()
 		d.eng.Panic()

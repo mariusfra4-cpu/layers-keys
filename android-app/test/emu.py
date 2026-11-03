@@ -20,6 +20,7 @@ def shot(name):
     return w, h
 
 def status():
+    time.sleep(3.6)  # le moteur écrit son état toutes les 3 secondes
     out = adb("logcat", "-d", "-s", "LayersKeys:I")
     m = re.findall(r"état audio=(\d+) frames=(\d+) midi=(\d+) notes=(\d+)", out)
     return tuple(map(int, m[-1])) if m else None

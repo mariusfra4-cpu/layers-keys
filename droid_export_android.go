@@ -194,6 +194,14 @@ func lkaRender(out *C.float, frames C.int) {
 	d.Render(unsafe.Slice((*float32)(unsafe.Pointer(out)), 2*n), n)
 }
 
+//export lkaResume
+func lkaResume() {
+	defer recoverDroid()
+	if theDroid != nil {
+		theDroid.Resume()
+	}
+}
+
 //export lkaStop
 func lkaStop() {
 	defer recoverDroid()

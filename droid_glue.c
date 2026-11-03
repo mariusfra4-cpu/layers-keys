@@ -26,8 +26,22 @@ static pthread_mutex_t g_mu = PTHREAD_MUTEX_INITIALIZER;
 static volatile int g_want = 0;
 static int g_rate = 0;
 
+static int g_burst = 192, g_cb = 0, g_lastX = 0;
+
 static aaudio_data_callback_result_t data_cb(AAudioStream *s, void *user, void *data, int32_t frames) {
     lkaRender((float *)data, frames);
+    /* si le téléphone manque de temps (craquements), on agrandit peu à peu le tampon : un peu plus de latence, plus de sécurité */
+    if (++g_cb % 50 == 0) {
+        int x = AAudioStream_getXRunCount(s);
+        if (x > g_lastX) {
+            int size = AAudioStream_getBufferSizeInFrames(s);
+            if (size < g_burst * 24) {
+                AAudioStream_setBufferSizeInFrames(s, size + g_burst * 2);
+                LOGI("sous-alimentation audio (%d) : tampon agrandi à %d", x, size + g_burst * 2);
+            }
+            g_lastX = x;
+        }
+    }
     return AAUDIO_CALLBACK_RESULT_CONTINUE;
 }
 
@@ -73,7 +87,11 @@ static int open_stream(void) {
     if (r != AAUDIO_OK) { LOGE("openStream: %s", AAudio_convertResultToText(r)); return -2; }
     g_rate = AAudioStream_getSampleRate(s);
     int burst = AAudioStream_getFramesPerBurst(s);
-    AAudioStream_setBufferSizeInFrames(s, burst * 3); /* assez pour que les sons lourds ne craquent pas */
+    g_burst = burst > 0 ? burst : 192;
+    g_cb = 0; g_lastX = 0;
+    int want = burst * 4;
+    if (want < 768) want = 768; /* environ 16 ms : assez pour que les sons lourds ne craquent pas */
+    AAudioStream_setBufferSizeInFrames(s, want);
     lkaSetRate(g_rate);
     r = AAudioStream_requestStart(s);
     if (r != AAUDIO_OK) { LOGE("requestStart: %s", AAudio_convertResultToText(r)); AAudioStream_close(s); return -3; }
@@ -83,6 +101,7 @@ static int open_stream(void) {
 }
 
 JNIEXPORT jint JNICALL JF(audioStart)(JNIEnv *env, jclass c) {
+    lkaResume();
     pthread_mutex_lock(&g_mu);
     g_want = 1;
     int r = g_stream ? 0 : open_stream();

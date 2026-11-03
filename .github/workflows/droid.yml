@@ -52,6 +52,7 @@ jobs:
           git config user.name ci; git config user.email ci@users.noreply.github.com
           git checkout --orphan ci-droid-tmp
           git rm -rf . >/dev/null 2>&1 || true
+          git clean -fdxq
           cp /tmp/o/* . 2>/dev/null || true
           echo "run $GITHUB_RUN_ID" > run.txt
           git add -A && git commit -qm "android $GITHUB_RUN_ID"
@@ -85,6 +86,7 @@ jobs:
           git config user.name ci; git config user.email ci@users.noreply.github.com
           git checkout --orphan ci-droid-test-tmp
           git rm -rf . >/dev/null 2>&1 || true
+          git clean -fdxq
           cp /tmp/o/* . 2>/dev/null || true
           echo "run $GITHUB_RUN_ID" > run.txt
           git add -A && git commit -qm "test android $GITHUB_RUN_ID"
