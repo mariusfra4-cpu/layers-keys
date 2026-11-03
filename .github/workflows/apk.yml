@@ -1,0 +1,74 @@
+name: APK Générateur
+on:
+  push:
+    paths: ['android/**', '.github/workflows/apk.yml']
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Vérification du calcul des clés (Java)
+        run: |
+          mkdir -p /tmp/jt && cd android
+          javac --release 8 -Xlint:-options -d /tmp/jt src/com/jbpraise/keygen/KeyCore.java test/KeyCoreTest.java test/MakeTestSecret.java test/PrintKey.java
+          java -cp /tmp/jt KeyCoreTest 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f JBK-1A2B-3C4D-5E6F-7A8B BIBB67FT-U5AOFOQQ-EJRTD5S3-ZOOQ7ZBW-ZKCCYMUX-STXPDKG3-3EL2DAT4-PY5XNHOU-DCAXCE52-6KSQXBIW-FXDEK5F5-JLYASQKQ-JVWJIBY | tee /tmp/keycore.txt
+      - name: Construction de l'APK
+        run: |
+          cd android && ./build.sh 2>&1 | tee /tmp/build.txt
+      - name: Construction de l'APK de test
+        run: |
+          cd android
+          java -cp /tmp/jt MakeTestSecret /tmp/Secret.test.java
+          SECRET_JAVA=/tmp/Secret.test.java OUT=build_test ./build.sh 2>&1 | tail -3
+          mkdir -p /tmp/artup && cp build_test/jbkeys.apk /tmp/artup/ && echo BIBB67FT-U5AOFOQQ-EJRTD5S3-ZOOQ7ZBW-ZKCCYMUX-STXPDKG3-3EL2DAT4-PY5XNHOU-DCAXCE52-6KSQXBIW-FXDEK5F5-JLYASQKQ-JVWJIBY > /tmp/artup/expected.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apk-test
+          path: /tmp/artup
+      - name: Publier
+        if: always()
+        run: |
+          mkdir -p /tmp/o
+          cp android/build/jbkeys.apk /tmp/o/JB-Cles-Layers-Keys.apk 2>/dev/null || true
+          cp /tmp/build.txt /tmp/keycore.txt /tmp/o/ 2>/dev/null || true
+          git config user.name ci; git config user.email ci@users.noreply.github.com
+          git checkout --orphan ci-apk-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          cp /tmp/o/* . 2>/dev/null || true
+          echo "run $GITHUB_RUN_ID" > run.txt
+          git add -A && git commit -qm "apk $GITHUB_RUN_ID"
+          git push -f origin HEAD:refs/heads/ci-apk
+  emulateur:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: apk-test
+          path: /tmp/art
+      - name: KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 33
+          arch: x86_64
+          target: default
+          disable-animations: true
+          script: bash android/test/emu.sh /tmp/art/jbkeys.apk $(cat /tmp/art/expected.txt)
+        env:
+          OUT: /tmp/emu
+      - name: Publier
+        if: always()
+        run: |
+          mkdir -p /tmp/o; cp /tmp/emu/* /tmp/o/ 2>/dev/null || true
+          git config user.name ci; git config user.email ci@users.noreply.github.com
+          git checkout --orphan ci-apk-test-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          cp /tmp/o/* . 2>/dev/null || true
+          echo "run $GITHUB_RUN_ID" > run.txt
+          git add -A && git commit -qm "test apk $GITHUB_RUN_ID"
+          git push -f origin HEAD:refs/heads/ci-apk-test
