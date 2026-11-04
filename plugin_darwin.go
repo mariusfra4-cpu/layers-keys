@@ -51,12 +51,15 @@ func lkNew() C.uintptr_t {
 	lklog("plugin : création d'une instance (macOS %s)", macVersionPlugin())
 	gcOnce.Do(func() { debug.SetGCPercent(400) })
 	eng := NewEngine()
+	lklog("plugin : moteur créé")
 	if err := cocoaInit(); err != nil {
 		lklog("plugin : cocoaInit a échoué : %v", err)
 		return 0
 	}
 	app := &macApp{eng: eng, scale: 1, plugin: true}
+	lklog("plugin : cocoa prêt, création de l'interface")
 	ui := NewUI(eng, app, "")
+	lklog("plugin : interface créée")
 	ui.Plugin = true
 	app.ui = ui
 	in := &lkInst{refs: 1, eng: eng, ui: ui, app: app}

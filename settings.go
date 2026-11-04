@@ -104,6 +104,12 @@ func (u *UI) openAudioMenu() {
 		u.eng.StartTone()
 		u.Toast(T("Bip en cours : l'entends-tu ? Puis rouvre ce menu pour lire le diagnostic."))
 	}})
+	if sysBeep != nil {
+		items = append(items, olItem{text: T("Test du son 2 : bip du système Mac"), sub: T("sans passer par Layers Keys : pour comparer"), action: func() {
+			sysBeep()
+			u.Toast(T("Bip du système en cours : l'entends-tu ?"))
+		}})
+	}
 	if u.audioAPI() == apiASIO {
 		items = append(items,
 			olItem{text: Tf("Sorties ASIO : %d-%d", a.Pair*2+1, a.Pair*2+2), action: u.openPairMenu},
@@ -309,3 +315,6 @@ func (u *UI) diagText() string {
 	}
 	return Tf("demandé par la carte : %d · niveau : %.2f · %s · %d son(s)", pulled, peak, T(lic), loaded)
 }
+
+// bip joué par le système (Mac seulement)
+var sysBeep func()
