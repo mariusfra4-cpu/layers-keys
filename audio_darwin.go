@@ -16,6 +16,7 @@ import (
 )
 
 func init() {
+	bufferChoices = append(bufferChoices, 2048, 3072, 4096, 6144)
 	defaultAPI = apiCoreAudio
 	defaultDeviceName = "celle du Mac"
 }
@@ -81,7 +82,9 @@ func openAudio(e *Engine, cfg AudioCfg) (audioBackend, string, error) {
 	}
 	frames := cfg.Buffer
 	if frames == 0 {
-		frames = 512
+		// 6144 images = 4 tampons de 12288 octets : la taille par défaut de la bibliothèque, éprouvée sur des Mac réels.
+		// Les tampons très courts (128 images) sont silencieux sur certains Mac.
+		frames = 6144
 	}
 	frames = clamp(frames, 256, 8192)
 	note := ""
@@ -115,7 +118,7 @@ func openAudio(e *Engine, cfg AudioCfg) (audioBackend, string, error) {
 		go macWatchdog(e, rate)
 	}
 	info := fmt.Sprintf("CoreAudio · sortie du Mac · %d Hz · ≈ %.0f ms%s", macCtxRate,
-		2*float64(macCtxFrame)/float64(macCtxRate)*1000, note)
+		float64(macCtxFrame)/float64(macCtxRate)*1000, note)
 	return &macAudio{player: p, info: info}, info, nil
 }
 
