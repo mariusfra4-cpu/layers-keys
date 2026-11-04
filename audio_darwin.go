@@ -7,6 +7,8 @@ package main
 import (
 	"errors"
 	"fmt"
+	"os"
+	"os/exec"
 	"sync"
 	"time"
 
@@ -109,7 +111,39 @@ func openAudio(e *Engine, cfg AudioCfg) (audioBackend, string, error) {
 	p := macCtx.NewPlayer(&engReader{e: e})
 	p.SetBufferSize(macCtxFrame * 4)
 	p.Play()
+	if frames < 6144 && macStall != nil {
+		go macWatchdog(e, rate)
+	}
 	info := fmt.Sprintf("CoreAudio · sortie du Mac · %d Hz · ≈ %.0f ms%s", macCtxRate,
 		2*float64(macCtxFrame)/float64(macCtxRate)*1000, note)
 	return &macAudio{player: p, info: info}, info, nil
+}
+
+// macStall : appelé quand le Mac ne réclame presque pas de son (petits tampons refusés par certains Mac) ; réglé par l'application
+var macStall func()
+
+var macWatchdogOnce sync.Once
+
+// Après 3 secondes, la carte son doit avoir demandé environ 3 s de son. Sinon, on relance avec de gros tampons.
+func macWatchdog(e *Engine, rate int) {
+	p0, _ := e.DiagRead()
+	time.Sleep(3 * time.Second)
+	p1, _ := e.DiagRead()
+	if float64(p1-p0) >= 0.3*float64(rate)*3 {
+		return
+	}
+	macWatchdogOnce.Do(func() {
+		if macStall != nil {
+			macStall()
+		}
+	})
+}
+
+// relance l'application (utilisé après avoir enregistré un réglage de tampon plus sûr)
+func macRelaunch() {
+	if exe, err := os.Executable(); err == nil {
+		_ = exec.Command(exe).Start()
+	}
+	time.Sleep(300 * time.Millisecond)
+	os.Exit(0)
 }

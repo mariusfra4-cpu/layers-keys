@@ -135,6 +135,11 @@ func main() {
 	debug.SetGCPercent(400) // moins de pauses du ramasse-miettes = moins de craquements
 	a.ready = true
 	a.ui.RefreshKeyLabels()
+	macStall = func() { // le Mac ne réclame pas de son : on passe aux gros tampons (100 ms) et on relance une fois
+		a.ui.cfg.Audio.Buffer = 6144
+		a.ui.Save()
+		macRelaunch()
+	}
 	a.ui.StartAudio()
 	a.midi.init(a.ui)
 	a.midi.scan(a.ui, true)
