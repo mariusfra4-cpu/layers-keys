@@ -42,6 +42,7 @@ func (u *UI) StartAudio() {
 		u.Save() // écrit avant d'essayer : si le pilote fait tout planter, on le saura
 	}
 	info, err := u.host.AudioOpen(u.cfg.Audio)
+	lklog("sortie audio : info=%q erreur=%v tampon=%d", info, err, u.cfg.Audio.Buffer)
 	u.cfg.AudioPending = false
 	if risky && u.cfgPath != "" {
 		u.Save()

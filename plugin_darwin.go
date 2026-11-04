@@ -11,7 +11,9 @@ import "C"
 // Plugin VST3 : la colle en C (vst3_glue.c) appelle ces fonctions. Un « instance » = un exemplaire du plugin dans le DAW.
 
 import (
+	"os/exec"
 	"runtime/debug"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"unsafe"
@@ -46,9 +48,11 @@ func getInst(h C.uintptr_t) *lkInst {
 //export lkNew
 func lkNew() C.uintptr_t {
 	defer recoverPlugin()
+	lklog("plugin : création d'une instance (macOS %s)", macVersionPlugin())
 	gcOnce.Do(func() { debug.SetGCPercent(400) })
 	eng := NewEngine()
-	if cocoaInit() != nil {
+	if err := cocoaInit(); err != nil {
+		lklog("plugin : cocoaInit a échoué : %v", err)
 		return 0
 	}
 	app := &macApp{eng: eng, scale: 1, plugin: true}
@@ -62,6 +66,7 @@ func lkNew() C.uintptr_t {
 	nextInst++
 	insts[h] = in
 	instMu.Unlock()
+	lklog("plugin : instance %d créée", h)
 	return C.uintptr_t(h)
 }
 
@@ -176,9 +181,12 @@ func lkAttach(h C.uintptr_t, parent, hinst C.uintptr_t) C.int {
 	if in == nil {
 		return 0
 	}
+	lklog("plugin : ouverture de la fenêtre dans l'hôte")
 	if in.app.attachEditor(objc.ID(parent)) { // « parent » : la NSView du logiciel hôte
+		lklog("plugin : fenêtre ouverte")
 		return 1
 	}
+	lklog("plugin : la fenêtre n'a pas pu s'ouvrir")
 	return 0
 }
 
@@ -206,9 +214,18 @@ func lkSize(h C.uintptr_t, w, hh *C.int) {
 func recoverPlugin() {
 	if r := recover(); r != nil {
 		pluginErrors++
+		lklog("plugin : erreur interne attrapée : %v\n%s", r, debug.Stack())
 	}
 }
 
 var pluginErrors int
+
+func macVersionPlugin() string {
+	out, err := exec.Command("/usr/bin/sw_vers", "-productVersion").Output()
+	if err != nil {
+		return "?"
+	}
+	return strings.TrimSpace(string(out))
+}
 
 func main() {}

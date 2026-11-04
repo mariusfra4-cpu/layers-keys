@@ -129,6 +129,7 @@ func macWatchdog(e *Engine, rate int) {
 	p0, _ := e.DiagRead()
 	time.Sleep(3 * time.Second)
 	p1, _ := e.DiagRead()
+	lklog("contrôle audio à 3 s : %d images demandées par le Mac (attendu environ %d)", p1-p0, rate*3)
 	if float64(p1-p0) >= 0.3*float64(rate)*3 {
 		return
 	}
