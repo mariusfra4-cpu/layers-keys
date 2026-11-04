@@ -21,8 +21,15 @@ func init() {
 	defaultDeviceName = "celle du Mac"
 }
 
-func audioAPIs() []string              { return []string{apiCoreAudio} }
-func audioDevices(api string) []string { return nil } // le Mac utilise la sortie choisie dans Réglages Système > Son
+func audioAPIs() []string { return []string{apiCoreAudio} }
+func audioDevices(api string) []string {
+	var names []string
+	for _, d := range macOutputDevices() {
+		names = append(names, d.name)
+	}
+	lklog("cartes son vues : %v", names)
+	return names
+}
 
 // Le système audio ne permet de créer qu'un seul contexte par exécution : on le garde pour toute la session.
 var (
@@ -110,6 +117,22 @@ func openAudio(e *Engine, cfg AudioCfg) (audioBackend, string, error) {
 	} else if rate != macCtxRate || frames != macCtxFrame {
 		note = " · fréquence/tampon : relance le logiciel pour les changer"
 	}
+	// carte son : celle choisie dans le menu, sinon celle des Réglages Système
+	uid := ""
+	if cfg.Device != "" {
+		uid = macDeviceUID(cfg.Device)
+		if uid == "" {
+			note += " · carte son « " + cfg.Device + " » introuvable : sortie du Mac utilisée"
+		}
+	}
+	if uid == "" {
+		uid = macDefaultUID()
+	}
+	if err := oto.SetOutputDeviceUID(uid); err != nil {
+		lklog("carte son : choix impossible (%v)", err)
+	} else {
+		lklog("carte son : %q (uid %s)", cfg.Device, uid)
+	}
 	e.SetSampleRate(macCtxRate)
 	p := macCtx.NewPlayer(&engReader{e: e})
 	p.SetBufferSize(macCtxFrame * 4)
@@ -117,7 +140,11 @@ func openAudio(e *Engine, cfg AudioCfg) (audioBackend, string, error) {
 	if frames < 6144 && macStall != nil {
 		go macWatchdog(e, rate)
 	}
-	info := fmt.Sprintf("CoreAudio · sortie du Mac · %d Hz · ≈ %.0f ms%s", macCtxRate,
+	label := "sortie du Mac"
+	if cfg.Device != "" {
+		label = cfg.Device
+	}
+	info := fmt.Sprintf("CoreAudio · %s · %d Hz · ≈ %.0f ms%s", label, macCtxRate,
 		float64(macCtxFrame)/float64(macCtxRate)*1000, note)
 	return &macAudio{player: p, info: info}, info, nil
 }

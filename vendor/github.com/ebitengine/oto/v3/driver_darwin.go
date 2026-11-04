@@ -84,6 +84,8 @@ type context struct {
 
 	mux *mux.Mux
 	err atomicError
+
+	devErr error
 }
 
 // TODO: Convert the error code correctly.
@@ -138,6 +140,9 @@ func newContext(sampleRate int, channelCount int, format mux.Format, bufferSizeI
 		}
 		c.audioQueue = q
 		c.unqueuedBuffers = bs
+		if err := applyDevice(q, pendingDeviceUID()); err != nil {
+			c.devErr = err // la carte son choisie n'a pas pu être appliquée : on garde la sortie par défaut du Mac
+		}
 
 		if err := setNotificationHandler(); err != nil {
 			c.err.TryStore(err)
