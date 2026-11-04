@@ -99,6 +99,10 @@ func (u *UI) openAudioMenu() {
 		{text: Tf("Fréquence : %d Hz", a.Rate), action: u.openRateMenu},
 		{text: bufTxt, sub: T("Plus petit = moins de latence, mais plus de risque de craquements."), action: u.openBufferMenu},
 	}
+	items = append(items, olItem{text: T("Test du son : bip de 2 secondes"), sub: u.diagText(), action: func() {
+		u.eng.StartTone()
+		u.Toast(T("Bip en cours : l'entends-tu ? Puis rouvre ce menu pour lire le diagnostic."))
+	}})
 	if u.audioAPI() == apiASIO {
 		items = append(items,
 			olItem{text: Tf("Sorties ASIO : %d-%d", a.Pair*2+1, a.Pair*2+2), action: u.openPairMenu},
@@ -282,4 +286,25 @@ func (u *UI) OpenSettings() {
 	u.ov = &overlay{title: T("Paramètres de Layers Keys"), items: items, hint: T("Clique sur un réglage · Échap pour fermer")}
 	u.ov.sel = u.ov.firstSelectable()
 	u.host.Invalidate()
+}
+
+// texte de diagnostic du son : la carte son demande-t-elle du son ? le moteur en produit-il ? la licence l'autorise-t-elle ?
+func (u *UI) diagText() string {
+	pulled, peak := u.eng.DiagRead()
+	lic := "licence ?"
+	switch u.licSt.State {
+	case LicLicensed:
+		lic = "licencié"
+	case LicDemo:
+		lic = "démo"
+	default:
+		lic = "son verrouillé"
+	}
+	loaded := 0
+	for i := range u.eng.ch {
+		if src, _, _ := u.eng.ChInfo(i); src != nil {
+			loaded++
+		}
+	}
+	return Tf("demandé par la carte : %d · niveau : %.2f · %s · %d son(s)", pulled, peak, T(lic), loaded)
 }

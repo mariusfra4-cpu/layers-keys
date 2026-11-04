@@ -146,8 +146,12 @@ func iVibIdx() int { return pVib }
 // ---------------------------------------------------------------- moteur
 
 type Engine struct {
-	licLocked   int32 // 1 : logiciel non autorisé, aucune note ne sonne
-	licDeadline int64 // fin de la démo (ns Unix), 0 = pas de limite
+	licLocked   int32  // 1 : logiciel non autorisé, aucune note ne sonne
+	licDeadline int64  // fin de la démo (ns Unix), 0 = pas de limite
+	pulled      int64  // nombre d'images sonores demandées par la carte son (diagnostic)
+	outPeakBits uint64 // plus fort niveau sorti du moteur depuis la dernière lecture (diagnostic)
+	toneLeft    int64  // images restantes du bip de test (contourne licence, pistes et effets)
+	tonePhase   float64
 	Player      *Player
 	cpuBits     uint64 // charge moyenne du calcul audio (0..1, en 64 bits)
 	cpuPeak     uint64
@@ -716,6 +720,7 @@ func (e *Engine) Render(out []int16) {
 	e.mixBlock(B)
 	mixL, mixR := e.mixL[:B], e.mixR[:B]
 	e.limitBlock(B, e.master*e.cc7*e.cc11*1.414)
+	e.diagOut(mixL, mixR, B)
 	for i := 0; i < B; i++ {
 		out[2*i] = int16(softLimit(mixL[i]) * 32000)
 		out[2*i+1] = int16(softLimit(mixR[i]) * 32000)
@@ -733,6 +738,7 @@ func (e *Engine) RenderF(l, r []float32) {
 	e.mixBlock(B)
 	mixL, mixR := e.mixL[:B], e.mixR[:B]
 	e.limitBlock(B, e.master*e.cc7*e.cc11*1.414)
+	e.diagOut(mixL, mixR, B)
 	for i := 0; i < B; i++ {
 		l[i] = float32(softLimit(mixL[i]) * (32000.0 / 32768))
 		r[i] = float32(softLimit(mixR[i]) * (32000.0 / 32768))
@@ -983,4 +989,40 @@ func (e *Engine) Load() (avg, peak float64) {
 // Voices renvoie le nombre de notes en cours et la limite actuelle.
 func (e *Engine) Voices() (live, limit int) {
 	return int(atomic.LoadInt32(&e.liveCount)), int(atomic.LoadInt32(&e.voiceLimit))
+}
+
+// diagOut : compte ce que la carte son demande, relève le niveau de sortie et ajoute le bip de test s'il est demandé
+func (e *Engine) diagOut(mixL, mixR []float64, B int) {
+	atomic.AddInt64(&e.pulled, int64(B))
+	pk := 0.0
+	for i := 0; i < B; i++ {
+		if a := math.Abs(mixL[i]); a > pk {
+			pk = a
+		}
+	}
+	if old := math.Float64frombits(atomic.LoadUint64(&e.outPeakBits)); pk > old {
+		atomic.StoreUint64(&e.outPeakBits, math.Float64bits(pk))
+	}
+	if left := atomic.LoadInt64(&e.toneLeft); left > 0 {
+		w := 2 * math.Pi * 440 / SR
+		for i := 0; i < B; i++ {
+			s := 0.3 * math.Sin(e.tonePhase)
+			e.tonePhase += w
+			mixL[i] += s
+			mixR[i] += s
+		}
+		if e.tonePhase > 2*math.Pi {
+			e.tonePhase -= 2 * math.Pi
+		}
+		atomic.AddInt64(&e.toneLeft, -int64(B))
+	}
+}
+
+// StartTone : bip de test de 2 secondes
+func (e *Engine) StartTone() { atomic.StoreInt64(&e.toneLeft, int64(2*SR)) }
+
+// DiagRead : (images demandées par la carte son, plus fort niveau depuis la dernière lecture)
+func (e *Engine) DiagRead() (int64, float64) {
+	p := math.Float64frombits(atomic.SwapUint64(&e.outPeakBits, 0))
+	return atomic.LoadInt64(&e.pulled), p
 }

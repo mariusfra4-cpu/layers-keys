@@ -21,7 +21,7 @@ func testPriv(t *testing.T) ed25519.PrivateKey {
 
 func testLicense(t *testing.T, id string) (*License, *time.Time, string) {
 	dir := t.TempDir()
-	now := time.Date(2026, 11, 1, 10, 0, 0, 0, time.UTC)
+	now := time.Now().UTC().Truncate(time.Second)
 	l := &License{Now: func() time.Time { return now }, MachineID: func() string { return id },
 		Dirs: func() []string { return []string{filepath.Join(dir, "a"), filepath.Join(dir, "b")} }}
 	return l, &now, dir

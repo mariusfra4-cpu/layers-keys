@@ -356,3 +356,24 @@ func TestPerf(t *testing.T) {
 		t.Logf("%-20s voix=%3d  %.2f ms pour 384 images (budget %.1f ms) -> %.0f%%", c.name, e.VoiceCount(), per, budget, per/budget*100)
 	}
 }
+
+func TestDiagTone(t *testing.T) {
+	e := NewEngine()
+	e.SetLicenseGate(true, time.Time{}) // son verrouillé : le bip doit sortir quand même
+	e.StartTone()
+	out := make([]int16, 2*4800)
+	e.Render(out)
+	pk := 0
+	for _, v := range out {
+		if int(v) > pk {
+			pk = int(v)
+		}
+	}
+	if pk < 3000 {
+		t.Fatalf("le bip de test doit être audible, crête %d", pk)
+	}
+	pulled, _ := e.DiagRead()
+	if pulled != 4800 {
+		t.Fatalf("images demandées : %d", pulled)
+	}
+}
