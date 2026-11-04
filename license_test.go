@@ -178,3 +178,9 @@ func TestFormatDemoLeft(t *testing.T) {
 		}
 	}
 }
+
+func TestNormalizeCodeLettreO(t *testing.T) {
+	if got := NormalizeCode("jbk-of7a-d818-12ea-2939"); got != "JBK-0F7A-D818-12EA-2939" {
+		t.Fatalf("got %q", got)
+	}
+}

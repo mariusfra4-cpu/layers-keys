@@ -96,6 +96,10 @@ func (l *License) Code() string {
 func NormalizeCode(s string) string {
 	s = strings.ToUpper(strings.TrimSpace(s))
 	s = strings.NewReplacer(" ", "", "-", "", "\n", "", "\r", "", "\t", "").Replace(s)
+	// la lettre O est prise pour un zéro : les codes n'ont que 0-9 et A-F, la confusion est fréquente à la lecture
+	if strings.HasPrefix(s, "JBK") {
+		s = "JBK" + strings.ReplaceAll(s[3:], "O", "0")
+	}
 	if !strings.HasPrefix(s, "JBK") || len(s) != 19 {
 		return ""
 	}
