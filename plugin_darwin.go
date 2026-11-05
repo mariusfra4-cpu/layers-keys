@@ -11,9 +11,7 @@ import "C"
 // Plugin VST3 : la colle en C (vst3_glue.c) appelle ces fonctions. Un « instance » = un exemplaire du plugin dans le DAW.
 
 import (
-	"os/exec"
 	"runtime/debug"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"unsafe"
@@ -223,12 +221,6 @@ func recoverPlugin() {
 
 var pluginErrors int
 
-func macVersionPlugin() string {
-	out, err := exec.Command("/usr/bin/sw_vers", "-productVersion").Output()
-	if err != nil {
-		return "?"
-	}
-	return strings.TrimSpace(string(out))
-}
+func macVersionPlugin() string { return macVersionSysctl() }
 
 func main() {}

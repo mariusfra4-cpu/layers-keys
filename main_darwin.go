@@ -7,10 +7,8 @@ package main
 import (
 	"math"
 	"os"
-	"os/exec"
 	"runtime"
 	"runtime/debug"
-	"strings"
 
 	"github.com/ebitengine/purego/objc"
 )
@@ -81,15 +79,10 @@ func buildMenu(app objc.ID) {
 	app.Send(sel("setWindowsMenu:"), winMenu)
 }
 
-func macVersion() string {
-	out, err := exec.Command("/usr/bin/sw_vers", "-productVersion").Output()
-	if err != nil {
-		return "?"
-	}
-	return strings.TrimSpace(string(out))
-}
+func macVersion() string { return macVersionSysctl() }
 
 func main() {
+	allowExec = true // application seule : le lancement d'un programme du système est permis (sans danger ici)
 	if err := cocoaInit(); err != nil {
 		println("Layers Keys : impossible de charger les bibliothèques du Mac :", err.Error())
 		os.Exit(1)
