@@ -32,10 +32,7 @@ jobs:
           cache: false
       - name: Application Mac
         run: ./build_mac.sh 2>&1 | tee /tmp/lklogs/02_app.txt | tail -20
-      - uses: actions/setup-go@v5
-        with:
-          go-version: "1.24"
-          cache: false
+      # Les plugins aussi doivent être construits avec Go 1.22 : avec Go 1.24, la version Intel (x86_64) plante au chargement (Logic, GarageBand, auval)
       - name: Plugin VST3 Mac
         run: ./build_mac_vst3.sh 2>&1 | tee /tmp/lklogs/03_vst3.txt | tail -30
       - name: Plugin Audio Unit Mac
@@ -59,6 +56,16 @@ jobs:
             head -c 12000 "$f" >> /tmp/lklogs/05b_crash.txt
           done
           tail -40 dist/auval.txt
+      - name: Test officiel Apple de l'Audio Unit en version Intel (auval sous Rosetta)
+        continue-on-error: true
+        run: |
+          set +e
+          killall -9 AudioComponentRegistrar 2>/dev/null || true
+          sleep 3
+          lipo -archs dist/mac/LayersKeys.component/Contents/MacOS/LayersKeys | tee /tmp/lklogs/05d_auval_intel.txt
+          arch -x86_64 auval -v aumu Lkys JBPr >> /tmp/lklogs/05d_auval_intel.txt 2>&1
+          echo "auval Intel EXIT=$?" >> /tmp/lklogs/05d_auval_intel.txt
+          tail -12 /tmp/lklogs/05d_auval_intel.txt
       - name: Test de démarrage du plugin VST3 (chargement + fabrique)
         continue-on-error: true
         run: |

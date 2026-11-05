@@ -37,6 +37,7 @@ var (
 	macCtx      *oto.Context
 	macCtxRate  int
 	macCtxFrame int
+	macCtxUID   string
 )
 
 // lit le moteur directement : il calcule le son au moment où la carte son en a besoin
@@ -95,6 +96,30 @@ func openAudio(e *Engine, cfg AudioCfg) (audioBackend, string, error) {
 	}
 	frames = clamp(frames, 256, 8192)
 	note := ""
+	// carte son : celle choisie dans le menu, sinon celle des Réglages Système.
+	// Elle doit être connue AVANT la création de la sortie : le Mac refuse de la changer une fois le son démarré.
+	uid := ""
+	if cfg.Device != "" {
+		uid = macDeviceUID(cfg.Device)
+		if uid == "" {
+			lklog("carte son « %s » introuvable : sortie du Mac utilisée", cfg.Device)
+		}
+	}
+	if uid == "" {
+		uid = macDefaultUID()
+	}
+	var devErr error
+	if macCtx == nil || uid != macCtxUID { // sinon : déjà la bonne carte, rien à changer
+		devErr = oto.SetOutputDeviceUID(uid)
+	}
+	if devErr != nil {
+		lklog("carte son : changement impossible en cours de route (%v)", devErr)
+		if macCtx != nil && uid != macCtxUID {
+			note += " · pour changer de carte son : ferme et rouvre le logiciel"
+		}
+	} else {
+		lklog("carte son : %q (uid %s)", cfg.Device, uid)
+	}
 	if macCtx == nil {
 		ctx, ready, err := oto.NewContext(&oto.NewContextOptions{
 			SampleRate:   rate,
@@ -113,25 +138,9 @@ func openAudio(e *Engine, cfg AudioCfg) (audioBackend, string, error) {
 		if err := ctx.Err(); err != nil {
 			return nil, "", err
 		}
-		macCtx, macCtxRate, macCtxFrame = ctx, rate, frames
+		macCtx, macCtxRate, macCtxFrame, macCtxUID = ctx, rate, frames, uid
 	} else if rate != macCtxRate || frames != macCtxFrame {
 		note = " · fréquence/tampon : relance le logiciel pour les changer"
-	}
-	// carte son : celle choisie dans le menu, sinon celle des Réglages Système
-	uid := ""
-	if cfg.Device != "" {
-		uid = macDeviceUID(cfg.Device)
-		if uid == "" {
-			note += " · carte son « " + cfg.Device + " » introuvable : sortie du Mac utilisée"
-		}
-	}
-	if uid == "" {
-		uid = macDefaultUID()
-	}
-	if err := oto.SetOutputDeviceUID(uid); err != nil {
-		lklog("carte son : choix impossible (%v)", err)
-	} else {
-		lklog("carte son : %q (uid %s)", cfg.Device, uid)
 	}
 	e.SetSampleRate(macCtxRate)
 	p := macCtx.NewPlayer(&engReader{e: e})
