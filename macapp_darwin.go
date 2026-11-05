@@ -212,6 +212,8 @@ func (a *macApp) cleanupGraphics() {
 }
 
 // dessine l'interface si quelque chose a changé
+var firstPaintLogged int32
+
 func (a *macApp) flush() {
 	if a.canvas == nil || !atomic.CompareAndSwapInt32(&a.pending, 1, 0) {
 		return
@@ -220,6 +222,9 @@ func (a *macApp) flush() {
 	img := cgBitmapContextCreateImage(a.cgCtx)
 	if img == 0 {
 		return
+	}
+	if a.plugin && atomic.CompareAndSwapInt32(&firstPaintLogged, 0, 1) {
+		lklog("éditeur : première image dessinée")
 	}
 	tr := cls("CATransaction")
 	tr.Send(sel("begin"))
@@ -299,6 +304,7 @@ func (a *macApp) onTick() {
 	if a.autoDetach && a.view != 0 {
 		if a.view.Send(sel("window")) == 0 {
 			if a.noWin++; a.noWin > 180 { // ~3 s sans fenêtre : l'éditeur a été fermé
+				lklog("éditeur : fermé car la vue n'est dans aucune fenêtre depuis 3 s")
 				a.detachEditor()
 				return
 			}
@@ -436,11 +442,14 @@ func (a *macApp) createEditorView() objc.ID {
 	}
 	atomic.StoreInt32(&a.pending, 0)
 	w, h := a.editorSize()
+	lklog("éditeur : taille %d x %d (échelle %.2f)", w, h, a.scale)
 	a.makeView(nsRect{nsPoint{0, 0}, nsSize{float64(w), float64(h)}})
 	if !a.setupGraphics() {
+		lklog("éditeur : les graphiques n'ont pas pu être préparés")
 		a.detachEditor()
 		return 0
 	}
+	lklog("éditeur : graphiques prêts")
 	a.ui.mu.Lock()
 	a.ui.toast = ""
 	a.ui.mu.Unlock()
