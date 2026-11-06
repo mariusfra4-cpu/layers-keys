@@ -20,6 +20,9 @@ import (
 
 var auClassOnce sync.Once
 
+//export lkAULog
+func lkAULog(s *C.char) { lklog("%s", C.GoString(s)) }
+
 //export lkAUPrepareUI
 func lkAUPrepareUI(h C.uintptr_t) {
 	defer recoverPlugin()

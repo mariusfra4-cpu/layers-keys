@@ -252,11 +252,35 @@ static OSStatus au_getprop(void *self, AudioUnitPropertyID id, AudioUnitScope sc
         *(UInt32 *)out = a->maxFrames;
         return noErr;
     case kAudioUnitProperty_CocoaUI: {
+        lkAULog((char *)"AU : le logiciel hôte demande les informations d'interface (CocoaUI)");
         lkAUPrepareUI(a->h); /* enregistre la classe de la vue avant que l'hôte la cherche */
         AudioUnitCocoaViewInfo *info = (AudioUnitCocoaViewInfo *)out;
+        CFURLRef url = NULL;
+        /* 1) le paquet connu par son identifiant ; 2) le chemin réel de cette bibliothèque (certains hôtes, dont Logic,
+              chargent le plugin sans l'enregistrer comme paquet) ; 3) l'emplacement d'installation habituel */
         CFBundleRef b = CFBundleGetBundleWithIdentifier(CFSTR(BUNDLE_ID));
-        if (!b) return kAudioUnitErr_InvalidProperty;
-        info->mCocoaAUViewBundleLocation = CFBundleCopyBundleURL(b);
+        if (b) url = CFBundleCopyBundleURL(b);
+        if (!url) {
+            Dl_info di;
+            if (dladdr((void *)&lk_pin_library, &di) && di.dli_fname) {
+                char path[1024];
+                strncpy(path, di.dli_fname, sizeof(path) - 1);
+                path[sizeof(path) - 1] = 0;
+                for (int i = 0; i < 3; i++) { /* .../X.component/Contents/MacOS/X -> .../X.component */
+                    char *s = strrchr(path, '/');
+                    if (!s) break;
+                    *s = 0;
+                }
+                url = CFURLCreateFromFileSystemRepresentation(NULL, (const UInt8 *)path, (CFIndex)strlen(path), true);
+                lkAULog((char *)"AU : paquet retrouvé par le chemin de la bibliothèque");
+            }
+        }
+        if (!url) {
+            const char *p = "/Library/Audio/Plug-Ins/Components/LayersKeys.component";
+            url = CFURLCreateFromFileSystemRepresentation(NULL, (const UInt8 *)p, (CFIndex)strlen(p), true);
+            lkAULog((char *)"AU : paquet supposé à l'emplacement habituel");
+        }
+        info->mCocoaAUViewBundleLocation = url;
         info->mCocoaAUViewClass[0] = CFStringCreateCopy(NULL, CFSTR("LKAUViewFactory"));
         return noErr;
     }
