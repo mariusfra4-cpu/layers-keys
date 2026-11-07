@@ -388,8 +388,13 @@ func (u *UI) loadSource(i int, sc SrcCfg) {
 		u.loading[i] = true
 		u.mu.Unlock()
 		go func() {
-			gcPauseBegin()
-			defer gcPauseEnd()
+			t0 := time.Now()
+			startDiag(u.eng)
+			atomic.AddInt32(&loadsNow, 1)
+			defer func() {
+				atomic.AddInt32(&loadsNow, -1)
+				lklog("chargement du son « %s » terminé en %d ms", filepath.Base(sc.File), time.Since(t0).Milliseconds())
+			}()
 			var src Source
 			var name, cat string
 			var err error

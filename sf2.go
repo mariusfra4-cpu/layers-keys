@@ -68,6 +68,9 @@ type SF2 struct {
 
 	mu    sync.Mutex
 	cache map[int][]int16
+
+	mapOnce sync.Once
+	mm      []byte // fichier projeté en mémoire (voir sf2map.go), nil si indisponible
 }
 
 type PresetInfo struct {
@@ -358,6 +361,13 @@ func (s *SF2) sampleData(id int) ([]int16, error) {
 	if start+n > total {
 		n = total - start
 	}
+	// projection mémoire : aucune copie, le système lit le disque à la demande
+	if d := s.viewData(s.smplOff+start*2, n); d != nil {
+		s.mu.Lock()
+		s.cache[id] = d
+		s.mu.Unlock()
+		return d, nil
+	}
 	// lecture directe dans le tableau final : pas de copie ni de conversion (le SF2 et le PC sont en little-endian)
 	d := make([]int16, n)
 	raw := unsafe.Slice((*byte)(unsafe.Pointer(&d[0])), len(d)*2)
@@ -514,6 +524,13 @@ func (s *SF2) preload(ids []int) {
 	}
 	s.mu.Unlock()
 	if len(todo) < 2 {
+		return
+	}
+	if s.view() != nil { // projection mémoire : rien à copier, on prépare seulement les pages (en douceur)
+		for _, id := range todo {
+			_, _ = s.sampleData(id)
+		}
+		s.touch(todo)
 		return
 	}
 	// on laisse des cœurs libres au son (et à l'hôte, ex. Ableton) pendant le chargement :

@@ -155,7 +155,9 @@ type Engine struct {
 	Player      *Player
 	cpuBits     uint64 // charge moyenne du calcul audio (0..1, en 64 bits)
 	cpuPeak     uint64
-	voiceLimit  int32 // nombre maximal de notes en même temps (baisse toute seule si le PC est surchargé)
+	slowN       int64  // blocs audio dont le calcul a pris plus de 70 % du temps disponible (diagnostic)
+	slowMax     uint64 // pire bloc (en millièmes du temps disponible)
+	voiceLimit  int32  // nombre maximal de notes en même temps (baisse toute seule si le PC est surchargé)
 	calm        int
 	liveCount   int32
 	fxp         [nCh]unsafe.Pointer // *FXCfg par piste : réglages des effets (lus par le thread audio)
@@ -937,6 +939,12 @@ func (e *Engine) Rate() int { return int(SR) }
 func (e *Engine) measure(t0 time.Time, frames int) {
 	budget := float64(frames) / SR
 	r := time.Since(t0).Seconds() / budget
+	if r > 0.7 { // diagnostic : bloc lent, relevé sans rien écrire depuis le thread audio
+		atomic.AddInt64(&e.slowN, 1)
+		if m := uint64(r * 1000); m > atomic.LoadUint64(&e.slowMax) {
+			atomic.StoreUint64(&e.slowMax, m)
+		}
+	}
 	old := math.Float64frombits(atomic.LoadUint64(&e.cpuBits))
 	avg := old*0.97 + r*0.03
 	atomic.StoreUint64(&e.cpuBits, math.Float64bits(avg))
