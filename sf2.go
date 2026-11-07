@@ -15,6 +15,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 	"unsafe"
 
 	"minipiano/oggvorbis"
@@ -515,12 +516,14 @@ func (s *SF2) preload(ids []int) {
 	if len(todo) < 2 {
 		return
 	}
-	n := runtime.NumCPU()
-	if n > 8 {
-		n = 8
+	// on laisse des cœurs libres au son (et à l'hôte, ex. Ableton) pendant le chargement :
+	// moitié des cœurs au plus, 4 maximum
+	n := runtime.NumCPU() / 2
+	if n > 4 {
+		n = 4
 	}
-	if n < 2 {
-		n = 2
+	if n < 1 {
+		n = 1
 	}
 	if n > len(todo) {
 		n = len(todo)
@@ -536,6 +539,7 @@ func (s *SF2) preload(ids []int) {
 					defer func() { recover() }() // un échantillon abîmé ne bloque pas le chargement
 					_, _ = s.sampleData(id)
 				}()
+				time.Sleep(300 * time.Microsecond) // courte pause : le son passe en priorité
 			}
 		}()
 	}
