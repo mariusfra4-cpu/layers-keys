@@ -1,3 +1,5 @@
+//go:build !windows
+
 package main
 
 // Couche Android de Layers Keys (sans cgo, donc testable sous Linux).

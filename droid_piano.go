@@ -1,3 +1,5 @@
+//go:build !windows
+
 package main
 
 // Piano tactile (Android) : grosses touches faites pour les doigts, plusieurs doigts à la fois,
