@@ -388,6 +388,8 @@ func (u *UI) loadSource(i int, sc SrcCfg) {
 		u.loading[i] = true
 		u.mu.Unlock()
 		go func() {
+			gcPauseBegin()
+			defer gcPauseEnd()
 			var src Source
 			var name, cat string
 			var err error
