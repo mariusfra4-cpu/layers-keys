@@ -1,3 +1,4 @@
 installer/payload/
 android-app/build/
 android-app/build_test/
+dist/
