@@ -10,9 +10,9 @@ for a in amd64 386; do
 done
 # plugin VST3 : compilé depuis une copie sans l'icône (.syso) qui fait planter l'éditeur de liens
 rm -rf /tmp/vstbuild && mkdir /tmp/vstbuild
-tar --exclude=dist --exclude='*.syso' --exclude=installer --exclude='*_test.go' -cf - . | tar -xf - -C /tmp/vstbuild
+tar --exclude=.git --exclude=dist --exclude='*.syso' --exclude=installer --exclude='*_test.go' -cf - . | tar -xf - -C /tmp/vstbuild
 (cd /tmp/vstbuild && PATH=$TC:$PATH CGO_ENABLED=1 CC=x86_64-w64-mingw32-gcc GOOS=windows GOARCH=amd64 \
-  go build -tags vst3 -buildmode=c-shared -trimpath -ldflags "-s -w" -o "$OLDPWD/dist/LayersKeys.vst3" .)
+  go build -buildvcs=false -tags vst3 -buildmode=c-shared -trimpath -ldflags "-s -w" -o "$OLDPWD/dist/LayersKeys.vst3" .)
 rm -f dist/LayersKeys.h
 cp dist/LayersKeys64.exe dist/LayersKeys32.exe dist/LayersKeys.vst3 installer/payload/
 rm -f installer/payload/LayersKeys_vst3.dll
