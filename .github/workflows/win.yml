@@ -15,7 +15,19 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path C:\lklogs | Out-Null
-          for ($i = 1; $i -le 4 -and -not (Test-Path "C:\Program Files (x86)\NSIS\makensis.exe"); $i++) {
+          if (-not (Test-Path "C:\Program Files (x86)\NSIS\makensis.exe")) {
+            foreach ($u in @("https://downloads.sourceforge.net/project/nsis/NSIS%203/3.10/nsis-3.10.zip", "https://prdownloads.sourceforge.net/nsis/nsis-3.10.zip?download")) {
+              try {
+                Invoke-WebRequest -Uri $u -OutFile C:\nsis.zip -MaximumRedirection 10 -UserAgent "Mozilla/5.0" -TimeoutSec 120
+                Expand-Archive C:\nsis.zip -DestinationPath C:\nsisx -Force
+                $d = Get-ChildItem C:\nsisx -Directory | Select-Object -First 1
+                New-Item -ItemType Directory -Force -Path "C:\Program Files (x86)" | Out-Null
+                Move-Item $d.FullName "C:\Program Files (x86)\NSIS" -Force
+                break
+              } catch { "telechargement direct : $_" | Tee-Object -Append C:\lklogs\00_choco.txt }
+            }
+          }
+          for ($i = 1; $i -le 3 -and -not (Test-Path "C:\Program Files (x86)\NSIS\makensis.exe"); $i++) {
             choco install nsis -y --no-progress --force 2>&1 | Tee-Object -Append C:\lklogs\00_choco.txt
             if (-not (Test-Path "C:\Program Files (x86)\NSIS\makensis.exe")) { Start-Sleep -Seconds (15 * $i) }
           }
