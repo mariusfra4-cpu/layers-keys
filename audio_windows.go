@@ -269,7 +269,12 @@ func startWASAPI(e *Engine, devName string, rate, bufFrames int, exclusive bool)
 			return com(c, 3, args...)
 		}
 		// partagé : Windows convertit si besoin la fréquence de la carte
-		return com(c, 3, 0, 0x00040000|0x80000000|0x08000000, 0, 0, 0, 0, ptr(&wf), 0)
+		// tampon confortable de 40 ms : une petite pause de Windows ou du programme ne coupe plus le son
+		args := []uintptr{0, 0x00040000 | 0x80000000 | 0x08000000}
+		args = append(args, i64args(400000)...)
+		args = append(args, i64args(0)...)
+		args = append(args, ptr(&wf), 0)
+		return com(c, 3, args...)
 	}
 	client, err := activate()
 	if err != nil {
@@ -278,7 +283,7 @@ func startWASAPI(e *Engine, devName string, rate, bufFrames int, exclusive bool)
 	dur := int64(0)
 	if exclusive {
 		if bufFrames < 32 {
-			bufFrames = 128
+			bufFrames = 256 // 5 ms : marge sûre avec 8 pistes actives
 		}
 		dur = int64(bufFrames) * 10000000 / int64(rate)
 	}
@@ -343,6 +348,8 @@ func (w *wasapiOut) loop(e *Engine, exclusive bool) {
 	defer close(w.done)
 	boostThread()
 	call(pCoInitializeEx, 0, 0)
+	warm := make([]int16, 512) // préchauffage : alloue les tampons avant le premier vrai bloc
+	e.Render(warm)
 	for atomic.LoadInt32(&w.stop) == 0 {
 		if r := call(pWaitForSingleObject, w.event, 1000); r != 0 {
 			continue
@@ -365,7 +372,14 @@ func (w *wasapiOut) loop(e *Engine, exclusive bool) {
 		if com(w.render, 3, uintptr(n), ptr(&p)) != 0 || p == 0 {
 			continue
 		}
-		e.Render(goInt16s(p, int(n)*2))
+		buf := goInt16s(p, int(n)*2)
+		for off := 0; off < len(buf); off += 512 { // morceaux de 256 images : durée de calcul régulière
+			end := off + 512
+			if end > len(buf) {
+				end = len(buf)
+			}
+			e.Render(buf[off:end])
+		}
 		com(w.render, 4, uintptr(n), 0)
 	}
 }
