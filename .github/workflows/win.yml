@@ -15,7 +15,10 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path C:\lklogs | Out-Null
-          if (-not (Test-Path "C:\Program Files (x86)\NSIS\makensis.exe")) { choco install nsis -y --no-progress | Out-Null }
+          for ($i = 1; $i -le 4 -and -not (Test-Path "C:\Program Files (x86)\NSIS\makensis.exe"); $i++) {
+            choco install nsis -y --no-progress --force 2>&1 | Tee-Object -Append C:\lklogs\00_choco.txt
+            if (-not (Test-Path "C:\Program Files (x86)\NSIS\makensis.exe")) { Start-Sleep -Seconds (15 * $i) }
+          }
           $env:Path += ";C:\Program Files (x86)\NSIS"
           makensis /VERSION | Tee-Object C:\lklogs\01_nsis_version.txt
       - name: Construction
