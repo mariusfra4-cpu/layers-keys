@@ -11,6 +11,7 @@
 #import <AudioToolbox/AudioToolbox.h>
 #import <AudioUnit/AUCocoaUIView.h>
 #include <stdio.h>
+#include <math.h>
 
 static int fails = 0;
 #define CHECK(cond, ...) do { if (cond) { printf("OK    "); } else { printf("ÉCHEC "); fails++; } printf(__VA_ARGS__); printf("\n"); fflush(stdout); } while (0)
@@ -36,7 +37,7 @@ static NSView *openEditor(AudioUnit au, NSWindow **outWin) {
     Class c = [b classNamed:clsName] ?: NSClassFromString(clsName);
     CHECK(c != nil, "classe de l'interface trouvée");
     if (!c) return nil;
-    id<AUCocoaUIBase> factory = [[c alloc] init];
+    NSObject<AUCocoaUIBase> *factory = [[c alloc] init];
     CHECK([factory respondsToSelector:@selector(uiViewForAudioUnit:withSize:)], "la fabrique répond à uiViewForAudioUnit:withSize:");
     NSView *v = [factory uiViewForAudioUnit:au withSize:NSMakeSize(800, 600)];
     CHECK(v != nil && v.frame.size.width > 100 && v.frame.size.height > 100, "vue de l'éditeur créée (%.0f x %.0f)", v.frame.size.width, v.frame.size.height);
