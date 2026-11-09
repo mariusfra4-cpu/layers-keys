@@ -9,7 +9,7 @@
 
 #import <AppKit/AppKit.h>
 #import <AudioToolbox/AudioToolbox.h>
-#import <CoreAudioKit/AUCocoaUIView.h>
+#import <AudioUnit/AUCocoaUIView.h>
 #include <stdio.h>
 
 static int fails = 0;
