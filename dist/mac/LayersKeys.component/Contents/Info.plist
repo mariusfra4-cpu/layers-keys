@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleName</key><string>Layers Keys</string>
+	<key>CFBundleDisplayName</key><string>Layers Keys</string>
+	<key>CFBundleIdentifier</key><string>com.jbpraise.layerskeys.component</string>
+	<key>CFBundleExecutable</key><string>LayersKeys</string>
+	<key>CFBundlePackageType</key><string>BNDL</string>
+	<key>CFBundleSignature</key><string>????</string>
+	<key>CFBundleVersion</key><string>1.0.2</string>
+	<key>CFBundleShortVersionString</key><string>1.0.2</string>
+	<key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
+	<key>NSHighResolutionCapable</key><true/>
+	<key>AudioComponents</key>
+	<array>
+		<dict>
+			<key>type</key><string>aumu</string>
+			<key>subtype</key><string>Lkys</string>
+			<key>manufacturer</key><string>JBPr</string>
+			<key>name</key><string>JB Praise: Layers Keys</string>
+			<key>description</key><string>Layers Keys, instrument en couches pour musicien d'église</string>
+			<key>version</key><integer>65538</integer>
+			<key>factoryFunction</key><string>LayersKeysAUFactory</string>
+			<key>sandboxSafe</key><true/>
+			<key>tags</key>
+			<array><string>Synthesizer</string></array>
+		</dict>
+	</array>
+</dict>
+</plist>
