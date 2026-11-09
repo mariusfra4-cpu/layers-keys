@@ -412,8 +412,11 @@ func (a *macApp) makeView(frame nsRect) {
 	layer.Send(sel("setOpaque:"), true)
 	a.view, a.layer = view, layer
 	macApps.Store(view, a)
-	a.timer = cls("NSTimer").Send(sel("scheduledTimerWithTimeInterval:target:selector:userInfo:repeats:"),
+	// minuterie ajoutée aux modes « communs » de la boucle principale : elle continue de tourner quand le logiciel hôte
+	// (Logic…) est dans un menu, un glisser-déposer ou un déplacement de fenêtre ; sinon l'interface se figerait
+	a.timer = cls("NSTimer").Send(sel("timerWithTimeInterval:target:selector:userInfo:repeats:"),
 		1.0/60, view, sel("tick:"), objc.ID(0), true)
+	cls("NSRunLoop").Send(sel("mainRunLoop")).Send(sel("addTimer:forMode:"), a.timer, nsString("kCFRunLoopCommonModes"))
 }
 
 // ---- éditeur de plugin : la vue vit dans la fenêtre du DAW

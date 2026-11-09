@@ -12,6 +12,7 @@
 #include "_cgo_export.h"
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdatomic.h>
 
 /* Une bibliothèque Go ne peut pas être déchargée : si le logiciel hôte tente un dlclose, tout planterait.
    On demande donc au système de la garder en mémoire (RTLD_NODELETE). */
@@ -37,6 +38,10 @@ static void tr(const char *fmt, ...) {
 #define LK_SUBTYPE FOURCC('L', 'k', 'y', 's')
 #define LK_MANUF FOURCC('J', 'B', 'P', 'r')
 
+#define LK_MQ 1024        /* taille de la file MIDI (puissance de 2) */
+#define LK_GRAIN 16       /* les notes sont placées au 16e d'échantillon près (0,4 ms) : assez précis, peu de découpage */
+#define LK_TAIL_SEC 10.0  /* le son continue jusqu'à 10 s après la dernière note (relâchement, réverbération, delay) */
+
 typedef struct LKAU {
     AudioComponentPlugInInterface iface; /* doit rester en premier */
     AudioComponentInstance ci;
@@ -48,6 +53,10 @@ typedef struct LKAU {
     UInt32 sn;
     struct { AudioUnitPropertyID id; AudioUnitPropertyListenerProc proc; void *ud; } ls[32];
     int nls;
+    /* file des notes MIDI reçues avant le prochain bloc de son, avec leur position dans le bloc
+       (Logic envoie les notes en avance avec un décalage : on les joue à l'échantillon près) */
+    struct { uint8_t st, d1, d2; UInt32 off; } mq[LK_MQ];
+    _Atomic uint32_t mqw, mqr;
 } LKAU;
 
 /* ---- table instance système -> instance Go (pour la fenêtre de l'éditeur) */
@@ -239,8 +248,10 @@ static OSStatus au_getprop(void *self, AudioUnitPropertyID id, AudioUnitScope sc
         *(Float64 *)out = a->rate;
         return noErr;
     case kAudioUnitProperty_Latency:
-    case kAudioUnitProperty_TailTime:
         *(Float64 *)out = 0.0;
+        return noErr;
+    case kAudioUnitProperty_TailTime:
+        *(Float64 *)out = LK_TAIL_SEC;
         return noErr;
     case kAudioUnitProperty_SupportedNumChannels: {
         AUChannelInfo *ci = (AUChannelInfo *)out;
@@ -400,15 +411,41 @@ static OSStatus au_render(void *self, AudioUnitRenderActionFlags *flags, const A
         io->mBuffers[i].mDataByteSize = n * sizeof(float);
         io->mBuffers[i].mNumberChannels = 1;
     }
-    lkProcess(a->h, (float *)io->mBuffers[0].mData, (float *)io->mBuffers[1].mData, (int)n);
+    float *L = (float *)io->mBuffers[0].mData, *R = (float *)io->mBuffers[1].mData;
+    /* les notes en attente découpent le bloc : son jusqu'à la position de la note, la note, puis la suite */
+    uint32_t w = atomic_load_explicit(&a->mqw, memory_order_acquire);
+    uint32_t r = atomic_load_explicit(&a->mqr, memory_order_relaxed);
+    UInt32 pos = 0;
+    for (; r != w; r++) {
+        UInt32 off = a->mq[r & (LK_MQ - 1)].off;
+        if (off >= n) off = n ? n - 1 : 0;
+        off -= off % LK_GRAIN;
+        if (off > pos) {
+            lkProcess(a->h, L + pos, R + pos, (int)(off - pos));
+            pos = off;
+        }
+        lkMidi(a->h, a->mq[r & (LK_MQ - 1)].st, a->mq[r & (LK_MQ - 1)].d1, a->mq[r & (LK_MQ - 1)].d2);
+    }
+    atomic_store_explicit(&a->mqr, r, memory_order_release);
+    if (pos < n) lkProcess(a->h, L + pos, R + pos, (int)(n - pos));
     return noErr;
 }
 
 /* ---- MIDI (instrument) */
 static OSStatus au_midi(void *self, UInt32 status, UInt32 d1, UInt32 d2, UInt32 offset) {
-    tr("midi %x %u %u", (unsigned)status, (unsigned)d1, (unsigned)d2);
-    (void)offset;
-    lkMidi(((LKAU *)self)->h, (int)(status & 0xFF), (int)(d1 & 0x7F), (int)(d2 & 0x7F));
+    LKAU *a = (LKAU *)self;
+    tr("midi %x %u %u off=%u", (unsigned)status, (unsigned)d1, (unsigned)d2, (unsigned)offset);
+    uint32_t w = atomic_load_explicit(&a->mqw, memory_order_relaxed);
+    uint32_t r = atomic_load_explicit(&a->mqr, memory_order_acquire);
+    if (!a->initialized || w - r >= LK_MQ) { /* pas de son en cours ou file pleine : la note est jouée tout de suite */
+        lkMidi(a->h, (int)(status & 0xFF), (int)(d1 & 0x7F), (int)(d2 & 0x7F));
+        return noErr;
+    }
+    a->mq[w & (LK_MQ - 1)].st = (uint8_t)(status & 0xFF);
+    a->mq[w & (LK_MQ - 1)].d1 = (uint8_t)(d1 & 0x7F);
+    a->mq[w & (LK_MQ - 1)].d2 = (uint8_t)(d2 & 0x7F);
+    a->mq[w & (LK_MQ - 1)].off = offset;
+    atomic_store_explicit(&a->mqw, w + 1, memory_order_release);
     return noErr;
 }
 static OSStatus au_sysex(void *self, const UInt8 *data, UInt32 len) { (void)self; (void)data; (void)len; return noErr; }

@@ -1,6 +1,16 @@
 #!/bin/bash
 # Enlève la quarantaine puis demande à macOS de relire la liste des Audio Units.
 [ -e "/Library/Audio/Plug-Ins/Components/LayersKeys.component" ] && xattr -cr "/Library/Audio/Plug-Ins/Components/LayersKeys.component" 2>/dev/null
+# Une ancienne copie installée à la main dans le dossier de l'utilisateur passerait avant celle-ci dans Logic : on la retire,
+# ainsi que le cache des Audio Units, pour que Logic / GarageBand voient tout de suite la nouvelle version.
+U=$(stat -f%Su /dev/console 2>/dev/null)
+if [ -n "$U" ] && [ "$U" != root ]; then
+  H=$(dscl . -read "/Users/$U" NFSHomeDirectory 2>/dev/null | awk '{print $2}')
+  if [ -n "$H" ] && [ -d "$H" ]; then
+    rm -rf "$H/Library/Audio/Plug-Ins/Components/LayersKeys.component" 2>/dev/null
+    rm -rf "$H/Library/Caches/AudioUnitCache" 2>/dev/null
+  fi
+fi
 killall -9 AudioComponentRegistrar 2>/dev/null
 # dossier commun de la licence (partagé par l'application, le VST3 et l'AU)
 mkdir -p "/Library/Application Support/JB Praise/Layers Keys" 2>/dev/null

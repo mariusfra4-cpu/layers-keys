@@ -45,5 +45,17 @@ LIMITES DE CETTE VERSION (honnêtement)
   - Pas encore signé ni « notarisé » par Apple (d'où l'étape clic droit → Ouvrir).
   - Sur écran Retina l'interface est affichée en taille standard (un peu moins nette).
 
+LOGIC PRO (Audio Unit)
+  - Installe avec le fichier .pkg (choix « Plugin Audio Unit ») : il se place dans
+    /Library/Audio/Plug-Ins/Components.
+  - Dans Logic : nouvelle piste « Instrument logiciel », emplacement Instrument >
+    AU Instruments > JB Praise > Layers Keys.
+  - Si Logic ne le montre pas ou le dit « échec de validation » : Logic Pro > Réglages >
+    Gestionnaire de plug-ins, sélectionne « Layers Keys », bouton « Réinitialiser et
+    analyser la sélection », puis coche « Utiliser ».
+  - Une seule copie : s'il en reste une ancienne dans ~/Bibliothèque/Audio/Plug-Ins/Components,
+    supprime-la (l'installateur .pkg le fait pour toi).
+  - En cas de souci, envoie le fichier ~/Bibliothèque/Logs/LayersKeys.log.
+
 RÉGLAGES ET PROJETS
   Les réglages sont dans  ~/Bibliothèque/Application Support/LayersKeys/

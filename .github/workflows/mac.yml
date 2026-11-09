@@ -66,6 +66,22 @@ jobs:
           arch -x86_64 auval -v aumu Lkys JBPr >> /tmp/lklogs/05d_auval_intel.txt 2>&1
           echo "auval Intel EXIT=$?" >> /tmp/lklogs/05d_auval_intel.txt
           tail -12 /tmp/lklogs/05d_auval_intel.txt
+      - name: Test « comme Logic » de l'Audio Unit (notes décalées, état du projet, fenêtre du plugin)
+        continue-on-error: true
+        run: |
+          set +e
+          clang -fobjc-arc -arch arm64 -arch x86_64 tools/au_logic_test.m -o /tmp/au_logic_test \
+            -framework AudioToolbox -framework AppKit -framework CoreAudioKit 2>&1 | tee /tmp/lklogs/05e_logic_test.txt
+          killall -9 AudioComponentRegistrar 2>/dev/null || true
+          sleep 3
+          echo "=== Apple Silicon" >> /tmp/lklogs/05e_logic_test.txt
+          /tmp/au_logic_test >> /tmp/lklogs/05e_logic_test.txt 2>&1; A=$?
+          echo "=== Intel (Rosetta)" >> /tmp/lklogs/05e_logic_test.txt
+          arch -x86_64 /tmp/au_logic_test >> /tmp/lklogs/05e_logic_test.txt 2>&1; I=$?
+          echo "EXIT arm64=$A x86_64=$I" >> /tmp/lklogs/05e_logic_test.txt
+          cp ~/Library/Logs/LayersKeys.log /tmp/lklogs/05f_journal_plugin.txt 2>/dev/null || true
+          cat /tmp/lklogs/05e_logic_test.txt
+          [ $A -eq 0 ] && [ $I -eq 0 ]
       - name: Test de démarrage du plugin VST3 (chargement + fabrique)
         continue-on-error: true
         run: |
