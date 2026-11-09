@@ -34,9 +34,15 @@ static NSView *openEditor(AudioUnit au, NSWindow **outWin) {
     printf("      paquet : %s  classe : %s\n", url.path.UTF8String, clsName.UTF8String);
     NSBundle *b = [NSBundle bundleWithURL:url];
     CHECK(b != nil, "paquet de l'interface trouvé");
-    Class c = [b classNamed:clsName] ?: NSClassFromString(clsName);
-    CHECK(c != nil, "classe de l'interface trouvée");
+    /* exactement comme Logic, GarageBand et FL Studio : la classe doit être DANS le paquet (aucune recherche ailleurs) */
+    [b load];
+    Class c = [b classNamed:clsName];
+    CHECK(c != nil, "classe de l'interface trouvée dans le paquet du plugin (comme Logic / FL Studio)");
     if (!c) return nil;
+    NSBundle *owner = [NSBundle bundleForClass:c];
+    CHECK([owner.bundleURL.path.stringByStandardizingPath isEqualToString:url.path.stringByStandardizingPath],
+          "la classe appartient bien au paquet du plugin (%s)", owner.bundlePath.UTF8String);
+    CHECK([c conformsToProtocol:@protocol(AUCocoaUIBase)], "la classe déclare le protocole AUCocoaUIBase");
     NSObject<AUCocoaUIBase> *factory = [[c alloc] init];
     CHECK([factory respondsToSelector:@selector(uiViewForAudioUnit:withSize:)], "la fabrique répond à uiViewForAudioUnit:withSize:");
     NSView *v = [factory uiViewForAudioUnit:au withSize:NSMakeSize(800, 600)];
@@ -153,6 +159,28 @@ int main(void) {
             if (v) {
                 for (int i = 0; i < 30; i++) { render(au, 512, 1, NULL); spin(0.02); }
                 CHECK(v.window == win, "ouverture %d : la vue est dans la fenêtre", round);
+                CHECK(v.layer != nil && v.layer.contents != nil, "ouverture %d : l'interface est dessinée (image présente)", round);
+                /* l'image doit continuer d'être redessinée (minuterie en marche) : on compare deux images successives */
+                id img1 = v.layer.contents;
+                spin(0.5);
+                CHECK(v.layer.contents != nil, "ouverture %d : l'interface est toujours dessinée après 0,5 s", round);
+                (void)img1;
+                /* vrais clics de souris dans la fenêtre, sur le clavier du bas (joue des notes) : l'interface doit répondre */
+                NSDate *t0 = [NSDate date];
+                for (int k = 0; k < 6; k++) {
+                    NSPoint p = NSMakePoint(v.frame.size.width * (0.3 + 0.08 * k), v.frame.size.height * 0.14);
+                    NSEvent *dn = [NSEvent mouseEventWithType:NSEventTypeLeftMouseDown location:p modifierFlags:0 timestamp:0
+                                                 windowNumber:win.windowNumber context:nil eventNumber:k clickCount:1 pressure:1];
+                    NSEvent *up = [NSEvent mouseEventWithType:NSEventTypeLeftMouseUp location:p modifierFlags:0 timestamp:0
+                                                 windowNumber:win.windowNumber context:nil eventNumber:k clickCount:1 pressure:0];
+                    [win sendEvent:dn];
+                    render(au, 512, 1, NULL);
+                    spin(0.05);
+                    [win sendEvent:up];
+                    spin(0.05);
+                }
+                double dt = -[t0 timeIntervalSinceNow];
+                CHECK(dt < 5.0, "ouverture %d : 6 clics traités sans blocage (%.2f s)", round, dt);
                 [win close];
                 win = nil;
                 v = nil;

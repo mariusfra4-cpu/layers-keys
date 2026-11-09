@@ -264,7 +264,7 @@ static OSStatus au_getprop(void *self, AudioUnitPropertyID id, AudioUnitScope sc
         return noErr;
     case kAudioUnitProperty_CocoaUI: {
         lkAULog((char *)"AU : le logiciel hôte demande les informations d'interface (CocoaUI)");
-        lkAUPrepareUI(a->h); /* enregistre la classe de la vue avant que l'hôte la cherche */
+        lkAUPrepareUI(a->h); /* prépare Cocoa ; la classe de la vue est dans au_view_darwin.m */
         AudioUnitCocoaViewInfo *info = (AudioUnitCocoaViewInfo *)out;
         CFURLRef url = NULL;
         /* 1) le paquet connu par son identifiant ; 2) le chemin réel de cette bibliothèque (certains hôtes, dont Logic,

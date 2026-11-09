@@ -7,6 +7,10 @@
 set -e
 cd "$(dirname "$0")"
 [ "$(uname)" = Darwin ] || { echo "Ce script doit être lancé sur un Mac."; exit 1; }
+# compatible macOS 11 (Big Sur) et plus récent, même construit sur un Mac plus récent
+export MACOSX_DEPLOYMENT_TARGET=11.0
+export CGO_CFLAGS="${CGO_CFLAGS:--O2} -mmacosx-version-min=11.0"
+export CGO_LDFLAGS="${CGO_LDFLAGS} -mmacosx-version-min=11.0"
 OUT=dist/mac
 PLUG="$OUT/LayersKeys.component"
 rm -rf "$PLUG" "$OUT/au" && mkdir -p "$PLUG/Contents/MacOS" "$OUT/au"

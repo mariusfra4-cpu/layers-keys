@@ -40,7 +40,14 @@ jobs:
       - name: Plugin VST3 Mac
         run: ./build_mac_vst3.sh 2>&1 | tee /tmp/lklogs/03_vst3.txt | tail -30
       - name: Plugin Audio Unit Mac
-        run: ./build_mac_au.sh 2>&1 | tee /tmp/lklogs/04_au.txt | tail -60
+        run: |
+          ./build_mac_au.sh 2>&1 | tee /tmp/lklogs/04_au.txt | tail -60
+          B=dist/mac/LayersKeys.component/Contents/MacOS/LayersKeys
+          # la classe de l'interface doit être écrite DANS le plugin (sinon Logic / FL Studio affichent leur fenêtre grise)
+          nm -arch x86_64 "$B" | grep 'OBJC_CLASS_\$_LKAUViewFactory' | tee -a /tmp/lklogs/04_au.txt
+          nm -arch arm64 "$B" | grep 'OBJC_CLASS_\$_LKAUViewFactory' | tee -a /tmp/lklogs/04_au.txt
+          # version minimale de macOS de chaque partie (doit être 11.0)
+          (vtool -show-build "$B" 2>/dev/null || otool -l "$B" | grep -A4 LC_BUILD_VERSION) | grep -iE 'architecture|minos' | tee -a /tmp/lklogs/04_au.txt
       - name: Test officiel Apple de l'Audio Unit (auval)
         continue-on-error: true
         run: |
@@ -78,10 +85,11 @@ jobs:
             -framework AudioToolbox -framework AppKit -framework CoreAudioKit 2>&1 | tee /tmp/lklogs/05e_logic_test.txt
           killall -9 AudioComponentRegistrar 2>/dev/null || true
           sleep 3
-          echo "=== Apple Silicon" >> /tmp/lklogs/05e_logic_test.txt
-          /tmp/au_logic_test >> /tmp/lklogs/05e_logic_test.txt 2>&1; A=$?
-          echo "=== Intel (Rosetta)" >> /tmp/lklogs/05e_logic_test.txt
-          arch -x86_64 /tmp/au_logic_test >> /tmp/lklogs/05e_logic_test.txt 2>&1; I=$?
+          echo "=== natif ($(uname -m))" >> /tmp/lklogs/05e_logic_test.txt
+          # perl alarm : si l'interface se bloque, le test est arrêté au bout de 120 s (au lieu de bloquer la construction)
+          perl -e 'alarm 120; exec @ARGV' /tmp/au_logic_test >> /tmp/lklogs/05e_logic_test.txt 2>&1; A=$?
+          echo "=== x86_64 (Intel, ou Rosetta sur Apple Silicon)" >> /tmp/lklogs/05e_logic_test.txt
+          perl -e 'alarm 120; exec @ARGV' arch -x86_64 /tmp/au_logic_test >> /tmp/lklogs/05e_logic_test.txt 2>&1; I=$?
           echo "EXIT arm64=$A x86_64=$I" >> /tmp/lklogs/05e_logic_test.txt
           cp ~/Library/Logs/LayersKeys.log /tmp/lklogs/05f_journal_plugin.txt 2>/dev/null || true
           cat /tmp/lklogs/05e_logic_test.txt
