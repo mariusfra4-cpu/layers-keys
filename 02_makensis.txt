@@ -1,0 +1,30 @@
+MakeNSIS v3.13 - Copyright 1999-2026 Contributors
+See the file COPYING for license details.
+Credits can be found in the Users Manual.
+
+Processing config: C:\Program Files (x86)\NSIS\nsisconf.nsh
+Processing script file: "layerskeys.nsi" (UTF8)
+
+Processed 1 file, writing output (x86-unicode):
+
+Output: "D:\a\layers-keys\layers-keys\nsis\Layers-Keys-Setup-1.1.0.exe"
+Install: 5 pages (320 bytes), 2 sections (1 required) (4144 bytes), 803 instructions (22484 bytes), 294 strings (11308 bytes), 1 language table (330 bytes).
+Uninstall: 3 pages (256 bytes), 1 section (2072 bytes), 392 instructions (10976 bytes), 185 strings (7296 bytes), 1 language table (274 bytes).
+Datablock optimizer saved 154546 bytes (~1.2%).
+
+Using lzma (compress whole) compression.
+
+EXE header size:               64512 / 38912 bytes
+Install code:                          (39050 bytes)
+Install data:                          (11929692 bytes)
+Uninstall code+data:                   (254884 bytes)
+Compressed data:             2894108 / 12223626 bytes
+CRC (0x8399989E):                  4 / 4 bytes
+
+Total size:                  2958624 / 12262542 bytes (24.1%)
+
+Name                         Length
+----                         ------
+Layers-Keys-Setup-1.1.0.exe 2958624
+
+

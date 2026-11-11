@@ -1,0 +1,32 @@
+
+7-Zip 26.05 (x64) : Copyright (c) 1999-2026 Igor Pavlov : 2026-10-21
+
+Scanning the drive for archives:
+1 file, 2958624 bytes (2890 KiB)
+
+Listing archive: .\Layers-Keys-Setup-1.1.0.exe
+
+--
+Path = .\Layers-Keys-Setup-1.1.0.exe
+Type = Nsis
+Physical Size = 2958624
+Method = LZMA:23
+Solid = +
+Headers Size = 39022
+Embedded Stub Size = 64512
+SubType = NSIS-3 Unicode
+
+   Date      Time    Attr         Size   Compressed  Name
+------------------- ----- ------------ ------------  ------------------------
+2026-11-11 11:13:38 .....       154542      2894108  $PLUGINSDIR\modern-wizard.bmp
+                    .....         9728               $PLUGINSDIR\nsDialogs.dll
+                    .....        12288               $PLUGINSDIR\System.dll
+2026-11-11 11:13:38 .....        25818               $PLUGINSDIR\modern-header.bmp
+                    .....         7168               $PLUGINSDIR\nsExec.dll
+2026-11-11 11:13:38 .....      4021760               LayersKeys.exe
+2026-11-11 11:13:38 .....      3617792               LayersKeys.exe
+2026-11-11 11:13:38 .....        23984               LayersKeys.ico
+2026-11-11 11:13:38 .....      4056576               $COMMONFILES64\VST3\Layers Keys.vst3\Contents\x86_64-win\Layers Keys.vst3
+                    .....                            Desinstaller.exe
+------------------- ----- ------------ ------------  ------------------------
+2026-11-11 11:13:38           11929656      2894108  10 files

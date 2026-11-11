@@ -1,0 +1,10 @@
+
+ProductName      : Layers Keys
+CompanyName      : JB Praise
+FileDescription  : Installateur de Layers Keys
+FileVersion      : 1.1.0
+ProductVersion   : 1.1.0
+LegalCopyright   : © JB Praise
+OriginalFilename : Layers-Keys-Setup-1.1.0.exe
+
+
