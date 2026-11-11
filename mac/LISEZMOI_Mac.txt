@@ -9,6 +9,9 @@ NOUVEAUTÉS DE LA VERSION 1.1
   - Pads continus : bouton PADS en bas de la fenêtre (ou Paramètres > Pads continus). Choisis un dossier
     avec un pad par tonalité (« C Major », « F#m », « La mineur »…). Le pad suit l'accord que tu tiens,
     ou se choisit à la main avec les 24 boutons ; fondu enchaîné entre deux tonalités.
+  - Split du clavier : bouton ZONE de chaque piste (TOUT / GAUCHE / DROITE) et bouton SPLIT
+    (joue la note où couper). Exemple : ta basse SF2 à gauche, ton piano à droite.
+  - Bibliothèque : colonne BASSE pour ranger tes basses.
 
 CE QUE C'EST
   Le logiciel autonome (« standalone ») : 8 pistes, SF2 / SF3 / WAV / MP3, presets,

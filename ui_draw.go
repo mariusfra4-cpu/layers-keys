@@ -197,6 +197,7 @@ func (u *UI) Draw(c *Canvas) {
 	}
 	u.drawPanel(c)
 	u.drawKeyboard(c)
+	u.drawSplitMarker(c)
 	u.drawFooter(c)
 	u.drawToast(c)
 	u.drawLearnMarks(c)
@@ -450,7 +451,13 @@ func (u *UI) drawRow(c *Canvas, i int) {
 		tc, ic = colText2, 0x5d6b85
 	}
 	drawIcon(c, u.rowIcon(i, empty), float64(x+62), float64(y+rowH/2), 26, ic, 1)
-	c.Text(x+86, y+7, 160, 20, name, fontMdB, tc, 0)
+	nw := 160
+	if z := chanZone(ch.KeyLo, ch.KeyHi); z != zoneAll { // split : petite étiquette bleue GAUCHE / DROITE
+		nw = 104
+		c.RRect(float64(x+194), float64(y+9), 52, 15, 7.5, colBlue, 0.9)
+		c.Text(x+194, y+9, 52, 15, zoneLabel(z), fontXs, colDark, 1)
+	}
+	c.Text(x+86, y+7, nw, 20, name, fontMdB, tc, 0)
 	c.Text(x+86, y+27, 160, 14, cat, fontXs, colText2, 0)
 
 	u.reg(region{r: r, id: fmt.Sprintf("row%d", i),
@@ -560,7 +567,7 @@ func (u *UI) drawPanel(c *Canvas) {
 		k := k
 		col, row := k%4, k/4
 		cx := float64(px + 16 + col*80 + 40)
-		cy := float64(py + 142 + row*82)
+		cy := float64(py + 138 + row*76)
 		u.knob(c, fmt.Sprintf("p%d", k), cx, cy, 20,
 			func() float64 { return ch.P[k] },
 			func(v float64) {
@@ -571,7 +578,7 @@ func (u *UI) drawPanel(c *Canvas) {
 		c.Text(int(cx)-40, int(cy)+40, 80, 14, paramText(k, ch.P[k]), fontSm, colGold, 1)
 	}
 	tw := (panW - 32 - 24) / 4
-	ty := py + 290
+	ty := py + 280
 	u.button(c, "tgPedal", rect{px + 16, ty, tw, 28}, "PÉDALE", ch.Pedal, fontSm, func() {
 		u.eng.SetPedalAware(sel, !ch.Pedal)
 		u.markDirty()
@@ -595,14 +602,14 @@ func (u *UI) drawPanel(c *Canvas) {
 		}
 	})
 	fx := u.fxAt(u.sel)
-	u.button(c, "btnEQ", rect{px + 16, py + 324, tw, 30}, "EQ", fx.EQ.On, fontSm, u.OpenEQ)
+	u.button(c, "btnEQ", rect{px + 16, py + 314, tw, 30}, "EQ", fx.EQ.On, fontSm, u.OpenEQ)
 	fxLbl := "EFFETS"
 	if n := u.fxActiveCount(); n > 0 {
 		fxLbl = fmt.Sprintf("EFFETS·%d", n)
 	}
-	u.button(c, "btnFX", rect{px + 24 + tw, py + 324, tw, 30}, fxLbl, u.fxActiveCount() > 0, fontSm, u.OpenFXWin)
+	u.button(c, "btnFX", rect{px + 24 + tw, py + 314, tw, 30}, fxLbl, u.fxActiveCount() > 0, fontSm, u.OpenFXWin)
 	// Leslie (cabine tournante de l'orgue) : allumé sur cette piste, et vitesse lente / rapide commune à toutes les pistes
-	u.button(c, "tgLeslie", rect{px + 32 + 2*tw, py + 324, tw, 30}, "LESLIE", fx.Leslie.On, fontSm, func() {
+	u.button(c, "tgLeslie", rect{px + 32 + 2*tw, py + 314, tw, 30}, "LESLIE", fx.Leslie.On, fontSm, func() {
 		on := !u.fxAt(sel).Leslie.On
 		u.fxSetAt(sel, func(c *FXCfg) { c.Leslie.On = on })
 		if on {
@@ -613,22 +620,32 @@ func (u *UI) drawPanel(c *Canvas) {
 	if u.eng.LeslieFast() {
 		spd = "RAPIDE"
 	}
-	u.button(c, "lesFast", rect{px + 40 + 3*tw, py + 324, tw, 30}, spd, u.eng.LeslieFast(), fontSm, func() {
+	u.button(c, "lesFast", rect{px + 40 + 3*tw, py + 314, tw, 30}, spd, u.eng.LeslieFast(), fontSm, func() {
 		u.eng.SetLeslieFast(!u.eng.LeslieFast())
 		u.markDirty()
 		if !u.anyLeslie() {
 			u.Toast("Allume d'abord LESLIE sur une piste (par exemple l'orgue).")
 		}
 	})
-	c.Rect(px+16, py+364, panW-32, 1, 0x2b3b57, 1)
-	c.Text(px+16, py+372, 110, 20, "Volume général", fontMd, colText, 0)
-	u.slider(c, "master", px+130, py+372, 160, 20, u.eng.master,
+	// split du clavier : zone de cette piste (TOUT / GAUCHE / DROITE) et note de coupure
+	z := chanZone(ch.KeyLo, ch.KeyHi)
+	u.buttonC(c, "zone", rect{px + 16, py + 350, bw, 26}, T("ZONE")+" : "+T(zoneLabel(z)), z != zoneAll, colBlue, colDark, fontSm, func() {
+		u.cycleZone(sel)
+	})
+	spl := T("SPLIT") + " : " + u.noteName(u.splitNote())
+	if u.splitLearning() {
+		spl = T("JOUE LA NOTE…")
+	}
+	u.buttonC(c, "split", rect{px + 24 + bw, py + 350, bw, 26}, spl, u.splitLearning(), colBlue, colDark, fontSm, u.splitLearnStart)
+	c.Rect(px+16, py+384, panW-32, 1, 0x2b3b57, 1)
+	c.Text(px+16, py+390, 110, 18, "Volume général", fontMd, colText, 0)
+	u.slider(c, "master", px+130, py+390, 160, 18, u.eng.master,
 		func(v float64) { u.eng.SetMaster(v); u.markDirty() }, 0.8)
-	c.Text(px+296, py+372, 40, 20, fmt.Sprintf("%d%%", int(math.Round(u.eng.master*100))), fontSm, colGold, 2)
-	c.Text(px+16, py+394, 110, 20, "Réverbération", fontMd, colText, 0)
-	u.slider(c, "reverb", px+130, py+394, 160, 20, u.eng.revAmt,
+	c.Text(px+296, py+390, 40, 18, fmt.Sprintf("%d%%", int(math.Round(u.eng.master*100))), fontSm, colGold, 2)
+	c.Text(px+16, py+408, 110, 18, "Réverbération", fontMd, colText, 0)
+	u.slider(c, "reverb", px+130, py+408, 160, 18, u.eng.revAmt,
 		func(v float64) { u.eng.SetReverb(v); u.markDirty() }, 0.15)
-	c.Text(px+296, py+394, 40, 20, fmt.Sprintf("%d%%", int(math.Round(u.eng.revAmt*100))), fontSm, colGold, 2)
+	c.Text(px+296, py+408, 40, 18, fmt.Sprintf("%d%%", int(math.Round(u.eng.revAmt*100))), fontSm, colGold, 2)
 }
 
 func (u *UI) drawKeyboard(c *Canvas) {

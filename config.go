@@ -35,6 +35,7 @@ type ChanCfg struct {
 	Filter bool            `json:"filter"`
 	ModFX  bool            `json:"modfx,omitempty"`
 	ATOff  bool            `json:"atoff,omitempty"` // aftertouch désactivé pour cette piste
+	Zone   [2]int          `json:"zone,omitempty"`  // split : plage de notes [basse, haute] ; [0, 0] = tout le clavier
 	P      [nParam]float64 `json:"p"`
 }
 
@@ -125,6 +126,8 @@ func (c *ChanCfg) sanitize() {
 	c.Pan = clampf(c.Pan, -1, 1)
 	c.Oct = clamp(c.Oct, -3, 3)
 	c.Trans = clamp(c.Trans, -12, 12)
+	lo, hi := zoneRange(c.Zone)
+	c.Zone = rangeZone(lo, hi)
 	for i := range c.P {
 		c.P[i] = clampf(c.P[i], 0, 1)
 	}

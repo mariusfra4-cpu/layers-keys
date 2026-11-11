@@ -25,17 +25,18 @@ const (
 	catSynth
 	catPad
 	catStrings
+	catBass
 	catOther
 	nCat
 )
 
-var catNames = [nCat]string{"PIANO", "ORGUE", "SYNTHÉ", "PAD", "STRINGS", "AUTRES"}
+var catNames = [nCat]string{"PIANO", "ORGUE", "SYNTHÉ", "PAD", "STRINGS", "BASSE", "AUTRES"}
 
 // icône représentative de chaque famille (titres des colonnes)
-var catIcons = [nCat]int{icKeys, icOrgan, icWave, icCloud, icStrings, icLayers}
+var catIcons = [nCat]int{icKeys, icOrgan, icWave, icCloud, icStrings, icBass, icLayers}
 
 const (
-	libVersion  = 1
+	libVersion  = 2    // 2 : colonne BASSE ajoutée
 	libMaxFiles = 4000 // garde-fou : un dossier énorme (disque entier) ne doit pas bloquer le logiciel
 	libMaxDepth = 8
 )
@@ -78,7 +79,11 @@ func loadLibrary(path string) *Library {
 	if b, err := os.ReadFile(path); err == nil {
 		var x Library
 		x.Pads = defaultPadCfg()
-		if json.Unmarshal(b, &x) == nil && x.Version == libVersion {
+		if json.Unmarshal(b, &x) == nil && (x.Version == libVersion || x.Version == 1) {
+			if x.Version == 1 { // ancienne liste (sans colonne BASSE) : on range à nouveau chaque son, sans relire le dossier
+				x.relabel()
+				x.Version = libVersion
+			}
 			l = &x
 		}
 	}
@@ -134,6 +139,8 @@ func catFromIcon(ic int) int {
 		return catPad
 	case icStrings:
 		return catStrings
+	case icBass:
+		return catBass
 	}
 	return catOther
 }
@@ -260,6 +267,21 @@ func sortLib(s []LibSound) {
 		}
 		return s[a].File < s[b].File
 	})
+}
+
+// relabel recalcule la famille de chaque son (nom, fichier, dossiers) : sert quand les familles changent
+func (l *Library) relabel() {
+	for i := range l.Sounds {
+		s := &l.Sounds[i]
+		var dirs []string
+		if l.Dir != "" {
+			if rel, err := filepath.Rel(l.Dir, filepath.Dir(s.File)); err == nil && rel != "." && !strings.HasPrefix(rel, "..") {
+				dirs = strings.Split(rel, string(filepath.Separator))
+			}
+		}
+		s.Cat = libCat(s.Name, s.File, s.Kind == "sf2", s.Bank, s.Prog, dirs)
+	}
+	sortLib(l.Sounds)
 }
 
 // byCat : les sons de chaque famille

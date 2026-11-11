@@ -30,6 +30,7 @@ func TestLibraryScanAndCategories(t *testing.T) {
 	mkFile(t, filepath.Join(dir, "Mes Pads", "Warm Worship.wav"), wav) // le dossier dit « pad »
 	mkFile(t, filepath.Join(dir, "Strings Ensemble.wav"), wav)
 	mkFile(t, filepath.Join(dir, "Divers", "bruit.wav"), wav)
+	mkFile(t, filepath.Join(dir, "Basses", "Finger Bass.wav"), wav)
 	mkFile(t, filepath.Join(dir, ".cache", "Piano cache.wav"), wav) // dossier caché : ignoré
 	mkFile(t, filepath.Join(dir, "notes.txt"), []byte("pas un son"))
 	mkFile(t, filepath.Join(dir, "Banques", "test.sf2"), testBank())
@@ -45,7 +46,7 @@ func TestLibraryScanAndCategories(t *testing.T) {
 	}
 	want := map[string]int{
 		"Concert Grand": catPiano, "Rhodes Mk1": catPiano, "Hammond B3 full": catOrgan, "Saw Lead": catSynth,
-		"Warm Worship": catPad, "Strings Ensemble": catStrings, "bruit": catOther,
+		"Warm Worship": catPad, "Strings Ensemble": catStrings, "bruit": catOther, "Finger Bass": catBass,
 		"TestA": catPiano, "Drums": catOther, // presets du SoundFont : numéro General MIDI, banque 128 = batterie
 	}
 	for n, c := range want {
@@ -61,8 +62,8 @@ func TestLibraryScanAndCategories(t *testing.T) {
 	if _, ok := cat["Piano cache"]; ok {
 		t.Error("le dossier caché n'aurait pas dû être lu")
 	}
-	if len(sounds) != 7+8 {
-		t.Errorf("%d sons trouvés (attendu 15 : 7 fichiers + 8 presets)", len(sounds))
+	if len(sounds) != 8+8 {
+		t.Errorf("%d sons trouvés (attendu 16 : 8 fichiers + 8 presets)", len(sounds))
 	}
 	// rangés par famille
 	for i := 1; i < len(sounds); i++ {

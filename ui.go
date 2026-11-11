@@ -119,15 +119,18 @@ type UI struct {
 	loading  [nCh]bool
 	gen      [nCh]int
 
-	srcCfg   [nCh]SrcCfg
-	learn    learnState  // MIDI Learn : associations CC → réglages
-	lastVel  [2]int32    // dernière vélocité reçue du clavier MIDI : avant / après la courbe
-	icons    [nCh]int32  // icône de chaque piste, choisie automatiquement d'après le son
-	labels   [nCh]string // noms des pistes choisis par l'utilisateur
-	sf2s     map[string]*SF2
-	libs     libState // bibliothèque de sons et pads (library.go, pads.go)
-	pads     padUI
-	libTrack int // piste pour laquelle la bibliothèque est ouverte
+	srcCfg     [nCh]SrcCfg
+	learn      learnState  // MIDI Learn : associations CC → réglages
+	lastVel    [2]int32    // dernière vélocité reçue du clavier MIDI : avant / après la courbe
+	icons      [nCh]int32  // icône de chaque piste, choisie automatiquement d'après le son
+	labels     [nCh]string // noms des pistes choisis par l'utilisateur
+	sf2s       map[string]*SF2
+	libs       libState // bibliothèque de sons et pads (library.go, pads.go)
+	pads       padUI
+	libTrack   int   // piste pour laquelle la bibliothèque est ouverte
+	splitLearn int32 // 1 : la prochaine note jouée devient le point de split (atomique)
+	splitGot   int32 // note reçue + 1 (atomique)
+	splitDef   int   // dernier point de split choisi
 
 	namer     ChordNamer
 	mqMu      sync.Mutex
@@ -305,7 +308,8 @@ func (u *UI) snapshot() [nCh]ChanCfg {
 	var s [nCh]ChanCfg
 	for i, ch := range u.eng.ch {
 		s[i] = ChanCfg{Label: u.labels[i], Src: u.srcCfg[i], Vol: ch.Vol, Pan: ch.Pan, Oct: ch.Oct, Trans: ch.Trans,
-			Mute: ch.Mute, Solo: ch.Solo, Hold: ch.Hold, Pedal: ch.Pedal, Filter: ch.Filter, ModFX: ch.ModFX, ATOff: !ch.AT, P: ch.P}
+			Mute: ch.Mute, Solo: ch.Solo, Hold: ch.Hold, Pedal: ch.Pedal, Filter: ch.Filter, ModFX: ch.ModFX, ATOff: !ch.AT, P: ch.P,
+			Zone: rangeZone(ch.KeyLo, ch.KeyHi)}
 	}
 	return s
 }
@@ -322,6 +326,7 @@ func (u *UI) applySetup(s [nCh]ChanCfg) {
 		ch.Mute, ch.Solo = cc.Mute, cc.Solo
 		ch.Filter, ch.ModFX, ch.P = cc.Filter, cc.ModFX, cc.P
 		ch.AT = !cc.ATOff
+		ch.KeyLo, ch.KeyHi = zoneRange(cc.Zone)
 		u.eng.SetHold(i, cc.Hold)
 		u.eng.SetPedalAware(i, cc.Pedal)
 		if u.srcCfg[i] != cc.Src || (cc.Src.Kind != "" && u.eng.ch[i].src == nil && !u.isLoading(i)) {
@@ -920,6 +925,7 @@ func (u *UI) press(tag, note, vel int) {
 	if u.noSound() {
 		u.Toast("Aucun son chargé : double-clique une piste (ou « SON ») pour en ajouter un.")
 	}
+	u.splitCatch(note)
 	u.eng.NoteOn(note, vel, tag)
 	u.counts[note]++
 }
@@ -993,6 +999,7 @@ func (u *UI) MidiFast(msg uint32) {
 			in := d2
 			d2 = u.eng.MapVel(d2) // courbe de vélocité réglée dans les Paramètres
 			u.lastVel[0], u.lastVel[1] = int32(in), int32(d2)
+			u.splitCatch(d1)
 			u.eng.NoteOn(d1, d2, 1000+d1)
 		} else {
 			u.eng.NoteOff(1000 + d1)
@@ -1104,6 +1111,7 @@ func (u *UI) Tick() {
 	}
 	u.updateChord() // (aussi quand rien n'est redessiné : les pads suivent les accords)
 	u.padTick()
+	u.splitTick()
 	if u.dirty && u.now().Sub(u.lastSave) > 1500*time.Millisecond {
 		u.Save()
 	}

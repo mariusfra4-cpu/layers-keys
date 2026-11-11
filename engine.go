@@ -95,6 +95,8 @@ type Channel struct {
 	Filter     bool // filtre passe-bas actif
 	AT         bool // l'aftertouch (pression sur les touches) agit sur cette piste
 	ModFX      bool // la molette de modulation commande l'effet « planant » de cette piste
+	KeyLo      int  // split : notes jouées acceptées par cette piste (avant octave / transposition)
+	KeyHi      int
 	P          [nParam]float64
 
 	peak    float64 // niveau pour le vumètre
@@ -102,7 +104,7 @@ type Channel struct {
 }
 
 func newChannel(i int) *Channel {
-	c := &Channel{idx: i, Pedal: true, Filter: true, AT: true, P: paramDefault, curGain: 1}
+	c := &Channel{idx: i, Pedal: true, Filter: true, AT: true, P: paramDefault, curGain: 1, KeyHi: 127}
 	return c
 }
 
@@ -417,6 +419,9 @@ func (e *Engine) NoteOn(note, vel, tag int) {
 	for _, ch := range e.ch {
 		src, _, _ := e.ChInfo(ch.idx)
 		if src == nil || ch.Mute || (solo && !ch.Solo) || ch.Vol <= -59.9 {
+			continue
+		}
+		if note < ch.KeyLo || note > ch.KeyHi { // split : cette piste ne joue pas sur cette partie du clavier
 			continue
 		}
 		n := note + e.transpose + 12*e.octave + ch.Trans + 12*ch.Oct
