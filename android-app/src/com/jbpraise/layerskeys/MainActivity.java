@@ -16,6 +16,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.DocumentsContract;
 import android.provider.OpenableColumns;
 import android.provider.Settings;
 import android.util.Log;
@@ -32,7 +33,7 @@ import java.util.List;
 
 public class MainActivity extends Activity {
     private static final String TAG = "LayersKeys";
-    private static final int REQ_OPEN = 71, REQ_PERM = 72;
+    private static final int REQ_OPEN = 71, REQ_PERM = 72, REQ_TREE = 73;
     private LkView view;
     private MidiHub midi;
     private boolean running;
@@ -130,6 +131,7 @@ public class MainActivity extends Activity {
     // ---------------------------------------------------------------- fichiers (sons SF2 / WAV / MP3, projets)
 
     private void openFile(String kind) {
+        if (kind.equals("folder") || kind.equals("padfolder")) { openTree(); return; }
         Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         i.addCategory(Intent.CATEGORY_OPENABLE);
         i.setType("*/*");
@@ -143,6 +145,7 @@ public class MainActivity extends Activity {
 
     @Override protected void onActivityResult(int req, int res, final Intent data) {
         super.onActivityResult(req, res, data);
+        if (req == REQ_TREE) { treeResult(res, data); return; }
         if (req != REQ_OPEN) return;
         if (res != RESULT_OK || data == null || data.getData() == null) { Native.fileResult(""); return; }
         final Uri uri = data.getData();
@@ -154,6 +157,78 @@ public class MainActivity extends Activity {
                 Native.fileResult(p);
             }
         }).start();
+    }
+
+    // ---------------------------------------------------------------- dossiers (bibliothèque de sons, pads)
+
+    private void openTree() {
+        try {
+            startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE), REQ_TREE);
+        } catch (Exception e) {
+            Toast.makeText(this, "Impossible d'ouvrir le sélecteur de dossiers", Toast.LENGTH_LONG).show();
+            Native.fileResult("");
+        }
+    }
+
+    private void treeResult(int res, Intent data) {
+        if (res != RESULT_OK || data == null || data.getData() == null) { Native.fileResult(""); return; }
+        final Uri tree = data.getData();
+        Toast.makeText(this, "Import du dossier… (les sons sont copiés dans l'appli)", Toast.LENGTH_LONG).show();
+        new Thread(new Runnable() {
+            @Override public void run() {
+                String p = "";
+                try {
+                    String id = DocumentsContract.getTreeDocumentId(tree);
+                    String name = id.contains(":") ? id.substring(id.lastIndexOf(':') + 1) : id;
+                    if (name.contains("/")) name = name.substring(name.lastIndexOf('/') + 1);
+                    if (name.isEmpty()) name = "Dossier";
+                    File dir = new File(new File(getFilesDir(), "dossiers"), name.replaceAll("[\\\\/:*?\"<>|]", "_"));
+                    dir.mkdirs();
+                    copyTree(tree, id, dir, 0);
+                    p = dir.getAbsolutePath();
+                } catch (Exception e) { Log.e(TAG, "dossier", e); }
+                Native.fileResult(p);
+            }
+        }).start();
+    }
+
+    private static boolean soundFile(String n) {
+        String l = n.toLowerCase();
+        return l.endsWith(".sf2") || l.endsWith(".sf3") || l.endsWith(".wav") || l.endsWith(".wave")
+            || l.endsWith(".mp3") || l.endsWith(".ogg");
+    }
+
+    /** copie les fichiers audio du dossier (et de ses sous-dossiers, 6 niveaux au plus) dans dir */
+    private void copyTree(Uri tree, String docId, File dir, int depth) throws Exception {
+        if (depth > 6) return;
+        Uri kids = DocumentsContract.buildChildDocumentsUriUsingTree(tree, docId);
+        Cursor c = getContentResolver().query(kids, new String[]{
+            DocumentsContract.Document.COLUMN_DOCUMENT_ID, DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+            DocumentsContract.Document.COLUMN_MIME_TYPE, DocumentsContract.Document.COLUMN_SIZE}, null, null, null);
+        if (c == null) return;
+        try {
+            while (c.moveToNext()) {
+                String id = c.getString(0), name = c.getString(1), mime = c.getString(2);
+                long size = c.isNull(3) ? -1 : c.getLong(3);
+                if (name == null) continue;
+                String safe = name.replaceAll("[\\\\/:*?\"<>|]", "_");
+                if (DocumentsContract.Document.MIME_TYPE_DIR.equals(mime)) {
+                    File sub = new File(dir, safe);
+                    sub.mkdirs();
+                    copyTree(tree, id, sub, depth + 1);
+                } else if (soundFile(name)) {
+                    File f = new File(dir, safe);
+                    if (f.exists() && size >= 0 && f.length() == size) continue; // déjà copié
+                    InputStream in = getContentResolver().openInputStream(DocumentsContract.buildDocumentUriUsingTree(tree, id));
+                    OutputStream out = new FileOutputStream(f);
+                    try {
+                        byte[] buf = new byte[1 << 20];
+                        int n;
+                        while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
+                    } finally { out.close(); in.close(); }
+                }
+            }
+        } finally { c.close(); }
     }
 
     /** copie le fichier choisi dans l'appli (le moteur lit des fichiers, pas des adresses Android) */

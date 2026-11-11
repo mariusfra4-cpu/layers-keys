@@ -139,10 +139,17 @@ func (a *macApp) KeyLabel(sc uint32, fallback string) string {
 
 func (a *macApp) OpenFile(kind string) (string, bool) {
 	panel := cls("NSOpenPanel").Send(sel("openPanel"))
-	panel.Send(sel("setCanChooseFiles:"), true)
-	panel.Send(sel("setCanChooseDirectories:"), false)
+	folder := kind == "folder" || kind == "padfolder"
+	panel.Send(sel("setCanChooseFiles:"), !folder)
+	panel.Send(sel("setCanChooseDirectories:"), folder)
 	panel.Send(sel("setAllowsMultipleSelection:"), false)
 	switch kind {
+	case "folder":
+		panel.Send(sel("setMessage:"), nsString("Choisir le dossier de sons (Layers Keys l'analyse et range les sons)"))
+		panel.Send(sel("setPrompt:"), nsString("Choisir"))
+	case "padfolder":
+		panel.Send(sel("setMessage:"), nsString("Choisir le dossier des pads (un pad par tonalité, majeur et mineur)"))
+		panel.Send(sel("setPrompt:"), nsString("Choisir"))
 	case "project":
 		panel.Send(sel("setMessage:"), nsString("Ouvrir un projet Layers Keys"))
 		panel.Send(sel("setAllowedFileTypes:"), nsArray("lkeys"))

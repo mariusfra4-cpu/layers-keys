@@ -277,6 +277,9 @@ func (u *UI) updateChord() {
 	u.chordKey = key
 	if len(notes) > 0 {
 		u.chord = u.namer.Detect(notes)
+		u.padFollow(u.chord, len(notes))
+	} else {
+		u.padFollow(ChordResult{Root: -1}, 0)
 	}
 }
 
@@ -592,12 +595,31 @@ func (u *UI) drawPanel(c *Canvas) {
 		}
 	})
 	fx := u.fxAt(u.sel)
-	u.button(c, "btnEQ", rect{px + 16, py + 324, bw, 30}, "EQ", fx.EQ.On, fontSm, u.OpenEQ)
+	u.button(c, "btnEQ", rect{px + 16, py + 324, tw, 30}, "EQ", fx.EQ.On, fontSm, u.OpenEQ)
 	fxLbl := "EFFETS"
 	if n := u.fxActiveCount(); n > 0 {
-		fxLbl = fmt.Sprintf("EFFETS · %d", n)
+		fxLbl = fmt.Sprintf("EFFETS·%d", n)
 	}
-	u.button(c, "btnFX", rect{px + 24 + bw, py + 324, bw, 30}, fxLbl, u.fxActiveCount() > 0, fontSm, u.OpenFXWin)
+	u.button(c, "btnFX", rect{px + 24 + tw, py + 324, tw, 30}, fxLbl, u.fxActiveCount() > 0, fontSm, u.OpenFXWin)
+	// Leslie (cabine tournante de l'orgue) : allumé sur cette piste, et vitesse lente / rapide commune à toutes les pistes
+	u.button(c, "tgLeslie", rect{px + 32 + 2*tw, py + 324, tw, 30}, "LESLIE", fx.Leslie.On, fontSm, func() {
+		on := !u.fxAt(sel).Leslie.On
+		u.fxSetAt(sel, func(c *FXCfg) { c.Leslie.On = on })
+		if on {
+			u.Toast("Leslie activé sur cette piste : le bouton LENT / RAPIDE change la vitesse.")
+		}
+	})
+	spd := "LENT"
+	if u.eng.LeslieFast() {
+		spd = "RAPIDE"
+	}
+	u.button(c, "lesFast", rect{px + 40 + 3*tw, py + 324, tw, 30}, spd, u.eng.LeslieFast(), fontSm, func() {
+		u.eng.SetLeslieFast(!u.eng.LeslieFast())
+		u.markDirty()
+		if !u.anyLeslie() {
+			u.Toast("Allume d'abord LESLIE sur une piste (par exemple l'orgue).")
+		}
+	})
 	c.Rect(px+16, py+364, panW-32, 1, 0x2b3b57, 1)
 	c.Text(px+16, py+372, 110, 20, "Volume général", fontMd, colText, 0)
 	u.slider(c, "master", px+130, py+372, 160, 20, u.eng.master,
@@ -677,6 +699,7 @@ func (u *UI) drawKeyboard(c *Canvas) {
 	hint := "Espace = sustain  ·  Échap = tout arrêter"
 	c.Text(kbX-8, kbY+whiteH+10, 250, 14, hint, fontXs, colText2, 0)
 	u.drawPlayer(c, 410, kbY+whiteH+9)
+	u.drawPadButton(c, 812, kbY+whiteH+9)
 	pc, pt := uint32(0x2a3039), uint32(colText2)
 	if u.eng.sustain {
 		pc, pt = colGold, colDark
@@ -841,6 +864,10 @@ func (u *UI) drawOverlay(c *Canvas) {
 		h = 170
 	}
 	x, y := (c.W-w)/2, 80
+	if o.wide {
+		w, h = 1120, 600
+		x, y = (c.W-w)/2, 60
+	}
 	if o.input {
 		y = 200
 	}

@@ -1,10 +1,10 @@
 #!/bin/bash
-# Assemble l'installateur Mac « Layers-Keys-1.0.0.pkg » : assistant en français avec choix des composants
+# Assemble l'installateur Mac « Layers-Keys-1.1.0.pkg » : assistant en français avec choix des composants
 # (application, plugin VST3, plugin Audio Unit). À lancer sur un Mac après build_mac.sh, build_mac_vst3.sh et build_mac_au.sh.
 set -e
 cd "$(dirname "$0")"
 [ "$(uname)" = Darwin ] || { echo "Ce script doit être lancé sur un Mac."; exit 1; }
-VER=1.0.0
+VER=1.1.0
 OUT=dist/mac
 P="$OUT/pk"
 rm -rf "$P" && mkdir -p "$P/app/Applications" "$P/vst3/Library/Audio/Plug-Ins/VST3" "$P/au/Library/Audio/Plug-Ins/Components"
@@ -62,9 +62,9 @@ cat > "$OUT/distribution.xml" <<'XML'
   <choice id="au" title="Plugin Audio Unit (Logic Pro, GarageBand)" description="Le plugin Audio Unit, installé dans /Library/Audio/Plug-Ins/Components." start_selected="true">
     <pkg-ref id="com.jbpraise.layerskeys.au"/>
   </choice>
-  <pkg-ref id="com.jbpraise.layerskeys.app" version="1.0.0" onConclusion="none">LayersKeys_app.pkg</pkg-ref>
-  <pkg-ref id="com.jbpraise.layerskeys.vst3" version="1.0.0" onConclusion="none">LayersKeys_vst3.pkg</pkg-ref>
-  <pkg-ref id="com.jbpraise.layerskeys.au" version="1.0.0" onConclusion="none">LayersKeys_au.pkg</pkg-ref>
+  <pkg-ref id="com.jbpraise.layerskeys.app" version="1.1.0" onConclusion="none">LayersKeys_app.pkg</pkg-ref>
+  <pkg-ref id="com.jbpraise.layerskeys.vst3" version="1.1.0" onConclusion="none">LayersKeys_vst3.pkg</pkg-ref>
+  <pkg-ref id="com.jbpraise.layerskeys.au" version="1.1.0" onConclusion="none">LayersKeys_au.pkg</pkg-ref>
 </installer-gui-script>
 XML
 productbuild --distribution "$OUT/distribution.xml" --resources "$OUT/res" --package-path "$P" dist/Layers-Keys-$VER.pkg

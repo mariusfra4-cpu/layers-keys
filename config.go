@@ -52,9 +52,11 @@ type Config struct {
 	Cur     int                 `json:"cur"`
 	Master  float64             `json:"master"`
 	Reverb  float64             `json:"reverb"`
-	FX      *FXCfg              `json:"fx,omitempty"`  // ancien format (un seul jeu pour tout) : converti au chargement
-	FXT     []*FXCfg            `json:"fxt,omitempty"` // égaliseur et effets de chaque piste
-	Recent  []string            `json:"recent"`
+	// Leslie : vitesse rapide (commune à toutes les pistes dont le Leslie est allumé)
+	LeslieFast bool     `json:"leslieFast,omitempty"`
+	FX         *FXCfg   `json:"fx,omitempty"`  // ancien format (un seul jeu pour tout) : converti au chargement
+	FXT        []*FXCfg `json:"fxt,omitempty"` // égaliseur et effets de chaque piste
+	Recent     []string `json:"recent"`
 
 	Format     string   `json:"format,omitempty"`     // présent seulement dans un fichier projet
 	Project    string   `json:"project,omitempty"`    // projet en cours (dernière session)

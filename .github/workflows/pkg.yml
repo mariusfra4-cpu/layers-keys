@@ -36,9 +36,9 @@ jobs:
       - name: Contenu
         run: |
           {
-            ls -la dist/Layers-Keys-1.0.0.pkg
-            pkgutil --check-signature dist/Layers-Keys-1.0.0.pkg
-            rm -rf /tmp/exp && pkgutil --expand dist/Layers-Keys-1.0.0.pkg /tmp/exp
+            ls -la dist/Layers-Keys-1.1.0.pkg
+            pkgutil --check-signature dist/Layers-Keys-1.1.0.pkg
+            rm -rf /tmp/exp && pkgutil --expand dist/Layers-Keys-1.1.0.pkg /tmp/exp
             echo "=== composants"; ls /tmp/exp
             echo "=== ressources"; ls /tmp/exp/Resources
             for c in app vst3 au; do
@@ -52,7 +52,7 @@ jobs:
           {
             D="$HOME/Library/Application Support/LayersKeys"
             mkdir -p "$D" && echo '{"test":"preset"}' > "$D/config.json"
-            sudo installer -pkg dist/Layers-Keys-1.0.0.pkg -target / -verbose 2>&1 | tail -15
+            sudo installer -pkg dist/Layers-Keys-1.1.0.pkg -target / -verbose 2>&1 | tail -15
             for x in "/Applications/Layers Keys.app/Contents/MacOS/LayersKeys" "/Applications/Désinstaller Layers Keys.app/Contents/Resources/desinstaller.sh" "/Library/Audio/Plug-Ins/VST3/LayersKeys.vst3/Contents/MacOS/LayersKeys" "/Library/Audio/Plug-Ins/Components/LayersKeys.component/Contents/MacOS/LayersKeys"; do
               [ -e "$x" ] && echo "présent : $x" || echo "ABSENT : $x"
             done
@@ -63,7 +63,7 @@ jobs:
             sleep 5
             pgrep -x LayersKeys >/dev/null && echo "application en marche après installation : OUI" || echo "application en marche : NON"
             echo "=== mise à jour pendant que l'application est ouverte"
-            sudo installer -pkg dist/Layers-Keys-1.0.0.pkg -target / 2>&1 | tail -3
+            sudo installer -pkg dist/Layers-Keys-1.1.0.pkg -target / 2>&1 | tail -3
             pgrep -x LayersKeys >/dev/null && echo "application encore ouverte après mise à jour : OUI (problème)" || echo "application fermée par la mise à jour : OUI"
             [ -e "/Applications/Layers Keys.app/Contents/MacOS/LayersKeys" ] && echo "application présente après mise à jour : OUI"
             [ -e "$D/config.json" ] && echo "données conservées après mise à jour : OUI" || echo "données conservées : NON"
@@ -90,7 +90,7 @@ jobs:
           <dict><key>attributeSetting</key><integer>0</integer><key>choiceAttribute</key><string>selected</string><key>choiceIdentifier</key><string>au</string></dict>
           </array></plist>
           XML
-            sudo installer -pkg dist/Layers-Keys-1.0.0.pkg -target / -applyChoiceChangesXML /tmp/choix.xml 2>&1 | tail -3
+            sudo installer -pkg dist/Layers-Keys-1.1.0.pkg -target / -applyChoiceChangesXML /tmp/choix.xml 2>&1 | tail -3
             [ -e "/Applications/Layers Keys.app" ] && echo "application installée : OUI"
             [ -e "/Library/Audio/Plug-Ins/VST3/LayersKeys.vst3" ] && echo "VST3 installé (inattendu)" || echo "VST3 non installé : OUI (attendu)"
             [ -e "/Library/Audio/Plug-Ins/Components/LayersKeys.component" ] && echo "AU installé (inattendu)" || echo "AU non installé : OUI (attendu)"
@@ -100,7 +100,7 @@ jobs:
       - name: Capture de l'assistant (essai)
         continue-on-error: true
         run: |
-          open dist/Layers-Keys-1.0.0.pkg
+          open dist/Layers-Keys-1.1.0.pkg
           sleep 8
           screencapture -x /tmp/lk/assistant_1.png || true
           osascript -e 'tell application "System Events" to keystroke return' || true
@@ -130,7 +130,7 @@ jobs:
         if: always()
         run: |
           mkdir -p /tmp/o && cp /tmp/lk/* /tmp/o/ 2>/dev/null || true
-          cp dist/Layers-Keys-1.0.0.pkg /tmp/o/ 2>/dev/null || true
+          cp dist/Layers-Keys-1.1.0.pkg /tmp/o/ 2>/dev/null || true
           git config user.name "ci"; git config user.email "ci@users.noreply.github.com"
           git checkout --orphan ci-pkg-tmp
           git rm -rf . >/dev/null 2>&1 || true

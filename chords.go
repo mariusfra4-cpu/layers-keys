@@ -20,6 +20,8 @@ var noteNamesSolfegeESSharp = [12]string{"Do", "Do#", "Re", "Re#", "Mi", "Fa", "
 type ChordResult struct {
 	Name  string   // « Cmaj7/E », vide s'il n'y a pas d'accord
 	Notes []string // notes jouées, de la plus grave à la plus aiguë
+	Root  int      // fondamentale (0 = do … 11 = si) ; -1 s'il n'y a pas d'accord (sert aux pads continus)
+	Minor bool     // accord mineur
 }
 
 // ChordNamer choisit l'écriture des notes (lettres ou Do Ré Mi).
@@ -314,11 +316,11 @@ func itoa(n int) string {
 // avec la vraie fondamentale. Il n'affiche jamais un nom qui cache une note jouée.
 func (n ChordNamer) Detect(notes []int) ChordResult {
 	if len(notes) == 0 {
-		return ChordResult{}
+		return ChordResult{Root: -1}
 	}
 	ns := append([]int(nil), notes...)
 	sort.Ints(ns)
-	res := ChordResult{}
+	res := ChordResult{Root: -1}
 	seen := map[int]bool{}
 	for _, v := range ns {
 		pc := ((v % 12) + 12) % 12
@@ -334,6 +336,7 @@ func (n ChordNamer) Detect(notes []int) ChordResult {
 	bass := ((ns[0] % 12) + 12) % 12
 	if len(seen) == 1 {
 		res.Name = n.Names[bass]
+		res.Root = bass
 		return res
 	}
 	if len(seen) == 2 {
@@ -354,6 +357,7 @@ func (n ChordNamer) Detect(notes []int) ChordResult {
 			sh := sharpFamily(root, false)
 			spell(sh)
 			res.Name = n.join(n.nm(root, sh), "5")
+			res.Root = root
 		}
 		return res // deux notes quelconques : pas d'accord, on montre les notes
 	}
@@ -395,5 +399,6 @@ func (n ChordNamer) Detect(notes []int) ChordResult {
 		name += "/" + n.nm(bass, sh)
 	}
 	res.Name = name
+	res.Root, res.Minor = bestRoot, bestMinor
 	return res
 }

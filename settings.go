@@ -270,6 +270,7 @@ func (u *UI) OpenSettings() {
 		u.dirty = true
 		u.OpenSettings()
 	}})
+	items = append(items, u.libSettingsItems()...)
 	items = append(items, u.playingSettingsItems()...)
 	if !u.Plugin {
 		items = append(items, olItem{text: "MIDI", header: true})

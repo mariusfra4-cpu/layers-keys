@@ -59,7 +59,7 @@ func idIndex(id, prefix string, max int) (int, bool) {
 // learnKind : de quel genre de réglage s'agit-il ? (kind, numéro de piste ou de paramètre)
 func learnKind(id string) (string, int, bool) {
 	switch id {
-	case "master", "reverb", "plVol", "plPlay", "plStop", "tgPedal", "tgFilter", "tgModFX", "tgAT":
+	case "master", "reverb", "plVol", "plPlay", "plStop", "tgPedal", "tgFilter", "tgModFX", "tgAT", "lesFast":
 		return id, 0, true
 	}
 	for _, p := range []string{"vol", "pan", "mute", "solo", "hold"} {
@@ -102,6 +102,8 @@ func learnName(id string) string {
 		return T("MOD FX (piste sélectionnée)")
 	case "tgAT":
 		return T("Aftertouch (piste sélectionnée)")
+	case "lesFast":
+		return T("Leslie : lent / rapide")
 	case "master":
 		return T("Volume général")
 	case "reverb":
@@ -314,6 +316,8 @@ func (u *UI) learnApply(id string, val int, edge bool) {
 			}
 		case "plStop":
 			u.eng.Player.Stop()
+		case "lesFast":
+			u.eng.SetLeslieFast(!u.eng.LeslieFast())
 		}
 	}
 	u.markDirty()

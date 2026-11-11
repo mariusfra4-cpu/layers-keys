@@ -1,5 +1,14 @@
-LAYERS KEYS pour Mac  ·  By JB Praise  ·  version 1.0.0
+LAYERS KEYS pour Mac  ·  By JB Praise  ·  version 1.1.0
 ==========================================================
+
+NOUVEAUTÉS DE LA VERSION 1.1
+  - Effet LESLIE (cabine tournante de l'orgue) : bouton LESLIE dans les réglages de la piste,
+    et bouton LENT / RAPIDE (commun à toutes les pistes, réglable aussi par MIDI Learn).
+  - Bibliothèque de sons : « Charger un son » > choisis ton dossier de sons ; Layers Keys l'analyse
+    et range tout seul les sons en colonnes PIANO, ORGUE, SYNTHÉ, PAD, STRINGS, AUTRES (liste enregistrée).
+  - Pads continus : bouton PADS en bas de la fenêtre (ou Paramètres > Pads continus). Choisis un dossier
+    avec un pad par tonalité (« C Major », « F#m », « La mineur »…). Le pad suit l'accord que tu tiens,
+    ou se choisit à la main avec les 24 boutons ; fondu enchaîné entre deux tonalités.
 
 CE QUE C'EST
   Le logiciel autonome (« standalone ») : 8 pistes, SF2 / SF3 / WAV / MP3, presets,

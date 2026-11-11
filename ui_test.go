@@ -320,10 +320,11 @@ func TestUIFilesSF2WAV(t *testing.T) {
 	// canal 1 : ouvrir le SoundFont, choisir « TestB »
 	h.open = sfp
 	u.openSoundMenu(0)
-	if u.ov == nil || len(u.ov.items) < 5 {
-		t.Fatal("menu des sons absent")
+	if u.ov == nil || u.ov.custom == nil || !u.ov.wide {
+		t.Fatal("fenêtre des sons absente")
 	}
-	u.overlayChoose(0) // « Ouvrir un fichier… »
+	drawUI(u)        // la fenêtre (vide, sans dossier de sons) se dessine sans planter
+	u.libPickFile(0) // « Ouvrir un fichier… »
 	if u.ov == nil || !u.ov.filterable || len(u.ov.items) != 8 {
 		t.Fatalf("liste du SoundFont : %+v", u.ov)
 	}
@@ -352,7 +353,7 @@ func TestUIFilesSF2WAV(t *testing.T) {
 	// canal 2 : WAV
 	h.open = wavp
 	u.openSoundMenu(1)
-	u.overlayChoose(0)
+	u.libPickFile(1)
 	waitLoaded(t, u, 1)
 	if nameOf(e, 1) != "la" || !strings.HasPrefix(catOf(e, 1), "AUDIO") {
 		t.Fatalf("canal 2 : %q %q", nameOf(e, 1), catOf(e, 1))
@@ -419,7 +420,7 @@ func TestUIBadFiles(t *testing.T) {
 
 func TestOverlayNavigation(t *testing.T) {
 	u, _, _ := newTestUI(t, "")
-	u.openSoundMenu(0)
+	u.OpenSettings()
 	o := u.ov
 	start := o.sel
 	if o.items[start].header {
@@ -441,16 +442,12 @@ func TestOverlayNavigation(t *testing.T) {
 	if u.ov != nil {
 		t.Fatal("échap ne ferme pas la fenêtre")
 	}
-	// un son intégré choisi dans la fenêtre
+	// les sons intégrés ne sont plus proposés dans la fenêtre des sons (seul le piano de départ reste)
 	u.openSoundMenu(4)
-	for k, it := range u.ov.items {
-		if it.text == "Synth Lead" {
-			u.overlayChoose(k)
-		}
+	if u.ov == nil || u.ov.custom == nil {
+		t.Fatal("fenêtre des sons absente")
 	}
-	if nameOf(u.eng, 4) != "Synth Lead" {
-		t.Fatalf("son intégré : %q", nameOf(u.eng, 4))
-	}
+	u.KeyDown(vkEscape, 0, false, false)
 }
 
 func TestConfigMigrate(t *testing.T) {

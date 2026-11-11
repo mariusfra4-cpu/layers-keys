@@ -28,7 +28,7 @@ var vst3dll []byte
 
 const (
 	appName    = "Layers Keys"
-	appVersion = "1.0.0"
+	appVersion = "1.1.0"
 	regPath    = `Software\Microsoft\Windows\CurrentVersion\Uninstall\LayersKeys`
 )
 

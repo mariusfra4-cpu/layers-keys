@@ -151,9 +151,11 @@ type Engine struct {
 	pulled      int64  // nombre d'images sonores demandées par la carte son (diagnostic)
 	outPeakBits uint64 // plus fort niveau sorti du moteur depuis la dernière lecture (diagnostic)
 	toneLeft    int64  // images restantes du bip de test (contourne licence, pistes et effets)
+	leslieFast  int32  // vitesse du Leslie de toutes les pistes : 1 = rapide (atomique)
 	tonePhase   float64
 	Player      *Player
-	cpuBits     uint64 // charge moyenne du calcul audio (0..1, en 64 bits)
+	Pads        *padPlayer // pads continus (pads.go)
+	cpuBits     uint64     // charge moyenne du calcul audio (0..1, en 64 bits)
 	cpuPeak     uint64
 	slowN       int64  // blocs audio dont le calcul a pris plus de 70 % du temps disponible (diagnostic)
 	slowMax     uint64 // pire bloc (en millièmes du temps disponible)
@@ -197,10 +199,11 @@ type Engine struct {
 }
 
 func NewEngine() *Engine {
-	e := &Engine{voiceLimit: maxVoice, master: 0.8, cc7: 1, cc11: 1, bend: 1, revAmt: 0.15, atAmt: 1, cache: map[[2]int][]float32{}, rev: newReverb(), Player: newPlayer()}
+	e := &Engine{voiceLimit: maxVoice, master: 0.8, cc7: 1, cc11: 1, bend: 1, revAmt: 0.15, atAmt: 1, cache: map[[2]int][]float32{}, rev: newReverb(), Player: newPlayer(), Pads: newPadPlayer()}
 	for i := range e.ch {
 		e.ch[i] = newChannel(i)
 	}
+	e.Pads.gate = e.soundAllowed
 	return e
 }
 
@@ -871,6 +874,7 @@ func (e *Engine) mixBlock(B int) {
 	e.voices = alive
 	atomic.StoreInt32(&e.liveCount, int32(len(alive)))
 	e.mu.Unlock()
+	lesFast := e.LeslieFast()
 	for ci, c := range fxc {
 		if c == nil {
 			if e.fx[ci] != nil {
@@ -885,7 +889,7 @@ func (e *Engine) mixBlock(B int) {
 			e.fx[ci] = newFXChain()
 		}
 		l, r := e.chL[ci][:B], e.chR[ci][:B]
-		e.fx[ci].process(l, r, c)
+		e.fx[ci].process(l, r, c, lesFast)
 		for i := range l {
 			mixL[i] += l[i]
 			mixR[i] += r[i]
@@ -906,6 +910,7 @@ func (e *Engine) mixBlock(B int) {
 		e.rev.process(mixL, mixR, sd, e.revAmt, 0.9)
 	}
 	e.Player.mix(mixL, mixR)
+	e.Pads.mix(mixL, mixR)
 }
 
 // SetSampleRate change la fréquence de travail (44100, 48000, 96000…). Toutes les notes sont coupées.

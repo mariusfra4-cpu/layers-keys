@@ -5,7 +5,7 @@ Unicode true
 !include "FileFunc.nsh"
 
 !define APPNAME "Layers Keys"
-!define APPVER "1.0.0"
+!define APPVER "1.1.0"
 !define PUBLISHER "JB Praise"
 !define UNKEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\LayersKeys"
 !define OLDUNKEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\LayersKeys"
@@ -24,14 +24,14 @@ SetCompressor /SOLID lzma
 ShowInstDetails show
 ShowUninstDetails show
 
-VIProductVersion "1.0.0.0"
+VIProductVersion "1.1.0.0"
 VIAddVersionKey /LANG=1036 "ProductName" "Layers Keys"
 VIAddVersionKey /LANG=1036 "CompanyName" "JB Praise"
 VIAddVersionKey /LANG=1036 "FileDescription" "Installateur de Layers Keys"
-VIAddVersionKey /LANG=1036 "FileVersion" "1.0.0"
-VIAddVersionKey /LANG=1036 "ProductVersion" "1.0.0"
+VIAddVersionKey /LANG=1036 "FileVersion" "1.1.0"
+VIAddVersionKey /LANG=1036 "ProductVersion" "1.1.0"
 VIAddVersionKey /LANG=1036 "LegalCopyright" "© JB Praise"
-VIAddVersionKey /LANG=1036 "OriginalFilename" "Layers-Keys-Setup-1.0.0.exe"
+VIAddVersionKey /LANG=1036 "OriginalFilename" "Layers-Keys-Setup-1.1.0.exe"
 
 !define MUI_ICON "layerskeys.ico"
 !define MUI_UNICON "layerskeys.ico"

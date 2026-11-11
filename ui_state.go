@@ -11,6 +11,7 @@ func (u *UI) StateBytes() []byte {
 	c := *u.cfg
 	c.Setup = u.snapshot()
 	c.Master, c.Reverb = u.eng.master, u.eng.revAmt
+	c.LeslieFast = u.eng.LeslieFast()
 	c.Lang = langCode(CurLang())
 	c.Learn = u.learnList()
 	c.Format, c.Version = projectFormat, cfgVersion
@@ -35,6 +36,7 @@ func (u *UI) SetStateBytes(b []byte) bool {
 	u.learnLoad(c.Learn)
 	u.eng.SetMaster(c.Master)
 	u.eng.SetReverb(c.Reverb)
+	u.eng.SetLeslieFast(c.LeslieFast)
 	u.loadFX(c.FXT)
 	for i := range u.eng.ch {
 		u.eng.ch[i].Solo = false

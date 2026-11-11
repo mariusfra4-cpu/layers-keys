@@ -1,7 +1,7 @@
 package main
 
 // Effets sur toute la sortie : compresseur, égaliseur 6 bandes, chorus, tremolo / auto-pan, delay.
-// Ordre : compresseur → égaliseur → chorus → tremolo → delay → (réverbération du moteur) → limiteur.
+// Ordre : compresseur → égaliseur → Leslie → chorus → tremolo → delay → (réverbération du moteur) → limiteur.
 // Tous les calculs se font en nombres à virgule, sans allocation pendant le jeu.
 
 import (
@@ -50,6 +50,7 @@ type FXCfg struct {
 	Chorus ChorusCfg
 	Delay  DelayCfg
 	Trem   TremCfg
+	Leslie LeslieCfg
 }
 
 func defaultFX() FXCfg {
@@ -101,7 +102,7 @@ func (c *FXCfg) sanitize() {
 }
 
 func (c *FXCfg) anyOn() bool {
-	return c.EQ.On || c.Comp.On || c.Chorus.On || c.Delay.On || c.Trem.On
+	return c.EQ.On || c.Comp.On || c.Chorus.On || c.Delay.On || c.Trem.On || c.Leslie.On
 }
 
 // ---------------------------------------------------------------- filtres biquad
@@ -207,6 +208,7 @@ type fxChain struct {
 	dLP    [2]float64
 	last   *FXCfg
 	clean  bool // tampons déjà vidés
+	les    leslieState
 }
 
 func newFXChain() *fxChain {
@@ -216,6 +218,7 @@ func newFXChain() *fxChain {
 	d := int(1.6*SR) + 8
 	f.dBuf[0], f.dBuf[1] = make([]float64, d), make([]float64, d)
 	f.dTime = 0.35 * SR
+	f.les = newLeslieState()
 	return f
 }
 
@@ -235,10 +238,11 @@ func (f *fxChain) clear() {
 	}
 	f.eqSt = [10]fxState{}
 	f.env = 0
+	f.les.clear()
 	f.clean = true
 }
 
-func (f *fxChain) process(l, r []float64, cfg *FXCfg) {
+func (f *fxChain) process(l, r []float64, cfg *FXCfg, leslieFast bool) {
 	f.clean = false
 	B := len(l)
 	if cfg.Comp.On {
@@ -266,6 +270,11 @@ func (f *fxChain) process(l, r []float64, cfg *FXCfg) {
 				r[i] = y
 			}
 		}
+	}
+	if cfg.Leslie.On {
+		f.les.process(l, r, leslieFast)
+	} else {
+		f.les.started = false
 	}
 	if cfg.Chorus.On {
 		f.chorus(l, r, &cfg.Chorus)

@@ -60,6 +60,26 @@ func (u *UI) fxSet(f func(c *FXCfg)) {
 	u.host.Invalidate()
 }
 
+// fxSetAt modifie les effets de la piste i (même principe que fxSet, pour une piste précise).
+func (u *UI) fxSetAt(i int, f func(c *FXCfg)) {
+	c := u.fxAt(i)
+	f(c)
+	c.sanitize()
+	u.eng.SetFX(i, *c)
+	u.markDirty()
+	u.host.Invalidate()
+}
+
+// anyLeslie : vrai si au moins une piste a le Leslie allumé.
+func (u *UI) anyLeslie() bool {
+	for i := 0; i < nCh; i++ {
+		if u.fxAt(i).Leslie.On {
+			return true
+		}
+	}
+	return false
+}
+
 func (u *UI) fxReset(part string) {
 	d := defaultFX()
 	u.fxSet(func(c *FXCfg) {

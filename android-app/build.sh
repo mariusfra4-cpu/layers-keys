@@ -32,7 +32,7 @@ for abi in $ABIS; do
 done
 
 "$BT/aapt2" compile --dir res -o "$OUT/res.zip"
-"$BT/aapt2" link -o "$OUT/base.apk" -I "$AJ" --manifest AndroidManifest.xml --min-sdk-version 26 --target-sdk-version 34 --version-code 1 --version-name 1.0.0 -R "$OUT/res.zip"
+"$BT/aapt2" link -o "$OUT/base.apk" -I "$AJ" --manifest AndroidManifest.xml --min-sdk-version 26 --target-sdk-version 34 --version-code 2 --version-name 1.1.0 -R "$OUT/res.zip"
 javac --release 8 -Xlint:-options -cp "$AJ" -d "$OUT/classes" $(find src -name '*.java')
 "$BT/d8" --min-api 26 --lib "$AJ" --output "$OUT" $(find "$OUT/classes" -name '*.class')
 (cd "$OUT" && zip -q -j base.apk classes.dex && zip -q -r base.apk lib)

@@ -40,6 +40,7 @@ func (u *UI) writeProject(path string) bool {
 	c := *u.cfg
 	c.Setup = u.snapshot()
 	c.Master, c.Reverb = u.eng.master, u.eng.revAmt
+	c.LeslieFast = u.eng.LeslieFast()
 	if err := saveProject(path, &c); err != nil {
 		u.Toast(Tf("Impossible d'enregistrer le projet : %s", err.Error()))
 		return false
@@ -101,6 +102,7 @@ func (u *UI) resetProject() {
 	u.cfg.Presets, u.cfg.Cur = d.Presets, 0
 	u.eng.SetMaster(d.Master)
 	u.eng.SetReverb(d.Reverb)
+	u.eng.SetLeslieFast(false)
 	u.loadFX(nil)
 	u.applySetup(d.Setup)
 	u.projPath, u.changed = "", false
@@ -125,6 +127,7 @@ func (u *UI) openProjectFile(path string) {
 		u.cfg.Presets, u.cfg.Cur = c.Presets, c.Cur
 		u.eng.SetMaster(c.Master)
 		u.eng.SetReverb(c.Reverb)
+		u.eng.SetLeslieFast(c.LeslieFast)
 		u.loadFX(c.FXT)
 		for i := range u.eng.ch {
 			u.eng.ch[i].Solo = false

@@ -1,0 +1,77 @@
+package main
+
+// traductions des textes ajoutés dans la version 1.1 : Leslie, bibliothèque de sons, pads continus
+func init() {
+	for k, v := range map[string][2]string{
+		// Leslie
+		"LESLIE": {"LESLIE", "LESLIE"},
+		"LENT":   {"SLOW", "LENTO"},
+		"RAPIDE": {"FAST", "RÁPIDO"},
+		"Leslie activé sur cette piste : le bouton LENT / RAPIDE change la vitesse.": {"Leslie on for this track: the SLOW / FAST button changes the speed.", "Leslie activado en esta pista: el botón LENTO / RÁPIDO cambia la velocidad."},
+		"Allume d'abord LESLIE sur une piste (par exemple l'orgue).":                 {"First turn LESLIE on for a track (for example the organ).", "Activa primero LESLIE en una pista (por ejemplo el órgano)."},
+		"Leslie : lent / rapide": {"Leslie: slow / fast", "Leslie: lento / rápido"},
+		// bibliothèque de sons
+		"Clique sur un son pour le charger · molette = faire défiler une colonne · Échap pour fermer": {"Click a sound to load it · wheel = scroll a column · Esc to close", "Haz clic en un sonido para cargarlo · rueda = desplazar una columna · Esc para cerrar"},
+		"OUVRIR UN FICHIER…":          {"OPEN A FILE…", "ABRIR UN ARCHIVO…"},
+		"VIDER LA PISTE":              {"CLEAR TRACK", "VACIAR PISTA"},
+		"CHOISIR LE DOSSIER DE SONS…": {"CHOOSE SOUND FOLDER…", "ELEGIR CARPETA DE SONIDOS…"},
+		"CHANGER DE DOSSIER…":         {"CHANGE FOLDER…", "CAMBIAR DE CARPETA…"},
+		"ANALYSER À NOUVEAU":          {"SCAN AGAIN", "ANALIZAR DE NUEVO"},
+		"Analyse… %d fichiers lus":    {"Scanning… %d files read", "Analizando… %d archivos leídos"},
+		"%d sons · %s":                {"%d sounds · %s", "%d sonidos · %s"},
+		"Choisis ton dossier de sons": {"Choose your sound folder", "Elige tu carpeta de sonidos"},
+		"Layers Keys l'analyse (sous-dossiers compris) et range tout seul les pianos, orgues, synthés, pads et strings.": {"Layers Keys scans it (subfolders included) and sorts pianos, organs, synths, pads and strings by itself.", "Layers Keys la analiza (subcarpetas incluidas) y ordena sola los pianos, órganos, sintes, pads y cuerdas."},
+		"SoundFont SF2 / SF3, WAV et MP3. La liste est enregistrée : à la prochaine ouverture, tes sons sont déjà là.":   {"SoundFont SF2 / SF3, WAV and MP3. The list is saved: next time, your sounds are already there.", "SoundFont SF2 / SF3, WAV y MP3. La lista se guarda: la próxima vez, tus sonidos ya están ahí."},
+		"aucun son":                             {"no sound", "ningún sonido"},
+		"PIANO":                                 {"PIANO", "PIANO"},
+		"ORGUE":                                 {"ORGAN", "ÓRGANO"},
+		"SYNTHÉ":                                {"SYNTH", "SINTE"},
+		"PAD":                                   {"PAD", "PAD"},
+		"STRINGS":                               {"STRINGS", "CUERDAS"},
+		"AUTRES":                                {"OTHERS", "OTROS"},
+		"Analyse du dossier de sons…":           {"Scanning the sound folder…", "Analizando la carpeta de sonidos…"},
+		"Dossier illisible : %s":                {"Folder can't be read: %s", "Carpeta ilegible: %s"},
+		"%d sons trouvés et rangés.":            {"%d sounds found and sorted.", "%d sonidos encontrados y ordenados."},
+		"Sons":                                  {"Sounds", "Sonidos"},
+		"Dossier de sons : aucun":               {"Sound folder: none", "Carpeta de sonidos: ninguna"},
+		"Dossier de sons : %s":                  {"Sound folder: %s", "Carpeta de sonidos: %s"},
+		"%d sons rangés":                        {"%d sounds sorted", "%d sonidos ordenados"},
+		"Analyser à nouveau le dossier de sons": {"Scan the sound folder again", "Analizar de nuevo la carpeta de sonidos"},
+		"après avoir ajouté ou retiré des sons":                                                 {"after adding or removing sounds", "tras añadir o quitar sonidos"},
+		"Layers Keys analyse le dossier et range les sons : piano, orgue, synthé, pad, strings": {"Layers Keys scans the folder and sorts the sounds: piano, organ, synth, pad, strings", "Layers Keys analiza la carpeta y ordena los sonidos: piano, órgano, sinte, pad, cuerdas"},
+		// pads continus
+		"PADS…":         {"PADS…", "PADS…"},
+		"Pads continus": {"Continuous pads", "Pads continuos"},
+		"Une tonalité par bouton · en mode AUTO, le pad suit l'accord que tu tiens · Échap pour fermer": {"One key per button · in AUTO mode, the pad follows the chord you hold · Esc to close", "Una tonalidad por botón · en modo AUTO, el pad sigue el acorde que mantienes · Esc para cerrar"},
+		"PADS ÉTEINTS":                 {"PADS OFF", "PADS APAGADOS"},
+		"PADS ALLUMÉS":                 {"PADS ON", "PADS ENCENDIDOS"},
+		"MODE : SUIT LES ACCORDS":      {"MODE: FOLLOWS CHORDS", "MODO: SIGUE LOS ACORDES"},
+		"MODE : MANUEL":                {"MODE: MANUAL", "MODO: MANUAL"},
+		"CHOISIR LE DOSSIER DES PADS…": {"CHOOSE PAD FOLDER…", "ELEGIR CARPETA DE PADS…"},
+		"Aucun dossier choisi : choisis un dossier qui contient un pad par tonalité (majeur et mineur).": {"No folder chosen: choose a folder with one pad per key (major and minor).", "Ninguna carpeta elegida: elige una carpeta con un pad por tonalidad (mayor y menor)."},
+		"%d / 24 tonalités trouvées · %s": {"%d / 24 keys found · %s", "%d / 24 tonalidades encontradas · %s"},
+		"%d / 24 tonalités trouvées":      {"%d / 24 keys found", "%d / 24 tonalidades encontradas"},
+		"MAJEUR":                          {"MAJOR", "MAYOR"},
+		"MINEUR":                          {"MINOR", "MENOR"},
+		"majeur":                          {"major", "mayor"},
+		"mineur":                          {"minor", "menor"},
+		"pas de pad":                      {"no pad", "sin pad"},
+		"chargement…":                     {"loading…", "cargando…"},
+		"ARRÊT EN FONDU":                  {"FADE OUT", "PARAR CON FUNDIDO"},
+		"Noms de fichiers reconnus : « C Major », « C# minor », « Dbm », « F#m », « Bb », « La mineur », « Sib majeur »…": {"File names understood: « C Major », « C# minor », « Dbm », « F#m », « Bb », « La mineur », « Sib majeur »…", "Nombres de archivo reconocidos: « C Major », « C# minor », « Dbm », « F#m », « Bb », « La mineur », « Sib majeur »…"},
+		"Pas de pad pour %s dans le dossier.": {"No pad for %s in the folder.", "No hay pad para %s en la carpeta."},
+		"Aucun pad reconnu : le nom de chaque fichier doit contenir sa tonalité (ex. « C Major », « F#m », « La mineur »).": {"No pad recognized: each file name must contain its key (e.g. « C Major », « F#m », « La mineur »).", "Ningún pad reconocido: el nombre de cada archivo debe contener su tonalidad (ej. « C Major », « F#m », « La mineur »)."},
+		"%d pads rangés par tonalité.":          {"%d pads sorted by key.", "%d pads ordenados por tonalidad."},
+		"Choisis d'abord le dossier des pads.":  {"First choose the pad folder.", "Elige primero la carpeta de pads."},
+		"Dossier des pads : aucun":              {"Pad folder: none", "Carpeta de pads: ninguna"},
+		"Dossier des pads : %s":                 {"Pad folder: %s", "Carpeta de pads: %s"},
+		"un pad par tonalité, majeur et mineur": {"one pad per key, major and minor", "un pad por tonalidad, mayor y menor"},
+		"Ouvrir la fenêtre des pads":            {"Open the pads window", "Abrir la ventana de pads"},
+		"tonalités, mode automatique, volume":   {"keys, automatic mode, volume", "tonalidades, modo automático, volumen"},
+		"Volume":                                {"Volume", "Volumen"},
+	} {
+		if _, ok := trTable[k]; !ok {
+			trTable[k] = v
+		}
+	}
+}

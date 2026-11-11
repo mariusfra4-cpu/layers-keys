@@ -28,7 +28,7 @@ func runFX(c FXCfg, f float64) float64 {
 	n := 512 * 86
 	l, r := fxSine(f, n)
 	for o := 0; o < n; o += 512 {
-		ch.process(l[o:o+512], r[o:o+512], &c)
+		ch.process(l[o:o+512], r[o:o+512], &c, false)
 	}
 	in, _ := fxSine(f, n)
 	return 20 * math.Log10(fxRMS(l[n/2:])/fxRMS(in[n/2:]))
@@ -81,7 +81,7 @@ func TestFXSafe(t *testing.T) {
 			l[i] = 0.5 * math.Sin(float64(i+k*512)*0.03)
 			r[i] = l[i]
 		}
-		ch.process(l, r, &c)
+		ch.process(l, r, &c, false)
 		for i := range l {
 			if math.IsNaN(l[i]) || math.IsInf(l[i], 0) || math.Abs(l[i]) > 50 {
 				t.Fatalf("sortie instable bloc %d: %v", k, l[i])
@@ -102,7 +102,7 @@ func TestTremoloPan(t *testing.T) {
 	ch := newFXChain()
 	l, r := fxSine(300, 512*86)
 	for o := 0; o+512 <= len(l); o += 512 {
-		ch.process(l[o:o+512], r[o:o+512], &c)
+		ch.process(l[o:o+512], r[o:o+512], &c, false)
 	}
 	if math.Abs(fxRMS(l)-fxRMS(r)) > 0.05*fxRMS(l) {
 		t.Logf("niveaux G/D: %.3f %.3f", fxRMS(l), fxRMS(r))

@@ -37,7 +37,7 @@ func (r rect) has(px, py int) bool { return px >= r.x && px < r.x+r.w && py >= r
 // Ce que l'interface demande à la plateforme (Windows) de faire.
 type Host interface {
 	Invalidate()                                // demande un nouveau dessin (peut être appelé depuis n'importe quel thread)
-	OpenFile(kind string) (string, bool)        // boîte « Ouvrir » : kind = "sound" (SF2/WAV/MP3) ou "project"
+	OpenFile(kind string) (string, bool)        // boîte « Ouvrir » : kind = "sound" (SF2/WAV/MP3), "project", "audio", "folder" ou "padfolder" (un dossier)
 	SaveFile(defaultName string) (string, bool) // boîte « Enregistrer sous » d'un projet
 	Mods() (ctrl, shift bool)                   // touches Ctrl et Maj enfoncées ?
 	SetTitle(title string)                      // titre de la fenêtre
@@ -90,6 +90,7 @@ type overlay struct {
 	onOK       func(string)
 	back       func()                  // bouton « Retour » : revient à l'écran précédent
 	custom     func(c *Canvas, r rect) // contenu dessiné à la place de la liste
+	wide       bool                    // grande fenêtre (bibliothèque de sons, pads)
 }
 
 type UI struct {
@@ -118,12 +119,15 @@ type UI struct {
 	loading  [nCh]bool
 	gen      [nCh]int
 
-	srcCfg  [nCh]SrcCfg
-	learn   learnState  // MIDI Learn : associations CC → réglages
-	lastVel [2]int32    // dernière vélocité reçue du clavier MIDI : avant / après la courbe
-	icons   [nCh]int32  // icône de chaque piste, choisie automatiquement d'après le son
-	labels  [nCh]string // noms des pistes choisis par l'utilisateur
-	sf2s    map[string]*SF2
+	srcCfg   [nCh]SrcCfg
+	learn    learnState  // MIDI Learn : associations CC → réglages
+	lastVel  [2]int32    // dernière vélocité reçue du clavier MIDI : avant / après la courbe
+	icons    [nCh]int32  // icône de chaque piste, choisie automatiquement d'après le son
+	labels   [nCh]string // noms des pistes choisis par l'utilisateur
+	sf2s     map[string]*SF2
+	libs     libState // bibliothèque de sons et pads (library.go, pads.go)
+	pads     padUI
+	libTrack int // piste pour laquelle la bibliothèque est ouverte
 
 	namer     ChordNamer
 	mqMu      sync.Mutex
@@ -195,7 +199,8 @@ const (
 func NewUI(eng *Engine, host Host, cfgPath string) *UI {
 	u := &UI{eng: eng, host: host, cfgPath: cfgPath, now: time.Now,
 		sf2s: map[string]*SF2{}, counts: map[int]int{}, kbDown: map[uint32]int{}, scanNote: map[uint32]int{},
-		midiDown: map[int]bool{}, whiteX: map[int]int{}, mouseNote: -1, lastSave: time.Now()}
+		midiDown: map[int]bool{}, whiteX: map[int]int{}, mouseNote: -1, lastSave: time.Now(),
+		pads: padUI{playing: -1, loading: -1, pendKey: -1}}
 	if cfgPath != "" {
 		u.cfg = loadConfig(cfgPath)
 	} else {
@@ -226,6 +231,9 @@ func NewUI(eng *Engine, host Host, cfgPath string) *UI {
 	u.RefreshKeyLabels()
 	u.eng.SetMaster(u.cfg.Master)
 	u.eng.SetReverb(u.cfg.Reverb)
+	u.eng.SetLeslieFast(u.cfg.LeslieFast)
+	u.libLoad()
+	u.eng.Pads.SetVol(u.padCfg().Vol)
 	u.applyFX()
 	u.applyPlaying()
 	u.learnLoad(u.cfg.Learn)
@@ -511,34 +519,6 @@ func (u *UI) openFileFor(ch int, path string) {
 // ---------------------------------------------------------------- fenêtres de choix (overlay)
 
 func (u *UI) closeOverlay() { u.ov = nil; u.host.Invalidate() }
-
-func (u *UI) openSoundMenu(ch int) {
-	var items []olItem
-	items = append(items, olItem{text: "Ouvrir un fichier : SF2, WAV ou MP3…", sub: "parcourir l'ordinateur", action: func() {
-		if p, ok := u.host.OpenFile("sound"); ok {
-			u.openFileFor(ch, p)
-		}
-	}})
-	items = append(items, olItem{text: "Aucun son (vider cette piste)", action: func() { u.loadSource(ch, SrcCfg{}) }})
-	if len(u.cfg.Recent) > 0 {
-		items = append(items, olItem{text: "Fichiers récents", header: true})
-		for _, p := range u.cfg.Recent {
-			p := p
-			items = append(items, olItem{text: filepath.Base(p), sub: filepath.Dir(p), action: func() { u.openFileFor(ch, p) }})
-		}
-	}
-	items = append(items, olItem{text: "Sons de base (synthétisés)", header: true})
-	for k := 0; k < nInst; k++ {
-		k := k
-		items = append(items, olItem{text: instLabels[k], sub: strings.ToUpper(instCats[k]), action: func() {
-			u.loadSource(ch, SrcCfg{Kind: "builtin", Builtin: k, Name: instLabels[k]})
-		}})
-	}
-	u.ov = &overlay{title: Tf("Choisir le son de la piste %d", ch+1), items: items, sel: 0,
-		hint: "Clique sur un son · Échap pour fermer"}
-	u.ov.sel = u.ov.firstSelectable()
-	u.host.Invalidate()
-}
 
 func (u *UI) openPresetList(ch int, sf *SF2, path string) {
 	var items []olItem
@@ -1122,6 +1102,8 @@ func (u *UI) Tick() {
 	if redraw {
 		u.host.Invalidate()
 	}
+	u.updateChord() // (aussi quand rien n'est redessiné : les pads suivent les accords)
+	u.padTick()
 	if u.dirty && u.now().Sub(u.lastSave) > 1500*time.Millisecond {
 		u.Save()
 	}
@@ -1137,6 +1119,7 @@ func (u *UI) Save() {
 	u.cfg.Learn = u.learnList()
 	u.cfg.Master = u.eng.master
 	u.cfg.Reverb = u.eng.revAmt
+	u.cfg.LeslieFast = u.eng.LeslieFast()
 	u.cfg.Project, u.cfg.Changed = u.projPath, u.changed
 	u.cfg.Lang = langCode(CurLang())
 	_ = saveConfig(u.cfgPath, u.cfg)

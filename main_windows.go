@@ -365,6 +365,12 @@ func (a *winApp) fileDialog(save bool, filterStr, title, defExt, initial string)
 }
 
 func (a *winApp) OpenFile(kind string) (string, bool) {
+	switch kind {
+	case "folder":
+		return a.folderDialog("Choisir le dossier de sons (Layers Keys l'analyse et range les sons)")
+	case "padfolder":
+		return a.folderDialog("Choisir le dossier des pads (un pad par tonalité, majeur et mineur)")
+	}
 	if kind == "project" {
 		return a.fileDialog(false, "Projets Layers Keys (*.lkeys)\x00*.lkeys\x00Tous les fichiers\x00*.*\x00\x00",
 			"Ouvrir un projet Layers Keys", "", "")
