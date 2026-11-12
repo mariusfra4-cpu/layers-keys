@@ -59,9 +59,14 @@ jobs:
           for pg in 1 0 2; do
             xcrun simctl terminate "$DEV" com.jbpraise.layersremote >/dev/null 2>&1
             sleep 2
-            xcrun simctl launch "$DEV" com.jbpraise.layersremote -LRPage $pg -LRDemo | tee -a /tmp/o/04_essai.txt
+            L=$(xcrun simctl launch "$DEV" com.jbpraise.layersremote -LRPage $pg -LRDemo)
+            echo "$L" | tee -a /tmp/o/04_essai.txt
+            PID=$(echo "$L" | sed -E 's/.*: ([0-9]+)/\1/')
             sleep 12
             xcrun simctl io "$DEV" screenshot /tmp/o/page_$pg.png
+            # ce que fait l'application à ce moment (fil principal bloqué ?)
+            sample "$PID" 2 -file /tmp/o/activite_page_$pg.txt >/dev/null 2>&1 || echo "pas d'échantillon pour $PID" >> /tmp/o/04_essai.txt
+            xcrun simctl spawn "$DEV" log show --last 30s --style compact --predicate 'process == "LayersRemote"' 2>/dev/null | tail -40 > /tmp/o/journal_page_$pg.txt
             if xcrun simctl spawn "$DEV" launchctl list | grep -q layersremote; then
               echo "page $pg : application en marche" | tee -a /tmp/o/04_essai.txt
             else
