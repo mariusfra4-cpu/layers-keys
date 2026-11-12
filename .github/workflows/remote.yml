@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Tests (sans Android) : messages MIDI, Wi-Fi, boutons et faders
+      - name: "Tests (sans Android) : messages MIDI, Wi-Fi, boutons et faders"
         run: |
           mkdir -p /tmp/o /tmp/rt
           cd android-remote
