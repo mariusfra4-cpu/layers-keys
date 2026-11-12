@@ -1,0 +1,16 @@
+Performing Streamed Install
+Success
+Starting: Intent { cmp=com.jbpraise.layersremote/.MainActivity }
+Status: ok
+LaunchState: COLD
+Activity: com.jbpraise.layersremote/.MainActivity
+TotalTime: 1144
+WaitTime: 1152
+Complete
+écran : 640x320
+capture 1_mixeur
+capture 2_mixeur_apres_gestes
+capture 3_live
+capture 4_reglages
+application en marche : OK
+11-12 08:35:37.846   859   859 I AndroidRuntime: VM exiting with result code 0, cleanup skipped.
