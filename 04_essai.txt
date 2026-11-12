@@ -1,0 +1,7 @@
+simulateur BEB0C3A5-7D46-4D50-B4C6-777F0A79718D app ios-remote/build/sim/Build/Products/Debug-iphonesimulator/LayersRemote.app
+com.jbpraise.layersremote: 8668
+page 0 : application en marche
+com.jbpraise.layersremote: 12798
+page 2 : PLANTAGE
+com.jbpraise.layersremote: 14991
+application en marche : OK

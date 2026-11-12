@@ -1,0 +1,2 @@
+Timestamp               Ty Process[PID:TID]
+2026-11-12 19:06:07.742 Df log[15916:0] [com.apple.log:] log run noninteractively, parent: 4551 (launchd_sim), args: 'log' 'show' '--last' '20s' '--style' 'compact' '--predicate' 'eventMessage CONTAINS "LayersRemote"'

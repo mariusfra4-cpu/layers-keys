@@ -1,0 +1,17 @@
+OK    volume piste 3 = CC 22
+OK    canal 16, valeur bornée
+OK    preset 5 = Program Change 4
+OK    tout arrêter sur les 16 canaux
+OK    faders 0..127
+OK    35 CC libres et différents
+OK    fader 1 : un seul message quand la valeur ne change pas
+OK    M piste 5 momentané : 127 puis 0
+OK    H piste 3 en bascule
+OK    preset 3 canal 4
+OK    Leslie CC 30
+OK    renvoyer tout : 10 messages
+OK    réglages gardés
+OK    fichier abîmé ignoré
+OK    format identique à Android
+
+TÉLÉCOMMANDE iPhone : TOUT VA BIEN
