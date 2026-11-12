@@ -30,6 +30,7 @@ final class RemoteViewController: UIViewController {
         st.load(UserDefaults.standard.string(forKey: RemoteViewController.key))
         st.sustain = false
         st.panicFlash = false
+        st.page = 0 // l'application s'ouvre toujours sur le MIXEUR (le plus utile en live)
         // essais automatiques (simulateur) : -LRPage 0|1|2 choisit la page, -LRDemo allume quelques boutons
         let args = ProcessInfo.processInfo.arguments
         if let i = args.firstIndex(of: "-LRPage"), i + 1 < args.count, let pg = Int(args[i + 1]) { st.page = max(0, min(2, pg)) }
@@ -37,7 +38,6 @@ final class RemoteViewController: UIViewController {
         if let i = args.firstIndex(of: "-LRSwitch"), i + 1 < args.count, let pg = Int(args[i + 1]) {
             Timer.scheduledTimer(withTimeInterval: 4, repeats: false) { [weak self] _ in
                 guard let self = self else { return }
-                NSLog("LayersRemote essai : page %d", pg)
                 self.st.page = max(0, min(2, pg))
                 self.rv.setNeedsDisplay()
             }

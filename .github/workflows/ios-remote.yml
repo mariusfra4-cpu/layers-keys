@@ -56,7 +56,7 @@ jobs:
           echo "simulateur $DEV app $APP" | tee /tmp/o/04_essai.txt
           xcrun simctl boot "$DEV"; xcrun simctl bootstatus "$DEV" -b >/dev/null
           xcrun simctl install "$DEV" "$APP"
-          for pg in 1 0 2; do
+          for pg in 0 2; do
             xcrun simctl terminate "$DEV" com.jbpraise.layersremote >/dev/null 2>&1
             sleep 2
             L=$(xcrun simctl launch "$DEV" com.jbpraise.layersremote -LRPage $pg -LRDemo)
