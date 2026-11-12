@@ -272,6 +272,12 @@ func (u *UI) OpenSettings() {
 	}})
 	items = append(items, u.libSettingsItems()...)
 	items = append(items, u.playingSettingsItems()...)
+	items = append(items, olItem{text: T("Télécommande Android"), header: true})
+	remTxt := T("Associer la télécommande Layers Remote")
+	if u.remoteLinked() {
+		remTxt = T("Télécommande Layers Remote : associée")
+	}
+	items = append(items, olItem{text: remTxt, sub: T("faders, M / S / H, Leslie, presets"), action: func() { u.remoteLink(); u.OpenSettings() }})
 	if !u.Plugin {
 		items = append(items, olItem{text: "MIDI", header: true})
 		ms := u.midiStatus

@@ -131,6 +131,7 @@ type UI struct {
 	splitLearn int32 // 1 : la prochaine note jouée devient le point de split (atomique)
 	splitGot   int32 // note reçue + 1 (atomique)
 	splitDef   int   // dernier point de split choisi
+	pcPending  int32 // preset demandé par un Program Change + 1 (atomique)
 
 	namer     ChordNamer
 	mqMu      sync.Mutex
@@ -1011,6 +1012,9 @@ func (u *UI) MidiFast(msg uint32) {
 			return // consommé par l'apprentissage
 		}
 		u.eng.Control(d1, d2)
+	case 0xC0: // changement de programme : preset 1-8 (télécommande, pédalier MIDI…)
+		u.programChange(d1)
+		return
 	case 0xE0:
 		u.eng.SetBend((d2<<7 | d1) - 8192)
 	case 0xD0: // aftertouch de canal
@@ -1112,6 +1116,7 @@ func (u *UI) Tick() {
 	u.updateChord() // (aussi quand rien n'est redessiné : les pads suivent les accords)
 	u.padTick()
 	u.splitTick()
+	u.pcTick()
 	if u.dirty && u.now().Sub(u.lastSave) > 1500*time.Millisecond {
 		u.Save()
 	}

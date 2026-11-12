@@ -52,6 +52,13 @@ func init() {
 		"SPLIT : joue la note où le clavier doit être coupé (elle commence la zone de droite).":     {"SPLIT: play the note where the keyboard should be split (it starts the right zone).", "SPLIT: toca la nota donde se divide el teclado (empieza la zona derecha)."},
 		"Split réglé sur %s : la zone de droite commence à cette note.":                             {"Split set to %s: the right zone starts at this note.", "Split en %s: la zona derecha empieza en esta nota."},
 		"Mets maintenant une piste en GAUCHE (basse) et une en DROITE (piano) avec le bouton ZONE.": {"Now set one track to LEFT (bass) and one to RIGHT (piano) with the ZONE button.", "Ahora pon una pista en IZQUIERDA (bajo) y otra en DERECHA (piano) con el botón ZONA."},
+		// télécommande Android
+		"Télécommande Android":                   {"Android remote", "Control remoto Android"},
+		"Associer la télécommande Layers Remote": {"Link the Layers Remote app", "Vincular el control Layers Remote"},
+		"Télécommande Layers Remote : associée":  {"Layers Remote: linked", "Layers Remote: vinculado"},
+		"faders, M / S / H, Leslie, presets":     {"faders, M / S / H, Leslie, presets", "faders, M / S / H, Leslie, presets"},
+		"Télécommande Layers Remote associée : faders, M / S / H, général, réverbération, Leslie et presets.": {"Layers Remote linked: faders, M / S / H, master, reverb, Leslie and presets.", "Layers Remote vinculado: faders, M / S / H, general, reverb, Leslie y presets."},
+		"Preset %d « %s »": {"Preset %d « %s »", "Preset %d « %s »"},
 		// pads continus
 		"PADS…":         {"PADS…", "PADS…"},
 		"Pads continus": {"Continuous pads", "Pads continuos"},

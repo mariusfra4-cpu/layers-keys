@@ -1,0 +1,68 @@
+# Construit la télécommande Android « Layers Remote », lance ses tests, puis l'essaie dans un émulateur Android
+# (captures des 3 pages, appui sur un bouton, mouvement d'un fader). APK et captures publiés dans la branche « ci-remote ».
+name: Layers Remote Android
+on:
+  push:
+    paths: ['android-remote/**', '.github/workflows/remote.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tests (sans Android) : messages MIDI, Wi-Fi, boutons et faders
+        run: |
+          mkdir -p /tmp/o /tmp/rt
+          cd android-remote
+          javac -d /tmp/rt src/com/jbpraise/layersremote/MidiMap.java src/com/jbpraise/layersremote/RtpMidi.java \
+            src/com/jbpraise/layersremote/RemoteState.java test/RemoteTest.java
+          java -Dfile.encoding=UTF-8 -cp /tmp/rt RemoteTest | tee /tmp/o/01_tests.txt
+      - name: APK
+        run: ./android-remote/build.sh 2>&1 | tee /tmp/o/02_build.txt | tail -12
+      - uses: actions/upload-artifact@v4
+        with:
+          name: remote-apk
+          path: android-remote/build/layers-remote.apk
+      - name: Publier
+        if: always()
+        run: |
+          cp android-remote/build/layers-remote.apk /tmp/o/Layers-Remote.apk 2>/dev/null || true
+          git config user.name ci; git config user.email ci@users.noreply.github.com
+          git checkout --orphan ci-remote-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          git clean -fdxq
+          cp /tmp/o/* . 2>/dev/null || true
+          echo "run $GITHUB_RUN_ID" > run.txt
+          git add -A && git commit -qm "télécommande $GITHUB_RUN_ID"
+          git push -f origin HEAD:refs/heads/ci-remote
+  emulateur:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: remote-apk
+          path: /tmp/art
+      - name: KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 33
+          arch: x86_64
+          target: default
+          disable-animations: true
+          script: bash android-remote/test/emu.sh /tmp/art/layers-remote.apk /tmp/shots
+      - name: Publier les captures
+        if: always()
+        run: |
+          git fetch -q origin ci-remote || exit 0
+          git config user.name ci; git config user.email ci@users.noreply.github.com
+          git checkout -q -B ci-remote origin/ci-remote
+          cp /tmp/shots/* . 2>/dev/null || true
+          git add -A && git commit -qm "captures $GITHUB_RUN_ID" || true
+          git push -f origin HEAD:refs/heads/ci-remote
