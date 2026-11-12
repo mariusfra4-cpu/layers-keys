@@ -1,0 +1,70 @@
+# Construit l'APK Eli Guitar Chords et le teste dans un émulateur.
+# Résultats : branche « ci-eli » (APK) et « ci-eli-test » (captures d'écran et journaux).
+name: Eli Guitar Chords Android
+on:
+  push:
+    paths: ['eli-guitar-app/**', '.github/workflows/eli.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Construction de l'APK
+        run: VCODE=${{ github.run_number }} ./eli-guitar-app/build.sh 2>&1 | tee /tmp/build.txt
+      - name: Contenu
+        run: unzip -l eli-guitar-app/build/eliguitarchords.apk | tee /tmp/contenu.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: eli-apk
+          path: eli-guitar-app/build/eliguitarchords.apk
+      - name: Publier
+        if: always()
+        run: |
+          mkdir -p /tmp/o
+          cp eli-guitar-app/build/eliguitarchords.apk /tmp/o/Eli-Guitar-Chords.apk 2>/dev/null || true
+          cp /tmp/build.txt /tmp/contenu.txt /tmp/o/ 2>/dev/null || true
+          git config user.name ci; git config user.email ci@users.noreply.github.com
+          git checkout --orphan ci-eli-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          git clean -fdxq
+          cp /tmp/o/* . 2>/dev/null || true
+          echo "run $GITHUB_RUN_ID" > run.txt
+          git add -A && git commit -qm "eli apk $GITHUB_RUN_ID"
+          git push -f origin HEAD:refs/heads/ci-eli
+  emulateur:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: eli-apk
+          path: /tmp/art
+      - name: KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 33
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          script: bash eli-guitar-app/test/emu.sh /tmp/art/eliguitarchords.apk
+        env:
+          OUT: /tmp/emu
+      - name: Publier
+        if: always()
+        run: |
+          mkdir -p /tmp/o; cp /tmp/emu/* /tmp/o/ 2>/dev/null || true
+          git config user.name ci; git config user.email ci@users.noreply.github.com
+          git checkout --orphan ci-eli-test-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          git clean -fdxq
+          cp /tmp/o/* . 2>/dev/null || true
+          echo "run $GITHUB_RUN_ID" > run.txt
+          git add -A && git commit -qm "test eli $GITHUB_RUN_ID"
+          git push -f origin HEAD:refs/heads/ci-eli-test
