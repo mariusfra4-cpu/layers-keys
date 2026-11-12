@@ -1,0 +1,38 @@
+# Projet Xcode de « Layers Remote » pour iPhone / iPad, généré par XcodeGen (brew install xcodegen ; xcodegen).
+name: LayersRemote
+options:
+  bundleIdPrefix: com.jbpraise
+  deploymentTarget:
+    iOS: "14.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    TARGETED_DEVICE_FAMILY: "1,2"
+    ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    CODE_SIGN_STYLE: Automatic
+targets:
+  LayersRemote:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources
+      - path: Resources
+    info:
+      path: Generated/Info.plist
+      properties:
+        CFBundleDisplayName: Layers Remote
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        UILaunchScreen: {}
+        UIRequiresFullScreen: true
+        UIStatusBarHidden: true
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+        UISupportedInterfaceOrientations~ipad: [UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+        NSLocalNetworkUsageDescription: "Layers Remote envoie les faders et les boutons à ton ordinateur par le Wi-Fi (réseau MIDI)."
+        NSBonjourServices: [_apple-midi._udp]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.jbpraise.layersremote
+        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES

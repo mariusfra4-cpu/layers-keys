@@ -1,0 +1,97 @@
+# Construit « Layers Remote » pour iPhone / iPad sur un Mac de GitHub :
+#   tests de la logique (sans iPhone), application pour le simulateur iPhone + captures des 3 pages,
+#   application pour iPhone (.ipa NON signée : à signer avec un compte Apple pour l'installer sur un vrai iPhone).
+# Résultats dans la branche « ci-ios ».
+name: Layers Remote iPhone
+on:
+  push:
+    paths: ['ios-remote/**', '.github/workflows/ios-remote.yml']
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: "Machine GitHub (macos-15-intel si les Mac Apple Silicon sont saturés)"
+        default: macos-15-intel
+permissions:
+  contents: write
+jobs:
+  ios:
+    runs-on: ${{ inputs.runner || 'macos-15-intel' }}
+    defaults:
+      run:
+        shell: bash -eo pipefail {0}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Préparation
+        run: |
+          mkdir -p /tmp/o
+          (sw_vers; xcodebuild -version; swift --version) 2>&1 | tee /tmp/o/00_systeme.txt
+      - name: "Tests de la logique (messages MIDI, boutons, faders, presets, enregistrement)"
+        run: |
+          cd ios-remote
+          swiftc -O Sources/MidiMap.swift Sources/RemoteState.swift Tests/main.swift -o /tmp/logic
+          /tmp/logic | tee /tmp/o/01_tests.txt
+      - name: Projet Xcode
+        run: |
+          brew install xcodegen >/dev/null 2>&1 || brew install xcodegen
+          cd ios-remote && xcodegen generate 2>&1 | tee /tmp/o/02_projet.txt
+      - name: Application pour le simulateur
+        run: |
+          cd ios-remote
+          xcodebuild -project LayersRemote.xcodeproj -scheme LayersRemote -configuration Debug \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build/sim \
+            CODE_SIGNING_ALLOWED=NO build 2>&1 | tee /tmp/o/03_simulateur.txt | grep -E 'error|warning: unre|BUILD' | tail -30
+      - name: Essai dans le simulateur iPhone (captures des 3 pages)
+        continue-on-error: true
+        run: |
+          set +e
+          APP=$(find ios-remote/build/sim -name 'LayersRemote.app' -type d | head -1)
+          DEV=$(xcrun simctl list devices available -j | python3 -c "
+          import json,sys
+          d=json.load(sys.stdin)['devices']
+          for rt,devs in d.items():
+            if 'iOS' in rt:
+              for x in devs:
+                if x['name'].startswith('iPhone'):
+                  print(x['udid']); sys.exit()")
+          echo "simulateur $DEV app $APP" | tee /tmp/o/04_essai.txt
+          xcrun simctl boot "$DEV"; xcrun simctl bootstatus "$DEV" -b >/dev/null
+          xcrun simctl install "$DEV" "$APP"
+          for pg in 0 1 2; do
+            xcrun simctl terminate "$DEV" com.jbpraise.layersremote >/dev/null 2>&1
+            xcrun simctl launch "$DEV" com.jbpraise.layersremote -LRPage $pg -LRDemo | tee -a /tmp/o/04_essai.txt
+            sleep 6
+            xcrun simctl io "$DEV" screenshot /tmp/o/page_$pg.png
+          done
+          if xcrun simctl spawn "$DEV" launchctl list | grep -q layersremote; then
+            echo "application en marche : OK" | tee -a /tmp/o/04_essai.txt
+          else
+            echo "application arrêtée : PLANTAGE" | tee -a /tmp/o/04_essai.txt
+          fi
+          ls ~/Library/Logs/DiagnosticReports/ 2>/dev/null | grep -i layers | tee -a /tmp/o/04_essai.txt
+      - name: Application pour iPhone (.ipa non signée)
+        run: |
+          cd ios-remote
+          xcodebuild -project LayersRemote.xcodeproj -scheme LayersRemote -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build/dev \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build 2>&1 \
+            | tee /tmp/o/05_iphone.txt | grep -E 'error|BUILD' | tail -20
+          APP=$(find build/dev -name 'LayersRemote.app' -type d | grep iphoneos | head -1)
+          rm -rf /tmp/ipa && mkdir -p /tmp/ipa/Payload && cp -R "$APP" /tmp/ipa/Payload/
+          (cd /tmp/ipa && zip -qr /tmp/o/Layers-Remote-iPhone-non-signe.ipa Payload)
+          ls -la /tmp/o/*.ipa | tee -a /tmp/o/05_iphone.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: layers-remote-ios
+          path: /tmp/o
+      - name: Publier (branche ci-ios)
+        if: always()
+        run: |
+          git config user.name ci; git config user.email ci@users.noreply.github.com
+          git checkout --orphan ci-ios-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          git clean -fdxq
+          cp /tmp/o/* . 2>/dev/null || true
+          echo "run $GITHUB_RUN_ID" > run.txt
+          git add -A && git commit -qm "iPhone $GITHUB_RUN_ID"
+          git push -f origin HEAD:refs/heads/ci-ios

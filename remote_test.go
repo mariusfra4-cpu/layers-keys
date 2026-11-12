@@ -9,22 +9,24 @@ import (
 
 // les numéros doivent être identiques dans l'application Android et dans Layers Keys
 func TestRemoteNumbersMatchAndroidApp(t *testing.T) {
-	b, err := os.ReadFile("android-remote/src/com/jbpraise/layersremote/MidiMap.java")
-	if err != nil {
-		t.Fatal(err)
-	}
-	get := func(name string) int {
-		m := regexp.MustCompile(`\b` + name + `\s*=\s*(\d+)`).FindSubmatch(b)
-		if m == nil {
-			t.Fatalf("%s introuvable dans MidiMap.java", name)
+	for _, f := range []string{"android-remote/src/com/jbpraise/layersremote/MidiMap.java", "ios-remote/Sources/MidiMap.swift"} {
+		b, err := os.ReadFile(f)
+		if err != nil {
+			t.Fatal(err)
 		}
-		n, _ := strconv.Atoi(string(m[1]))
-		return n
-	}
-	for name, want := range map[string]int{"VOL_BASE": remVolBase, "MUTE_BASE": remMuteBase, "SOLO_BASE": remSoloBase,
-		"HOLD_BASE": remHoldBase, "MASTER": remMaster, "REVERB": remReverb, "LESLIE": remLeslie} {
-		if got := get(name); got != want {
-			t.Errorf("%s : %d dans l'application Android, %d dans Layers Keys", name, got, want)
+		get := func(name string) int {
+			m := regexp.MustCompile(`\b` + name + `\s*=\s*(\d+)`).FindSubmatch(b)
+			if m == nil {
+				t.Fatalf("%s introuvable dans %s", name, f)
+			}
+			n, _ := strconv.Atoi(string(m[1]))
+			return n
+		}
+		for name, want := range map[string]int{"VOL_BASE": remVolBase, "MUTE_BASE": remMuteBase, "SOLO_BASE": remSoloBase,
+			"HOLD_BASE": remHoldBase, "MASTER": remMaster, "REVERB": remReverb, "LESLIE": remLeslie} {
+			if got := get(name); got != want {
+				t.Errorf("%s : %d dans %s, %d dans Layers Keys", name, got, f, want)
+			}
 		}
 	}
 	for cc := range remoteMap() {
