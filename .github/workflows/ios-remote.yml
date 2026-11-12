@@ -73,6 +73,16 @@ jobs:
               echo "page $pg : PLANTAGE" | tee -a /tmp/o/04_essai.txt
             fi
           done
+          # une seule ouverture : l'application change elle-même de page toutes les 4 s (MIXEUR → LIVE → RÉGLAGES)
+          xcrun simctl terminate "$DEV" com.jbpraise.layersremote >/dev/null 2>&1
+          sleep 2
+          xcrun simctl launch "$DEV" com.jbpraise.layersremote -LRPage 0 -LRDemo -LRCycle | tee -a /tmp/o/04_essai.txt
+          sleep 10
+          xcrun simctl io "$DEV" screenshot /tmp/o/suite_1.png
+          sleep 4
+          xcrun simctl io "$DEV" screenshot /tmp/o/suite_2.png
+          sleep 4
+          xcrun simctl io "$DEV" screenshot /tmp/o/suite_3.png
           # rapports de plantage éventuels (simulateur)
           for f in $(ls -t ~/Library/Logs/DiagnosticReports/*LayersRemote* 2>/dev/null | head -2); do
             echo "=== $f" >> /tmp/o/04_essai.txt; head -c 6000 "$f" >> /tmp/o/04_essai.txt
