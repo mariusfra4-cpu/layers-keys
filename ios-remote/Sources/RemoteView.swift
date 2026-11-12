@@ -52,6 +52,7 @@ final class RemoteView: UIView {
     // ---------------------------------------------------------------- dessin
 
     override func draw(_ rect: CGRect) {
+        NSLog("LayersRemote dessin : page %d", st.page)
         BG.setFill()
         UIRectFill(bounds)
         drawTop()
@@ -169,6 +170,7 @@ final class RemoteView: UIView {
 
     private func drawLive() {
         let g = liveGeo
+        NSLog("LayersRemote dessin LIVE : zone %@, presets %@, leslie %@", NSCoder.string(for: R), NSCoder.string(for: g.presets[0]), NSCoder.string(for: g.leslie))
         text("PRESETS", X0 + 14, top + 20, 12, GOLD, center: false)
         for (k, r) in g.presets.enumerated() {
             button(r, "PRESET \(k + 1)", st.preset == k, GOLD, min(r.height * 0.2, 20))

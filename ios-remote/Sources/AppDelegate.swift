@@ -33,12 +33,12 @@ final class RemoteViewController: UIViewController {
         // essais automatiques (simulateur) : -LRPage 0|1|2 choisit la page, -LRDemo allume quelques boutons
         let args = ProcessInfo.processInfo.arguments
         if let i = args.firstIndex(of: "-LRPage"), i + 1 < args.count, let pg = Int(args[i + 1]) { st.page = max(0, min(2, pg)) }
-        if args.contains("-LRCycle") { // essai : change de page toutes les 4 s, comme un doigt sur les onglets
-            var n = 0
-            Timer.scheduledTimer(withTimeInterval: 4, repeats: true) { [weak self] _ in
+        // essai : -LRSwitch N passe à la page N au bout de 4 s (comme un doigt sur l'onglet) et y reste
+        if let i = args.firstIndex(of: "-LRSwitch"), i + 1 < args.count, let pg = Int(args[i + 1]) {
+            Timer.scheduledTimer(withTimeInterval: 4, repeats: false) { [weak self] _ in
                 guard let self = self else { return }
-                n += 1
-                self.st.page = n % 3
+                NSLog("LayersRemote essai : page %d", pg)
+                self.st.page = max(0, min(2, pg))
                 self.rv.setNeedsDisplay()
             }
         }
