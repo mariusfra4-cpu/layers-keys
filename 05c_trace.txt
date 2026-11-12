@@ -1,0 +1,611 @@
+lookup 1
+lookup 2
+lookup 3
+lookup 4
+lookup 5
+lookup 10
+lookup 11
+lookup 18
+lookup 15
+lookup 16
+lookup 6
+lookup 7
+lookup 17
+lookup 14
+lookup 9
+lookup 19
+lookup 20
+lookup 21
+lookup 513
+lookup 514
+lookup 257
+lookup 258
+lookup 261
+lookup 262
+lookup 263
+lookup 259
+lookup 260
+open ci=0x81e260b2
+open h=1
+getprop 60 scope=0 elem=0
+getpropinfo 11 scope=1 elem=0
+getprop 11 scope=1 elem=0
+getpropinfo 11 scope=2 elem=0
+getprop 11 scope=2 elem=0
+getpropinfo 21 scope=0 elem=0
+reset
+getprop 0 scope=0 elem=0
+make_state: avant lkGetState
+make_state: lkGetState len=14950 p=0x7fcf7302b000
+make_state: data=0x7fcf7302ec00
+make_state: fini
+setprop 0 scope=0 elem=0 size=8
+setprop ClassInfo: data=0x7fcf7302ec00
+setprop ClassInfo: lkSetState len=14950
+setprop ClassInfo: lkSetState fini
+getpropinfo 3 scope=0 elem=0
+getprop 24 scope=0 elem=0
+getprop 0 scope=0 elem=0
+make_state: avant lkGetState
+make_state: lkGetState len=14950 p=0x7fcf73812e00
+make_state: data=0x7fcf73816a00
+make_state: fini
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+open ci=0x81e260b3
+open h=2
+getprop 60 scope=0 elem=0
+getprop 36 scope=0 elem=0
+getpropinfo 11 scope=1 elem=0
+getprop 11 scope=1 elem=0
+getpropinfo 11 scope=2 elem=0
+getprop 11 scope=2 elem=0
+getpropinfo 21 scope=0 elem=0
+reset
+getprop 0 scope=0 elem=0
+make_state: avant lkGetState
+make_state: lkGetState len=14950 p=0x7fcf74809c00
+make_state: data=0x7fcf74812a00
+make_state: fini
+setprop 0 scope=0 elem=0 size=8
+setprop ClassInfo: data=0x7fcf74812a00
+setprop ClassInfo: lkSetState len=14950
+setprop ClassInfo: lkSetState fini
+getpropinfo 3 scope=0 elem=0
+getprop 24 scope=0 elem=0
+getprop 0 scope=0 elem=0
+make_state: avant lkGetState
+make_state: lkGetState len=14950 p=0x7fcf73810000
+make_state: data=0x7fcf73813c00
+make_state: fini
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+getprop 0 scope=0 elem=0
+make_state: avant lkGetState
+make_state: lkGetState len=14950 p=0x7fcf74812a00
+make_state: data=0x7fcf74809c00
+make_state: fini
+setprop 0 scope=0 elem=0 size=8
+setprop ClassInfo: data=0x7fcf74809c00
+setprop ClassInfo: lkSetState len=14950
+setprop ClassInfo: lkSetState fini
+initialize rate=44100 max=4096
+getprop 64 scope=0 elem=0
+uninitialize
+getprop 11 scope=1 elem=0
+getprop 11 scope=2 elem=0
+getprop 11 scope=3 elem=0
+getprop 8 scope=2 elem=0
+getprop 30 scope=2 elem=0
+getpropinfo 32 scope=2 elem=0
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+getprop 0 scope=0 elem=0
+make_state: avant lkGetState
+make_state: lkGetState len=14950 p=0x7fcf7380f000
+make_state: data=0x7fcf73812c00
+make_state: fini
+setprop 0 scope=0 elem=0 size=8
+setprop ClassInfo: data=0x7fcf73812c00
+setprop ClassInfo: lkSetState len=14950
+setprop ClassInfo: lkSetState fini
+getpropinfo 3 scope=0 elem=0
+getprop 24 scope=0 elem=0
+getpropinfo 12 scope=0 elem=0
+getprop 12 scope=0 elem=0
+getprop 12 scope=0 elem=0
+getpropinfo 12 scope=2 elem=0
+getprop 12 scope=2 elem=0
+getpropinfo 12 scope=4 elem=0
+getprop 12 scope=4 elem=0
+getpropinfo 12 scope=5 elem=0
+getprop 12 scope=5 elem=0
+getprop 12 scope=0 elem=0
+getprop 14 scope=0 elem=0
+addlistener 14
+setprop 14 scope=0 elem=0 size=4
+setprop 14 scope=0 elem=0 size=4
+setprop 14 scope=0 elem=0 size=4
+setprop 14 scope=0 elem=0 size=4
+getpropinfo 20 scope=0 elem=0
+getprop 20 scope=0 elem=0
+getprop 20 scope=0 elem=0
+getpropinfo 20 scope=2 elem=0
+getprop 20 scope=2 elem=0
+getpropinfo 20 scope=4 elem=0
+getprop 20 scope=4 elem=0
+getpropinfo 20 scope=5 elem=0
+getprop 20 scope=5 elem=0
+getpropinfo 21 scope=0 elem=0
+getprop 21 scope=0 elem=0
+getpropinfo 21 scope=2 elem=0
+getprop 21 scope=2 elem=0
+getpropinfo 21 scope=4 elem=0
+getprop 21 scope=4 elem=0
+getpropinfo 21 scope=5 elem=0
+getprop 21 scope=5 elem=0
+getpropinfo 6 scope=0 elem=0
+getprop 6 scope=0 elem=0
+getpropinfo 6 scope=2 elem=0
+getprop 6 scope=2 elem=0
+getpropinfo 6 scope=4 elem=0
+getprop 6 scope=4 elem=0
+getpropinfo 6 scope=5 elem=0
+getprop 6 scope=5 elem=0
+getpropinfo 31 scope=0 elem=0
+getprop 31 scope=0 elem=0
+getprop 36 scope=0 elem=0
+getprop 36 scope=0 elem=0
+setprop 36 scope=0 elem=0 size=16
+getprop 24 scope=0 elem=0
+getprop 0 scope=0 elem=0
+make_state: avant lkGetState
+make_state: lkGetState len=14950 p=0x7fcf7302a400
+make_state: data=0x7fcf7302e000
+make_state: fini
+getpropinfo 27 scope=0 elem=0
+setprop 27 scope=0 elem=0 size=40
+getpropinfo 27 scope=0 elem=0
+setprop 27 scope=0 elem=0 size=40
+getpropinfo 3 scope=0 elem=0
+getpropinfo 3 scope=1 elem=0
+getpropinfo 3 scope=2 elem=0
+getpropinfo 3 scope=3 elem=0
+getpropinfo 3 scope=4 elem=0
+getpropinfo 3 scope=5 elem=0
+initialize rate=44100 max=4096
+getprop 64 scope=0 elem=0
+reset
+uninitialize
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+uninitialize
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 11 scope=1 elem=0
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+uninitialize
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getpropinfo 32 scope=2 elem=0
+getprop 8 scope=1 elem=0
+getprop 8 scope=1 elem=0
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+uninitialize
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 11 scope=1 elem=0
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+uninitialize
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 11 scope=1 elem=0
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+uninitialize
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 11 scope=1 elem=0
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+uninitialize
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 11 scope=1 elem=0
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+uninitialize
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 11 scope=1 elem=0
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+uninitialize
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getpropinfo 32 scope=2 elem=0
+getprop 8 scope=1 elem=0
+getprop 8 scope=1 elem=0
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+uninitialize
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 11 scope=1 elem=0
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+uninitialize
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 11 scope=1 elem=0
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+uninitialize
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 11 scope=1 elem=0
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+uninitialize
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 11 scope=1 elem=0
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+uninitialize
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 11 scope=1 elem=0
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+uninitialize
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 11 scope=1 elem=0
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+uninitialize
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 11 scope=1 elem=0
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+uninitialize
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 11 scope=1 elem=0
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+uninitialize
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 11 scope=1 elem=0
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+uninitialize
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 11 scope=1 elem=0
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+uninitialize
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 11 scope=1 elem=0
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+uninitialize
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 11 scope=1 elem=0
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+uninitialize
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getpropinfo 32 scope=2 elem=0
+initialize rate=44100 max=4096
+getprop 64 scope=0 elem=0
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+uninitialize
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 11 scope=1 elem=0
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+uninitialize
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 11 scope=1 elem=0
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+uninitialize
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 11 scope=1 elem=0
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+uninitialize
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 11 scope=1 elem=0
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+uninitialize
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 11 scope=1 elem=0
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+uninitialize
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getpropinfo 32 scope=2 elem=0
+initialize rate=44100 max=4096
+getprop 64 scope=0 elem=0
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 11 scope=1 elem=0
+getpropinfo 32 scope=1 elem=0
+getpropinfo 32 scope=2 elem=0
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+uninitialize
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getpropinfo 32 scope=2 elem=0
+initialize rate=44100 max=4096
+getprop 64 scope=0 elem=0
+getprop 3700 scope=0 elem=0
+getprop 29 scope=0 elem=0
+getprop 8 scope=1 elem=0
+getprop 8 scope=2 elem=0
+getpropinfo 27 scope=0 elem=0
+setprop 27 scope=0 elem=0 size=40
+getprop 11 scope=1 elem=0
+getprop 8 scope=1 elem=0
+getprop 8 scope=2 elem=0
+getprop 11 scope=1 elem=0
+getprop 11 scope=2 elem=0
+getprop 14 scope=0 elem=0
+render bus=0 frames=512 nbuf=2
+getpropinfo 27 scope=0 elem=0
+setprop 27 scope=0 elem=0 size=40
+getprop 8 scope=1 elem=0
+getprop 8 scope=2 elem=0
+getprop 11 scope=1 elem=0
+getprop 11 scope=2 elem=0
+getprop 14 scope=0 elem=0
+render bus=0 frames=64 nbuf=2
+getprop 8 scope=1 elem=0
+getprop 8 scope=2 elem=0
+getprop 11 scope=1 elem=0
+getprop 11 scope=2 elem=0
+getprop 14 scope=0 elem=0
+render bus=0 frames=64 nbuf=2
+getprop 8 scope=1 elem=0
+getprop 8 scope=2 elem=0
+getprop 11 scope=1 elem=0
+getprop 11 scope=2 elem=0
+getprop 14 scope=0 elem=0
+getprop 8 scope=1 elem=0
+getprop 8 scope=2 elem=0
+getprop 11 scope=1 elem=0
+getprop 11 scope=2 elem=0
+getprop 14 scope=0 elem=0
+getprop 8 scope=1 elem=0
+getprop 8 scope=2 elem=0
+getprop 11 scope=1 elem=0
+getprop 11 scope=2 elem=0
+getprop 14 scope=0 elem=0
+getprop 8 scope=1 elem=0
+getprop 8 scope=2 elem=0
+getprop 11 scope=1 elem=0
+getprop 11 scope=2 elem=0
+getprop 14 scope=0 elem=0
+getprop 8 scope=1 elem=0
+getprop 8 scope=2 elem=0
+getprop 11 scope=1 elem=0
+getprop 11 scope=2 elem=0
+getprop 14 scope=0 elem=0
+getprop 8 scope=1 elem=0
+getprop 8 scope=2 elem=0
+getprop 11 scope=1 elem=0
+getprop 11 scope=2 elem=0
+getprop 14 scope=0 elem=0
+reset
+getprop 11 scope=1 elem=0
+getprop 8 scope=1 elem=0
+getprop 8 scope=2 elem=0
+getprop 11 scope=1 elem=0
+getprop 11 scope=2 elem=0
+getprop 14 scope=0 elem=0
+getprop 8 scope=1 elem=0
+getprop 8 scope=2 elem=0
+getprop 11 scope=1 elem=0
+getprop 11 scope=2 elem=0
+getprop 14 scope=0 elem=0
+uninitialize
+setprop 14 scope=0 elem=0 size=4
+getprop 11 scope=1 elem=0
+getprop 11 scope=2 elem=0
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+initialize rate=22050 max=64
+getprop 64 scope=0 elem=0
+getprop 11 scope=1 elem=0
+getprop 8 scope=1 elem=0
+getprop 8 scope=2 elem=0
+getprop 11 scope=1 elem=0
+getprop 11 scope=2 elem=0
+getprop 14 scope=0 elem=0
+uninitialize
+setprop 14 scope=0 elem=0 size=4
+getprop 11 scope=1 elem=0
+getprop 11 scope=2 elem=0
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+initialize rate=96000 max=137
+getprop 64 scope=0 elem=0
+getprop 11 scope=1 elem=0
+getprop 8 scope=1 elem=0
+getprop 8 scope=2 elem=0
+getprop 11 scope=1 elem=0
+getprop 11 scope=2 elem=0
+getprop 14 scope=0 elem=0
+uninitialize
+setprop 14 scope=0 elem=0 size=4
+getprop 11 scope=1 elem=0
+getprop 11 scope=2 elem=0
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+initialize rate=48000 max=4096
+getprop 64 scope=0 elem=0
+getprop 11 scope=1 elem=0
+getprop 8 scope=1 elem=0
+getprop 8 scope=2 elem=0
+getprop 11 scope=1 elem=0
+getprop 11 scope=2 elem=0
+getprop 14 scope=0 elem=0
+uninitialize
+setprop 14 scope=0 elem=0 size=4
+getprop 11 scope=1 elem=0
+getprop 11 scope=2 elem=0
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+initialize rate=192000 max=4096
+getprop 64 scope=0 elem=0
+getprop 11 scope=1 elem=0
+getprop 8 scope=1 elem=0
+getprop 8 scope=2 elem=0
+getprop 11 scope=1 elem=0
+getprop 11 scope=2 elem=0
+getprop 14 scope=0 elem=0
+uninitialize
+setprop 14 scope=0 elem=0 size=4
+getprop 11 scope=1 elem=0
+getprop 11 scope=2 elem=0
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+initialize rate=11025 max=4096
+getprop 64 scope=0 elem=0
+getprop 11 scope=1 elem=0
+getprop 8 scope=1 elem=0
+getprop 8 scope=2 elem=0
+getprop 11 scope=1 elem=0
+getprop 11 scope=2 elem=0
+getprop 14 scope=0 elem=0
+uninitialize
+setprop 14 scope=0 elem=0 size=4
+getprop 11 scope=1 elem=0
+getprop 11 scope=2 elem=0
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+initialize rate=44100 max=512
+getprop 64 scope=0 elem=0
+getprop 11 scope=1 elem=0
+getprop 8 scope=1 elem=0
+getprop 8 scope=2 elem=0
+getprop 11 scope=1 elem=0
+getprop 11 scope=2 elem=0
+getprop 14 scope=0 elem=0
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+getpropinfo 13 scope=0 elem=0
+getprop 13 scope=0 elem=0
+uninitialize
+getprop 8 scope=2 elem=0
+setprop 8 scope=2 elem=0 size=40
+getprop 8 scope=1 elem=0
+getprop 8 scope=1 elem=0
+initialize rate=44100 max=512
+getprop 64 scope=0 elem=0
+getpropinfo 64 scope=0 elem=0
+midi 90 60 127 off=0
+getprop 8 scope=1 elem=0
+getprop 8 scope=2 elem=0
+getprop 11 scope=1 elem=0
+getprop 11 scope=2 elem=0
+getprop 14 scope=0 elem=0
+midi 90 60 0 off=0
+getprop 8 scope=1 elem=0
+getprop 8 scope=2 elem=0
+getprop 11 scope=1 elem=0
+getprop 11 scope=2 elem=0
+getprop 14 scope=0 elem=0
+close h=2
+close done
+close h=1
+close done

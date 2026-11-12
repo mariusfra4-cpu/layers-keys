@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<installer-gui-script minSpecVersion="2">
+  <title>Layers Keys</title>
+  <organization>com.jbpraise</organization>
+  <options customize="always" require-scripts="false" hostArchitectures="arm64,x86_64"/>
+  <allowed-os-versions><os-version min="11.0"/></allowed-os-versions>
+  <domains enable_anywhere="false" enable_localSystem="true" enable_currentUserHome="false"/>
+  <background file="background.png" mime-type="image/png" alignment="bottomleft" scaling="none"/>
+  <background-darkAqua file="background-dark.png" mime-type="image/png" alignment="bottomleft" scaling="none"/>
+  <welcome file="welcome.html" mime-type="text/html"/>
+  <conclusion file="conclusion.html" mime-type="text/html"/>
+  <pkg-ref id="com.jbpraise.layerskeys.app"/>
+  <pkg-ref id="com.jbpraise.layerskeys.vst3"/>
+  <pkg-ref id="com.jbpraise.layerskeys.au"/>
+  <choices-outline>
+    <line choice="app"/>
+    <line choice="vst3"/>
+    <line choice="au"/>
+  </choices-outline>
+  <choice id="app" title="Layers Keys (obligatoire)" description="Le logiciel Layers Keys, installé dans le dossier Applications, avec « Désinstaller Layers Keys »." enabled="false" selected="true">
+    <pkg-ref id="com.jbpraise.layerskeys.app"/>
+  </choice>
+  <choice id="vst3" title="Plugin VST3 (Ableton Live et autres)" description="Le plugin VST3, installé dans /Library/Audio/Plug-Ins/VST3." start_selected="true">
+    <pkg-ref id="com.jbpraise.layerskeys.vst3"/>
+  </choice>
+  <choice id="au" title="Plugin Audio Unit (Logic Pro, GarageBand)" description="Le plugin Audio Unit, installé dans /Library/Audio/Plug-Ins/Components." start_selected="true">
+    <pkg-ref id="com.jbpraise.layerskeys.au"/>
+  </choice>
+  <pkg-ref id="com.jbpraise.layerskeys.app" version="1.1.0" onConclusion="none">LayersKeys_app.pkg</pkg-ref>
+  <pkg-ref id="com.jbpraise.layerskeys.vst3" version="1.1.0" onConclusion="none">LayersKeys_vst3.pkg</pkg-ref>
+  <pkg-ref id="com.jbpraise.layerskeys.au" version="1.1.0" onConclusion="none">LayersKeys_au.pkg</pkg-ref>
+</installer-gui-script>

@@ -1,0 +1,480 @@
+=== rapport de plantage /Library/Logs/DiagnosticReports/mds_stores_2026-11-12-083020_sjc20-cw757-65bbedcd-d33d-49d9-82d0-db1a9025375c-C2F50F5CD4A9.diag
+Date/Time:        2026-11-12 08:25:25.125 +0000
+End time:         2026-11-12 08:30:17.811 +0000
+OS Version:       macOS 15.7.9 (Build 24G830)
+Architecture:     x86_64h
+Report Version:   60
+Incident Identifier: F9693856-9E83-4D49-BBB0-1CB1C2C96088
+
+Data Source:      Microstackshots
+Shared Cache:     FDD97301-9818-3865-A1D2-FEC1D3914796 slid base address 0x7ff80dc84000, slide 0xdc84000
+
+Command:          mds_stores
+Path:             /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds_stores
+Resource Coalition: "com.apple.Spotlight"(287)
+On Behalf Of:     201 samples UNKNOWN [111] (201 samples originated by UNKNOWN [111, 1408, 1409, 1683, 1962, 2080, 2437, 2542, 2555])
+Architecture:     x86_64
+Parent:           launchd [1]
+PID:              277
+
+Event:            disk writes
+Action taken:     none
+Writes:           2147.51 MB of file backed memory dirtied over 293 seconds (7337.25 KB per second average), exceeding limit of 24.86 KB per second over 86400 seconds
+Writes limit:     2147.48 MB
+Limit duration:   86400s
+Writes caused:    2147.51 MB
+Writes duration:  293s
+Duration:         292.69s
+Duration Sampled: 261.27s (event starts 31.41s before samples)
+Steps:            388 (10.49 MB/step)
+
+Hardware model:   Macmini6,2
+Active cpus:      4
+Memory size:      14 GB
+HW page size:     4096
+VM page size:     4096
+Shared cache residency: 22.84% (1084.94 MB / 4749.17 MB)
+Boot args:        preempt=10
+
+Time Since Boot:  59s
+Time Awake Since Boot: 59s
+Time Since Wake:  n/a (machine hasn't slept)
+
+Total CPU Time:   169.480s
+Advisory levels:  Battery -> 3, User -> 2, ThermalPressure -> 0, Combined -> 2
+Free disk space:  107.29 GB/324.68 GB, low space threshold 3072 MB
+Vnodes Available: 87.70% (202054/230400, 73772 allocated)
+Models:           none
+
+Preferred User Language: en
+OS Cryptex File Extents: 1
+
+Heaviest stack for the target process:
+  201  start_wqthread + 15 (libsystem_pthread.dylib + 6211) [0x7ff80fb53843]
+  200  _pthread_wqthread + 298 (libsystem_pthread.dylib + 10337) [0x7ff80fb54861]
+  200  _dispatch_workloop_worker_thread + 688 (libdispatch.dylib + 70883) [0x7ff80f9bc4e3]
+  200  _dispatch_root_queue_drain_deferred_wlh + 275 (libdispatch.dylib + 72598) [0x7ff80f9bcb96]
+  200  _dispatch_workloop_invoke + 743 (libdispatch.dylib + 40037) [0x7ff80f9b4c65]
+  200  _dispatch_lane_invoke + 382 (libdispatch.dylib + 36269) [0x7ff80f9b3dad]
+  200  _dispatch_lane_serial_drain + 319 (libdispatch.dylib + 33171) [0x7ff80f9b3193]
+  200  _dispatch_lane_invoke + 382 (libdispatch.dylib + 36269) [0x7ff80f9b3dad]
+  200  _dispatch_lane_serial_drain + 779 (libdispatch.dylib + 33631) [0x7ff80f9b335f]
+  200  _dispatch_client_callout + 6 (libdispatch.dylib + 96764) [0x7ff80f9c29fc]
+  200  _dispatch_block_async_invoke2 + 85 (libdispatch.dylib + 58272) [0x7ff80f9b93a0]
+  200  ??? (SpotlightIndex + 3498192) [0x7ff82c1b00d0]
+  161  ??? (SpotlightIndex + 547626) [0x7ff82bedfb2a]
+  161  ??? (SpotlightIndex + 903825) [0x7ff82bf36a91]
+  161  ??? (SpotlightIndex + 906807) [0x7ff82bf37637]
+  161  ??? (SpotlightIndex + 3677639) [0x7ff82c1dbdc7]
+  80   ??? (SpotlightIndex + 3733602) [0x7ff82c1e9862]
+  19   ??? (SpotlightIndex + 4785320) [0x7ff82c2ea4a8]
+  19   ??? (SpotlightIndex + 4809848) [0x7ff82c2f0478]
+  19   guarded_pwrite_np + 10 (libsystem_kernel.dylib + 14310) [0x7ff80fb187e6]
+
+
+Powerstats for:   mds_stores [277]
+UUID:             10250B51-17B8-3FA0-A78A-9489E4063052
+Path:             /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds_stores
+Resource Coalition: 201 samples "com.apple.Spotlight"(287)
+On Behalf Of:     201 samples UNKNOWN [111] (201 samples originated by UNKNOWN [111, 1408, 1409, 1683, 1962, 2080, 2437, 2542, 2555])
+Architecture:     x86_64
+Parent:           launchd [1]
+UID:              0
+Sudden Term:      Tracked
+Footprint:        58.12 MB -> 43.00 MB (-15.12 MB) (max 104.42 MB )
+Pageins:          39176 pages
+Start time:       2026-11-12 08:27:18.861 +0000
+End time:         2026-11-12 08:30:17.801 +0000
+Num samples:      201 (52%)
+Num threads:      4
+Primary state:    161 samples Non-Frontmost App, Non-Suppressed, Kernel mode, Effective Thread QoS Maintenance, Requested Thread QoS Maintenance, Override Thread QoS Unspecified
+User Activity:    0 samples Idle, 201 samples Active
+Power Source:     0 samples on Battery, 201 samples on AC
+  201  start_wqthread + 15 (libsystem_pthread.dylib + 6211) [0x7ff80fb53843]
+    200  _pthread_wqthread + 298 (libsystem_pthread.dylib + 10337) [0x7ff80fb54861]
+      200  _dispatch_workloop_worker_thread + 688 (libdispatch.dylib + 70883) [0x7ff80f9bc4e3]
+        200  _dispatch_root_queue_drain_deferred_wlh + 275 (libdispatch.dylib + 72598) [0x7ff80f9bcb96]
+          200  _dispatch_workloop_invoke + 743 (libdispatch.dylib + 40037) [0x7ff80f9b4c65]
+            200  _dispatch_lane_invoke + 382 (libdispatch.dylib + 36269) [0x7ff80f9b3dad]
+              200  _dispatch_lane_serial_drain + 319 (libdispatch.dylib + 33171) [0x7ff80f9b3193]
+                200  _dispatch_lane_invoke + 382 (libdispatch.dylib + 36269) [0x7ff80f9b3dad]
+                  200  _dispatch_lane_serial_drain + 779 (libdispatch.dylib + 33631) [0x7ff80f9b335f]
+                    200  _dispatch_client_callout + 6 (libdispatch.dylib + 96764) [0x7ff80f9c29fc]
+                      200  _dispatch_block_async_invoke2 + 85 (libdispatch.dylib + 58272) [0x7ff80f9b93a0]
+                        200  ??? (SpotlightIndex + 3498192) [0x7ff82c1b00d0]
+                          161  ??? (SpotlightIndex + 547626) [0x7ff82bedfb2a]
+                            161  ??? (SpotlightIndex + 903825) [0x7ff82bf36a91]
+                              161  ??? (SpotlightIndex + 906807) [0x7ff82bf37637]
+                                161  ??? (SpotlightIndex + 3677639) [0x7ff82c1dbdc7]
+                                  80   ??? (SpotlightIndex + 3733602) [0x7ff82c1e9862]
+                                    19   ??? (SpotlightIndex + 4785320) [0x7ff82c2ea4a8]
+                                      19   ??? (SpotlightIndex + 4809848) [0x7ff82c2f0478]
+                                        19   guarded_pwrite_np + 10 (libsystem_kernel.dylib + 14310) [0x7ff80fb187e6]
+                                          19   <on behalf of UNKNOWN [111] (originated by UNKNOWN [2555])>
+                                    18   ??? (SpotlightIndex + 4783163) [0x7ff82c2e9c3b]
+                                      14   ??? (SpotlightIndex + 4809848) [0x7ff82c2f0478]
+                                        14   guarded_pwrite_np + 10 (libsystem_kernel.dylib + 14310) [0x7ff80fb187e6]
+                                          14   <on behalf of UNKNOWN [111] (originated by UNKNOWN [2555])>
+                                      2    ??? (SpotlightIndex + 4813162) [0x7ff82c2f116a]
+                                        2    guarded_pwrite_np + 10 (libsystem_kernel.dylib + 14310) [0x7ff80fb187e6]
+                                          2    <on behalf of UNKNOWN [111] (originated by UNKNOWN [2555])>
+                                      2    ??? (SpotlightIndex + 4812922) [0x7ff82c2f107a]
+                                        2    guarded_pwrite_np + 10 (libsystem_kernel.dylib + 14310) [0x7ff80fb187e6]
+                                          2    <on behalf of UNKNOWN [111] (originated by UNKNOWN [2555])>
+                                    10   ??? (SpotlightIndex + 4780876) [0x7ff82c2e934c]
+                                      9    ??? (SpotlightIndex + 4796570) [0x7ff82c2ed09a]
+                                        9    ??? (SpotlightIndex + 4809848) [0x7ff82c2f0478]
+                                          9    guarded_pwrite_np + 10 (libsystem_kernel.dylib + 14310) [0x7ff80fb187e6]
+                                            9    <on behalf of UNKNOWN [111] (originated by UNKNOWN [2555])>
+                                      1    ??? (SpotlightIndex + 4796533) [0x7ff82c2ed075]
+                                        1    ??? (SpotlightIndex + 4808696) [0x7ff82c2efff8]
+                                          1    guarded_pwrite_np + 10 (libsystem_kernel.dylib + 14310) [0x7ff80fb187e6]
+                                            1    <on behalf of UNKNOWN [111] (originated by UNKNOWN [2555])>
+                                    8    ??? (SpotlightIndex + 4788584) [0x7ff82c2eb168]
+                                      8    ??? (SpotlightIndex + 4809848) [0x7ff82c2f0478]
+                                        8    guarded_pwrite_np + 10 (libsystem_kernel.dylib + 14310) [0x7ff80fb187e6]
+                                          8    <on behalf of UNKNOWN [111] (originated by UNKNOWN [2555])>
+                                    8    ??? (SpotlightIndex + 4783532) [0x7ff82c2e9dac]
+                                      7    ??? (SpotlightIndex + 4809848) [0x7ff82c2f0478]
+                                        7    guarded_pwrite_np + 10 (libsystem_kernel.dylib + 14310) [0x7ff80fb187e6]
+                                          7    <on behalf of UNKNOWN [111] (originated by UNKNOWN [2555])>
+                                      1    ??? (SpotlightIndex + 4812922) [0x7ff82c2f107a]
+                                        1    guarded_pwrite_np + 10 (libsystem_kernel.dylib + 14310) [0x7ff80fb187e6]
+                                          1    <on behalf of UNKNOWN [111] (originated by UNKNOWN [2555])>
+                                    6    ??? (SpotlightIndex + 4785383) [0x7ff82c2ea4e7]
+                                      6    ??? (SpotlightIndex + 4809848) [0x7ff82c2f0478]
+                                        6    guarded_pwrite_np + 10 (libsystem_kernel.dylib + 14310) [0x7ff80fb187e6]
+                                          6    <on behalf of UNKNOWN [111] (originated by UNKNOWN [2555])>
+                                    4    ??? (SpotlightIndex + 4788548) [0x7ff82c2eb144]
+                                      4    <on behalf of UNKNOWN [111] (originated by UNKNOWN [2555])>
+                                    2    ??? (SpotlightIndex + 4785452) [0x7ff82c2ea52c]
+                                      2    guarded_pwrite_np + 10 (libsystem_kernel.dylib + 14310) [0x7ff80fb187e6]
+                                        2    <on behalf of UNKNOWN [111] (originated by UNKNOWN [2555])>
+                                    2    ??? (SpotlightIndex + 4783504) [0x7ff82c2e9d90]
+                                      2    ??? (SpotlightIndex + 4808696) [0x7ff82c2efff8]
+                                        2    guarded_pwrite_np + 10 (libsystem_kernel.dylib + 14310) [0x7ff80fb187e6]
+                                          2    <on behalf of UNKNOWN [111] (originated by UNKNOWN [2555])>
+                                    2    ??? (SpotlightIndex + 4783132) [0x7ff82c2e9c1c]
+                                      2    ??? (SpotlightIndex + 4808696) [0x7ff82c2efff8]
+                                        2    guarded_pwrite_np + 10 (libsystem_kernel.dylib + 14310) [0x7ff80fb187e6]
+                                          2    <on behalf of UNKNOWN [111] (originated by UNKNOWN [2555])>
+                                    1    ??? (SpotlightIndex + 4785596) [0x7ff82c2ea5bc]
+                                      1    guarded_pwrite_np + 10 (libsystem_kernel.dylib + 14310) [0x7ff80fb187e6]
+                                        1    <on behalf of UNKNOWN [111] (originated by UNKNOWN [2555])>
+                                  79   ??? (SpotlightIndex + 3733925) [0x7ff82c1e99a5]
+                                    29   ??? (SpotlightIndex + 4780876) [0x7ff82c2e934c]
+                                      21   ??? (SpotlightIndex + 4804792) [0x7ff82c2ef0b8]
+                                        21   guarded_pwrite_np + 10 (libsystem_kernel.dylib + 14310) [0x7ff80fb187e6]
+                                          21   <on behalf of UNKNOWN [111] (originated by UNKNOWN [2555])>
+                                      4   === rapport de plantage /Library/Logs/DiagnosticReports/shutdown_stall_2026-08-24-070958_Mac-mini.shutdownStall
+Use spindump -i to generate textual report
+
+Spindump binary format
++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
+ZXWJ3x5bXmLtM8tLRPaPNf6y8JDUrZ/lJb47ZTags/AqKV9Dy989mFHZ8hJPvrf8w4WKOywvMfpH
+y99mialh+WvhvdXy7UJttLzE99aXGP2h5W+z/JPb8hKv2pkfkVh4xbrG+teiSDrzhNPK12KD5c9i
+1h+1rC4RYbN8jZo+qKbVJX5oav75pmKjq/efVZk3ZuXz1ldrztqb1BKp9YKyK13izR1zu7Cwk0a5
+PSmtLjF9n+XvRzW1/tuPNcpafvL/W0vLS4TNs/yT4q2tLf+8exvjd1v428ko6xuneC62/LWodsDy
+NSpoguUlsrexvEQm60uku9TM+MvCA+uei5aX+Gqu5SvtLbO/tZWbXpGzlv/0KW8R63/A1dfyEhUW
+Wb6ghnn6WF2idnFldYlTnS0vcTnA8hLZQ8y/LHxD+2pJy1faKa0sL1HwM8u3i+EPzL8sfC2erjHb
+g1t4vCi8KZ3VJTZfMP9qP+Vq5dEPqo7+pMyymlszd82U1BKu231dvymu8KXN2hItvJMPTPyVD/qH
+KYbmUuzEFL8uUg2wDXbHGNSvs77onYsrcBPqK9aTeBUf4mvUF6jZsDBWQAaNUC2R4RdUJA7GcTgL
+l+F6pF+54pt1im/Hq7v4AlPQ0j4T5kebTa8b5q35b91a8NatJW/d+vytW67f3r91K9lbt5K/dcvj
+rVsfvHUrxVu3Ur51y/OtW6neupX6rVtp3rqV9q1b6d66lf6tWxneuuX11i3vt275vHUr41u3Mr11
+K/Nbt7K8dSvrW7eyvXUr+1u3crx1K+dbt3zfupXrrVu537qV561bed+6lc+49b+7Zptt6//cauHd
+/PEP6u1/ehvjQlOtxTu6AutgEE7FO7xPlJdxF4JwKh7U4zHQRbEKxuAKvIrZOCtuieNwJ77AKp7c
+D67Aq5gtFfeD43AnvsAydLGLwRV4FbPRmrEljsOd+ALLcDwLx8V4Dr3Y7zVCO27Gx1iUnWA3nIMn
+0NPs66f8cA7XDifQMyNxHIgnaDvCaBvKDwfiWryDeemcFY47+dHwCyzDTjoGV+Adc6gNFWSO+Kum
+4kH0zEN9HIhr8Q7mzcv94FQ8h175TBuhHTfjYyzK2xrdcA6eQM8CPB4ciGvxDnYrSD6eQE++QdcI
+7ciQ6eqxjtM5zY6bUXdUm2p+UKYOouLg6If6YHmiBHX5hbUfDsS1eAfzmh+GqiCcigdR8fW8KhiD
+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= rapport de plantage /Library/Logs/DiagnosticReports/mds_stores_2026-08-24-070645_Mac-mini.diag
+Date/Time:        2026-08-24 06:38:52.065 +0000
+End time:         2026-08-24 07:06:43.827 +0000
+OS Version:       macOS 15.7.9 (Build 24G830)
+Architecture:     x86_64h
+Report Version:   60
+Incident Identifier: D4B2FE31-6AF3-4D73-8314-019782153A79
+
+Data Source:      Microstackshots
+Shared Cache:     FDD97301-9818-3865-A1D2-FEC1D3914796 slid base address 0x7ff81593e000, slide 0x1593e000
+
+Command:          mds_stores
+Path:             /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds_stores
+Codesigning ID:   com.apple.mds_stores
+Resource Coalition: "com.apple.Spotlight"(299)
+On Behalf Of:     209 samples mds [111] (194 samples originated by UNKNOWN [3032, 17723, 17810, 19771, 22734, 22738, 22746, 22786, 22895, 22916, 22918, 23058, 23065, 23143, 23146, 23270, 23354, 23373, 23383, 23430, 23630, 23943, 24858, 24883, 24886, 25866, 26120, 26742, 27311, 27574, 27878, 27879, 27881, 27891, 27893, 27901, 28392, 28401, 28402, 28409, 28418, 28444, 28446, 28454, 28455, 28463, 28474, 28479, 28502, 28512, 28520, 29018, 29019, 29047, 29048, 29051, 29056, 29057, 29076, 29080, 29081, 29089, 29090, 29099, 29107, 29121, 29140, 29144, 29446, 29458, 29648, 29653, 29657], 15 samples originated by mds [111])
+Architecture:     x86_64
+Parent:           launchd [1]
+PID:              289
+
+Event:            disk writes
+Action taken:     none
+Writes:           2147.49 MB of file backed memory dirtied over 1672 seconds (1284.56 KB per second average), exceeding limit of 24.86 KB per second over 86400 seconds
+Writes limit:     2147.48 MB
+Limit duration:   86400s
+Writes caused:    2147.49 MB
+Writes duration:  1672s
+Duration:         1671.76s
+Duration Sampled: 1661.12s (event starts 9.47s before samples, event ends 1.17s after samples)
+Steps:            4959 (10.49 MB/step)
+
+Hardware model:   Macmini6,2
+Active cpus:      6
+Memory size:      14 GB
+HW page size:     4096
+VM page size:     4096
+Shared cache residency: 21.52% (1021.97 MB / 4749.17 MB)
+Boot args:        preempt=10
+
+Time Since Boot:  24s
+Time Awake Since Boot: 24s
+Time Since Wake:  n/a (machine hasn't slept)
+
+Total CPU Time:   1706.879s
+Advisory levels:  Battery -> 3, User -> 2, ThermalPressure -> 0, Combined -> 2
+Free disk space:  110.03 GB/324.68 GB, low space threshold 3072 MB
+Vnodes Available: 54.88% (126441/230400)
+Models:           none
+
+Preferred User Language: en
+OS Cryptex File Extents: 1
+
+Heaviest stack for the target process:
+  209  start_wqthread + 15 (libsystem_pthread.dylib + 6211) [0x7ff81780d843]
+  138  _pthread_wqthread + 298 (libsystem_pthread.dylib + 10337) [0x7ff81780e861]
+  138  _dispatch_workloop_worker_thread + 688 (libdispatch.dylib + 70883) [0x7ff8176764e3]
+  138  _dispatch_root_queue_drain_deferred_wlh + 275 (libdispatch.dylib + 72598) [0x7ff817676b96]
+  137  _dispatch_workloop_invoke + 743 (libdispatch.dylib + 40037) [0x7ff81766ec65]
+  134  _dispatch_lane_invoke + 382 (libdispatch.dylib + 36269) [0x7ff81766ddad]
+  134  _dispatch_lane_serial_drain + 319 (libdispatch.dylib + 33171) [0x7ff81766d193]
+  134  _dispatch_lane_invoke + 382 (libdispatch.dylib + 36269) [0x7ff81766ddad]
+  134  _dispatch_lane_serial_drain + 779 (libdispatch.dylib + 33631) [0x7ff81766d35f]
+  134  _dispatch_client_callout + 6 (libdispatch.dylib + 96764) [0x7ff81767c9fc]
+  134  _dispatch_block_async_invoke2 + 85 (libdispatch.dylib + 58272) [0x7ff8176733a0]
+  134  ??? (SpotlightIndex + 3498192) [0x7ff833e6a0d0]
+  60   ??? (SpotlightIndex + 547626) [0x7ff833b99b2a]
+  35   ??? (SpotlightIndex + 903825) [0x7ff833bf0a91]
+  35   ??? (SpotlightIndex + 906807) [0x7ff833bf1637]
+  35   ??? (SpotlightIndex + 3677639) [0x7ff833e95dc7]
+  18   ??? (SpotlightIndex + 3733925) [0x7ff833ea39a5]
+  6    ??? (SpotlightIndex + 4786094) [0x7ff833fa47ae]
+  6    ??? (SpotlightIndex + 4809848) [0x7ff833faa478]
+  6    guarded_pwrite_np + 10 (libsystem_kernel.dylib + 14310) [0x7ff8177d27e6]
+
+
+Powerstats for:   mds_stores [289]
+UUID:             10250B51-17B8-3FA0-A78A-9489E4063052
+Path:             /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds_stores
+Codesigning ID:   com.apple.mds_stores
+Resource Coalition: 209 samples "com.apple.Spotlight"(299)
+On Behalf Of:     209 samples mds [111] (194 samples originated by UNKNOWN [3032, 17723, 17810, 19771, 22734, 22738, 22746, 22786, 22895, 22916, 22918, 23058, 23065, 23143, 23146, 23270, 23354, 23373, 23383, 23430, 23630, 23943, 24858, 24883, 24886, 25866, 26120, 26742, 27311, 27574, 27878, 27879, 27881, 27891, 27893, 27901, 28392, 28401, 28402, 28409, 28418, 28444, 28446, 28454, 28455, 28463, 28474, 28479, 28502, 28512, 28520, 29018, 29019, 29047, 29048, 29051, 29056, 29057, 29076, 29080, 29081, 29089, 29090, 29099, 29107, 29121, 29140, 29144, 29446, 29458, 29648, 29653, 29657], 15 samples originated by mds [111])
+Architecture:     x86_64
+Parent:           launchd [1]
+UID:              0
+Sudden Term:      Tracked
+Footprint:        31.50 MB -> 113.69 MB (+82.18 MB) (max 454.19 MB )
+Pageins:          110908 pages
+Start time:       2026-08-24 06:40:04.730 +0000
+End time:         2026-08-24 07:06:42.656 +0000
+Num samples:      209 (4%)
+Num threads:      49
+Primary state:    111 samples Non-Frontmost App, Non-Suppressed, Kernel mode, Effective Thread QoS Background, Requested Thread QoS Background, Override Thread QoS Unspecified
+User Activity:    136 samples Idle, 73 samples Active
+Power Source:     0 samples on Battery, 209 samples on AC
+  209  start_wqthread + 15 (libsystem_pthread.dylib + 6211) [0x7ff81780d843]
+    138  _pthread_wqthread + 298 (libsystem_pthread.dylib + 10337) [0x7ff81780e861]
+      138  _dispatch_workloop_worker_thread + 688 (libdispatch.dylib + 70883) [0x7ff8176764e3]
+        138  _dispatch_root_queue_drain_deferred_wlh + 275 (libdispatch.dylib + 72598) [0x7ff817676b96]
+          137  _dispatch_workloop_invoke + 743 (libdispatch.dylib + 40037) [0x7ff81766ec65]
+            134  _dispatch_lane_invoke + 382 (libdispatch.dylib + 36269) [0x7ff81766ddad]
+              134  _dispatch_lane_serial_drain + 319 (libdispatch.dylib + 33171) [0x7ff81766d193]
+                134  _dispatch_lane_invoke + 382 (libdispatch.dylib + 36269) [0x7ff81766ddad]
+                  134  _dispatch_lane_serial_drain + 779 (libdispatch.dylib + 33631) [0x7ff81766d35f]
+                    134  _dispatch_client_callout + 6 (libdispatch.dylib + 96764) [0x7ff81767c9fc]
+                      134  _dispatch_block_async_invoke2 + 85 (libdispatch.dylib + 58272) [0x7ff8176733a0]
+                        134  ??? (SpotlightIndex + 3498192) [0x7ff833e6a0d0]
+                          60   ??? (SpotlightIndex + 547626) [0x7ff833b99b2a]
+                            35   ??? (SpotlightIndex + 903825) [0x7ff833bf0a91]
+                              35   ??? (SpotlightIndex + 906807) [0x7ff833bf1637]
+                                35   ??? (SpotlightIndex + 3677639) [0x7ff833e95dc7]
+                                  18   ??? (SpotlightIndex + 3733925) [0x7ff833ea39a5]
+                                    6    ??? (SpotlightIndex + 4786094) [0x7ff833fa47ae]
+                                      6    ??? (SpotlightIndex + 4809848) [0x7ff833faa478]
+                                        6    guarded_pwrite_np + 10 (libsystem_kernel.dylib + 14310) [0x7ff8177d27e6]
+                                          6    <on behalf of mds [111] (originated by UNKNOWN [3032]), Effective Thread QoS Maintenance, Requested Thread QoS Maintenance>
+                                    3    ??? (SpotlightIndex + 4788584) [0x7ff833fa5168]
+                                      3    ??? (SpotlightIndex + 4809848) [0x7ff833faa478]
+                                        3    guarded_pwrite_np + 10 (libsystem_kernel.dylib + 14310) [0x7ff8177d27e6]
+                                          3    <on behalf of mds [111] (originated by UNKNOWN [3032]), Effective Thread QoS Maintenance, Requested Thread QoS Maintenance>
+                                    2    ??? (SpotlightIndex + 4786243) [0x7ff833fa4843]
+                                      2    ??? (SpotlightIndex + 4809848) [0x7ff833faa478]
+                                        2    guarded_pwrite_np + 10 (libsystem_kernel.dylib + 14310) [0x7ff8177d27e6]
+                                          2    <on behalf of mds [111] (originated by UNKNOWN [3032]), Effective Thread QoS Maintenance, Requested Thread QoS Maintenance>
+                                    2    ??? (SpotlightIndex + 4783532) [0x7ff833fa3dac]
+                                      2    ??? (SpotlightIndex + 4809848) [0x7ff833faa478]
+                                        2    guarded_pwrite_np + 10 (libsystem_kernel.dylib + 14310) [0x7ff8177d27e6]
+                                          2    <on behalf of mds [111] (originated by UNKNOWN [3032]), Effective Thread QoS Maintenance, Requested Thread QoS Maintenance>
+                                    2    ??? (SpotlightIndex + 4780876) [0x7ff833fa334c]
+                                      2    ??? (SpotlightIndex + 4804792) [0x7ff833fa90b8]
+                                        2    guarded_pwrite_np + 10 (libsystem_kernel.dylib + 14310) [0x7ff8177d27e6]
+                                          2    <on behalf of mds [111] (originated by UNKNOWN [3032]), Effective Thread QoS Maintenance, Requested Thread QoS Maintenance>
+                                    1    ??? (SpotlightIndex + 4786875) [0x7ff833fa4abb]
+                                      1    guarded_pwrite_np + 10 (libsystem_kernel.dylib + 14310) [0x7ff8177d27e6]
+                                        1    <on behalf of mds [111] (originated by UNKNOWN [3032]), Effective Thread QoS Maintenance, Requested Thread QoS Maintenance>
+                                    1    ??? (SpotlightIndex + 4786646) [0x7ff833fa49d6]
+                                      1    ??? (SpotlightIndex + 4809848) [0x7ff833faa478]
+                                        1    guarded_pwrite_np + 10 (libsystem_kernel.dylib + 14310) [0x7ff8177d27e6]
+                                          1    <on behalf of mds [111] (originated by UNKNOWN [3032]), Effective Thread QoS Maintenance, Requested Thread QoS Maintenance>
+                                    1    ??? (SpotlightIndex + 4783163) [0x7ff833fa3c3b]
+                                      1    ??? (SpotlightIndex + 4809848) [0x7ff833faa478]
+                                        1    guarded_pwrite_np + 10 (libsystem_kernel.dylib + 14310) [0x7ff8177d27e6]
+                                          1    <on behalf of mds [111] (originated by UNKNOWN [3032]), Effective Thread QoS Maintenance, Requested Thread QoS Maintenance>
+                                  15   ??? (SpotlightIndex + 3733602) [0x7ff833ea3862]
+                                    4    ??? (SpotlightIndex + 4783163) [0x7ff833fa3c3b]
+                                      3    ??? (SpotlightIndex + 4809848) [0x7ff833faa478]
+                                        3    guarded_pwrite_np + 10 (libsystem_kernel.dylib + 14310) [0x7ff8177d27e6]
+                                          3    <on behalf of mds [111] (originated by UNKNOWN [3032]), Effective Thread QoS Maintenance, Requested Thread QoS Maintenance>
+                                      1    ??? (SpotlightIndex + 4812922) [0x7ff833fab07a]
+                                        1    guarded_pwrite_np + 10 (libsystem_kernel.dylib + 14310) [0x7ff8177d27e6]
+                                          1    <on behalf of mds [111] (originated by UNKNOWN [3032]), Effective Thread QoS Maintenance, Requested Thread QoS Maintenance>
+                                    2    ??? (SpotlightIndex + 4788548) [0x7ff833fa5144]
+                                      2    <on behalf of mds [111] (originated by UNKNOWN [3032]), Effective Thread QoS Maintenance, Requested Thread QoS Maintenance>
+                                    2    ??? (SpotlightIndex + 4785320) [0x7ff833fa44a8]
+                            
