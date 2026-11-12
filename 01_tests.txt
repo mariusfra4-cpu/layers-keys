@@ -1,0 +1,33 @@
+OK    volume piste 3 = CC 22
+OK    canal 16, valeur bornée à 127
+OK    preset 5 = Program Change 4
+OK    tout arrêter : sustain relâché + CC 120 + CC 123 sur les 16 canaux
+OK    position des faders → 0..127
+OK    35 CC tous libres et différents
+OK    ports ouverts : 15004 / 15005
+OK    invitation (contrôle) acceptée, même jeton
+OK    nom annoncé : Layers Remote (test)
+OK    invitation (données) acceptée
+OK    ordinateur « MacBook » connecté
+OK    synchronisation : réponse « compte 1 » avec l'heure du Mac
+OK    paquet RTP version 2, type 97
+OK    contenu MIDI : B0 14 63 (fader 1 à 99) : [-128, 97, 0, 1, 0, 0, 17, 0, -88, -127, -88, 73, 3, -80, 20, 99]
+OK    numéro de séquence qui avance
+OK    deux commandes dans un paquet (délai 00 entre elles) : [-128, 97, 0, 2, 0, 0, 17, 3, -88, -127, -88, 73, 7, -80, 102, 127, 0, -80, 102, 0]
+OK    longue liste (48 commandes) : en-tête sur 2 octets, longueur 191
+OK    déconnexion (BY) prise en compte
+OK    arrêt propre
+OK    fader 1 au milieu : un seul message CC 20 = 64
+OK    volume général : CC 28 = 127
+OK    M de la piste 5 (momentané) : CC 106 = 127 puis 0, affiché allumé
+OK    deuxième appui : éteint à l'écran, et encore 127 (le logiciel bascule)
+OK    H piste 3 en mode bascule : CC 72 = 127 (rien au relâchement)
+OK    mode bascule : éteint = 0
+OK    preset 3 sur le canal 4 : C3 02
+OK    Leslie : CC 30 (appui + relâchement)
+OK    sustain tenu : CC 64 127 puis 0
+OK    renvoyer tout : 8 pistes + général + réverbération (10)
+OK    réglages gardés à la prochaine ouverture
+OK    fichier abîmé : ignoré sans planter
+
+TÉLÉCOMMANDE : TOUT VA BIEN
