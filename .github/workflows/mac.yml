@@ -87,9 +87,22 @@ jobs:
           sleep 3
           echo "=== natif ($(uname -m))" >> /tmp/lklogs/05e_logic_test.txt
           # perl alarm : si l'interface se bloque, le test est arrêté au bout de 120 s (au lieu de bloquer la construction)
-          perl -e 'alarm 120; exec @ARGV' /tmp/au_logic_test >> /tmp/lklogs/05e_logic_test.txt 2>&1; A=$?
+          # lance le test ; s'il est encore là au bout de 90 s (blocage), on relève ce que fait chaque fil puis on l'arrête
+          runwatch() { # nom, commande…
+            local n=$1; shift
+            "$@" >> /tmp/lklogs/05e_logic_test.txt 2>&1 &
+            local p=$! k=0
+            while kill -0 $p 2>/dev/null && [ $k -lt 90 ]; do sleep 1; k=$((k+1)); done
+            if kill -0 $p 2>/dev/null; then
+              echo "BLOCAGE ($n) : le test ne répond plus après 90 s" >> /tmp/lklogs/05e_logic_test.txt
+              sample $p 3 -file /tmp/lklogs/05g_blocage_$n.txt >/dev/null 2>&1
+              kill -9 $p; wait $p 2>/dev/null; return 124
+            fi
+            wait $p
+          }
+          runwatch natif /tmp/au_logic_test; A=$?
           echo "=== x86_64 (Intel, ou Rosetta sur Apple Silicon)" >> /tmp/lklogs/05e_logic_test.txt
-          perl -e 'alarm 120; exec @ARGV' arch -x86_64 /tmp/au_logic_test >> /tmp/lklogs/05e_logic_test.txt 2>&1; I=$?
+          runwatch x86_64 arch -x86_64 /tmp/au_logic_test; I=$?
           echo "EXIT arm64=$A x86_64=$I" >> /tmp/lklogs/05e_logic_test.txt
           cp ~/Library/Logs/LayersKeys.log /tmp/lklogs/05f_journal_plugin.txt 2>/dev/null || true
           cat /tmp/lklogs/05e_logic_test.txt
