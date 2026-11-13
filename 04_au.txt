@@ -1,0 +1,7 @@
+Plugin construit : dist/mac/LayersKeys.component
+0000000000382490 S _OBJC_CLASS_$_LKAUViewFactory
+00000000003604a0 S _OBJC_CLASS_$_LKAUViewFactory
+dist/mac/LayersKeys.component/Contents/MacOS/LayersKeys (architecture x86_64):
+    minos 11.0
+dist/mac/LayersKeys.component/Contents/MacOS/LayersKeys (architecture arm64):
+    minos 11.0
