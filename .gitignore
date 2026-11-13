@@ -4,3 +4,4 @@ android-app/build_test/
 dist/
 eli-guitar-app/build/
 eli-guitar-app/build_test/
+__pycache__/
