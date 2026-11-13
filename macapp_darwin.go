@@ -8,6 +8,7 @@ package main
 import (
 	"math"
 	"path/filepath"
+	"runtime/debug"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -48,8 +49,8 @@ type macApp struct {
 	userFlag int32   // une action est à faire dans le thread de l'interface (état reçu du DAW)
 	onUser   func()
 
-	autoDetach bool // AU : le logiciel hôte garde la vue ; on la libère quand elle n'est plus dans une fenêtre
-	noWin      int
+	autoDetach bool // AU : le logiciel hôte garde la vue (Logic peut la cacher puis la réafficher telle quelle)
+	hidden     bool // la vue n'est dans aucune fenêtre : on ne dessine plus, mais on garde tout pour sa réouverture
 }
 
 // toutes les vues ouvertes : l'application seule, ou une par éditeur de plugin
@@ -59,7 +60,15 @@ func appOf(view objc.ID) *macApp {
 	if v, ok := macApps.Load(view); ok {
 		return v.(*macApp)
 	}
-	return theMac
+	return theMac // nil dans un plugin : chaque fonction de la vue le vérifie
+}
+
+// une erreur dans une fonction appelée par macOS (souris, clavier, dessin) ne doit jamais bloquer ni faire tomber
+// le logiciel hôte : elle est notée dans le journal et ignorée
+func macRecover() {
+	if r := recover(); r != nil {
+		lklog("interface : erreur attrapée : %v\n%s", r, debug.Stack())
+	}
 }
 
 var theMac *macApp
@@ -302,14 +311,20 @@ func (a *macApp) scroll(ev objc.ID) {
 func (a *macApp) onTick() {
 	a.tick++
 	if a.autoDetach && a.view != 0 {
+		// Fenêtre du plugin fermée par le logiciel hôte : Logic Pro 13 garde la même vue et la réaffiche telle quelle
+		// à la réouverture. On ne la détruit donc plus : on arrête seulement de dessiner, et on reprend au retour.
 		if a.view.Send(sel("window")) == 0 {
-			if a.noWin++; a.noWin > 180 { // ~3 s sans fenêtre : l'éditeur a été fermé
-				lklog("éditeur : fermé car la vue n'est dans aucune fenêtre depuis 3 s")
-				a.detachEditor()
-				return
+			if !a.hidden {
+				a.hidden = true
+				lklog("éditeur : fenêtre cachée par le logiciel hôte (gardée pour sa réouverture)")
 			}
-		} else {
-			a.noWin = 0
+			a.ui.DrainMidi()
+			return
+		}
+		if a.hidden {
+			a.hidden = false
+			lklog("éditeur : fenêtre de nouveau affichée")
+			a.Invalidate()
 		}
 	}
 	if atomic.CompareAndSwapInt32(&a.userFlag, 1, 0) && a.onUser != nil {
@@ -348,7 +363,11 @@ func registerViewClass() {
 		yes := func(self objc.ID, _cmd objc.SEL) bool { return true }
 		mouse := func(f func(a *macApp, x, y int)) func(self objc.ID, _cmd objc.SEL, ev objc.ID) {
 			return func(self objc.ID, _cmd objc.SEL, ev objc.ID) {
+				defer macRecover()
 				a := appOf(self)
+				if a == nil || a.ui == nil {
+					return
+				}
 				if a.plugin { // dans un DAW, le clic donne le clavier à notre vue
 					if w := self.Send(sel("window")); w != 0 {
 						w.Send(sel("makeFirstResponder:"), self)
@@ -365,9 +384,19 @@ func registerViewClass() {
 			// si le système redemande l'image (changement d'écran, Retina…), on redessine tout de suite
 			{Cmd: sel("wantsUpdateLayer"), Fn: yes},
 			{Cmd: sel("updateLayer"), Fn: func(self objc.ID, _cmd objc.SEL) {
-				a := appOf(self)
-				a.Invalidate()
-				a.flush()
+				defer macRecover()
+				if a := appOf(self); a != nil && a.ui != nil {
+					a.Invalidate()
+					a.flush()
+				}
+			}},
+			// la vue revient dans une fenêtre (réouverture de la fenêtre du plugin) : on redessine tout de suite
+			{Cmd: sel("viewDidMoveToWindow"), Fn: func(self objc.ID, _cmd objc.SEL) {
+				defer macRecover()
+				if a := appOf(self); a != nil && a.ui != nil && self.Send(sel("window")) != 0 {
+					a.Invalidate()
+					a.flush()
+				}
 			}},
 			{Cmd: sel("acceptsFirstMouse:"), Fn: func(self objc.ID, _cmd objc.SEL, ev objc.ID) bool { return true }},
 			{Cmd: sel("mouseDown:"), Fn: mouse(func(a *macApp, x, y int) { a.ui.MouseDown(x, y) })},
@@ -375,10 +404,24 @@ func registerViewClass() {
 			{Cmd: sel("mouseDragged:"), Fn: mouse(func(a *macApp, x, y int) { a.ui.MouseMove(x, y, true) })},
 			{Cmd: sel("mouseMoved:"), Fn: mouse(func(a *macApp, x, y int) { a.ui.MouseMove(x, y, false) })},
 			{Cmd: sel("rightMouseDown:"), Fn: mouse(func(a *macApp, x, y int) { a.ui.RightDown(x, y) })},
-			{Cmd: sel("scrollWheel:"), Fn: func(self objc.ID, _cmd objc.SEL, ev objc.ID) { appOf(self).scroll(ev) }},
-			{Cmd: sel("keyDown:"), Fn: func(self objc.ID, _cmd objc.SEL, ev objc.ID) { appOf(self).keyDown(ev) }},
+			{Cmd: sel("scrollWheel:"), Fn: func(self objc.ID, _cmd objc.SEL, ev objc.ID) {
+				defer macRecover()
+				if a := appOf(self); a != nil && a.ui != nil {
+					a.scroll(ev)
+				}
+			}},
+			{Cmd: sel("keyDown:"), Fn: func(self objc.ID, _cmd objc.SEL, ev objc.ID) {
+				defer macRecover()
+				if a := appOf(self); a != nil && a.ui != nil {
+					a.keyDown(ev)
+				}
+			}},
 			{Cmd: sel("keyUp:"), Fn: func(self objc.ID, _cmd objc.SEL, ev objc.ID) {
+				defer macRecover()
 				a := appOf(self)
+				if a == nil || a.ui == nil {
+					return
+				}
 				if vk, sc, _, ok := a.keyInfo(ev); ok {
 					a.ui.KeyUp(vk, sc)
 				}
@@ -386,14 +429,21 @@ func registerViewClass() {
 			}},
 			// Avec la touche Commande enfoncée, macOS n'envoie plus les relâchements de touches : on lâche tout.
 			{Cmd: sel("flagsChanged:"), Fn: func(self objc.ID, _cmd objc.SEL, ev objc.ID) {
+				defer macRecover()
 				if objc.Send[uint64](ev, sel("modifierFlags"))&macModCommand != 0 {
-					a := appOf(self)
-					a.ui.FocusLost()
-					a.flush()
+					if a := appOf(self); a != nil && a.ui != nil {
+						a.ui.FocusLost()
+						a.flush()
+					}
 				}
 			}},
 			// minuterie : la vue est la cible, elle retrouve son application
-			{Cmd: sel("tick:"), Fn: func(self objc.ID, _cmd objc.SEL, timer objc.ID) { appOf(self).onTick() }},
+			{Cmd: sel("tick:"), Fn: func(self objc.ID, _cmd objc.SEL, timer objc.ID) {
+				defer macRecover()
+				if a := appOf(self); a != nil && a.ui != nil {
+					a.onTick()
+				}
+			}},
 		})
 		if err != nil {
 			panic(err)

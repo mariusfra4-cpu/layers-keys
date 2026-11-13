@@ -189,6 +189,49 @@ int main(void) {
             }
         }
 
+        /* Comme Logic Pro 13 : la MÊME vue est gardée quand on ferme la fenêtre du plugin, puis remise dans une
+           nouvelle fenêtre à la réouverture (sans redemander une vue). Elle doit se redessiner et répondre aux clics. */
+        {
+            NSWindow *w1 = nil;
+            NSView *kept = openEditor(au, &w1);
+            if (kept) {
+                spin(0.5);
+                [w1 setContentView:[[NSView alloc] initWithFrame:kept.frame]]; /* la vue quitte sa fenêtre… */
+                [w1 close];
+                w1 = nil;
+                CHECK(kept.window == nil, "Logic 13 : vue retirée de sa fenêtre (fenêtre du plugin fermée)");
+                spin(4.5); /* … plus de 3 s : l'ancienne version détruisait l'éditeur à ce moment */
+                NSWindow *w2 = [[NSWindow alloc] initWithContentRect:kept.frame styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskClosable
+                                                             backing:NSBackingStoreBuffered defer:NO];
+                w2.releasedWhenClosed = NO;
+                [w2 setContentView:kept]; /* réouverture : la même vue revient */
+                [w2 orderFront:nil];
+                id before = kept.layer.contents;
+                spin(0.6);
+                CHECK(kept.window == w2 && kept.layer.contents != nil, "Logic 13 : la même vue est de nouveau affichée et dessinée");
+                /* clics dans la vue revenue : doivent être traités, sans blocage ni plantage */
+                NSDate *t1 = [NSDate date];
+                for (int k = 0; k < 6; k++) {
+                    NSPoint p = NSMakePoint(kept.frame.size.width * (0.3 + 0.08 * k), kept.frame.size.height * 0.14);
+                    NSEvent *dn = [NSEvent mouseEventWithType:NSEventTypeLeftMouseDown location:p modifierFlags:0 timestamp:0
+                                                 windowNumber:w2.windowNumber context:nil eventNumber:100 + k clickCount:1 pressure:1];
+                    NSEvent *up = [NSEvent mouseEventWithType:NSEventTypeLeftMouseUp location:p modifierFlags:0 timestamp:0
+                                                 windowNumber:w2.windowNumber context:nil eventNumber:100 + k clickCount:1 pressure:0];
+                    [w2 sendEvent:dn];
+                    render(au, 512, 1, NULL);
+                    spin(0.05);
+                    [w2 sendEvent:up];
+                    spin(0.05);
+                }
+                double dt1 = -[t1 timeIntervalSinceNow];
+                CHECK(dt1 < 5.0, "Logic 13 : 6 clics dans la vue revenue, sans blocage (%.2f s)", dt1);
+                spin(0.5);
+                CHECK(kept.layer.contents != nil && kept.layer.contents != before, "Logic 13 : l'image se met à jour après les clics");
+                [w2 close];
+                spin(0.5);
+            }
+        }
+
         AudioUnitUninitialize(au);
         st = AudioComponentInstanceDispose(au);
         CHECK(st == noErr, "instance fermée");
