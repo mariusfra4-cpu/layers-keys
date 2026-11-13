@@ -49,8 +49,9 @@ type macApp struct {
 	userFlag int32   // une action est à faire dans le thread de l'interface (état reçu du DAW)
 	onUser   func()
 
-	autoDetach bool // AU : le logiciel hôte garde la vue (Logic peut la cacher puis la réafficher telle quelle)
-	hidden     bool // la vue n'est dans aucune fenêtre : on ne dessine plus, mais on garde tout pour sa réouverture
+	autoDetach bool   // AU : le logiciel hôte garde la vue (Logic peut la cacher puis la réafficher telle quelle)
+	hidden     bool   // la vue n'est dans aucune fenêtre : on ne dessine plus, mais on garde tout pour sa réouverture
+	infoKey    [3]int // dernier état « Notes reçues / Son » affiché (plugin)
 }
 
 // toutes les vues ouvertes : l'application seule, ou une par éditeur de plugin
@@ -333,6 +334,13 @@ func (a *macApp) onTick() {
 	a.ui.DrainMidi()
 	if a.tick%2 == 0 {
 		a.ui.Tick()
+	}
+	if a.plugin && a.tick%30 == 0 && a.ui.PluginInfo != nil { // état « Notes reçues / Son » de l'en-tête
+		n, s, r := a.ui.PluginInfo()
+		if k := [3]int{n, map[bool]int{true: 1}[s], r}; k != a.infoKey {
+			a.infoKey = k
+			a.Invalidate()
+		}
 	}
 	if a.tick%120 == 0 && !a.plugin {
 		a.midi.scan(a.ui, false)

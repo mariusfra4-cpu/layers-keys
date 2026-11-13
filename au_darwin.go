@@ -123,6 +123,35 @@ func lkAUCreateView(au C.uintptr_t) C.uintptr_t {
 	return C.uintptr_t(v)
 }
 
-func auDiagPeak(l, r []float32) { auNotePeak(l, r) }
-func auDiagNote()               { atomic.AddInt64(&auNotesOn, 1) }
-func auDiagBegin()              { auDiagStart() }
+func auDiagPeak(l, r []float32) {
+	auNotePeak(l, r)
+	for i := range l {
+		if l[i] > 0.0005 || l[i] < -0.0005 {
+			atomic.StoreInt64(&auLoudAt, time.Now().UnixNano())
+			break
+		}
+	}
+}
+
+var auLoudAt int64 // dernière fois que du son est sorti du plugin
+
+// état affiché dans l'en-tête du plugin : le client voit tout de suite si les notes arrivent et si le son sort
+func auPluginInfo() (int, bool, int) {
+	notes := int(atomic.LoadInt64(&auNotesOn)) // notes arrivées jusqu'au moteur
+	sound := time.Now().UnixNano()-atomic.LoadInt64(&auLoudAt) < int64(2*time.Second)
+	return notes, sound, int(C.lk_st(1))
+}
+
+// ouvre le Finder sur le journal, sélectionné : le client n'a plus qu'à le glisser dans un message
+func auShowLog() {
+	p := logPath()
+	lklog("plugin : le client ouvre le journal (%s)", p)
+	cls("NSWorkspace").Send(sel("sharedWorkspace")).Send(sel("selectFile:inFileViewerRootedAtPath:"), nsString(p), nsString(""))
+}
+
+func auSetupUI(ui *UI) {
+	ui.PluginInfo = auPluginInfo
+	ui.OnShowLog = auShowLog
+}
+func auDiagNote()  { atomic.AddInt64(&auNotesOn, 1) }
+func auDiagBegin() { auDiagStart() }

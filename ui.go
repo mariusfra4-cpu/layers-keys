@@ -93,15 +93,18 @@ type overlay struct {
 }
 
 type UI struct {
-	lic         *License
-	licSt       LicStatus
-	licShow     bool   // l'écran « Autoriser le logiciel » est affiché
-	licKey      string // clé en cours de saisie
-	licMsg      string
-	licMsgOK    bool
-	licNext     time.Time
-	licLeft     string
-	Plugin      bool   // vrai quand le logiciel tourne comme plugin VST3 dans un DAW
+	lic      *License
+	licSt    LicStatus
+	licShow  bool   // l'écran « Autoriser le logiciel » est affiché
+	licKey   string // clé en cours de saisie
+	licMsg   string
+	licMsgOK bool
+	licNext  time.Time
+	licLeft  string
+	Plugin   bool // vrai quand le logiciel tourne comme plugin VST3 dans un DAW
+	// plugin Audio Unit : état affiché dans l'en-tête (notes reçues du logiciel hôte, son qui sort, refus)
+	PluginInfo  func() (notes int, sound bool, refused int)
+	OnShowLog   func() // ouvre le Finder sur le fichier journal (à envoyer au support)
 	OnPiano     func() // Android : ouvre le piano tactile (nil ailleurs)
 	OnBluetooth func() // Android : cherche un clavier MIDI Bluetooth
 	eng         *Engine

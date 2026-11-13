@@ -235,6 +235,27 @@ func (u *UI) drawHeader(c *Canvas) {
 	} else {
 		c.Text(72, 36, 150, 14, Tf("Projet : %s", pn), fontXs, colText2, 0)
 	}
+	if u.Plugin && u.PluginInfo != nil {
+		notes, sound, refused := u.PluginInfo()
+		nc := uint32(colRed)
+		if notes > 0 {
+			nc = colGreen
+		}
+		c.Circle(244, 22, 5, nc, 1)
+		c.Text(254, 14, 200, 16, Tf("Notes reçues : %d", notes), fontXs, colText, 0)
+		sc, st := uint32(colRed), T("Son : aucun")
+		if sound {
+			sc, st = colGreen, T("Son : OK")
+		}
+		if refused > 0 {
+			sc, st = colRed, Tf("Son refusé par l'hôte (%d)", refused)
+		}
+		c.Circle(244, 42, 5, sc, 1)
+		c.Text(254, 34, 200, 16, st, fontXs, colText, 0)
+		if u.OnShowLog != nil {
+			u.button(c, "showlog", rect{460, 14, 124, 30}, "Journal", false, fontSm, func() { u.OnShowLog() })
+		}
+	}
 	if !u.Plugin {
 		u.button(c, "pnew", rect{236, 14, 76, 30}, "Nouveau", false, fontSm, func() { u.NewProject() })
 		u.button(c, "popen", rect{318, 14, 76, 30}, "Ouvrir", false, fontSm, func() { u.OpenProjectMenu() })
