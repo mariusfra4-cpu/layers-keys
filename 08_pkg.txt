@@ -1,0 +1,16 @@
+pkgbuild: Reading components from dist/mac/pk/app.plist
+pkgbuild: Adding component at Applications/Désinstaller Layers Keys.app
+pkgbuild: Adding component at Applications/Layers Keys.app
+pkgbuild: Adding top-level preinstall script
+pkgbuild: Adding top-level postinstall script
+pkgbuild: Wrote package to dist/mac/pk/LayersKeys_app.pkg
+pkgbuild: Reading components from dist/mac/pk/vst3.plist
+pkgbuild: Adding component at Library/Audio/Plug-Ins/VST3/LayersKeys.vst3
+pkgbuild: Adding top-level postinstall script
+pkgbuild: Wrote package to dist/mac/pk/LayersKeys_vst3.pkg
+pkgbuild: Reading components from dist/mac/pk/au.plist
+pkgbuild: Adding component at Library/Audio/Plug-Ins/Components/LayersKeys.component
+pkgbuild: Adding top-level postinstall script
+pkgbuild: Wrote package to dist/mac/pk/LayersKeys_au.pkg
+productbuild: Wrote product to dist/Layers-Keys-1.0.0.pkg
+-rw-r--r--  1 runner  staff  15562251 Nov 13 23:06 dist/Layers-Keys-1.0.0.pkg

@@ -1,0 +1,506 @@
+=== rapport de plantage /Library/Logs/DiagnosticReports/shutdown_stall_2026-11-04-111453_Ankas-Virtual-Machine.shutdownStall
+Use spindump -i to generate textual report
+
+Spindump binary format
+P0JfAAAAAAB4nLTdCZyN9f///2u4jn0Z+9j3nTF2ss3YxzrM2IdxzBwMszUbSpoKRdZSkUJKURRt
+CtGCfEolUQqlKEmyJGT9n3Nej/fx5n0c0+9/+87n9uk+5jyv13lf1/W+rnOdM9f7PWPSkhIzMsPC
+9llBVh4rr2VbDiufld8qNLRWtis9IzE1ZVgtZ3r8+ET3v2JqZaamDa2VOmaCKz4zo6QVNHNFXHDx
+ftG9XVNcCRGEvrYKWAVj0lNTM3OC3gjubRW2iljbrJPWn9Yp6y/rtHXGOmuds/62zlv/WBesi9Yl
+61/rsnXFumpds65bN4KsoKCgPEF5g+wgR1C+oPxBBYIKBhUKKhxUJKhoULGg4kHBQSWCQoLKB1UI
+qhhUKahyUJWgqlZmUJOgsKCm1lxrS1CzoBZBLYPaBLUL6hQUHhQRFBnUK6h3UL+gAUExQYOCBgcN
+DxoRFDuoVkpWUtJPwfFWUauYVdwKtkpYJa1SVmmrjFXWKmeFWOWtClZFq5JV2apiVbWqWdWtGlZN
+q5ZV26pj1bXqWfWtBlZDq5HV2Aq1mlhhVlOrmdXcamG1tFpZra02VlvrHqud1d7qYHW0OlnhVoTV
+2epidbW6Wd2tHlZPK9LqZfW2+lh9rX5WfyvKGmANtKKtGGuQNdgaYg21hlnDrRFWrDXSGmXFWaMt
+pzXGircSLJc11hpnjbcSrQnWRCvJSrZSrFQrzbrXSrcyrEwry8q2JlmT3f+9z7rfmurW87Np3p96
+fpbt/t90a4Y396j1mDXLmm09bs1xp+Za86z51gJrofWE+7FF7sQkb9rzvyXWs+5Etrea53/PW8vc
+/11urXBXXGm96P75Km+NLHfF+6xX3P/21H/V/f+11jrrdesN92PrrQ3Wm9Zb1tvWO9a71kZv4n1r
+k7XZ2uJ+9ANr67C4ca6MzKx0V0ZccKm4ZGf8+JjEZNcYZ4YrLsGVkpocFxwcl+lMH+fKjEpPjXdl
+ZEQmDI1LdiVHJ97nGhGXkpU8xDnRlZXmXrpM3CT5tk9icmJm16x0Z6a7I8cFl711+cGulITU9Miu
+nqdzLz44JTXBldHTmZ7gXSwuuEpcxnhnuiuhi7sprsGJ6ZlZziTPk0WmdJ6S6Wll1Vvrdc5KSUhy
+uf/hOT76OZNdnpaMd2Z0S8l0paelJ2a4otyHVGqK07OkVnqgKyPRvYaZWu2R+uPuZ6rm75k6ZyUm
+JQyWo9SzcW5uAu8KDIuLT8vyfjcqzjU5M915xw0h5SITbtkQ0aljM9kQtz17l9TkZFd6vKvbZPd6
+pTiTPFswOC4xIyItzV0lRX7oWXdnVmZqsjPTldDVlZ0Y7+qRnpqV5vl5xpSMTFdyREJ2YkZq+pQ+
+rmxXknsdy8dNSk2fOCDLleXy7ISY8ekup9oVlePik7LcC6V3T3KOy+iemt4lalC/rOS+zrS0xJRx
+Qz1rOijD5V6BknETXVPGpHp2ojNlXJbT3aVi4+JTs1Iy06d0ca9WXHCTuKiIaGeyu6me7hXtSk90
+ZXR1ZjqjM1PTXXGefzuT3DsiIY4tOzIu3v3Mqcn9szLTstxNCbkZ8SzWNTHes02d6VNG3dx23dNd
+7i6ZnRzlfn7PXvVs8XFpWe4d7d6QmX2cGZl93Ts2YkzGiLgEz1OnZrk3Z1xwibgMX8PcyeQ0dz9I
+YKf1S810JyrEOTPdmy7NvU296+Beee8Gz3YmDYlLdj91krf7p6VOcqX3df8zJt2ZkpHoWd7987p3
+6K4JWfGZel8aHjc+MaFbtrtHZnjapHrRze6j9ZKIpKTUeM8uHh7n3j1pGZ5mxsY5vdskxt0Z3enq
+/p5WVtnXef327+jxqemZvkhF/53Q3ek8/S/E06T+0V3Sp7i3zeTuiUne3uldA9XZe0Z29a4Um97d
+4MRxKU7PCccoLs/ve+ricS7Pgp7dMtDdq1yevnprzW4pCZS9+XxdEzPSnJnx4709OjJhlLtnpqe4
+knzdKsndDTzHq6es5wC62UG6ePrrUPd2j8uckuYaLM8eF1zz5n7p6cx29UwcN767+8SRlJg5xVPD
+3RlcGd5OGOHe/Nku9yHi7QzuU6T7KItyn1cz3Ouq9mtw3PjUZNfg1KQs90GQ5pTul5pBd6CRI+LG
+T1J9ODZuknacBJeOS3elufeP55k9h2rG+NSkBM/OjuboutPxJOeKge4LhMgU99omJbkSBteKd28M
+76a7vQXdPCeuWE8fVN1viPuJnRmeDSjbU50iy8WlpKZ0dY11ZiVldnd596v3ZGG8mLg3kCt9eNxY
+Z0p0msuV4A0kqqZ42uU5dXvPR5nqOOw/1nPMRmc64ye61zPTW9Kzj9w/yczKcB9k8e62DItLTJWt
+O9J7AGS7jz73umcMixvjLhqRPi5jhGeXZmSN8exVT69KzdAPu2HuFZrsLXnLudBzHr7lXFgqLi3d
+NdaV7n558J3jPBuV1zy1nYZLt/EckIPdPTJjojtUKS7FmZLQw5k+xr1Ql1T3CnsPVNUnvJWzE1Oz
+MqIjaJT7MPGeoTKnJHmbLF1b2uPp07795dloo9yvdukJk9wvXJ5zT1J4cN5SN/gqZVlW3hz3f4Ld
+l1F85bivufLev9HzUFCt6x+6/12gZAv3o/2DQ1QkCPP4FqkZ7vvWnff8p0QeK6ep+5uOwfVyGubk
+KWnl6VizRLgVHNS/RJ4PVYECtxXKi0WwGAZjSSyNZVG1rAJWwipYDWtgLayD9bABNsJQDMNm2AJb
+YRu8B9tjRwzHztgVu2NP7IV9sB9G4UCMwcE4FIdjLI7C0TgGE3AsjscJmIQpmIbpmInZOBnvw6k4
+DXPwYZyOM/ExnI1zcB4uwCdwET6Ni/FZfA6X4QpciS/hy7gabXTgWnwd82FO95qdpt/3c4/XS98f
+rvadeyXDcyz+Fxkc5LVRzW1n5NGS7j5fJKdbgeB8nlRogZxeObJE8APhOfd4ftopp21wnpwmOQ2C
+w3Pa57iPN9XrjONNHSa3Nzc8p0ewndM4J+wb60PrI3cv+dj61vpjSL/oUPflV8Zwt7xLfCO4lPWJ
+td3aYe20PrV2Wf+zPrM+t3ZbX1hfWl9Ze6yvrb3WN9Y+a39O3hw7x5GTLyd/ToGcgjmFcgrnFMkp
+mlMsp3hOcE6JnJI5pXJK55TxlPvOOmB9b/1gHbQOWYetH62frCPWz9Yv1lHrmPWr9Zt13PrdOpFT
+NqdcTkhO+ZwKORVzKuVUzqmSUzWnWk71nBo5NXNq5dTOqZNTN6deTv0h0RHd072X6uX6RUdnprsv
+qNyXh54XrTHuVy33f1wjoiN812MjoyM8L1rpWfFcCEVFDIkelOY+Q7r0l8boiFte+z2ndNdQdxnv
+WdP9voJn8L4s9jVeR9zJzomeC0rPM7vP297F3c8cffMdwTD3v1zjkt1n7cGSGR4dMcSZ6H5FHZtK
+e70XKiPVk3pruF8kVOk+qe7TtzvsPqXf1lj3FUN0RJR5/di/xPgbZ1X34KsuqoP7eTykeg/5ZujE
+BbgN/8LKdLs+eD++it9jAbplaxyLT+F2/Btr0H0HYA6+gT9iUbp3e5yIz+L/8BLW5Sjthw/gWjyK
+hfKLbXE0zset+CuW5tVqBD6MG/AI5i8otkIXLsJP8BxWLyRG4YP4Oh7GIoXFdjgBl+AuvIh1eBUd
+hNPxLfwFSxQVwzEVl+EXeBUb8qo8HGfhe3gcixUXO2ASLsXP8F+sxqt8f5yG6/AQFi4h3oOJuBg/
+xQtYm6uGGLwfV+L/8AyWKyV2RBfOwbfwBwziaqQe9sdsfB6340ksWUZsi6PxUXwdO3CVk4RL8TP8
+F6uV4/lxGq7DQ5iXq6Vm6MQFuA1/wzLlxa6YgSvxa1RXX01wMM7At/EolqwotsXx+AzuxH+wEld1
+vfE+XIN78AaGVhZH4hzcjL9gCa4SwzEVn8YdeB5rVhUH4kO4Hn/CYtXEDpiES/FjPIvVqos9cBqu
+wn14BRtwNTsMH8M38Fu8hrW4xO+N6bgEP8TjWIyr5JYYi4/gq/g1XsKqtcXumIyLcDP+ggW5Cg/D
+OJyHH+CfWJEXuF44BVfjd5iPq/qWGIuP45v4MxaoL7bGUTgX38aTWJJ3CxGYhsvxS7yGLRqKI3A2
+vo+/Y3HefXREF87BzfgHlm8s9sQH8XU8jDbvZprjGFyIe/AGhjbh+fE5/BwvY32uU0fjfHwXKzcV
++2AGPosfYTDvrlrjKHwKt+NJbNZcHIY5+Ap+idewEe/aRuBsfB9/x3Itxe6YjM/h53gZ6/MucCg+
+iq/jYSzSWmyOw3EWvofHsSzvKrthJr6Ie7FgW7ENjsNleBiL8O60HU7Ahfg7lmsn9sMHcC0exEK8
+y22L4/EZ3IqnsFIHsTem4wu4B29gKO+eR+Ic3Ix/YPlOYjim4jL8Aq9iw3BxOM7C9/AnLBYhdsNM
+fBH3YhDv6ttgKj6NH+B5rNhF7Iz34gr8Ci9gbT4tiMFH8E08gSHdxB6YjatwN/6NNfj0YRjm4EbM
+10NsjDH4CL6JP2Mw74Rb41h8Crfj31gjUhyAOfgGfovXsBGfjozA2fg+/o7Fe4sdMRmfw8/xMtbn
+05ah+Ci+i79i6b5iF0zHF3AP3sBQPr0ZhNPxLfwFS/QX2+A4fBp34FVsyKdBw3EWrsefsM4AsS9O
+xRfxMzyLIXy61AOzcR0ewsLR4j2YiIvxU7yAtfm0KgYfwVfxeywwSGyNo3AubsGTWIFPvyJxMr6C
+36JjiNgCR+BsfB9/x+J8mtYKXbgIP8FzWH6Y2BOD7Ni6+QpY12/csLQv9ZFrkO8bO7jvgfyemHr/
+nleLOdRHelwU+D77ubn49Dx/exfPoyVUKUc9reati/1ZWBbLqyVUCYf6gFR9omQbi7d/83fv4uoR
+/Um0ddu9U2KqUJAWc+QzqmYGn/DG82lxtagjvxEPmX7cG8+vxdWijgJG/Nj5Dt79UUCLq0UdBY14
+WnyeQp54QS2uFnUUMuLhiRIvpMXVoo7CRrxS9TzexhTW4mpRRxEjfqCuxItocbWoo6gRv7TuVW+8
+qBZXizqKGfEW70m8mBZXizqKG3HrHYkX1+JqUUewET/wmuWNB2txtaijhBmvJRuyhBZXizpKGvH3
+8pTyxktqcbWoo5QRX7TsWkFPvJQWV4s6ShvxFc4r3i5WWourRR1lzMakSLyMFleLOsoacevSZW+8
+rBZXizrKGfGY9CDvqpbT4mpRR4gRb99GqodocbWoo7wRt+OCvLupvBZXizoqGPFK9V/1bsgKWlwt
+6qhoxFffv8Ybr6jF1aKOSka8WkuJV9LialFHZSMe/oftjVfW4mpRRxUjvvpniVfR4mpRR1Uj3rPE
+YO+WqarF1aKOakZ8/fdSvZoWV4s6qhvxPfXyeuPqEc+Xb9GbsdGfyKm0hlbVdyqtaVRdcVziNbW4
+77Rey4gP/fKsN64e8bwUqEUd6vdjtY3F6rWXxdQjni9VQmv7c10lpgoFaTFHXaOqitfVqtYxqy7i
+JayeVtX3ElbfqHr1E6laX4urRR0NjPjkjRJXj3i+fIvejC0IkkY01Kr6Xn4bGVVzonp4u5J6xPP6
+qRZ1qN/r8U7Y93vHxkaZ7e1be8uoRzxfqqTWuPODWnljqlCQFnM0MaoeKPu9d12aaHG1qCPMiMdU
+k7jvF1TuL9+iN2NW8nVvrKlW1deIZkbVam/c8MabaXG1qKO5Ed/VJcG7is21uFrU0cKIF/nhF+/B
+1kKLq0UdLY34+HUSb6nF1aKOVkb8wKtHvfFWWlwt6mhtxNdvlnhrLa4WdbQx4vV2/OqNt9HialFH
+WyN+zHHMG2+rxdWijnuMeKMD0ph7tLha1NHO3O7x8qLeTourRR3tjXhUedv70tVei6tFHR3MLVNY
+rgE6aHG1qKOjEe9Tu6A33lGLq0UdnYz4kToS76TF1aKOcCP+Xpti3ni4FleLOiKMeEh7iUdocbWo
+o7MRb/NkUW+8sxZXizq6GPHzI4K98S5aXC3q6GrEJydKvKsWV4s6uhnxtPbSmG5aXC3q6G7EP2x0
+1dtnumtxtaijhxE/0lDiPbS4WtTR04iff0O6WE8trhZ1RBpxf9cvalFHLyPu7/pFFXX0NuL+rl9U
+UUcfI+7v+kUVdfQ14v6uX1RRRz8j7u/6RRV19Dfi/q5fVFFHlBH3d/2iijoGGHF/1y+qqPYysHi4
+vPuK1Kr6XgaijaoJsRLvpcXV66MjxogfGNTCG++txVVRxyAjHhL9k/dFpo8WV0Udg434rsePeON9
+tbgqqj5X0OKPrZC42saeL1VU2yIf2nLp0F+r6rt0GGZUPTTunDcepcXVxwOO4UZ8zrhD3vgALa6K
+OkYY8fB4iQ/U4qqoI9aINyp20BuP1uKqqGOkGd912BuP0eKqqGOUEV/x76/e+CAtroo64ox42KE+
+3p0/WIuroo7RRnzy9V7e+BAtroo6nEa83oKe3vhQLa6KOsbkKq6KOuKNeOYLvb3xYVpcFXUkGPEz
+P0pc7RrPlyqqda23+/zs3YAjtJjv0ZuxIsPkqIkNHGtU/6i32sjAsbff+dMbGxU4Fva+HHtxgWO7
+SsoqjA4cO7NPjjVn4Nj45bIKYwLH1heR9+/xgWP2pkbe7ZYQOBbyWRlvzBU49mGhLt7Y2MCxSgdK
+el+bxwWO9UmQN37jA8fe2+jwPmli4FiBmfLh5ITAsWrL5Gw9MXAsfIV8YJcUODZ93UlvLPku2+1B
+6W8pgWMh5xze7ZZ6lxhrqm5yLKrFHB/ww/fxXXwV1R2EK1DdefgMqjsW1Z2NMzAH77+9XXaRDw55
+X1Xv5RHPeUHdV+mYasR7DpYjOV2Lq6KOB4x4yAA5BjO0uCrqmGbE/b3+qaKOB424v9c/VVQ/2OpL
+h87UqvpW8SGjqr+XeLX9HA8bcX8v8aqo45FcraIq6phuxP2toiqqf7Y/aaC3zVn+VnGmUbXWzihv
+PFuLq67ieNSIh4UO8MYnaXFV1PGYEX87XrbIZC2uijpm3TE+RVtFVVRbxS0vyZn1Pq2qbxUfN6rG
+LJL4/VpcHRWOOUa8dNpO7ypO1eKqqGOuEW80dIc3/oAWV0Ud84z4nndkA07T4qqoY74R93fUqKKO
+BUbcX5dSRR0Ljbi/LqWKatu7dLCcGB7Uqvq295NGVX9HjTobORYZcX9HjSrqeCpXq6iKOp424v5W
+URXVTww/V/KuYo6/VVxsVC1yWOIPaXF14nUsMVfRz15URR3PGnF/q6iKOpbmahVVUf3d0NhL3t3y
+sFbVt4rPG1X9tVm9xjiWGXF/bVZFHctz1WZVVP8E+he56nlEq+pr8wtG1TlHJT5di69Q8ZVGfPQZ
+ic/Q4qqo40UjHntc4jO1uCrqeMmId42X086jWlwVday6Y1yd7zxfqqh+rcXpfZZW1bdFXjGq+tuL
+6srBsdqI+9uLqqhjjRH3txdVUf3g+nSQt82ztaq+Nr9mVJ2+WeKPa3F11eNYa8QT7pWPGuZocVXU
+sc6Ir0+R+Fwtroo6Xjfiq79403ukz9PiqqjjDSN+6TuJz9fiqqhjvRFf3FVeDRZocVXUscGIv/2j
+vFgv1OKqqONNI97ijMSf0OKqqOMtI176msSf1OKqqONtI575nvxeYZEWV0Ud7xjx5wbLO2Z18vV8
+qaL6b1h2yc5/Wqvq6ysbjar+Oqy6Una8Z8T9dVhVVH/r9rfE1Ck9j96IzXyzyahe5Kwspk7tni91
++R5kxtQpPUiLObYYVaP6yWc2z2pVN5tV5yyd7e15S7WqvjZvNaq2eUfe6z6nxdVbDse2XG1nVdTx
+Ya62syqqtbnFYHnj+LwW8z16M7blZznxLgscU2+nlgeOzVkpJ9oVgWMFQuTd6guBY2c+l7ehKwPH
+rHdlc78YODb+Z7l0eilw7Eg1+ShsVeBYEbrxy4Fjq0839j7pK4Fjo1vJzlodOBazXd4irwkc68pr
+wquBY1FfSrXXAsdGfyuxtYFjtcZe9cbWBY6911ruono9cOxIWbk34o3AsZc2yF5YHzi25ZFT3tiG
+wLFMp6zCm4FjLWIXzNFPyJ6vA0beTjguMd+J2P3/7/ne/s6Ir46T+Dta/AcVP2DE57R8cY5+QvZ8
+f1DFvzfiq6tIfKMWV0PH7B+M+PhSEn9Pix9W8YNGfHEla55+pvV8/6OKHzLi7Rfn98Y3afGfVPyw
+Ed/eJd72RDZr8SMq/qMRPxKW4I1v0eI/q/hPRnzxxOFz9BN0kPaofcSIZzZcNEc/Qd8SP2rE10+W
+vapO0J6vXywjVuDjg894Yh/6q/qrEa8We9wb/0iresysuuXd897Yx/6qHjfii0ZL1U+0qr/9x7ae
+yFVbf/+PbT2Zq7b+YVa9fW/l0av+xQ9PGYv522t/mtWrdZTq27U2q5h92oj/3uA+b3yHFldtsM8Y
+8YRmEt+pxVVR+6wRbzRvijf+qRZXRe1zRjzqEYnv0uKqqP23EY9dLI35n7YhVVH7H745byxWpP9C
+72KfaRtSFddiC2aXz+OJfa41RsXsC0Z8eq3K3vhuLa7aYF804j3bSfwLLa6K2pfMVa0mbf5Sa7Mq
+ql+1tZAt8pVW1de1LhvxY3ulS+3Rqv5rVl1L7GstdtWMxZ560Bvbqz35NbVKV4z41ebS1m+0+HUV
+v2rEpw6Wfr1PXzUVv2bEVz8s8f1aXP3m075uxNdGS/xbHvF0JVvFg/jmhrHYdp5FvXLe8ix5gm6P
+hwyR+AEtrorbeY14+9my3dUrp7dhQUYjEk7LUfODVtWhqlpG1fUfFM+jvzB7vs+n4rYRD/hS5DDi
+t5/c9DvN7RPEf8UCxuL+zl75VeMKGnF/Zy9V1C5kxG8/e3n2sipq/8A3hY3FRnMWO6Qtporbu/im
+iLFYpemymLp4CNKK20WN+O1nsyCtqF3MiDe6MnmOfknj+V4VtYubuzFZzmbqWsOzDqqoXZJvgo3F
+YrpM2aVf2ni+V8XtEkZ8+7JBc/RLG72oFjtPVXXRUUCv+inftMKWqCYRKIdlsQyWMvdbpDyNugLy
+fK9W1S5txHc/sdzbeN9Fi1ZU70Q9pOqvWqykGVvQX2K/BY7tdklMXfk49DY25JsaWAHLY4ixDuEP
+SjnfxYy2wfRnfUhiJwLHRq+TmLqIyaPF7Mp8U9FoxNufyWLqCilIa7pdyYhbQ6XT+C5mtKJ67HOp
+qq6MbL1qdb6phlWxirmFmkoZdZHj+apsPtvUsY96Y6cDx3ZPeNAbOxM4VoRqZwPH1i+RtqmLGM/3
+vu1d03w5OT3ZG/9bi6uuYtcy4gt+lfh5La6K2rWN+NRNM7zxf7S4KmrXMeJRH03yxi9ocVXUrmse
+mxsf8c4CclGLq6J2PXOvbZf4JS2uitr1jfiZpCe8XepfLa6K2g2MuL83z6qoFntvteyey1pV3+5p
+ZFSd/JvEr2hxdUTbjY342pYSv6rFVVE71IgX+UN2zzUtroraTYz4pQqye65rcVXUDjPi9XpJ/IYW
+V0Xtpka8Wls5hH33lrm/wswNWIQTsrrmueWE3NyoWmm+nJDzaHH1KmC3ME87TSSeV2tEc7MRUZy/
+bS3m58QcPF5iDn9tbW08edpmiefT4uoVzG5jxBc5JJ5fi6uidluz+tRp3ngBLa6K2vcY8UbDJV5Q
+i6uidjtzZ0+XeCEtrora7Y34gTiJF9biqqjdwWz7sL4rPD8sosVVUbujWX2CxNW1jOc1RxW13+Ob
+TsZiPWf07aRf03hQxe1wI56UI89SXIuronaEEd+XLfFgrVGqqP0W33Q2FuszWxqlLpQ8F8OquP0C
+3/TALsbiWybJs5bUGqmexO5qHi6Py7OV0uKqqN3N3OsdB3jjpbW4Kmp3N883Vfos8/xQXW55vlRR
+/TpzirRZXZ3l09s8g2/uw0QcjYOxp/Hsv8+VdSunNVZtODvS3F/3yLqpC6Q8WlF7IN/0Mhb7sHB/
+72LltWdRxe3eRnxq+ShvvIIWV0XtPmYXnSrxilpcFbX7GvGEc/288UpaXBW1+xnx6X9LvLIWV0Xt
+/kZ89SqJV9HiqqgdZcTbZ0m8qhZXRe0BRnwx7wLV5ZjnSxXVdxPbu7q/7R1tVq0vjaihxdXOtGOM
++NqGEq+pxVVRe5ARzyy92NvmWlqbY8w2b6cn1taq+nriEKPqn22lJ9bR4qqb20ONeFRx2SJ1tbgq
+ag/LVQ9URe3hueqBqqg9wuyBeaQx9bS4KmrH5qrDqqL2yFx1WFXUHmXEu74k8fpaXBW148yd3ybM
+e7pSF3ueL1VUfyfK3myoVfXtTadRtVZf2ZuNtLg6edljzNOQn/6titrxuerfqqidYMQX0L8ba3FV
+1HYZ8Ri2SKgWV0XtsUY8aXukN95Ei6ui9jgzXrqvNx6mxVVRe7wRL1BQ4upS0vOliurv+ebJ7mmm
+VfXtngl33T2e79VrjJ3NNxONxfyd9lVxOylXB50qaifn6qBTRe2UXB1FqqidetejyPO9Kmpn8E2a
+sdh5jqbm2mKquJ3ON/eaZ7PKchGgLr714nr1H6R6y8Cx2w/pWxqRxTeZRiPW8+LSSqueYVa/ekm6
+WOvAMX/HqG/nT8rVMap6lj05V8eoKmpPMeK7S8prUButzZPNNlfisGirVfUdFvcbVdtMlWuye7S4
+ugSzpxrxA0/I9X07La6K2g8Y8dFvPeCNt9fiqqg9zdyAaySuruk966GK2tP55kFjsSIbZbGO2rOo
+4naOeYwukPeCnbS4Kmo/ZMS7DnveGw/X4qqo/bDZmKmZ3niEFldF7UeMeGyw7FV1Hez5UkW12Bw+
+JOqixaaZsQResrpqT+7b+TONJ3+vh5wT1bW653t1HW4/xjePGov5+1BuptmY2J5SvbtWXcXspXwz
+y6i+qLwcdKrdnk89VVvsZ/lmIc7Bx3G2Ua7RXDnF9tS23CyzsdV4CxN5l9hsqdZL28AqZs81nvz3
+YKnaW4urJtvzzDNCYYn30eKqqD3fiK/dnO0t1leLq6L2AiNeZJ/E+2mrON9cRXu+rGJ/f6v4hFHV
+3wuk2jv2k+bB5+cFUhW1Fxlxfy+Qqqj9lBH39wKpitpPG3F/l5mqqP2MeSbwc5mpitqLjXiBdnJR
+FaXFVVF7iREPeVAuqtQ7Js+XKqrFnqsufWSgFvPTUfdxFEVrT+47ip4zO+qZCt6qMVpcHaL280Y8
+5x+JD9Liqqi9LFeHgSpqLze384xh3vhgLa6K2ivMw+Bfec0fom2R5X62CJ+YDNWq+j59WGlU3cUn
+JsO0uPpYxn7RiJ9pLye74VpcFbVfMuKx5WT3jNDiqqi9yuwbT07wHtixWlwVtV824i/N6OndXiO1
+uCpqv2Ju70HSUUdpcVXUXm3Et3eUeJwWV0XtNeZB9lKENz5ai6ui9qtGPG2XxJ1aXBW1XzNPP2/J
+UTNGi6ui9lpzr3aRtsdrcVXUXmfE7f2y3RO0uCpqv24eFl9J3KXFVVH7DSNe7UZrb3ysFldF7fW5
+OopUUXuDEff3YqKK2m8a8QOb5NXB907L/aWK6lf5s+SwGK9V9X1s+bZRtVGsHBaJWlx9Jmq/YzYi
+TuITtLgqar9rxC/xK+WJWlwVtTca8T3bZBWTtFV811zFXdNlFZO1qr6Pi983qrZ3SptTtLj6LNre
+ZMSnTpd4qhZXRe3NRtz6WF4A1Vskz/eqqP0h32wxT0dX5Fnu1Z5FFbc/MI+ifMnenpiuxVVRe6vZ
+cfdf816WZGhxVdTeZsTDy8oNSurtmudLFdViK/IM9LY5y1+bPzJXcZOsou8dlvv/aoPYO/lmB36C
+HxtlSj8mZSZpjfvIbFx7YpO1xqmYvd2oOvm1bt4NOkWr+olZ9VgHWeX7Aj95MOfz+wPHFvSWXxx=== rapport de plantage /Library/Logs/DiagnosticReports/ditto_2026-11-04-110727_Ankas-Virtual-Machine.diag
+Date/Time:        2026-11-04 11:04:08.203 +0000
+End time:         2026-11-04 11:07:22.832 +0000
+OS Version:       macOS 15.8.2 (Build 24H232)
+Architecture:     arm64e
+Report Version:   60
+Incident Identifier: 741647A1-0817-4F4A-9418-363A8EC4CAA7
+
+Data Source:      Microstackshots
+Shared Cache:     E130CBA3-99F2-36E1-98C3-DDC73414B433 slid base address 0x18c4d4000, slide 0xc4d4000
+
+Command:          ditto
+Path:             /usr/bin/ditto
+Codesigning ID:   com.apple.ditto
+Resource Coalition: "com.openssh.sshd.BF7F47B5-11CD-4497-8061-5815031A691C"(746)
+Architecture:     arm64e
+Parent:           UNKNOWN [9973]
+PID:              9978
+
+Event:            disk writes
+Action taken:     none
+Writes:           34.36 GB of file backed memory dirtied over 195 seconds (176.54 MB per second average), exceeding limit of 397.68 KB per second over 86400 seconds
+Writes limit:     34.36 GB
+Limit duration:   86400s
+Writes caused:    34.36 GB
+Writes duration:  195s
+Duration:         194.63s
+Steps:            3263 (10.49 MB/step)
+
+Hardware model:   VirtualMac2,1
+Active cpus:      6
+Memory size:      14 GB
+HW page size:     16384
+VM page size:     16384
+Shared cache residency: 16.40% (768.94 MB / 4687.92 MB)
+
+Time Since Boot:  146s
+Time Awake Since Boot: 146s
+Time Since Wake:  n/a (machine hasn't slept)
+
+Total CPU Time:   192.997s
+Advisory levels:  Battery -> 3, User -> 2, ThermalPressure -> 0, Combined -> 2
+Free disk space:  52.72 GB/319.51 GB, low space threshold 3072 MB
+Vnodes Available: 77.77% (177522/228279)
+Models:           none
+
+Preferred User Language: en-US
+Country Code:     US
+OS Cryptex File Extents: 1
+
+Heaviest stack for the target process:
+  24  start + 6076 (dyld + 27544) [0x18c5a6b98]
+  24  ??? (ditto + 7328) [0x100145ca0]
+  24  BOMCopierCopyWithOptions + 1176 (Bom + 5792) [0x19caa36a0]
+  24  _BOMCopierCopyFromFilesystem + 2016 (Bom + 189096) [0x19cad02a8]
+  24  _copyFromDirToDir + 1500 (Bom + 195884) [0x19cad1d2c]
+  24  _copyDir + 1476 (Bom + 17944) [0x19caa6618]
+  24  _copyFromDirToDir + 1500 (Bom + 195884) [0x19cad1d2c]
+  24  _copyDir + 1476 (Bom + 17944) [0x19caa6618]
+  24  _copyFromDirToDir + 1500 (Bom + 195884) [0x19cad1d2c]
+  24  _copyDir + 1476 (Bom + 17944) [0x19caa6618]
+  24  _copyFromDirToDir + 1500 (Bom + 195884) [0x19cad1d2c]
+  24  _copyDir + 1476 (Bom + 17944) [0x19caa6618]
+  24  _copyFromDirToDir + 1500 (Bom + 195884) [0x19cad1d2c]
+  24  _copyDir + 1476 (Bom + 17944) [0x19caa6618]
+  24  _copyFromDirToDir + 1500 (Bom + 195884) [0x19cad1d2c]
+  24  _copyDir + 1476 (Bom + 17944) [0x19caa6618]
+  24  _copyFromDirToDir + 1428 (Bom + 195812) [0x19cad1ce4]
+  24  _copyFile + 1084 (Bom + 21064) [0x19caa7248]
+  24  _copyDataFork + 5052 (Bom + 207352) [0x19cad49f8]
+  24  _executeBomCopySpecification + 476 (Bom + 25464) [0x19caa8378]
+  24  _BOMFileDirectWrite + 188 (Bom + 27392) [0x19caa8b00]
+  24  write + 8 (libsystem_kernel.dylib + 18164) [0x18c9096f4]
+
+
+Powerstats for:   ditto [9978]
+UUID:             397F916F-2F3E-3801-BD24-AF62F2A213C8
+Path:             /usr/bin/ditto
+Codesigning ID:   com.apple.ditto
+Resource Coalition: 24 samples "com.openssh.sshd.BF7F47B5-11CD-4497-8061-5815031A691C"(746)
+Architecture:     arm64e
+Parent:           UNKNOWN [9973]
+UID:              501
+Footprint:        2912 KB
+Start time:       2026-11-04 11:07:20.002 +0000
+End time:         2026-11-04 11:07:22.804 +0000
+Num samples:      24 (1%)
+Num threads:      1
+Primary state:    24 samples Non-Frontmost App, Non-Suppressed, Kernel mode, Effective Thread QoS Default, Requested Thread QoS Default, Override Thread QoS Unspecified
+User Activity:    24 samples Idle, 0 samples Active
+Power Source:     0 samples on Battery, 24 samples on AC
+  24  start + 6076 (dyld + 27544) [0x18c5a6b98]
+    24  ??? (ditto + 7328) [0x100145ca0]
+      24  BOMCopierCopyWithOptions + 1176 (Bom + 5792) [0x19caa36a0]
+        24  _BOMCopierCopyFromFilesystem + 2016 (Bom + 189096) [0x19cad02a8]
+          24  _copyFromDirToDir + 1500 (Bom + 195884) [0x19cad1d2c]
+            24  _copyDir + 1476 (Bom + 17944) [0x19caa6618]
+              24  _copyFromDirToDir + 1500 (Bom + 195884) [0x19cad1d2c]
+                24  _copyDir + 1476 (Bom + 17944) [0x19caa6618]
+                  24  _copyFromDirToDir + 1500 (Bom + 195884) [0x19cad1d2c]
+                    24  _copyDir + 1476 (Bom + 17944) [0x19caa6618]
+                      24  _copyFromDirToDir + 1500 (Bom + 195884) [0x19cad1d2c]
+                        24  _copyDir + 1476 (Bom + 17944) [0x19caa6618]
+                          24  _copyFromDirToDir + 1500 (Bom + 195884) [0x19cad1d2c]
+                            24  _copyDir + 1476 (Bom + 17944) [0x19caa6618]
+                              24  _copyFromDirToDir + 1500 (Bom + 195884) [0x19cad1d2c]
+                                24  _copyDir + 1476 (Bom + 17944) [0x19caa6618]
+                                  24  _copyFromDirToDir + 1428 (Bom + 195812) [0x19cad1ce4]
+                                    24  _copyFile + 1084 (Bom + 21064) [0x19caa7248]
+                                      24  _copyDataFork + 5052 (Bom + 207352) [0x19cad49f8]
+                                        24  _executeBomCopySpecification + 476 (Bom + 25464) [0x19caa8378]
+                                          24  _BOMFileDirectWrite + 188 (Bom + 27392) [0x19caa8b00]
+                                            24  write + 8 (libsystem_kernel.dylib + 18164) [0x18c9096f4]
+
+  Binary Images:
+           0x100144000 -        0x100153fff  ditto (269.4)                                <397F916F-2F3E-3801-BD24-AF62F2A213C8>  /usr/bin/ditto
+           0x18c5a0000 -        0x18c63b597  dyld (1286.12)                               <A1EE9680-226E-3DBA-A14C-8C93EEA2E129>  /usr/lib/dyld
+           0x18c905000 -        0x18c9405f3  libsystem_kernel.dylib (11417.140.69.713.47) <D7A304D7-88F5-3CE0-AA04-F59A5AD8B4FC>  /usr/lib/system/libsystem_kernel.dylib
+           0x19caa2000 -        0x19cb17793  com.apple.bom 14.0 (269.4)                   <AAE58254-1DC3-3F48-A69C-26F37B626463>  /System/Library/PrivateFrameworks/Bom.framework/Versions/A/Bom
+
+
+Powerstats for:   java
+UUID:             63147C0F-CA5E-359A-8716-0D0885C21071
+Path:             /Users/USER/*/java
+Codesigning ID:   net.java.openjdk.java
+Team ID:          JCDTMS22B4
+Resource Coalition: 2952 samples "com.openssh.sshd.BF7F47B5-11CD-4497-8061-5815031A691C"(746)
+Architecture:     arm64
+Start time:       2026-11-04 11:04:27.097 +0000
+End time:         2026-11-04 11:06:46.409 +0000
+Num samples:      2952 (90%)
+Primary state:    2952 samples Non-Frontmost App, Non-Suppressed, Kernel mode, Effective Thread QoS Default, Requested Thread QoS Default, Override Thread QoS Unspecified
+User Activity:    0 samples Idle, 2952 samples Active
+Power Source:     0 samples on Battery, 2952 samples on AC
+  871   ??? [0x1176aa148]
+    871   ??? [0x11766a4f8]
+      871   write + 8 (libsystem_kernel.dylib + 18164) [0x18c9096f4]
+  525   ??? [0x113658a58]
+    525   ??? [0x1136235f8]
+      525   write + 8 (libsystem_kernel.dylib + 18164) [0x18c9096f4]
+  482   ??? [0x11297753c]
+    482   ??? [0x112945f78]
+      482   write + 8 (libsystem_kernel.dylib + 18164) [0x18c9096f4]
+  477   ??? [0x116988b9c]
+    477   ??? [0x116957c78]
+      477   write + 8 (libsystem_kernel.dylib + 18164) [0x18c9096f4]
+  228   ??? [0x11312909c]
+    228   ??? [0x1130eb978]
+      228   write + 8 (libsystem_kernel.dylib + 18164) [0x18c9096f4]
+  99    ??? [0x112971bac]
+    99    ??? [0x112945f78]
+      99    write + 8 (libsystem_kernel.dylib + 18164) [0x18c9096f4]
+  62    thread_start + 8 (libsystem_pthread.dylib + 7040) [0x18c942b80]
+    62    _pthread_start + 136 (libsystem_pthread.dylib + 27592) [0x18c947bc8]
+      62    ThreadJavaMain + 12 (libjli.dylib + 41048) [0x102bce058]
+        62    JavaMain + 2324 (libjli.dylib + 30104) [0x102bcb598]
+          62    jni_CallStaticVoidMethod + 264 (libjvm.dylib + 5400724) [0x10449a894]
+            62    jni_invoke_static(JNIEnv_*, JavaValue*, _jobject*, JNICallType, _jmethodID*, JNI_ArgumentPusher*, JavaThread*) + 368 (libjvm.dylib + 5386276) [0x104497024]
+              62    JavaCalls::call_helper(JavaValue*, methodHandle const&, JavaCallArguments*, JavaThread*) + 984 (libjvm.dylib + 4908636) [0x10442265c]
+                9     ??? [0x114334154]
+                  9     ??? [0x11433917c]
+                    9     ??? [0x11433917c]
+                      9     ??? [0x11433917c]
+                        9     ??? [0x11433904c]
+                          9     ??? [0x1143394fc]
+                            9     ??? [0x11433904c]
+                              8     ??? [0x11433917c]
+                                5     ??? [0x10d5d7f08]
+                                  5     ??? [0x114a58c78]
+                                    5     write + 8 (libsystem_kernel.dylib + 18164) [0x18c9096f4]
+                                3     ??? [0x11433904c]
+                                  2     ??? [0x10d5d7f08]
+                                    2     ??? [0x114a58c78]
+                                      2     write + 8 (libsystem_kernel.dylib + 18164) [0x18c9096f4]
+                                  1     ??? [0x11433917c]
+                                    1     ??? [0x11433917c]
+                                      1     ??? [0x10d5d7f08]
+                                        1     ??? [0x114a58c78]
+                                          1     write + 8 (libsystem_kernel.dylib + 18164) [0x18c9096f4]
+                              1     ??? [0x11433962c]
+                                1     ??? [0x11433962c]
+                                  1     ??? [0x10d5d7f08]
+                                    1     ??? [0x114a58c78]
+                                      1     write + 8 (libsystem_kernel.dylib + 18164) [0x18c9096f4]
+                7     ??? [0x11624c154]
+                  7     ??? [0x11625117c]
+                    7     ??? [0x11625117c]
+                      7     ??? [0x11625117c]
+                        7     ??? [0x11625104c]
+                          7     ??? [0x1162514fc]
+                            7     ??? [0x11625104c]
+                              7     ??? [0x11625162c]
+                                7     ??? [0x11625162c]
+                                  6     ??? [0x10f43b288]
+                                    6     ??? [0x116957c78]
+                                      6     write + 8 (libsystem_kernel.dylib + 18164) [0x18c9096f4]
+                                  1     ??? [0x11625117c]
+                                    1     ??? [0x11625117c]
+                                      1     ??? [0x1162514fc]
+                                        1     ??? [0x11625104c]
+                                          1     ??? [0x11625104c]
+                                            1     ??? [0x11625104c]
+                                              1     ??? [0x11625104c]
+                                                1     ??? [0x11625104c]
+                                                  1     ??? [0x116957c78]
+                                                    1     write + 8 (libsystem_kernel.dylib + 18164) [0x18c9096f4]
+                7     ??? [0x112500154]
+                  7     ??? [0x11250517c]
+                    7     ??? [0x11250517c]
+                      7     ??? [0x11250517c]
+                        7     ??? [0x11250504c]
+                          7     ??? [0x1125054fc]
+                            7     ??? [0x11250504c]
+                              5     ??? [0x11250562c]
+                                5     ??? [0x11250562c]
+                                  4     ??? [0x10b7ba908]
+                                    4     ??? [0x112c26478]
+                                      4     write + 8 (libsystem_kernel.dylib + 18164) [0x18c9096f4]
+                                  1     ??? [0x10b7a3464]
+                                    1     ??? [0x11250504c]
+                                      1     ??? [0x11250504c]
+                                        1     ??? [0x11250504c]
+     === rapport de plantage /Library/Logs/DiagnosticReports/ruby_2026-11-04-110409_Ankas-Virtual-Machine.diag
+Date/Time:        2026-11-04 11:02:12.306 +0000
+End time:         2026-11-04 11:04:08.106 +0000
+OS Version:       macOS 15.8.2 (Build 24H232)
+Architecture:     arm64e
+Report Version:   60
+Incident Identifier: 06A920CD-A4B4-420B-8173-18AC4CB1976F
+
+Data Source:      Microstackshots
+Shared Cache:     E130CBA3-99F2-36E1-98C3-DDC73414B433 slid base address 0x18c4d4000, slide 0xc4d4000
+
+Command:          ruby
+Path:             /opt/homebrew/*/ruby
+Codesigning ID:   ruby
+Resource Coalition: "com.openssh.sshd.BF7F47B5-11CD-4497-8061-5815031A691C"(746)
+Architecture:     arm64
+PID:              7442
+
+Event:            disk writes
+Action taken:     none
+Writes:           8633.34 MB of file backed memory dirtied over 116 seconds (74.55 MB per second average), exceeding limit of 99.42 KB per second over 86400 seconds
+Writes limit:     8589.93 MB
+Limit duration:   86400s
+Writes caused:    8633.34 MB
+Writes duration:  116s
+Duration:         115.80s
+Duration Sampled: 0.13s (event starts 115.64s before samples)
+Steps:            6 (10.49 MB/step)
+
+Hardware model:   VirtualMac2,1
+Active cpus:      6
+Memory size:      14 GB
+HW page size:     16384
+VM page size:     16384
+Shared cache residency: 16.83% (788.81 MB / 4687.92 MB)
+
+Time Since Boot:  146s
+Time Awake Since Boot: 146s
+Time Since Wake:  n/a (machine hasn't slept)
+
+Total CPU Time:   0.130s
+Advisory levels:  Battery -> 3, User -> 2, ThermalPressure -> 0, Combined -> 2
+Free disk space:  68.83 GB/319.51 GB, low space threshold 3072 MB
+Vnodes Available: 74.07% (169078/228279, 137946 allocated)
+Models:           none
+
+Preferred User Language: en-US
+Country Code:     US
+OS Cryptex File Extents: 1
+
+Heaviest stack for the target process:
+  6  start + 6076 (dyld + 27544) [0x18c5a6b98]
+  6  main + 104 (ruby + 13800) [0x10409b5e8]
+  6  ruby_run_node + 76 (ruby + 1509608) [0x1042088e8]
+  6  rb_ec_exec_node + 136 (ruby + 1509824) [0x1042089c0]
+  6  rb_vm_exec + 280 (ruby + 2875724) [0x10435614c]
+  6  vm_exec_loop + 1440 (ruby + 2959464) [0x10436a868]
+  6  vm_exec_core + 4920 (ruby + 2887000) [0x104358d58]
+  6  vm_sendish + 1472 (ruby + 2875212) [0x104355f4c]
+  6  vm_call_cfunc_with_frame_ + 228 (ruby + 2998816) [0x104374220]
+  6  rb_ary_each + 88 (ruby + 901260) [0x10417408c]
+  6  rb_yield + 332 (ruby + 2934936) [0x104364898]
+  6  invoke_block_from_c_bh + 724 (ruby + 3030348) [0x10437bd4c]
+  6  rb_vm_exec + 128 (ruby + 2875572) [0x1043560b4]
+  6  vm_exec_core + 5176 (ruby + 2887256) [0x104358e58]
+  6  vm_sendish + 1472 (ruby + 2875212) [0x104355f4c]
+  6  vm_call_cfunc_with_frame_ + 228 (ruby + 2998816) [0x104374220]
+  6  io_s_write + 400 (ruby + 1762092) [0x10424632c]
+  6  rb_ec_ensure + 160 (ruby + 1513340) [0x10420977c]
+  6  io_write + 164 (ruby + 1762360) [0x104246438]
+  6  io_fwrite + 124 (ruby + 1756056) [0x104244b98]
+  6  io_binwrite + 296 (ruby + 1691440) [0x104234f30]
+  6  rb_mutex_synchronize + 204 (ruby + 2685120) [0x1043278c0]
+  6  rb_ec_ensure + 160 (ruby + 1513340) [0x10420977c]
+  6  io_binwrite_string + 156 (ruby + 1745788) [0x10424237c]
+  6  rb_io_write_memory + 188 (ruby + 1746496) [0x104242640]
+  6  rb_thread_io_blocking_call + 600 (ruby + 2695556) [0x10432a184]
+  6  write + 8 (libsystem_kernel.dylib + 18164) [0x18c9096f4]
+
+
+Powerstats for:   ruby [7442]
+UUID:             B5A9726C-DAF9-3928-AB7E-E25B88350F64
+Path:             /opt/homebrew/*/ruby
+Codesigning ID:   ruby
+Resource Coalition: 6 samples "com.openssh.sshd.BF7F47B5-11CD-4497-8061-5815031A691C"(746)
+Architecture:     arm64
+Footprint:        421.17 MB -> 382.91 MB (-38.27 MB)
+Start time:       2026-11-04 11:04:07.949 +0000
+End time:         2026-11-04 11:04:08.079 +0000
+Num samples:      6 (100%)
+Num threads:      1
+Primary state:    6 samples Non-Frontmost App, Non-Suppressed, Kernel mode, Effective Thread QoS Default, Requested Thread QoS Default, Override Thread QoS Unspecified
+User Activity:    0 samples Idle, 6 samples Active
+Power Source:     0 samples on Battery, 6 samples on AC
+  6  start + 6076 (dyld + 27544) [0x18c5a6b98]
+    6  main + 104 (ruby + 13800) [0x10409b5e8]
+      6  ruby_run_node + 76 (ruby + 1509608) [0x1042088e8]
+        6  rb_ec_exec_node + 136 (ruby + 1509824) [0x1042089c0]
+          6  rb_vm_exec + 280 (ruby + 2875724) [0x10435614c]
+            6  vm_exec_loop + 1440 (ruby + 2959464) [0x10436a868]
+              6  vm_exec_core + 4920 (ruby + 2887000) [0x104358d58]
+                6  vm_sendish + 1472 (ruby + 2875212) [0x104355f4c]
+                  6  vm_call_cfunc_with_frame_ + 228 (ruby + 2998816) [0x104374220]
+                    6  rb_ary_each + 88 (ruby + 901260) [0x10417408c]
+                      6  rb_yield + 332 (ruby + 2934936) [0x104364898]
+                        6  invoke_block_from_c_bh + 724 (ruby + 3030348) [0x10437bd4c]
+                          6  rb_vm_exec + 128 (ruby + 2875572) [0x1043560b4]
+                            6  vm_exec_core + 5176 (ruby + 2887256) [0x104358e58]
+                              6  vm_sendish + 1472 (ruby + 2875212) [0x104355f4c]
+                                6  vm_call_cfunc_with_frame_ + 228 (ruby + 2998816) [0x104374220]
+                                  6  io_s_write + 400 (ruby + 1762092) [0x10424632c]
+                                    6  rb_ec_ensure + 160 (ruby + 1513340) [0x10420977c]
+                                      6  io_write + 164 (ruby + 1762360) [0x104246438]
+                                        6  io_fwrite + 124 (ruby + 1756056) [0x104244b98]
+                                          6  io_binwrite + 296 (ruby + 1691440) [0x104234f30]
+                                            6  rb_mutex_synchronize + 204 (ruby + 2685120) [0x1043278c0]
+                                              6  rb_ec_ensure + 160 (ruby + 1513340) [0x10420977c]
+                                                6  io_binwrite_string + 156 (ruby + 1745788) [0x10424237c]
+                                                  6  rb_io_write_memory + 188 (ruby + 1746496) [0x104242640]
+                                                    6  rb_thread_io_blocking_call + 600 (ruby + 2695556) [0x10432a184]
+                                                      6  write + 8 (libsystem_kernel.dylib + 18164) [0x18c9096f4]
+
+  Binary Images:
+           0x104098000 -        0x104bcbfff  ruby (0)                                     <B5A9726C-DAF9-3928-AB7E-E25B88350F64>  /opt/homebrew/*/ruby
+           0x18c5a0000 -        0x18c63b597  dyld (1286.12)                               <A1EE9680-226E-3DBA-A14C-8C93EEA2E129>  /usr/lib/dyld
+           0x18c905000 -        0x18c9405f3  libsystem_kernel.dylib (11417.140.69.713.47) <D7A304D7-88F5-3CE0-AA04-F59A5AD8B4FC>  /usr/lib/system/libsystem_kernel.dylib

@@ -1,0 +1,2 @@
+dist/mac/LayersKeys.vst3: replacing existing signature
+Plugin construit : dist/mac/LayersKeys.vst3
