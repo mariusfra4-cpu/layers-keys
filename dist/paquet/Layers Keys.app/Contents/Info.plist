@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleName</key><string>Layers Keys</string>
+	<key>CFBundleDisplayName</key><string>Layers Keys</string>
+	<key>CFBundleIdentifier</key><string>com.jbpraise.layerskeys</string>
+	<key>CFBundleExecutable</key><string>LayersKeys</string>
+	<key>CFBundleIconFile</key><string>icon</string>
+	<key>CFBundlePackageType</key><string>APPL</string>
+	<key>CFBundleVersion</key><string>1.0.0</string>
+	<key>CFBundleShortVersionString</key><string>1.0.0</string>
+	<key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
+	<key>CFBundleDevelopmentRegion</key><string>fr</string>
+	<key>LSMinimumSystemVersion</key><string>11.0</string>
+	<key>LSApplicationCategoryType</key><string>public.app-category.music</string>
+	<key>NSHighResolutionCapable</key><true/>
+	<key>NSPrincipalClass</key><string>NSApplication</string>
+	<key>NSHumanReadableCopyright</key><string>Layers Keys · By JB Praise</string>
+</dict>
+</plist>

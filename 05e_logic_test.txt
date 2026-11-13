@@ -1,0 +1,137 @@
+=== natif (x86_64)
+OK    Audio Unit « JB Praise: Layers Keys » trouvée
+      version annoncée : 1.0.6
+OK    instance créée (code 0)
+OK    taille de bloc maximale 1024
+OK    format 48 kHz stéréo accepté
+OK    initialisation (code 0)
+OK    temps de traîne annoncé : 10.0 s
+OK    400 blocs rendus avec notes décalées (erreurs : 0)
+OK    son sans valeur aberrante (crête 0.000)
+OK    bloc avec 3000 notes en attente
+OK    état du plugin lu (sauvegarde du projet)
+OK    état du plugin rechargé (ouverture du projet)
+OK    CocoaUI annoncée (taille 16, code 0)
+OK    CocoaUI lue (code 0)
+      paquet : /Users/runner/Library/Audio/Plug-Ins/Components/LayersKeys.component  classe : LKAUViewFactory
+OK    paquet de l'interface trouvé
+OK    classe de l'interface trouvée dans le paquet du plugin (comme Logic / FL Studio)
+OK    la classe appartient bien au paquet du plugin (/Users/runner/Library/Audio/Plug-Ins/Components/LayersKeys.component)
+OK    la classe déclare le protocole AUCocoaUIBase
+OK    la fabrique répond à uiViewForAudioUnit:withSize:
+OK    vue de l'éditeur créée (1200 x 744)
+OK    ouverture 1 : la vue est dans la fenêtre
+OK    ouverture 1 : l'interface est dessinée (image présente)
+OK    ouverture 1 : l'interface est toujours dessinée après 0,5 s
+OK    ouverture 1 : 6 clics traités sans blocage (1.51 s)
+OK    ouverture 1 : fenêtre fermée sans plantage
+OK    CocoaUI annoncée (taille 16, code 0)
+OK    CocoaUI lue (code 0)
+      paquet : /Users/runner/Library/Audio/Plug-Ins/Components/LayersKeys.component  classe : LKAUViewFactory
+OK    paquet de l'interface trouvé
+OK    classe de l'interface trouvée dans le paquet du plugin (comme Logic / FL Studio)
+OK    la classe appartient bien au paquet du plugin (/Users/runner/Library/Audio/Plug-Ins/Components/LayersKeys.component)
+OK    la classe déclare le protocole AUCocoaUIBase
+OK    la fabrique répond à uiViewForAudioUnit:withSize:
+OK    vue de l'éditeur créée (1200 x 744)
+OK    ouverture 2 : la vue est dans la fenêtre
+OK    ouverture 2 : l'interface est dessinée (image présente)
+OK    ouverture 2 : l'interface est toujours dessinée après 0,5 s
+OK    ouverture 2 : 6 clics traités sans blocage (1.59 s)
+OK    ouverture 2 : fenêtre fermée sans plantage
+OK    CocoaUI annoncée (taille 16, code 0)
+OK    CocoaUI lue (code 0)
+      paquet : /Users/runner/Library/Audio/Plug-Ins/Components/LayersKeys.component  classe : LKAUViewFactory
+OK    paquet de l'interface trouvé
+OK    classe de l'interface trouvée dans le paquet du plugin (comme Logic / FL Studio)
+OK    la classe appartient bien au paquet du plugin (/Users/runner/Library/Audio/Plug-Ins/Components/LayersKeys.component)
+OK    la classe déclare le protocole AUCocoaUIBase
+OK    la fabrique répond à uiViewForAudioUnit:withSize:
+OK    vue de l'éditeur créée (1200 x 744)
+OK    Logic 13 : vue retirée de sa fenêtre (fenêtre du plugin fermée)
+OK    Logic 13 : la même vue est de nouveau affichée et dessinée
+OK    Logic 13 : 6 clics dans la vue revenue, sans blocage (1.37 s)
+OK    Logic 13 : l'image se met à jour après les clics
+OK    instance fermée
+OK    deuxième instance créée
+OK    deuxième instance : rendu
+
+TEST LOGIC : TOUT VA BIEN (0 échec(s))
+=== x86_64 (Intel, ou Rosetta sur Apple Silicon)
+OK    Audio Unit « JB Praise: Layers Keys » trouvée
+      version annoncée : 1.0.6
+OK    instance créée (code 0)
+OK    taille de bloc maximale 1024
+OK    format 48 kHz stéréo accepté
+OK    initialisation (code 0)
+OK    temps de traîne annoncé : 10.0 s
+OK    400 blocs rendus avec notes décalées (erreurs : 0)
+OK    son sans valeur aberrante (crête 0.000)
+OK    bloc avec 3000 notes en attente
+OK    état du plugin lu (sauvegarde du projet)
+OK    état du plugin rechargé (ouverture du projet)
+OK    CocoaUI annoncée (taille 16, code 0)
+OK    CocoaUI lue (code 0)
+      paquet : /Users/runner/Library/Audio/Plug-Ins/Components/LayersKeys.component  classe : LKAUViewFactory
+OK    paquet de l'interface trouvé
+OK    classe de l'interface trouvée dans le paquet du plugin (comme Logic / FL Studio)
+OK    la classe appartient bien au paquet du plugin (/Users/runner/Library/Audio/Plug-Ins/Components/LayersKeys.component)
+OK    la classe déclare le protocole AUCocoaUIBase
+OK    la fabrique répond à uiViewForAudioUnit:withSize:
+OK    vue de l'éditeur créée (1200 x 744)
+OK    ouverture 1 : la vue est dans la fenêtre
+OK    ouverture 1 : l'interface est dessinée (image présente)
+OK    ouverture 1 : l'interface est toujours dessinée après 0,5 s
+OK    ouverture 1 : 6 clics traités sans blocage (1.38 s)
+OK    ouverture 1 : fenêtre fermée sans plantage
+OK    CocoaUI annoncée (taille 16, code 0)
+OK    CocoaUI lue (code 0)
+      paquet : /Users/runner/Library/Audio/Plug-Ins/Components/LayersKeys.component  classe : LKAUViewFactory
+OK    paquet de l'interface trouvé
+OK    classe de l'interface trouvée dans le paquet du plugin (comme Logic / FL Studio)
+OK    la classe appartient bien au paquet du plugin (/Users/runner/Library/Audio/Plug-Ins/Components/LayersKeys.component)
+OK    la classe déclare le protocole AUCocoaUIBase
+OK    la fabrique répond à uiViewForAudioUnit:withSize:
+OK    vue de l'éditeur créée (1200 x 744)
+OK    ouverture 2 : la vue est dans la fenêtre
+OK    ouverture 2 : l'interface est dessinée (image présente)
+OK    ouverture 2 : l'interface est toujours dessinée après 0,5 s
+OK    ouverture 2 : 6 clics traités sans blocage (1.40 s)
+OK    ouverture 2 : fenêtre fermée sans plantage
+OK    CocoaUI annoncée (taille 16, code 0)
+OK    CocoaUI lue (code 0)
+      paquet : /Users/runner/Library/Audio/Plug-Ins/Components/LayersKeys.component  classe : LKAUViewFactory
+OK    paquet de l'interface trouvé
+OK    classe de l'interface trouvée dans le paquet du plugin (comme Logic / FL Studio)
+OK    la classe appartient bien au paquet du plugin (/Users/runner/Library/Audio/Plug-Ins/Components/LayersKeys.component)
+OK    la classe déclare le protocole AUCocoaUIBase
+OK    la fabrique répond à uiViewForAudioUnit:withSize:
+OK    vue de l'éditeur créée (1200 x 744)
+OK    Logic 13 : vue retirée de sa fenêtre (fenêtre du plugin fermée)
+OK    Logic 13 : la même vue est de nouveau affichée et dessinée
+OK    Logic 13 : 6 clics dans la vue revenue, sans blocage (1.49 s)
+OK    Logic 13 : l'image se met à jour après les clics
+OK    instance fermée
+OK    deuxième instance créée
+OK    deuxième instance : rendu
+
+TEST LOGIC : TOUT VA BIEN (0 échec(s))
+EXIT arm64=0 x86_64=0
+=== gardien sur le plugin livré
+OK    Audio Unit « JB Praise: Layers Keys » trouvée
+      version annoncée : 1.0.6
+OK    gardien : instance créée
+OK    gardien : initialisation
+OK    CocoaUI annoncée (taille 16, code 0)
+OK    CocoaUI lue (code 0)
+      paquet : /Users/runner/Library/Audio/Plug-Ins/Components/LayersKeys.component  classe : LKAUViewFactory
+OK    paquet de l'interface trouvé
+OK    classe de l'interface trouvée dans le paquet du plugin (comme Logic / FL Studio)
+OK    la classe appartient bien au paquet du plugin (/Users/runner/Library/Audio/Plug-Ins/Components/LayersKeys.component)
+OK    la classe déclare le protocole AUCocoaUIBase
+OK    la fabrique répond à uiViewForAudioUnit:withSize:
+OK    vue de l'éditeur créée (1200 x 744)
+OK    gardien : aucun signal pendant 12 s de jeu (ce que Logic Pro 13 prendrait pour un plantage) : 0 signal(aux)
+
+GARDIEN : TOUT VA BIEN (0 échec(s))
+EXIT gardien=0

@@ -1,0 +1,8 @@
+réglages Go du plugin : httplaxcontentlength=1,httpmuxgo121=1,tls10server=1,tlsrsakex=1,tlsunsafeekm=1,asyncpreemptoff=1
+Plugin construit : dist/mac/LayersKeys.component
+0000000000383498 S _OBJC_CLASS_$_LKAUViewFactory
+00000000003604a8 S _OBJC_CLASS_$_LKAUViewFactory
+dist/mac/LayersKeys.component/Contents/MacOS/LayersKeys (architecture x86_64):
+    minos 11.0
+dist/mac/LayersKeys.component/Contents/MacOS/LayersKeys (architecture arm64):
+    minos 11.0

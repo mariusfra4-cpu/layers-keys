@@ -1,0 +1,55 @@
+=== gardien natif (x86_64), plugin tel que livré
+OK    Audio Unit « JB Praise: Layers Keys » trouvée
+      version annoncée : 1.0.6
+OK    gardien : instance créée
+OK    gardien : initialisation
+OK    CocoaUI annoncée (taille 16, code 0)
+OK    CocoaUI lue (code 0)
+      paquet : /Users/runner/Library/Audio/Plug-Ins/Components/LayersKeys.component  classe : LKAUViewFactory
+OK    paquet de l'interface trouvé
+OK    classe de l'interface trouvée dans le paquet du plugin (comme Logic / FL Studio)
+OK    la classe appartient bien au paquet du plugin (/Users/runner/Library/Audio/Plug-Ins/Components/LayersKeys.component)
+OK    la classe déclare le protocole AUCocoaUIBase
+OK    la fabrique répond à uiViewForAudioUnit:withSize:
+OK    vue de l'éditeur créée (1200 x 744)
+OK    gardien : aucun signal pendant 12 s de jeu (ce que Logic Pro 13 prendrait pour un plantage) : 0 signal(aux)
+
+GARDIEN : TOUT VA BIEN (0 échec(s))
+EXIT 0
+=== gardien x86_64
+OK    Audio Unit « JB Praise: Layers Keys » trouvée
+      version annoncée : 1.0.6
+OK    gardien : instance créée
+OK    gardien : initialisation
+OK    CocoaUI annoncée (taille 16, code 0)
+OK    CocoaUI lue (code 0)
+      paquet : /Users/runner/Library/Audio/Plug-Ins/Components/LayersKeys.component  classe : LKAUViewFactory
+OK    paquet de l'interface trouvé
+OK    classe de l'interface trouvée dans le paquet du plugin (comme Logic / FL Studio)
+OK    la classe appartient bien au paquet du plugin (/Users/runner/Library/Audio/Plug-Ins/Components/LayersKeys.component)
+OK    la classe déclare le protocole AUCocoaUIBase
+OK    la fabrique répond à uiViewForAudioUnit:withSize:
+OK    vue de l'éditeur créée (1200 x 744)
+OK    gardien : aucun signal pendant 12 s de jeu (ce que Logic Pro 13 prendrait pour un plantage) : 0 signal(aux)
+
+GARDIEN : TOUT VA BIEN (0 échec(s))
+EXIT 0
+=== contre-épreuve : comme la 1.0.5 (asyncpreemptoff=0)
+OK    Audio Unit « JB Praise: Layers Keys » trouvée
+      version annoncée : 1.0.6
+OK    gardien : instance créée
+OK    gardien : initialisation
+OK    CocoaUI annoncée (taille 16, code 0)
+OK    CocoaUI lue (code 0)
+      paquet : /Users/runner/Library/Audio/Plug-Ins/Components/LayersKeys.component  classe : LKAUViewFactory
+OK    paquet de l'interface trouvé
+OK    classe de l'interface trouvée dans le paquet du plugin (comme Logic / FL Studio)
+OK    la classe appartient bien au paquet du plugin (/Users/runner/Library/Audio/Plug-Ins/Components/LayersKeys.component)
+OK    la classe déclare le protocole AUCocoaUIBase
+OK    la fabrique répond à uiViewForAudioUnit:withSize:
+OK    vue de l'éditeur créée (1200 x 744)
+      signal SIGURG : 23 fois (dont 19 sur la ligne audio)
+ÉCHEC gardien : aucun signal pendant 12 s de jeu (ce que Logic Pro 13 prendrait pour un plantage) : 23 signal(aux)
+
+GARDIEN : PROBLÈME (1 échec(s))
+EXIT 1
