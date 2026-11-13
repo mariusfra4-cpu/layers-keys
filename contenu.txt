@@ -1,0 +1,16 @@
+Archive:  eli-guitar-app/build/eliguitarchords.apk
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+     3412  1980-01-01 00:00   AndroidManifest.xml
+     8895  1980-01-01 00:00   res/drawable-xxxhdpi-v4/ic_launcher.png
+     1212  1980-01-01 00:00   resources.arsc
+     1461  1980-01-01 00:00   assets/android.js
+   133947  1980-01-01 00:00   assets/index.html
+     4382  1980-01-01 00:00   assets/licence.html
+    36428  2026-11-13 00:40   classes.dex
+      792  2026-11-13 00:40   META-INF/JBKEYS.SF
+     1184  2026-11-13 00:40   META-INF/JBKEYS.RSA
+      665  2026-11-13 00:40   META-INF/MANIFEST.MF
+---------                     -------
+   192378                     10 files
+contenu vérifié
