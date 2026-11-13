@@ -1,0 +1,34 @@
+installer: Preparing Layers Keys….....
+installer: Waiting for other installations to complete….....
+installer: Configuring the installation….....
+installer: 	
+#
+installer: Optimizing system for installed software….....
+installer: Validating packages….....
+#
+installer: 	Running installer actions…
+installer: 	
+installer: Finishing the Installation….....
+installer: 	
+#
+installer: The software was successfully installed......
+installer: The install was successful.
+présent : /Applications/Layers Keys.app/Contents/MacOS/LayersKeys
+présent : /Applications/Désinstaller Layers Keys.app/Contents/Resources/desinstaller.sh
+présent : /Library/Audio/Plug-Ins/VST3/LayersKeys.vst3/Contents/MacOS/LayersKeys
+présent : /Library/Audio/Plug-Ins/Components/LayersKeys.component/Contents/MacOS/LayersKeys
+total 8
+-rwxr-xr-x  1 runner  staff  105 Nov 13 23:11 Desinstaller
+com.jbpraise.layerskeys.vst3
+com.jbpraise.layerskeys.au
+com.jbpraise.layerskeys.app
+x86_64 arm64
+application en marche après installation : OUI
+=== mise à jour pendant que l'application est ouverte
+installer: Package name is Layers Keys
+installer: Upgrading at base path /
+installer: The upgrade was successful.
+/Users/runner/work/_temp/e83fae6c-ccd6-4fbb-9642-165190b75d71.sh: line 19:  1474 Terminated: 15          "/Applications/Layers Keys.app/Contents/MacOS/LayersKeys" > /tmp/lk/app.out 2>&1
+application fermée par la mise à jour : OUI
+application présente après mise à jour : OUI
+données conservées après mise à jour : OUI

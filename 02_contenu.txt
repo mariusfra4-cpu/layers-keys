@@ -1,0 +1,75 @@
+-rw-r--r--  1 runner  staff  15561974 Nov 13 23:11 dist/Layers-Keys-1.0.0.pkg
+Package "Layers-Keys-1.0.0.pkg":
+   Status: no signature
+=== composants
+Distribution
+LayersKeys_app.pkg
+LayersKeys_au.pkg
+LayersKeys_vst3.pkg
+Resources
+=== ressources
+background-dark.png
+background.png
+conclusion.html
+welcome.html
+=== contenu app
+Could not list files: The operation couldn’t be completed. Is a directory
+--- scripts app
+postinstall
+preinstall
+=== contenu vst3
+Could not list files: The operation couldn’t be completed. Is a directory
+--- scripts vst3
+postinstall
+=== contenu au
+Could not list files: The operation couldn’t be completed. Is a directory
+--- scripts au
+postinstall
+=== distribution
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<installer-gui-script minSpecVersion="2">
+    <title>Layers Keys</title>
+    <organization>com.jbpraise</organization>
+    <options customize="always" require-scripts="false" hostArchitectures="arm64,x86_64"/>
+    <allowed-os-versions>
+        <os-version min="11.0"/>
+    </allowed-os-versions>
+    <domains enable_anywhere="false" enable_localSystem="true" enable_currentUserHome="false"/>
+    <background file="background.png" mime-type="image/png" alignment="bottomleft" scaling="none"/>
+    <background-darkAqua file="background-dark.png" mime-type="image/png" alignment="bottomleft" scaling="none"/>
+    <welcome file="welcome.html" mime-type="text/html"/>
+    <conclusion file="conclusion.html" mime-type="text/html"/>
+    <pkg-ref id="com.jbpraise.layerskeys.app">
+        <bundle-version>
+            <bundle CFBundleShortVersionString="1.0.0" CFBundleVersion="1.0.0" id="com.jbpraise.layerskeys" path="Applications/Layers Keys.app"/>
+            <bundle CFBundleShortVersionString="1.0.0" CFBundleVersion="1.0.0" id="com.jbpraise.layerskeys.uninstaller" path="Applications/Désinstaller Layers Keys.app"/>
+        </bundle-version>
+    </pkg-ref>
+    <pkg-ref id="com.jbpraise.layerskeys.vst3">
+        <bundle-version>
+            <bundle CFBundleShortVersionString="1.0.0" CFBundleVersion="1.0.0" id="com.jbpraise.layerskeys.vst3" path="Library/Audio/Plug-Ins/VST3/LayersKeys.vst3"/>
+        </bundle-version>
+    </pkg-ref>
+    <pkg-ref id="com.jbpraise.layerskeys.au">
+        <bundle-version>
+            <bundle CFBundleShortVersionString="1.0.6" CFBundleVersion="1.0.6" id="com.jbpraise.layerskeys.component" path="Library/Audio/Plug-Ins/Components/LayersKeys.component"/>
+        </bundle-version>
+    </pkg-ref>
+    <choices-outline>
+        <line choice="app"/>
+        <line choice="vst3"/>
+        <line choice="au"/>
+    </choices-outline>
+    <choice id="app" title="Layers Keys (obligatoire)" description="Le logiciel Layers Keys, installé dans le dossier Applications, avec « Désinstaller Layers Keys »." enabled="false" selected="true">
+        <pkg-ref id="com.jbpraise.layerskeys.app"/>
+    </choice>
+    <choice id="vst3" title="Plugin VST3 (Ableton Live et autres)" description="Le plugin VST3, installé dans /Library/Audio/Plug-Ins/VST3." start_selected="true">
+        <pkg-ref id="com.jbpraise.layerskeys.vst3"/>
+    </choice>
+    <choice id="au" title="Plugin Audio Unit (Logic Pro, GarageBand)" description="Le plugin Audio Unit, installé dans /Library/Audio/Plug-Ins/Components." start_selected="true">
+        <pkg-ref id="com.jbpraise.layerskeys.au"/>
+    </choice>
+    <pkg-ref id="com.jbpraise.layerskeys.app" version="1.0.0" onConclusion="none" installKBytes="11848" updateKBytes="0">#LayersKeys_app.pkg</pkg-ref>
+    <pkg-ref id="com.jbpraise.layerskeys.vst3" version="1.0.0" onConclusion="none" installKBytes="12115" updateKBytes="0">#LayersKeys_vst3.pkg</pkg-ref>
+    <pkg-ref id="com.jbpraise.layerskeys.au" version="1.0.0" onConclusion="none" installKBytes="12197" updateKBytes="0">#LayersKeys_au.pkg</pkg-ref>
+</installer-gui-script>
