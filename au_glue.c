@@ -430,8 +430,9 @@ static OSStatus au_render(void *self, AudioUnitRenderActionFlags *flags, const A
     atomic_store(&lk_st_nbuf, io ? io->mNumberBuffers : 0);
     if (!a->initialized) RFAIL(kAudioUnitErr_Uninitialized);
     if (bus != 0) RFAIL(kAudioUnitErr_InvalidElement);
-    /* blocs plus grands que prévu (l'hôte a changé la taille après l'initialisation) : on suit, au lieu de refuser */
-    if (a->maxFrames && n > a->maxFrames) a->maxFrames = n;
+    /* règle d'Apple (vérifiée par auval et par Logic) : un bloc plus grand que la taille maximale annoncée est refusé.
+       (L'hôte peut changer cette taille à tout moment, même après l'initialisation : voir SetProperty.) */
+    if (a->maxFrames && n > a->maxFrames) RFAIL(kAudioUnitErr_TooManyFramesToProcess);
     if (!io || io->mNumberBuffers < 1) RFAIL(kAudioUnitErr_FormatNotSupported);
     /* stéréo entrelacée dans un seul tampon (gauche, droite, gauche…) : on calcule à part puis on entrelace */
     int inter = io->mNumberBuffers == 1;
