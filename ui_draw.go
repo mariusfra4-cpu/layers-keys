@@ -231,7 +231,7 @@ func (u *UI) drawHeader(c *Canvas) {
 		pn += " *"
 	}
 	if u.Plugin {
-		c.Text(72, 36, 150, 14, "VST3", fontXs, colText2, 0)
+		c.Text(72, 36, 150, 14, "Plugin", fontXs, colText2, 0)
 	} else {
 		c.Text(72, 36, 150, 14, Tf("Projet : %s", pn), fontXs, colText2, 0)
 	}
