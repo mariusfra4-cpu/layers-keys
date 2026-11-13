@@ -95,6 +95,7 @@ public class MainActivity extends Activity {
         super.onResume();
         long now = System.currentTimeMillis();
         Licence.touch(this, now);
+        if (web == null) return;
         if (now - Licence.lastCheck(this) > Licence.RECHECK_MS) checkLicence(null);
         else if (!Licence.isOpen(this, now) && shownOpen) web.reload();
     }
@@ -128,6 +129,7 @@ public class MainActivity extends Activity {
             final Licence.Result r = Licence.check(getApplicationContext(), salt);
             runOnUiThread(() -> {
                 checking = false;
+                if (isFinishing() || isDestroyed() || web == null) { licenceCbs.clear(); return; }
                 if (!licenceCbs.isEmpty()) {
                     for (String cb : licenceCbs) web.evaluateJavascript(cb + "(" + licenceJson() + ")", null);
                     licenceCbs.clear();
@@ -167,7 +169,7 @@ public class MainActivity extends Activity {
     }
 
     @Override protected void onDestroy() {
-        if (web != null) { web.stopLoading(); web.destroy(); }
+        if (web != null) { web.stopLoading(); web.destroy(); web = null; }
         super.onDestroy();
     }
 

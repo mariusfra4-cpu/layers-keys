@@ -65,18 +65,18 @@ jobs:
           arch: x86_64
           target: google_apis
           disable-animations: true
-          script: bash eli-guitar-app/test/emu.sh $(find /tmp/art -name eliguitarchords-test.apk)
+          script: bash -c 'A=$(find /tmp/art -name eliguitarchords-test.apk); for i in 1 2 3; do echo "=== passage $i"; OUT=/tmp/emu/passage$i bash eli-guitar-app/test/emu.sh "$A" || exit 1; done'
         env:
           OUT: /tmp/emu
       - name: Publier
         if: always()
         run: |
-          mkdir -p /tmp/o; cp /tmp/emu/* /tmp/o/ 2>/dev/null || true
+          mkdir -p /tmp/o; cp -r /tmp/emu/* /tmp/o/ 2>/dev/null || true
           git config user.name ci; git config user.email ci@users.noreply.github.com
           git checkout --orphan ci-eli-test-tmp
           git rm -rf . >/dev/null 2>&1 || true
           git clean -fdxq
-          cp /tmp/o/* . 2>/dev/null || true
+          cp -r /tmp/o/* . 2>/dev/null || true
           echo "run $GITHUB_RUN_ID" > run.txt
           git add -A && git commit -qm "test eli $GITHUB_RUN_ID"
           git push -f origin HEAD:refs/heads/ci-eli-test

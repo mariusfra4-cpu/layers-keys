@@ -78,6 +78,7 @@ threading.Thread(target=srv.serve_forever, daemon=True).start()
 print(adb("reverse", "tcp:8099", "tcp:8099").strip())
 
 write_list("anciens-codes 2099-12-31\n")
+adb("uninstall", PKG)
 print(adb("install", "-r", "-g", APK).strip())
 adb("logcat", "-c")
 
@@ -151,6 +152,9 @@ adb("shell", "input", "keyevent", "4")
 time.sleep(1)
 log = adb("logcat", "-d")
 open(f"{OUT}/logcat.txt", "w").write(log)
-check("FATAL EXCEPTION" not in log, "aucun plantage")
+crash = re.findall(r"FATAL EXCEPTION.*\n.*Process: ([\w.:]+)", log)
+for c in re.finditer(r"FATAL EXCEPTION[\s\S]{0,1500}", log):
+    print(c.group(0)[:1500])
+check(not [c for c in crash if c.startswith(PKG)], "aucun plantage de l'application" + (" (autres : " + ", ".join(crash) + ")" if crash else ""))
 print("RESULTAT", "OK" if ok else "ECHEC")
 sys.exit(0 if ok else 1)
