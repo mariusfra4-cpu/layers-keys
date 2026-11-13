@@ -1,0 +1,23 @@
+NDK: /usr/local/lib/android/sdk/ndk/30.0.16248370 ; build-tools: /usr/local/lib/android/sdk/build-tools/37.0.0 ; plateforme: /usr/local/lib/android/sdk/platforms/android-37.2-beta3 ; go: go version go1.24.13 linux/amd64
+== moteur Go (arm64-v8a)
+-rw-r--r-- 1 runner runner 5801744 Nov 13 23:03 /home/runner/work/layers-keys/layers-keys/android-app/build/lib/arm64-v8a/liblk.so
+== moteur Go (x86_64)
+-rw-r--r-- 1 runner runner 6049232 Nov 13 23:04 /home/runner/work/layers-keys/layers-keys/android-app/build/lib/x86_64/liblk.so
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::loadLibrary has been called by org.conscrypt.NativeLibraryUtil in an unnamed module (file:/usr/local/lib/android/sdk/build-tools/37.0.0/lib/apksigner.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::loadLibrary has been called by org.conscrypt.NativeLibraryUtil in an unnamed module (file:/usr/local/lib/android/sdk/build-tools/37.0.0/lib/apksigner.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+Verifies
+Verified using v1 scheme (JAR signing): false
+Verified using v2 scheme (APK Signature Scheme v2): true
+Verified using v3 scheme (APK Signature Scheme v3): true
+Verified using v3.1 scheme (APK Signature Scheme v3.1): false
+-rw-r--r-- 1 runner runner 4879014 Nov 13 23:04 /home/runner/work/layers-keys/layers-keys/android-app/build/layerskeys.apk
