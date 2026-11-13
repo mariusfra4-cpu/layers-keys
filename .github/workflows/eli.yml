@@ -14,12 +14,24 @@ jobs:
       - uses: actions/checkout@v4
       - name: Construction de l'APK
         run: VCODE=${{ github.run_number }} ./eli-guitar-app/build.sh 2>&1 | tee /tmp/build.txt
+      - name: APK de test (liste des licences servie par l'émulateur, jamais distribué)
+        run: |
+          OUT=$PWD/eli-guitar-app/build_test APKNAME=eliguitarchords-test LICENCE_URL=http://127.0.0.1:8099/licences.txt \
+            ./eli-guitar-app/build.sh 2>&1 | tail -3
       - name: Contenu
-        run: unzip -l eli-guitar-app/build/eliguitarchords.apk | tee /tmp/contenu.txt
+        run: |
+          set -e
+          unzip -l eli-guitar-app/build/eliguitarchords.apk | tee /tmp/contenu.txt
+          # l'APK distribué lit la vraie liste et n'autorise pas le http en clair
+          unzip -p eli-guitar-app/build/eliguitarchords.apk classes.dex | strings | grep -q "raw.githubusercontent.com/mariusfra4-cpu/eli-licences"
+          if unzip -p eli-guitar-app/build/eliguitarchords.apk classes.dex | strings | grep -q "127.0.0.1:8099"; then echo "ERREUR : adresse de test dans l'APK distribué"; exit 1; fi
+          echo "contenu vérifié" | tee -a /tmp/contenu.txt
       - uses: actions/upload-artifact@v4
         with:
           name: eli-apk
-          path: eli-guitar-app/build/eliguitarchords.apk
+          path: |
+            eli-guitar-app/build/eliguitarchords.apk
+            eli-guitar-app/build_test/eliguitarchords-test.apk
       - name: Publier
         if: always()
         run: |
@@ -53,7 +65,7 @@ jobs:
           arch: x86_64
           target: google_apis
           disable-animations: true
-          script: bash eli-guitar-app/test/emu.sh /tmp/art/eliguitarchords.apk
+          script: bash eli-guitar-app/test/emu.sh $(find /tmp/art -name eliguitarchords-test.apk)
         env:
           OUT: /tmp/emu
       - name: Publier

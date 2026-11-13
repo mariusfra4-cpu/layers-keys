@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Eli Guitar Chords</title>
+<style>
+:root{--bg:#faf8f4;--fg:#1d1b18;--mut:#7a746b;--card:#fff;--ac:#c2410c;--on:#fff;--bd:#e3ddd2;--ok:#15803d;--bad:#b91c1c}
+@media (prefers-color-scheme:dark){:root{--bg:#16140f;--fg:#f3efe7;--mut:#a39d90;--card:#201d17;--ac:#fb923c;--on:#16140f;--bd:#38332a;--ok:#4ade80;--bad:#f87171}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 system-ui,-apple-system,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 16px}
+main{width:100%;max-width:420px;text-align:center}
+h1{font-size:28px;margin:0;font-weight:800}
+.by{color:var(--ac);font-weight:600;font-size:14px;margin:2px 0 18px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:16px;margin:12px 0;text-align:center}
+.lab{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);margin-bottom:6px}
+.code{font:700 21px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em;word-break:break-all;user-select:all}
+.row{display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap}
+button{font:inherit;border:1px solid var(--bd);background:var(--card);color:var(--fg);border-radius:12px;padding:10px 14px;min-height:44px}
+button.main{background:var(--ac);color:var(--on);border-color:var(--ac);font-weight:700;width:100%}
+button:disabled{opacity:.6}
+#st{min-height:22px;margin:4px 0;font-weight:600}
+#st.bad{color:var(--bad)}#st.ok{color:var(--ok)}
+.sub{color:var(--mut);font-size:14px}
+#msg:not(:empty){border-left:4px solid var(--ac);text-align:left}
+details{text-align:left;margin-top:8px}summary{cursor:pointer;color:var(--mut);font-size:14px;padding:6px 0}
+input{font:inherit;font-size:18px;text-align:center;padding:10px;border-radius:12px;border:1px solid var(--bd);background:var(--card);color:var(--fg);width:100%;margin-top:8px;text-transform:uppercase}
+</style></head><body><main>
+<h1>🎸 Eli Guitar Chords</h1><div class="by">by Eli Praise</div>
+<div id="st">Vérification de la licence…</div>
+<div class="card" id="msg" hidden></div>
+<div class="card">
+ <div class="lab">Code de ce téléphone</div>
+ <div class="code" id="code">…</div>
+ <div class="row"><button id="copy">Copier</button><button id="share">Envoyer à Eli Praise</button></div>
+ <p class="sub" style="margin:12px 0 0">Envoie ce code à Eli Praise pour activer l’application sur ce téléphone, puis touche « Vérifier ».</p>
+</div>
+<button class="main" id="check">Vérifier ma licence</button>
+<details id="oldbox"><summary>J’ai déjà un code d’accès (ELI-XXXX-XXXX)</summary>
+ <input id="old" autocomplete="off" autocapitalize="characters" placeholder="ELI-XXXX-XXXX">
+ <button class="main" id="oldok" style="margin-top:8px">Valider le code</button>
+</details>
+<p class="sub">Internet est nécessaire pour vérifier la licence, au moins une fois tous les 7 jours.</p>
+</main>
+<script>
+const A=window.EliAndroid,$=id=>document.getElementById(id),st=$('st');
+function show(i){
+ $('code').textContent=i.code||'';
+ const m=$('msg');m.hidden=!i.msg;m.textContent=i.msg||'';
+ if(i.open){st.className='ok';st.textContent='Licence active ✓';setTimeout(()=>A.openApp(),500);return}
+ st.className='bad';st.textContent=i.why||'Ce téléphone n’est pas encore activé.';
+ $('check').disabled=false;$('check').textContent='Vérifier ma licence';
+}
+window.onLicence=show;
+function check(){st.className='';st.textContent='Vérification de la licence…';$('check').disabled=true;$('check').textContent='Vérification…';A.checkLicence('onLicence')}
+if(A){const i=JSON.parse(A.licenceInfo());$('code').textContent=i.code;if(i.old)$('old').value=i.old;check()}
+else st.textContent='Ouvre l’application Eli Guitar Chords sur ton téléphone.';
+$('check').onclick=check;
+$('copy').onclick=()=>A&&A.copyCode();
+$('share').onclick=()=>A&&A.shareCode();
+function old(){const c=$('old').value.trim().toUpperCase().replace(/\s/g,'');if(!c)return;
+ if(A.oldCode(c,'onLicence')){st.className='';st.textContent='Code reconnu, vérification…'}else{st.className='bad';st.textContent='Code incorrect.'}}
+$('oldok').onclick=old;$('old').onkeydown=e=>{if(e.key=='Enter')old()};
+</script></body></html>

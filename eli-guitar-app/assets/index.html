@@ -571,4 +571,178 @@ document.addEventListener('click',e=>{
  else if(b.id=='nx'&&V.length)ix=(ix+1)%V.length;
  else return;upd();play(V[ix])});
 upd();ra();rall();rg();document.getElementById('sq').oninput=rg;document.getElementById('mic').closest('.card').remove();lkInit();document.getElementById('af2').onchange=e=>{const f=e.target.files[0];if(f)anl(f)};const au0=document.getElementById('au');au0.onplay=accStart;au0.onpause=accStop;au0.onended=accStop;au0.onseeked=()=>poll(true);document.getElementById('bsel').innerHTML='<option value=-1>Fondamentale</option>'+N.map((n,i)=>`<option value=${i}>${n}</option>`).join('');document.getElementById('bsel').onchange=function(){bs=+this.value;ix=0;upd();play(V[ix])};
+</script>
+<script id="eli-pro">
+/* ===== Eli Guitar Chords — analyse « pro » et synchronisation précise (remplace les anciennes fonctions) ===== */
+const APRO={sr:11025,th:.02,pk:1,cp:.3,lam:2.2,hf:.6,ex:1,bb:.07,bx:.05,t7:.45,tm7:.66,tM7:.85,t9:.9,t6:.6,tsl:1.6};
+// ---------- rééchantillonnage propre (filtre anti-repliement du navigateur) ----------
+async function proMono(buf,sr,maxSec){
+ const len=Math.min(buf.duration,maxSec);
+ try{const O=new OfflineAudioContext(1,Math.max(1,Math.ceil(len*sr)),sr),s=O.createBufferSource();s.buffer=buf;s.connect(O.destination);s.start(0);const r=await O.startRendering();return r.getChannelData(0)}
+ catch(e){const f=Math.max(1,Math.round(buf.sampleRate/sr)),m=Math.floor(Math.min(buf.length,buf.sampleRate*maxSec)/f),x=new Float32Array(m),nc=buf.numberOfChannels;for(let c=0;c<nc;c++){const d=buf.getChannelData(c);for(let i=0;i<m;i++){let s=0;for(let k=0;k<f;k++)s+=d[i*f+k];x[i]+=s/f/nc}}return x}}
+async function anl(file){const st=document.getElementById('as'),au=document.getElementById('au');st.textContent='Lecture du fichier…';
+ try{if(au.src&&au.src.startsWith('blob:'))URL.revokeObjectURL(au.src)}catch(e){}
+ try{au.src=URL.createObjectURL(file);au.style.display='block'}catch(e){}
+ aci();let buf;try{buf=await AC.decodeAudioData(await file.arrayBuffer())}catch(e){st.textContent='Format illisible. Essaie un MP3, M4A, WAV ou MP4.';return}
+ const sr=APRO.sr,x=await proMono(buf,sr,600);
+ const r=await anc(x,sr,async(q,n)=>{st.textContent='Analyse en cours… '+Math.round(q/n*100)+' %';await new Promise(z=>setTimeout(z))});
+ if(!r||!r.seg.length){st.textContent='Aucun accord détecté (fichier trop court ou silencieux).';return}
+ accStop();AN={...r,lv:1};LIV=-1;proEv=null;st.textContent='Analyse terminée.';rsa()}
+// ---------- spectre en demi-tons ----------
+function proTuning(fr){ // moyenne circulaire de l'écart des pics au demi-ton (en demi-tons, -0.5..0.5)
+ let a=0,b=0;fr.forEach(P=>{for(let i=0;i<P.f.length;i++){const d=2*Math.PI*P.f[i],w=P.m[i];a+=w*Math.cos(d);b+=w*Math.sin(d)}});return Math.atan2(b,a)/(2*Math.PI)}
+function proPeaks(mag,bw,k0,k1,lim){ // pics locaux avec interpolation parabolique -> {n: note fractionnaire, m: amplitude}
+ const n=[],m=[];let mx=0;for(let k=k0;k<=k1;k++)if(mag[k]>mx)mx=mag[k];const th=mx*APRO.th;
+ for(let k=k0;k<=k1;k++){const v=mag[k];if(v<th||v<mag[k-1]||v<=mag[k+1])continue;const a=Math.log(mag[k-1]+1e-12),b=Math.log(v+1e-12),c=Math.log(mag[k+1]+1e-12),den=a-2*b+c,p=den<0?.5*(a-c)/den:0,f=(k+p)*bw;if(f<=0)continue;n.push(69+12*Math.log2(f/440));m.push(Math.exp(b-.25*(a-c)*p));if(n.length>=lim)break}
+ return{n,m}}
+// harmoniques : demi-tons au-dessus de la fondamentale et part retirée
+const PH=[[12,.42],[19,.32],[24,.2],[28,.17],[31,.1],[34,.06],[36,.05]];
+async function anc(x,sr,prog){
+ const NO=1024,HO=256,nfo=Math.floor((x.length-NO)/HO);
+ const N2=4096,H=512,nf=Math.floor((x.length-N2)/H);if(nf<24||nfo<64)return null;
+ const tot0=nfo+nf*2;
+ // ----- 1. enveloppe d'attaques et temps (inchangé dans le principe, éprouvé) -----
+ const Wo=hann(NO),ro=new Float32Array(NO),io=new Float32Array(NO),env=new Float32Array(nfo),pm=new Float32Array(NO/2),bo=sr/NO,ko0=Math.ceil(80/bo),ko1=Math.floor(3000/bo);
+ for(let q=0;q<nfo;q++){ro.fill(0);io.fill(0);const o=q*HO;for(let i=0;i<NO;i++)ro[i]=x[o+i]*Wo[i];fft(ro,io);let s=0;for(let k=ko0;k<=ko1;k++){const m=Math.log(1+30*Math.hypot(ro[k],io[k])),d=m-pm[k];if(d>0)s+=d;pm[k]=m}env[q]=s;if(q%800==0&&prog)await prog(q,tot0)}
+ const bt=proBeats(env,sr,HO,NO,x.length/sr);
+ // ----- 2. spectres (4096 points = 2,7 Hz par case à 11 kHz) -----
+ const W=hann(N2),re=new Float32Array(N2),im=new Float32Array(N2),bw=sr/N2,mag=new Float32Array(N2/2+1),k0=Math.max(2,Math.floor(38/bw)),k1=Math.floor(2100/bw),raw=[];
+ for(let q=0;q<nf;q++){re.fill(0);im.fill(0);const o=q*H;for(let i=0;i<N2;i++)re[i]=x[o+i]*W[i];fft(re,im);let en=0;for(let k=k0-1;k<=k1+1;k++){mag[k]=Math.hypot(re[k],im[k]);en+=mag[k]*mag[k]}const pk=proPeaks(mag,bw,k0,k1,90);pk.e=en;raw.push(pk);if(q%300==0&&prog)await prog(nfo+q,tot0)}
+ // ----- 3. accordage du morceau -----
+ const sub=[];for(let q=0;q<raw.length;q+=3)sub.push({f:raw[q].n.map(v=>v-Math.round(v)),m:raw[q].m});const tun=proTuning(sub);
+ // ----- 4. chroma aigu / basse, harmoniques retirées -----
+ const fr=[],cen=[],tot=new Float32Array(12),LO=28,HI=100,sp=new Float32Array(HI-LO+1);
+ for(let q=0;q<nf;q++){const P=raw[q];sp.fill(0);for(let i=0;i<P.n.length;i++){const v=P.n[i]-tun,r=Math.round(v);if(r<LO||r>HI||Math.abs(v-r)>.42)continue;sp[r-LO]+=P.m[i]*(1-Math.abs(v-r))}
+  for(let p=0;p<sp.length;p++){const a=sp[p];if(a<=0)continue;for(const[h,g]of PH){const j=p+h;if(j<sp.length)sp[j]=Math.max(0,sp[j]-APRO.hf*g*a)}}
+  const c=new Float32Array(12),b=new Float32Array(12);let s=0;
+  for(let p=0;p<sp.length;p++){const a=sp[p];if(a<=0)continue;const m=p+LO,pc=m%12,v=Math.pow(a,APRO.cp);if(m<=52)b[pc]+=v*(m<=47?1:.6);if(m>=45)c[pc]+=v*(m<57?.7:1);s+=v}
+  fr.push({c,b,s,e:P.e});cen.push((q*H+N2/2)/sr);for(let j=0;j<12;j++)tot[j]+=c[j]/(s||1);if(q%300==0&&prog)await prog(nfo+nf+q,tot0)}
+ // ----- 5. modèles d'accords -----
+ const TP=[];for(let r=0;r<12;r++)ATY.forEach(([s,iv,pen])=>{const v=new Float32Array(12);iv.forEach((k,j)=>v[(r+k)%12]=[1,.85,.95,.7,.55][j]);let mu=0;for(let j=0;j<12;j++)mu+=v[j];mu/=12;const z=v.map(u=>u-mu),nz=Math.hypot(...z);TP.push({r,s,v,z:z.map(u=>u/nz),pcs:iv.map(k=>(r+k)%12),pen,ext:iv.length>3?iv.slice(3).map(k=>(r+k)%12):[],iv})});
+ const ctx={fr,cen,TP,tot,tun},r=ana2(ctx,bt);if(!r)return null;
+ const K=proKey(r.seg,tot);
+ return{tonic:K.k,mn:K.m,end:x.length/sr,beats:bt,bpm:60/r.per,ph:r.ph,seg:r.seg,ctx,tun}}
+function proBeats(env,sr,HO,NO,dur){const nfo=env.length,cs=new Float64Array(nfo+1);for(let i=0;i<nfo;i++)cs[i+1]=cs[i]+env[i];
+ const e2=new Float32Array(nfo);let sd=0;for(let i=0;i<nfo;i++){const a=Math.max(0,i-21),b=Math.min(nfo,i+22),m=(cs[b]-cs[a])/(b-a);e2[i]=Math.max(0,env[i]-m);sd+=e2[i]*e2[i]}sd=Math.sqrt(sd/nfo)||1;for(let i=0;i<nfo;i++)e2[i]/=sd;
+ const fps=sr/HO,minL=Math.round(fps*60/190),maxL=Math.round(fps*60/60);let bl=Math.round(fps*.6),bv=-1;
+ for(let lag=minL;lag<=maxL;lag++){let s=0;for(let i=0;i+lag<nfo;i++)s+=e2[i]*e2[i+lag];s*=Math.exp(-.5*Math.pow(Math.log2(60*fps/lag/100)/.8,2));if(s>bv){bv=s;bl=lag}}
+ // affinage fractionnaire de la période (parabole sur l'autocorrélation)
+ const ac=l=>{let s=0;for(let i=0;i+l<nfo;i++)s+=e2[i]*e2[i+l];return s},y0=ac(bl-1),y1=ac(bl),y2=ac(bl+1),dd=y0-2*y1+y2,blf=bl+(APRO.fr&&dd<0?.5*(y0-y2)/dd:0);
+ const C=new Float32Array(nfo),P=new Int32Array(nfo).fill(-1);
+ for(let t=0;t<nfo;t++){let best=0,bi=-1;for(let u=Math.max(0,t-Math.round(2*blf));u<=t-Math.round(blf/2);u++){const v=C[u]-100*Math.pow(Math.log((t-u)/blf),2);if(bi<0||v>best){best=v;bi=u}}if(bi>=0&&best>0){C[t]=e2[t]+best;P[t]=bi}else C[t]=e2[t]}
+ let te=Math.max(0,nfo-Math.round(2*blf));for(let t=te;t<nfo;t++)if(C[t]>C[te])te=t;const idx=[];for(let t=te;t>=0;t=P[t]){idx.push(t);if(P[t]<0)break}idx.reverse();
+ // position exacte de chaque attaque (maximum local interpolé autour du temps choisi)
+ let bt=idx.map(i=>{let j=i;if(APRO.pk)for(let k=Math.max(1,i-APRO.pk);k<=Math.min(nfo-2,i+APRO.pk);k++)if(e2[k]>e2[j])j=k;if(j<1||j>nfo-2)return(j*HO+NO/2)/sr;const a=e2[j-1]||0,b=e2[j],c=e2[j+1]||0,d=a-2*b+c,p=d<0?.5*(a-c)/d:0;return((j+p)*HO+NO/2)/sr});
+ if(bt.length<8){bt=[];const pp=60/Math.max(60,Math.min(160,60*fps/blf));for(let t=0;t<dur;t+=pp)bt.push(t);return bt}
+ const iv=[];for(let i=1;i<bt.length;i++)iv.push(bt[i]-bt[i-1]);iv.sort((a,b)=>a-b);const pr=iv[iv.length>>1],b2=[bt[0]];
+ for(let i=1;i<bt.length;i++){const gp=bt[i]-bt[i-1],n=Math.round(gp/pr);if(n>1)for(let k=1;k<n;k++)b2.push(bt[i-1]+gp*k/n);b2.push(bt[i])}
+ bt=b2;while(bt[0]-pr>=0)bt.unshift(bt[0]-pr);while(bt[bt.length-1]+pr<dur)bt.push(bt[bt.length-1]+pr);return bt}
+function ana2(c,bt){const{fr,cen,TP}=c,S2=TP.length,nb=bt.length-1;if(nb<2)return null;
+ const per=(bt[nb]-bt[0])/nb,dl=Math.min(.06,.15*per),med=fr.map(F=>F.e).sort((a,b)=>a-b)[fr.length>>1],E=[],BB=[],BV=[],SIL=[],CC=[];let k0=0;
+ for(let i=0;i<nb;i++){const a=bt[i]+dl,b=bt[i+1]+dl*.5,cc=new Float32Array(12),bb=new Float32Array(12);let n=0,ss=0;
+  while(k0<fr.length&&cen[k0]<a)k0++;
+  for(let k=k0;k<fr.length&&cen[k]<b;k++){const F=fr[k];for(let j=0;j<12;j++){cc[j]+=F.c[j];bb[j]+=F.b[j]}n++;ss+=F.e}
+  if(!n){const F=fr[Math.min(fr.length-1,Math.max(0,k0))];for(let j=0;j<12;j++){cc[j]=F.c[j];bb[j]=F.b[j]}n=1;ss=F.e}
+  CC.push(cc);const e=new Float32Array(S2),nb2=Math.hypot(...bb);let bi=-1,bv=0,b2v=0;bb.forEach((v,j)=>{if(v>bv){b2v=bv;bv=v;bi=j}else if(v>b2v)b2v=v});
+  const bOK=nb2>0&&bv>.45*nb2&&bv>1.3*b2v;BB.push(bOK?bi:-1);BV.push(bOK?bb.map(v=>v/bv):null);
+  if(ss/n<med*.02){SIL.push(true);E.push(e);continue}SIL.push(false);
+  let mu=0;for(let j=0;j<12;j++)mu+=cc[j];mu/=12;const z=[...cc].map(v=>v-mu),nz=Math.hypot(...z)||1;
+  TP.forEach((t,s)=>{let d=0;for(let j=0;j<12;j++)d+=t.z[j]*z[j];let v=d/nz*t.pen;
+   // basse : la fondamentale à la basse confirme l'accord ; une basse étrangère à l'accord le rend moins probable
+   if(bOK){if(bi==t.r)v+=APRO.bb;else if(t.pcs.includes(bi))v+=.015;else v-=APRO.bx}
+   // extensions (7e, 9e, 6te) : seulement si la note est vraiment entendue
+   if(t.ext.length){const bm=t.pcs.slice(0,3).reduce((u,p)=>u+cc[p],0)/3,em=Math.min(...t.ext.map(p=>cc[p]));if(em<.45*bm)v-=.12;else if(em<.65*bm)v-=.04}
+   e[s]=10*v});E.push(e)}
+ const run=(lam,ph,ex)=>{let V=Float32Array.from(E[0]);const bp=[];for(let t=1;t<nb;t++){let M=-1e9,Mi=0;for(let s=0;s<S2;s++)if(V[s]>M){M=V[s];Mi=s}const lt=lam+((ph>=0&&(t-ph)%4!=0)?ex:0),NV=new Float32Array(S2),B=new Int16Array(S2);for(let s=0;s<S2;s++){if(V[s]>=M-lt){NV[s]=V[s]+E[t][s];B[s]=s}else{NV[s]=M-lt+E[t][s];B[s]=Mi}}bp.push(B);V=NV}let s=0;for(let k=1;k<S2;k++)if(V[k]>V[s])s=k;const path=[s];for(let t=nb-1;t>=1;t--){s=bp[t-1][s];path.push(s)}return path.reverse()};
+ let path=run(APRO.lam,-1,0),ph=-1;const ch=[];for(let t=1;t<nb;t++)if(path[t]!=path[t-1])ch.push(t);
+ if(ch.length>=3){const cnt=[0,0,0,0];ch.forEach(t=>cnt[t%4]++);const m=Math.max(...cnt);if(m/ch.length>=.5){ph=cnt.indexOf(m);path=run(APRO.lam,ph,APRO.ex)}}
+ const runs=[];path.forEach((l,i)=>{const p=runs[runs.length-1];if(p&&p.l==l)p.n++;else runs.push({l,i,n:1})});
+ // un même accord dont la basse change (C puis C/E) devient deux accords
+ const runs2=[];runs.forEach(r=>{const T0=TP[r.l];let cur=null;for(let i=r.i;i<r.i+r.n;i++){const b=BB[i]>=0&&T0.pcs.includes(BB[i])?BB[i]:(cur?cur.bq:T0.r);
+   if(cur&&cur.bq==b){cur.n++;continue}if(cur&&cur.n<2){cur.n++;cur.bq=b;continue}cur={l:r.l,i,n:1,bq:b};runs2.push(cur)}});
+ for(let k=runs2.length-1;k>0;k--){const a=runs2[k-1],b=runs2[k];if(a.l==b.l&&(b.n<2||a.bq==b.bq)){a.n+=b.n;runs2.splice(k,1)}}
+ runs.length=0;runs2.forEach(r=>runs.push(r));
+ const seg=runs.filter(r=>{for(let i=r.i;i<r.i+r.n;i++)if(!SIL[i])return true;return false}).map(r=>{
+  // choix final de l'enrichissement sur toute la durée de l'accord (plus fiable que temps par temps)
+  let T0=TP[r.l];const cc=new Float32Array(12),bc=new Float32Array(12);for(let i=r.i;i<r.i+r.n;i++){for(let j=0;j<12;j++)cc[j]+=CC[i][j];if(BV[i])for(let j=0;j<12;j++)bc[j]+=BV[i][j]}
+  const R=proRefine(T0,cc,bc);
+return{p:T0.r,s:R.s,b:R.b,t:bt[r.i],n:r.n}});
+ return{seg,ph,per}}
+// ---------- enrichissement et basse, décidés sur toute la durée de l'accord ----------
+// seuils mesurés : la 5te d'un accord produit naturellement des harmoniques qui imitent une 7e majeure ou une 9e,
+// donc ces notes doivent être nettement plus fortes que ces harmoniques pour être retenues.
+function proRefine(T0,cc,bc){const r=T0.r,iv=T0.iv,rel=i=>cc[(r+i)%12],A=APRO;
+ const fam=iv.includes(3)&&iv.includes(6)&&!iv.includes(7)?'d':iv.includes(3)?'m':iv.includes(4)?'M':iv.includes(5)?'s4':'s2';
+ const tri={d:[0,3,6],m:[0,3,7],M:[0,4,7],s4:[0,5,7],s2:[0,2,7]}[fam],base=tri.reduce((u,i)=>u+rel(i),0)/3||1e-9;
+ const b7=rel(10)/base,M7=rel(11)/base,n9=rel(2)/base,n6=rel(9)/base;let s;
+ if(fam=='M'){if(b7>A.t7&&b7>1.3*M7)s=n9>A.t9+.1?'9':'7';else if(M7>A.tM7&&M7>1.5*b7)s=n9>A.t9+.1?'maj9':'maj7';else if(n9>A.t9)s='add9';else if(n6>A.t6&&n6>b7)s='6';else s=''}
+ else if(fam=='m')s=b7>A.tm7?(n9>A.t9+.1?'m9':'m7'):'m';
+ else if(fam=='d')s=b7>.5?'m7♭5':'dim';
+ else if(fam=='s4')s=b7>A.t7?'7sus4':'sus4';
+ else s='sus2';
+ if(!S[s])s=T0.s;
+ const pcs=(S[s]||[0,0,tri])[2].map(k=>(r+k)%12);let bi=0;for(let j=1;j<12;j++)if(bc[j]>bc[bi])bi=j;
+ const b=bc[bi]>0&&bi!=r&&pcs.includes(bi)&&bc[bi]>A.tsl*bc[r]?bi:null;return{s,b}}
+// ---------- tonalité : accords trouvés + profil des notes ----------
+function proKey(seg,tot){const MJ=[0,2,4,5,7,9,11],MN=[0,2,3,5,7,8,10];let best=-1e9,bk=0,bm=0;const dur=seg.map(g=>g.n),T=dur.reduce((a,b)=>a+b,0)||1;
+ for(let k=0;k<12;k++)for(let m=0;m<2;m++){const sc=(m?MN:MJ).map(i=>(k+i)%12);let s=0;
+  seg.forEach((g,i)=>{const iv=(S[g.s]||[0,0,[0,4,7]])[2],pcs=iv.map(x=>(g.p+x)%12),inK=pcs.filter(p=>sc.includes(p)).length/pcs.length,w=dur[i]/T;
+   s+=w*(inK-.5)*2;const o=(g.p-k+12)%12,mi=/^m(?!aj)/.test(g.s);
+   if(o==0&&(m?mi:!mi&&!/^(dim|m7♭5)/.test(g.s)))s+=w*1.2;           // accord de tonique
+   if(o==7&&!mi)s+=w*.35;                                            // dominante (V ou V7, aussi en mineur)
+   if(o==5&&(m?mi:!mi))s+=w*.2});
+  const f=seg[0],l=seg[seg.length-1];[f,l].forEach(g=>{if(g&&(g.p-k+12)%12==0&&(/^m(?!aj)/.test(g.s)==!!m))s+=.25});
+  const rot=[...Array(12)].map((_,i)=>KP[m][(i-k+12)%12]);s+=.6*corr([...tot],rot);
+  if(s>best){best=s;bk=k;bm=m}}
+ return{k:bk,m:bm}}
+// ---------- noms des notes selon la tonalité (F♯ en ré majeur, G♭ en mi♭ mineur…) ----------
+const NS=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'],NF=['C','D♭','D','E♭','E','F','G♭','G','A♭','A','B♭','B'];
+function proSharp(){const a=AN;if(!a)return false;const maj=a.mn?(a.tonic+3)%12:a.tonic;return[7,2,9,4,11,6].includes(maj)}
+function proNote(pc){const a=AN;if(!a)return N[pc];const maj=a.mn?(a.tonic+3)%12:a.tonic;if(pc==6)return maj==1||maj==8||maj==3||maj==10?'G♭':'F♯';return(proSharp()?NS:NF)[pc]}
+function nameOf(g){return proNote(g.p)+g.s+(g.b!==null&&g.b!==undefined?'/'+proNote(g.b):'')}
+// ---------- lecture synchronisée au son et à l'image ----------
+// Le son du lecteur passe par le même moteur audio que le piano et les guitares : même délai de sortie,
+// donc les instruments tombent exactement avec le morceau. Les accords sont programmés à l'avance,
+// à la milliseconde, au lieu d'être déclenchés au passage d'une minuterie.
+let proEv=null,proEvK=null,SYN=null,OG=null,MES=null;
+function proRoute(){if(MES!==null)return!!MES;aci();try{const au=document.getElementById('au');MES=AC.createMediaElementSource(au);OG=AC.createGain();MES.connect(OG);OG.connect(AC.destination)}catch(e){MES=false}return!!MES}
+function proL(){const a=AN;if(!a)return[];const k=a.seg;if(proEvK&&proEvK.seg===k&&proEvK.lv===a.lv&&proEvK.ms===MS&&proEvK.L)return proEvK.L;const L=sv();proEvK={seg:k,lv:a.lv,ms:MS,L,rt:-1};proEv=null;return L}
+function proEvents(){const a=AN,L=proL();if(proEv&&proEvK.rt===RTM)return proEv;const B=a.beats,per=60/a.bpm,E=[],down=j=>a.ph>=0?(j%4==a.ph):(j%4==0);
+ if(RTM){let i=0;B.forEach((t,j)=>{while(i+1<L.length&&L[i+1].t<=t+.02)i++;if(L[i].t>t+.02)return;E.push({t,i,du:per*.92,vel:down(j)?.7:.5})})}
+ else{let j=0;L.forEach((g,i)=>{const end=g.t+g.d;let last=g.t;const st=[g.t];while(j<B.length&&B[j]<=g.t+.02)j++;for(let q=j;q<B.length&&B[q]<end-.3;q++)if(down(q)&&B[q]-last>=1.5){st.push(B[q]);last=B[q]}
+  st.forEach((t,k)=>{const nx=k+1<st.length?st[k+1]:end;E.push({t,i,du:Math.max(.3,Math.min(nx-t,2.4)),vel:k?.5:.6})})})}
+ proEv=E;proEvK.rt=RTM;return E}
+function chordAt(g,now,du,vel){const ty=S[g.s];[0,1,2,3].forEach(vo=>{if(!ACS[vo])return;
+ if(vo==3){PVO=pvoice(g.p,ty[2],g.b,PVO);PVO.forEach((m,k)=>pn(m,now+k*.012,3,du,vel))}
+ else{const l=gv(g.p,ty[2],g.b);if(!l.length)return;const av=x=>{const f=x.f.filter(y=>y>0);return f.length?f.reduce((p,q)=>p+q,0)/f.length:0};if(PVL===null)PVL=av(l[0]);let b=l[0];l.forEach(x=>{if(Math.abs(av(x)-PVL)<Math.abs(av(b)-PVL))b=x});PVL=av(b);let k=0;b.f.forEach((f,j)=>{if(f<0)return;pn(T[j]+f,now+k*.03+vo*.004,vo,du,vel);k++})}})}
+function chordOn(g,du,vel){chordAt(g,AC.currentTime+.02,du,vel)}
+function proIdx(L,t){let i=-1,lo=0,hi=L.length-1;while(lo<=hi){const m=(lo+hi)>>1;if(L[m].t-.01<=t){i=m;lo=m+1}else hi=m-1}return i}
+function proShow(t){const L=proL(),i=proIdx(L,t);if(i>=0&&i!=LIV){LIV=i;live(i);hlc(i)}}
+function poll(){const au=document.getElementById('au');if(AN)proShow(au.currentTime+OFS/1000)}
+function proTick(){const a=AN,au=document.getElementById('au');if(!a||!AC)return;const rate=au.playbackRate||1,ac=AC.currentTime,mt=au.currentTime,sh=OFS/1000;
+ const lat=MES?(AC.outputLatency||AC.baseLatency||0):0;proShow(mt+sh-lat*rate); // affichage : ce que l'on entend
+ if(au.paused||!ACM||!ACS.some(x=>x))return;
+ const E=proEvents(),o=ac-mt/rate;
+ if(!SYN||SYN.off===null||SYN.E!==E||SYN.rate!==rate||Math.abs(o-SYN.off)>.08){SYN={off:o,rate,E,k:0};let lo=0,hi=E.length;while(lo<hi){const m=(lo+hi)>>1;if(E[m].t-sh>mt+.01)hi=m;else lo=m+1}SYN.k=lo}
+ else SYN.off+=(o-SYN.off)*.05;
+ const L=proL(),hor=mt+.3*rate;
+ while(SYN.k<E.length&&E[SYN.k].t-sh<=hor){const e=E[SYN.k++];let when=SYN.off+(e.t-sh)/rate;if(when<ac-.12)continue;if(when<ac+.005)when=ac+.005;chordAt(L[e.i],when,e.du/rate,e.vel)}}
+function accStart(){accStop();if(!AN)return;aci();proRoute();const au=document.getElementById('au');au.muted=ACM==2&&!MES;if(OG)OG.gain.value=ACM==2?0:1;
+ if(ACM){SES=AC.createGain();SES.gain.value=.85;SES.connect(MB);OUT=SES}PVL=null;PVO=null;LIV=-1;SYN=null;
+ if(ACM&&ACS.some(x=>x)){const L=proL(),rate=au.playbackRate||1,t=au.currentTime+OFS/1000,i=proIdx(L,t);if(i>=0){const g=L[i],rest=g.t+g.d-t;if(rest>.15&&t-g.t>.05)chordAt(g,AC.currentTime+.01,Math.max(.3,Math.min(rest,2.4))/rate,.55)}}
+ ACI=setInterval(proTick,25);proTick()}
+function accStop(){clearInterval(ACI);ACI=null;SYN=null;pstop()}
+// grille seule : même programmation précise
+function pplay(){if(SES){pstop();return}if(!AN)return;if(!ACS.some(x=>x))ACS[3]=true;aci();SES=AC.createGain();SES.gain.value=1;SES.connect(MB);OUT=SES;const L=proL();PVL=null;PVO=null;
+ document.getElementById('pgb').textContent='⏹ Arrêter';const t0=AC.currentTime+.15-L[0].t,last=L[L.length-1],me=SES;let k=0;
+ const id=setInterval(()=>{if(SES!==me){clearInterval(id);return}const now=AC.currentTime;while(k<L.length&&t0+L[k].t<=now+.3){const g=L[k],i=k,w=t0+g.t;chordAt(g,Math.max(w,now+.005),Math.min(g.d,8),.75);PGT.push(setTimeout(()=>hlc(i),Math.max(0,(w-now)*1000)));k++}
+  if(k>=L.length&&now>t0+last.t+Math.min(last.d,8)+.3){clearInterval(id);pstop()}},25);PGT.push(id)}
+(function(){const au=document.getElementById('au');if(!au)return;au.onplay=accStart;au.onpause=accStop;au.onended=accStop;
+ au.onseeked=()=>{if(!au.paused&&ACI)accStart();else poll()};au.onratechange=()=>{SYN=null};
+ // si les instruments ne jouent pas, la vidéo garde son propre son (aucun changement tant qu'on ne lance pas la lecture)
+})();
+// ---------- positions de guitare : la note la plus grave doit être la basse de l'accord ----------
+// (ex. E♭maj7 x-6-0-0-3-3 : la corde de ré à vide sonne plus grave que le mi♭ : c'est en fait E♭maj7/D)
+const gen0=gen;GCA={};
+gen=function(r,iv,bp){const b=bp??r,l=gen0(r,iv,bp),ok=l.filter(v=>{let lo=99;v.f.forEach((f,i)=>{if(f>=0)lo=Math.min(lo,T[i]+f)});return lo%12===b});return ok.length?ok:l};
 </script></body></html>

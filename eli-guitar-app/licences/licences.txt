@@ -1,0 +1,21 @@
+# Licences Eli Guitar Chords
+# Ce fichier se met dans le dépôt PUBLIC « eli-licences » (branche main), sous le nom licences.txt.
+# Les applis le lisent au démarrage puis toutes les 3 heures. Une modification compte en 5 minutes environ.
+#
+# ACTIVER un téléphone : colle son code sur une ligne (le client te l'envoie depuis l'appli).
+#   ELI-AB2C-DE3F-GH4J-KL5M
+# ACTIVER jusqu'à une date (incluse) :
+#   ELI-AB2C-DE3F-GH4J-KL5M 2027-06-30
+# BLOQUER un téléphone : supprime sa ligne, ou écris
+#   bloque ELI-AB2C-DE3F-GH4J-KL5M
+# Anciens codes d'accès (ELI-XXXX-XXXX de la version web) : acceptés jusqu'à cette date
+anciens-codes 2027-01-31
+#   bloquer un ancien code :  bloque-ancien ELI-XXXX-XXXX
+# Tout suspendre (urgence) : enlève le # devant la ligne suivante
+# tout-bloquer
+# Message affiché sur l'écran de licence (facultatif) :
+# message Pour activer l'appli, écris à Eli Praise sur WhatsApp.
+#
+# Ne mets pas de vrais noms ici (ce fichier est public) : un surnom en commentaire suffit, ex.
+#   ELI-AB2C-DE3F-GH4J-KL5M   # client 1
+

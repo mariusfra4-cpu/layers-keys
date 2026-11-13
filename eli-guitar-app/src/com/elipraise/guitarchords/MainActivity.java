@@ -5,6 +5,8 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
@@ -39,7 +41,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Eli Guitar Chords pour Android : la page index.html (dans assets/) est affichée dans une WebView
@@ -56,6 +61,9 @@ public class MainActivity extends Activity {
     private PermissionRequest micReq;
     private byte[] pendData;
     private String pendName, pendMime;
+    private String salt = "";
+    private final List<String> oldHashes = new ArrayList<>();
+    private boolean checking;
 
     @Override protected void onCreate(Bundle b) {
         super.onCreate(b);
@@ -78,8 +86,74 @@ public class MainActivity extends Activity {
         web.setWebViewClient(new Client());
         web.setWebChromeClient(new Chrome());
         setContentView(web);
+        readOldCodes();
         if (b != null) web.restoreState(b);
         if (web.getUrl() == null) web.loadUrl(HOME);
+    }
+
+    @Override protected void onResume() {
+        super.onResume();
+        long now = System.currentTimeMillis();
+        Licence.touch(this, now);
+        if (now - Licence.lastCheck(this) > Licence.RECHECK_MS) checkLicence(null);
+        else if (!Licence.isOpen(this, now) && shownOpen) web.reload();
+    }
+
+    // ---------- licence ----------
+
+    private volatile boolean shownOpen; // la page affichée est l'appli (et non l'écran de licence)
+
+    /** SALT et empreintes des anciens codes, lus dans index.html (pour accepter les anciens codes pendant la transition). */
+    private void readOldCodes() {
+        try {
+            String h = new String(asset("index.html"), StandardCharsets.UTF_8);
+            Matcher m = Pattern.compile("SALT\\s*=\\s*'([^']*)'").matcher(h);
+            if (m.find()) salt = m.group(1);
+            m = Pattern.compile("HS\\s*=\\s*\\[([^\\]]*)\\]").matcher(h);
+            if (m.find()) {
+                Matcher q = Pattern.compile("'([0-9a-f]{16})'").matcher(m.group(1));
+                while (q.find()) oldHashes.add(q.group(1));
+            }
+        } catch (IOException e) { /* pas d'anciens codes */ }
+    }
+
+    private final List<String> licenceCbs = new ArrayList<>();
+
+    /** Vérifie la licence en arrière-plan ; js = fonction de la page à rappeler avec le résultat (ou null). */
+    private void checkLicence(final String js) {
+        if (js != null) licenceCbs.add(js);
+        if (checking) return;
+        checking = true;
+        new Thread(() -> {
+            final Licence.Result r = Licence.check(getApplicationContext(), salt);
+            runOnUiThread(() -> {
+                checking = false;
+                if (!licenceCbs.isEmpty()) {
+                    for (String cb : licenceCbs) web.evaluateJavascript(cb + "(" + licenceJson() + ")", null);
+                    licenceCbs.clear();
+                } else if (r.open != shownOpen) web.reload();
+            });
+        }).start();
+    }
+
+    private static String q(String s) {
+        StringBuilder b = new StringBuilder("\"");
+        for (char c : (s == null ? "" : s).toCharArray()) {
+            if (c == '"' || c == '\\') b.append('\\').append(c);
+            else if (c < 32 || c == 0x2028 || c == 0x2029) b.append(String.format(Locale.ROOT, "\\u%04x", (int) c));
+            else b.append(c);
+        }
+        return b.append('"').toString();
+    }
+
+    private String licenceJson() {
+        long now = System.currentTimeMillis();
+        boolean open = Licence.isOpen(this, now);
+        long ok = Licence.lastOk(this);
+        return "{\"open\":" + open + ",\"code\":" + q(Licence.deviceCode(this))
+                + ",\"why\":" + q(Licence.reason(this)) + ",\"msg\":" + q(Licence.message(this))
+                + ",\"until\":" + q(ok > 0 ? Licence.fr(Licence.today(ok + Licence.GRACE_MS)) : "")
+                + ",\"old\":" + q(Licence.oldCode(this)) + "}";
     }
 
     @Override protected void onSaveInstanceState(Bundle out) {
@@ -135,8 +209,13 @@ public class MainActivity extends Activity {
         try {
             byte[] data = asset(p);
             String mime = mimeOf(p, null);
-            if (p.equals("index.html")) {
+            if (p.equals("index.html") || p.equals("licence.html")) {
+                boolean open = Licence.isOpen(this, System.currentTimeMillis());
+                if (!open) { p = "licence.html"; data = asset(p); mime = "text/html"; }
+                shownOpen = open && p.equals("index.html");
                 String html = new String(data, StandardCharsets.UTF_8);
+                if (shownOpen) // la licence est gérée par l'appli : l'ancien écran de code et « Verrouiller » sont masqués
+                    html = html.replaceFirst("</head>", "<style>#lk,[data-lock]{display:none!important}</style></head>");
                 String shim = new String(asset("android.js"), StandardCharsets.UTF_8);
                 int i = html.indexOf("<head>");
                 String tag = "<script>" + shim + "</script>";
@@ -336,6 +415,49 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface public void toast(final String m) {
             runOnUiThread(() -> MainActivity.this.toast(m));
+        }
+
+        @JavascriptInterface public boolean licensed() {
+            return Licence.isOpen(MainActivity.this, System.currentTimeMillis());
+        }
+
+        @JavascriptInterface public String licenceInfo() { return licenceJson(); }
+
+        @JavascriptInterface public void checkLicence(String cb) {
+            final String js = cb != null && cb.matches("[A-Za-z_$][A-Za-z0-9_$.]*") ? cb : "void";
+            runOnUiThread(() -> MainActivity.this.checkLicence(js));
+        }
+
+        /** Ancien code d'accès : 1 = reconnu (vérification lancée), 0 = code inconnu. */
+        @JavascriptInterface public int oldCode(String code, String cb) {
+            String h = Licence.oldHash(salt, code);
+            if (!oldHashes.contains(h)) return 0;
+            Licence.setOldCode(MainActivity.this, code);
+            checkLicence(cb);
+            return 1;
+        }
+
+        @JavascriptInterface public void copyCode() {
+            runOnUiThread(() -> {
+                ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                if (cm != null) cm.setPrimaryClip(ClipData.newPlainText("Code", Licence.deviceCode(MainActivity.this)));
+                MainActivity.this.toast("Code copié.");
+            });
+        }
+
+        @JavascriptInterface public void shareCode() {
+            runOnUiThread(() -> {
+                Intent i = new Intent(Intent.ACTION_SEND);
+                i.setType("text/plain");
+                i.putExtra(Intent.EXTRA_TEXT, "Bonjour, voici le code de mon téléphone pour activer Eli Guitar Chords : "
+                        + Licence.deviceCode(MainActivity.this));
+                try { startActivity(Intent.createChooser(i, "Envoyer le code")); }
+                catch (ActivityNotFoundException e) { MainActivity.this.toast("Aucune appli pour envoyer le code."); }
+            });
+        }
+
+        @JavascriptInterface public void openApp() {
+            runOnUiThread(() -> web.loadUrl(HOME));
         }
 
         @JavascriptInterface public int sdk() { return Build.VERSION.SDK_INT; }
