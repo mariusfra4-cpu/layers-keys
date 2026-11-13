@@ -147,6 +147,29 @@ static int soundTest(AudioComponent comp) {
         MusicDeviceMIDIEvent(au, 0xB0, 123, 0, 0);
         for (int i = 0; i < 100; i++) render(au, 512, 1, NULL);
     }
+    /* stéréo entrelacée dans un seul tampon (certains hôtes) : le son doit sortir aussi */
+    {
+        static float buf[2 * 1024];
+        MusicDeviceMIDIEvent(au, 0x90, 72, 110, 0);
+        float pk2 = 0;
+        OSStatus est = noErr;
+        for (int i = 0; i < 40; i++) {
+            AudioBufferList one;
+            one.mNumberBuffers = 1;
+            one.mBuffers[0].mNumberChannels = 2;
+            one.mBuffers[0].mDataByteSize = 512 * 2 * sizeof(float);
+            one.mBuffers[0].mData = buf;
+            AudioUnitRenderActionFlags fl = 0;
+            AudioTimeStamp ts = {0};
+            ts.mFlags = kAudioTimeStampSampleTimeValid;
+            est = AudioUnitRender(au, &fl, &ts, 0, 512, &one);
+            if (est != noErr) break;
+            for (int k = 0; k < 1024; k++) if (fabsf(buf[k]) > pk2) pk2 = fabsf(buf[k]);
+        }
+        CHECK(est == noErr && pk2 > 0.01, "son : stéréo entrelacée dans un seul tampon (crête %.4f, code %d)", pk2, (int)est);
+        MusicDeviceMIDIEvent(au, 0xB0, 123, 0, 0);
+        for (int i = 0; i < 100; i++) render(au, 512, 1, NULL);
+    }
     /* même chose avec la fenêtre du plugin ouverte (comme dans Logic) */
     NSWindow *w = nil;
     NSView *v = openEditor(au, &w);

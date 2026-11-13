@@ -68,6 +68,7 @@ func lkNew() C.uintptr_t {
 	insts[h] = in
 	instMu.Unlock()
 	lklog("plugin : instance %d créée", h)
+	auDiagBegin()
 	return C.uintptr_t(h)
 }
 
@@ -123,11 +124,15 @@ func lkProcess(h C.uintptr_t, l, r *C.float, n C.int) {
 		return
 	}
 	in.eng.RenderF(ls, rs)
+	auDiagPeak(ls, rs)
 }
 
 //export lkMidi
 func lkMidi(h C.uintptr_t, status, d1, d2 C.int) {
 	defer recoverPlugin()
+	if status&0xF0 == 0x90 && d2 > 0 {
+		auDiagNote()
+	}
 	if in := getInst(h); in != nil {
 		in.ui.MidiFast(uint32(status&0xFF) | uint32(d1&0x7F)<<8 | uint32(d2&0x7F)<<16)
 	}
