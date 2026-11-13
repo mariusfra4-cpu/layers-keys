@@ -132,6 +132,30 @@ jobs:
           done
       - name: Installateur .pkg
         run: ./build_mac_pkg.sh 2>&1 | tee /tmp/lklogs/08_pkg.txt | tail -20
+      - name: Test du son (plugin de TEST déjà autorisé, jamais distribué) - après l'installateur
+        continue-on-error: true
+        run: |
+          set +e
+          # plugin de test construit à part : dist/ (les fichiers distribués) n'est pas touché
+          T=/tmp/testau/LayersKeys.component
+          rm -rf /tmp/testau && mkdir -p $T/Contents/MacOS /tmp/testau/b
+          for a in arm64 amd64; do
+            CGO_ENABLED=1 GOOS=darwin GOARCH=$a CC=clang MACOSX_DEPLOYMENT_TARGET=11.0 \
+              CGO_CFLAGS="-O2 -mmacosx-version-min=11.0" CGO_LDFLAGS="-mmacosx-version-min=11.0" \
+              go build -tags "au lktest" -buildmode=c-shared -trimpath -o /tmp/testau/b/LK_$a.dylib . 2>&1 | tail -5
+          done
+          lipo -create /tmp/testau/b/LK_arm64.dylib /tmp/testau/b/LK_amd64.dylib -output $T/Contents/MacOS/LayersKeys
+          cp mac/au_Info.plist $T/Contents/Info.plist; printf 'BNDL????' > $T/Contents/PkgInfo
+          codesign --force --deep --sign - $T
+          rm -rf ~/Library/Audio/Plug-Ins/Components/LayersKeys.component
+          cp -R $T ~/Library/Audio/Plug-Ins/Components/
+          killall -9 AudioComponentRegistrar 2>/dev/null; sleep 3
+          echo "=== natif ($(uname -m))" > /tmp/lklogs/05h_son.txt
+          /tmp/au_logic_test --son >> /tmp/lklogs/05h_son.txt 2>&1; echo "EXIT $?" >> /tmp/lklogs/05h_son.txt
+          echo "=== x86_64" >> /tmp/lklogs/05h_son.txt
+          arch -x86_64 /tmp/au_logic_test --son >> /tmp/lklogs/05h_son.txt 2>&1; echo "EXIT $?" >> /tmp/lklogs/05h_son.txt
+          rm -rf ~/Library/Audio/Plug-Ins/Components/LayersKeys.component
+          cat /tmp/lklogs/05h_son.txt
       - name: Paquet
         run: |
           cd dist && rm -rf paquet && mkdir paquet

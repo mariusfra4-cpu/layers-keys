@@ -11,6 +11,7 @@
 #import <AudioToolbox/AudioToolbox.h>
 #import <AudioUnit/AUCocoaUIView.h>
 #include <stdio.h>
+#include <string.h>
 #include <math.h>
 
 static int fails = 0;
@@ -85,7 +86,70 @@ static int render(AudioUnit au, UInt32 n, int withBuffers, float *peak) {
     return (int)st;
 }
 
-int main(void) {
+/* --son : avec le plugin de TEST (déjà autorisé), charge le Grand Piano sur la piste 1 par l'état du plugin
+   (comme un projet Logic), joue une note comme Logic et mesure le son qui sort. */
+static int soundTest(AudioComponent comp) {
+    AudioUnit au = NULL;
+    OSStatus st = AudioComponentInstanceNew(comp, &au);
+    CHECK(st == noErr && au, "son : instance créée");
+    if (!au) return 1;
+    UInt32 maxf = 1024;
+    AudioUnitSetProperty(au, kAudioUnitProperty_MaximumFramesPerSlice, kAudioUnitScope_Global, 0, &maxf, sizeof maxf);
+    AudioStreamBasicDescription f = {0};
+    UInt32 sz = sizeof f;
+    AudioUnitGetProperty(au, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Output, 0, &f, &sz);
+    f.mSampleRate = 48000;
+    AudioUnitSetProperty(au, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Output, 0, &f, sizeof f);
+    st = AudioUnitInitialize(au);
+    CHECK(st == noErr, "son : initialisation");
+    float peak = 0;
+    for (int i = 0; i < 20; i++) render(au, 512, 1, &peak);
+    CHECK(peak < 1e-4, "son : silence avant toute note (crête %.5f)", peak);
+    /* état actuel du plugin → piste 1 = Grand Piano intégré → renvoyé au plugin (ce que fait Logic en ouvrant un projet) */
+    CFPropertyListRef pl = NULL;
+    sz = sizeof pl;
+    st = AudioUnitGetProperty(au, kAudioUnitProperty_ClassInfo, kAudioUnitScope_Global, 0, &pl, &sz);
+    NSDictionary *d = (__bridge_transfer NSDictionary *)pl;
+    NSData *data = d[@kAUPresetDataKey];
+    NSMutableDictionary *js = data ? [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingMutableContainers error:nil] : nil;
+    CHECK(js != nil && [js[@"setup"] isKindOfClass:[NSArray class]], "son : état du plugin lisible");
+    if (!js) return 1;
+    NSMutableDictionary *t1 = js[@"setup"][0];
+    t1[@"src"] = [@{@"kind": @"builtin", @"builtin": @0, @"name": @"Grand Piano"} mutableCopy];
+    t1[@"vol"] = @0;
+    t1[@"mute"] = @NO;
+    NSMutableDictionary *nd = [d mutableCopy];
+    nd[@kAUPresetDataKey] = [NSJSONSerialization dataWithJSONObject:js options:0 error:nil];
+    CFPropertyListRef npl = (__bridge CFPropertyListRef)nd;
+    st = AudioUnitSetProperty(au, kAudioUnitProperty_ClassInfo, kAudioUnitScope_Global, 0, &npl, sizeof npl);
+    CHECK(st == noErr, "son : Grand Piano chargé sur la piste 1 (état du plugin)");
+    for (int i = 0; i < 60; i++) { render(au, 512, 1, NULL); spin(0.02); }
+    /* une note, comme Logic : décalage dans le bloc */
+    MusicDeviceMIDIEvent(au, 0x90, 60, 110, 100);
+    peak = 0;
+    for (int i = 0; i < 60; i++) render(au, 512, 1, &peak);
+    CHECK(peak > 0.01, "son : la note joue, le son sort du plugin (crête %.4f)", peak);
+    MusicDeviceMIDIEvent(au, 0x80, 60, 0, 0);
+    /* même chose avec la fenêtre du plugin ouverte (comme dans Logic) */
+    NSWindow *w = nil;
+    NSView *v = openEditor(au, &w);
+    if (v) {
+        spin(0.5);
+        MusicDeviceMIDIEvent(au, 0x90, 64, 110, 0);
+        peak = 0;
+        for (int i = 0; i < 60; i++) { render(au, 512, 1, &peak); if (i % 10 == 0) spin(0.02); }
+        CHECK(peak > 0.01, "son : la note joue aussi avec la fenêtre ouverte (crête %.4f)", peak);
+        MusicDeviceMIDIEvent(au, 0x80, 64, 0, 0);
+        [w close];
+        spin(0.5);
+    }
+    AudioUnitUninitialize(au);
+    AudioComponentInstanceDispose(au);
+    printf("\n%s (%d échec(s))\n", fails ? "TEST DU SON : PROBLÈME" : "TEST DU SON : TOUT VA BIEN", fails);
+    return fails ? 1 : 0;
+}
+
+int main(int argc, char **argv) {
     @autoreleasepool {
         [NSApplication sharedApplication];
         [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
@@ -97,6 +161,7 @@ int main(void) {
         UInt32 ver = 0;
         AudioComponentGetVersion(comp, &ver);
         printf("      version annoncée : %u.%u.%u\n", ver >> 16, (ver >> 8) & 0xFF, ver & 0xFF);
+        if (argc > 1 && strcmp(argv[1], "--son") == 0) return soundTest(comp);
 
         AudioUnit au = NULL;
         OSStatus st = AudioComponentInstanceNew(comp, &au);
