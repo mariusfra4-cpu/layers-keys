@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <stdatomic.h>
 #include <CoreMIDI/CoreMIDI.h>
+#include <time.h>
 
 /* Une bibliothèque Go ne peut pas être déchargée : si le logiciel hôte tente un dlclose, tout planterait.
    On demande donc au système de la garder en mémoire (RTLD_NODELETE). */
@@ -74,7 +75,10 @@ typedef struct LKAU {
        (Logic envoie les notes en avance avec un décalage : on les joue à l'échantillon près) */
     struct { uint8_t st, d1, d2; UInt32 off; } mq[LK_MQ];
     _Atomic uint32_t mqw, mqr;
+    _Atomic uint64_t lastRender; /* heure (ns) du dernier bloc de son calculé */
 } LKAU;
+
+static uint64_t lk_now(void) { return clock_gettime_nsec_np(CLOCK_UPTIME_RAW); }
 
 /* ---- table instance système -> instance Go (pour la fenêtre de l'éditeur) */
 #define MAXI 256
@@ -474,6 +478,7 @@ static OSStatus au_render(void *self, AudioUnitRenderActionFlags *flags, const A
     }
     atomic_store_explicit(&a->mqr, r, memory_order_release);
     if (pos < n) lkProcess(a->h, L + pos, R + pos, (int)(n - pos));
+    atomic_store_explicit(&a->lastRender, lk_now(), memory_order_release);
     if (inter) {
         float *o = (float *)io->mBuffers[0].mData;
         if (!o) { io->mBuffers[0].mData = a->sl; o = a->sl; } /* (cas improbable : l'hôte ne fournit pas de tampon) */
@@ -492,7 +497,10 @@ static OSStatus au_midi(void *self, UInt32 status, UInt32 d1, UInt32 d2, UInt32 
     atomic_fetch_add(&lk_st_midiOld, 1);
     uint32_t w = atomic_load_explicit(&a->mqw, memory_order_relaxed);
     uint32_t r = atomic_load_explicit(&a->mqr, memory_order_acquire);
-    if (!a->initialized || w - r >= LK_MQ) { /* pas de son en cours ou file pleine : la note est jouée tout de suite */
+    /* strict : une note n'attend jamais. Si le logiciel hôte ne demande pas de son en ce moment (aucun bloc depuis
+       50 ms), si le plugin n'est pas initialisé ou si la file est pleine, la note part tout de suite vers le moteur. */
+    uint64_t lr = atomic_load_explicit(&a->lastRender, memory_order_acquire);
+    if (!a->initialized || w - r >= LK_MQ || (w == r && (!lr || lk_now() - lr > 50000000ull))) {
         lkMidi(a->h, (int)(status & 0xFF), (int)(d1 & 0x7F), (int)(d2 & 0x7F));
         return noErr;
     }

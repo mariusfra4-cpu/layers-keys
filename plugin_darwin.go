@@ -59,6 +59,7 @@ func lkNew() C.uintptr_t {
 	ui := NewUI(eng, app, "")
 	lklog("plugin : interface créée")
 	ui.Plugin = true
+	auSetupUI(ui)
 	app.ui = ui
 	in := &lkInst{refs: 1, eng: eng, ui: ui, app: app}
 	app.onUser = in.applyPending

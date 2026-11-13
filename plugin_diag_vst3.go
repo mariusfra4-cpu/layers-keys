@@ -6,3 +6,4 @@ package main
 func auDiagPeak(l, r []float32) {}
 func auDiagNote()               {}
 func auDiagBegin()              {}
+func auSetupUI(ui *UI)          {}
