@@ -1,0 +1,48 @@
+=== natif (x86_64)
+OK    Audio Unit « JB Praise: Layers Keys » trouvée
+      version annoncée : 1.0.3
+OK    son : instance créée
+OK    son : initialisation
+OK    son : silence avant toute note (crête 0.00000)
+OK    son : état du plugin lisible
+OK    son : Grand Piano chargé sur la piste 1 (état du plugin)
+OK    son : la note joue, le son sort du plugin (crête 0.2664)
+OK    son : note reçue en liste MIDI 1.0 (comme Logic récent), crête 0.3720 (code 0)
+OK    son : note reçue en liste MIDI 2.0 (comme Logic récent), crête 0.2730 (code 0)
+OK    CocoaUI annoncée (taille 16, code 0)
+OK    CocoaUI lue (code 0)
+      paquet : /Users/runner/Library/Audio/Plug-Ins/Components/LayersKeys.component  classe : LKAUViewFactory
+OK    paquet de l'interface trouvé
+OK    classe de l'interface trouvée dans le paquet du plugin (comme Logic / FL Studio)
+OK    la classe appartient bien au paquet du plugin (/Users/runner/Library/Audio/Plug-Ins/Components/LayersKeys.component)
+OK    la classe déclare le protocole AUCocoaUIBase
+OK    la fabrique répond à uiViewForAudioUnit:withSize:
+OK    vue de l'éditeur créée (1200 x 744)
+OK    son : la note joue aussi avec la fenêtre ouverte (crête 0.2793)
+
+TEST DU SON : TOUT VA BIEN (0 échec(s))
+EXIT 0
+=== x86_64
+OK    Audio Unit « JB Praise: Layers Keys » trouvée
+      version annoncée : 1.0.3
+OK    son : instance créée
+OK    son : initialisation
+OK    son : silence avant toute note (crête 0.00000)
+OK    son : état du plugin lisible
+OK    son : Grand Piano chargé sur la piste 1 (état du plugin)
+OK    son : la note joue, le son sort du plugin (crête 0.2668)
+OK    son : note reçue en liste MIDI 1.0 (comme Logic récent), crête 0.3068 (code 0)
+OK    son : note reçue en liste MIDI 2.0 (comme Logic récent), crête 0.2739 (code 0)
+OK    CocoaUI annoncée (taille 16, code 0)
+OK    CocoaUI lue (code 0)
+      paquet : /Users/runner/Library/Audio/Plug-Ins/Components/LayersKeys.component  classe : LKAUViewFactory
+OK    paquet de l'interface trouvé
+OK    classe de l'interface trouvée dans le paquet du plugin (comme Logic / FL Studio)
+OK    la classe appartient bien au paquet du plugin (/Users/runner/Library/Audio/Plug-Ins/Components/LayersKeys.component)
+OK    la classe déclare le protocole AUCocoaUIBase
+OK    la fabrique répond à uiViewForAudioUnit:withSize:
+OK    vue de l'éditeur créée (1200 x 744)
+OK    son : la note joue aussi avec la fenêtre ouverte (crête 0.2782)
+
+TEST DU SON : TOUT VA BIEN (0 échec(s))
+EXIT 0

@@ -1,0 +1,86 @@
+2026-11-13 17:47:04  plugin : création d'une instance (macOS 15.7.9)
+2026-11-13 17:47:04  plugin : moteur créé
+2026-11-13 17:47:04  plugin : cocoa prêt, création de l'interface
+2026-11-13 17:47:04  licence : identifiant lu par le système (sans programme externe)
+2026-11-13 17:47:04  plugin : interface créée
+2026-11-13 17:47:04  plugin : instance 1 créée
+2026-11-13 17:47:04  plugin : création d'une instance (macOS 15.7.9)
+2026-11-13 17:47:04  plugin : moteur créé
+2026-11-13 17:47:04  plugin : cocoa prêt, création de l'interface
+2026-11-13 17:47:04  licence : identifiant lu par le système (sans programme externe)
+2026-11-13 17:47:04  plugin : interface créée
+2026-11-13 17:47:04  plugin : instance 2 créée
+2026-11-13 17:47:04  AU : le logiciel hôte demande les informations d'interface (CocoaUI)
+2026-11-13 17:47:15  plugin : création d'une instance (macOS 15.7.9)
+2026-11-13 17:47:15  plugin : moteur créé
+2026-11-13 17:47:15  plugin : cocoa prêt, création de l'interface
+2026-11-13 17:47:15  licence : identifiant lu par le système (sans programme externe)
+2026-11-13 17:47:15  plugin : interface créée
+2026-11-13 17:47:15  plugin : instance 1 créée
+2026-11-13 17:47:15  plugin : création d'une instance (macOS 15.7.9)
+2026-11-13 17:47:15  plugin : moteur créé
+2026-11-13 17:47:15  plugin : cocoa prêt, création de l'interface
+2026-11-13 17:47:15  licence : identifiant lu par le système (sans programme externe)
+2026-11-13 17:47:15  plugin : interface créée
+2026-11-13 17:47:15  plugin : instance 2 créée
+2026-11-13 17:47:15  AU : le logiciel hôte demande les informations d'interface (CocoaUI)
+2026-11-13 17:47:25  plugin : création d'une instance (macOS 15.7.9)
+2026-11-13 17:47:25  plugin : moteur créé
+2026-11-13 17:47:25  plugin : cocoa prêt, création de l'interface
+2026-11-13 17:47:25  licence : identifiant lu par le système (sans programme externe)
+2026-11-13 17:47:25  plugin : interface créée
+2026-11-13 17:47:25  plugin : instance 1 créée
+2026-11-13 17:47:25  AU : le logiciel hôte demande les informations d'interface (CocoaUI)
+2026-11-13 17:47:25  AU : le logiciel hôte demande l'interface
+2026-11-13 17:47:25  éditeur : taille 1200 x 744 (échelle 1.00)
+2026-11-13 17:47:25  éditeur : graphiques prêts
+2026-11-13 17:47:25  éditeur : première image dessinée
+2026-11-13 17:47:25  AU : interface fournie au logiciel hôte (1200 x 744)
+2026-11-13 17:47:32  AU : le logiciel hôte demande les informations d'interface (CocoaUI)
+2026-11-13 17:47:32  AU : le logiciel hôte demande l'interface
+2026-11-13 17:47:32  éditeur : taille 1200 x 744 (échelle 1.00)
+2026-11-13 17:47:32  éditeur : graphiques prêts
+2026-11-13 17:47:32  AU : interface fournie au logiciel hôte (1200 x 744)
+2026-11-13 17:47:40  AU : le logiciel hôte demande les informations d'interface (CocoaUI)
+2026-11-13 17:47:40  AU : le logiciel hôte demande l'interface
+2026-11-13 17:47:40  éditeur : taille 1200 x 744 (échelle 1.00)
+2026-11-13 17:47:40  éditeur : graphiques prêts
+2026-11-13 17:47:40  AU : interface fournie au logiciel hôte (1200 x 744)
+2026-11-13 17:47:41  éditeur : fenêtre cachée par le logiciel hôte (gardée pour sa réouverture)
+2026-11-13 17:47:46  éditeur : fenêtre de nouveau affichée
+2026-11-13 17:47:50  plugin : création d'une instance (macOS 15.7.9)
+2026-11-13 17:47:50  plugin : moteur créé
+2026-11-13 17:47:50  plugin : cocoa prêt, création de l'interface
+2026-11-13 17:47:50  licence : identifiant lu par le système (sans programme externe)
+2026-11-13 17:47:50  plugin : interface créée
+2026-11-13 17:47:50  plugin : instance 2 créée
+2026-11-13 17:47:51  plugin : création d'une instance (macOS 15.7.9)
+2026-11-13 17:47:51  plugin : moteur créé
+2026-11-13 17:47:51  plugin : cocoa prêt, création de l'interface
+2026-11-13 17:47:51  licence : identifiant lu par le système (sans programme externe)
+2026-11-13 17:47:51  plugin : interface créée
+2026-11-13 17:47:51  plugin : instance 1 créée
+2026-11-13 17:47:51  AU : le logiciel hôte demande les informations d'interface (CocoaUI)
+2026-11-13 17:47:51  AU : le logiciel hôte demande l'interface
+2026-11-13 17:47:51  éditeur : taille 1200 x 744 (échelle 1.00)
+2026-11-13 17:47:51  éditeur : graphiques prêts
+2026-11-13 17:47:51  éditeur : première image dessinée
+2026-11-13 17:47:51  AU : interface fournie au logiciel hôte (1200 x 744)
+2026-11-13 17:47:58  AU : le logiciel hôte demande les informations d'interface (CocoaUI)
+2026-11-13 17:47:58  AU : le logiciel hôte demande l'interface
+2026-11-13 17:47:58  éditeur : taille 1200 x 744 (échelle 1.00)
+2026-11-13 17:47:58  éditeur : graphiques prêts
+2026-11-13 17:47:58  AU : interface fournie au logiciel hôte (1200 x 744)
+2026-11-13 17:48:06  AU : le logiciel hôte demande les informations d'interface (CocoaUI)
+2026-11-13 17:48:06  AU : le logiciel hôte demande l'interface
+2026-11-13 17:48:06  éditeur : taille 1200 x 744 (échelle 1.00)
+2026-11-13 17:48:06  éditeur : graphiques prêts
+2026-11-13 17:48:06  AU : interface fournie au logiciel hôte (1200 x 744)
+2026-11-13 17:48:07  éditeur : fenêtre cachée par le logiciel hôte (gardée pour sa réouverture)
+2026-11-13 17:48:11  éditeur : fenêtre de nouveau affichée
+2026-11-13 17:48:14  plugin : création d'une instance (macOS 15.7.9)
+2026-11-13 17:48:14  plugin : moteur créé
+2026-11-13 17:48:14  plugin : cocoa prêt, création de l'interface
+2026-11-13 17:48:14  licence : identifiant lu par le système (sans programme externe)
+2026-11-13 17:48:14  plugin : interface créée
+2026-11-13 17:48:14  plugin : instance 2 créée
