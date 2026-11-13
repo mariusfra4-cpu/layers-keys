@@ -1,0 +1,26 @@
+
+Performing Streamed Install
+Success
+OK    écran de licence : téléphone non activé
+OK    code du téléphone affiché
+code : ELI-U8V7-KPQN-R3VP-TSL8
+OK    après activation dans la liste : l'application s'ouvre
+OK    réouverture : l'application s'ouvre directement
+OK    bloqué dans la liste : l'application se verrouille
+OK    ancien code ELI-TEST-2026 accepté pendant la transition
+OK    sans Internet : l'application reste ouverte (7 jours)
+info : arrêts du moteur d'affichage WebView pendant le test : 0
+FATAL EXCEPTION: UiAutomation
+11-13 00:43:51.891  6247  6348 E AndroidRuntime: PID: 6247
+11-13 00:43:51.891  6247  6348 E AndroidRuntime: java.lang.RuntimeException: Bad file descriptor
+11-13 00:43:51.891  6247  6348 E AndroidRuntime: 	at android.os.BinderProxy.transactNative(Native Method)
+11-13 00:43:51.891  6247  6348 E AndroidRuntime: 	at android.os.BinderProxy.transact(BinderProxy.java:584)
+11-13 00:43:51.891  6247  6348 E AndroidRuntime: 	at android.accessibilityservice.IAccessibilityServiceConnection$Stub$Proxy.findAccessibilityNodeInfoByAccessibilityId(IAccessibilityServiceConnection.java:1072)
+11-13 00:43:51.891  6247  6348 E AndroidRuntime: 	at android.view.accessibility.AccessibilityInteractionClient.findAccessibilityNodeInfoByAccessibilityId(AccessibilityInteractionClient.java:599)
+11-13 00:43:51.891  6247  6348 E AndroidRuntime: 	at android.view.accessibility.AccessibilityNodeInfo.refresh(AccessibilityNodeInfo.java:1074)
+11-13 00:43:51.891  6247  6348 E AndroidRuntime: 	at android.view.accessibility.AccessibilityCache$AccessibilityNodeRefresher.refreshNode(AccessibilityCache.java:888)
+11-13 00:43:51.891  6247  6348 E AndroidRuntime: 	at android.view.accessibility.AccessibilityCache.onAccessibilityEvent(AccessibilityCache.java:294)
+11-13 00:43:51.891  6247  6348 E AndroidRuntime: 	at android.view.accessibility.AccessibilityInteractionClient.onAccessibilityEvent(AccessibilityInteractionClient.java:1041)
+11-13 00:43:51.891  6247  6348 E AndroidRuntime: 	at android.a
+OK    aucun plantage de l'application
+RESULTAT OK

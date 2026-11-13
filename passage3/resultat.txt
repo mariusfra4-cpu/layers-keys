@@ -1,0 +1,14 @@
+
+Performing Streamed Install
+Success
+OK    écran de licence : téléphone non activé
+OK    code du téléphone affiché
+code : ELI-U8V7-KPQN-R3VP-TSL8
+OK    après activation dans la liste : l'application s'ouvre
+OK    réouverture : l'application s'ouvre directement
+OK    bloqué dans la liste : l'application se verrouille
+OK    ancien code ELI-TEST-2026 accepté pendant la transition
+OK    sans Internet : l'application reste ouverte (7 jours)
+info : arrêts du moteur d'affichage WebView pendant le test : 0
+OK    aucun plantage de l'application
+RESULTAT OK
