@@ -3,7 +3,7 @@
 package main
 
 /*
-#cgo darwin LDFLAGS: -framework CoreFoundation -framework AudioToolbox -framework AudioUnit -framework AppKit -framework Foundation
+#cgo darwin LDFLAGS: -framework CoreFoundation -framework AudioToolbox -framework AudioUnit -framework CoreMIDI -framework AppKit -framework Foundation
 #include <stdint.h>
 extern uintptr_t lkAUHandleFor(void *ci);
 */
