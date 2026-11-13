@@ -68,7 +68,7 @@ func auDiagStart() {
 					continue
 				}
 				n := int(atomic.LoadInt64(&auNotesOn))
-				lklog("AU son : %d blocs demandés (+%d, dernier %d images, %d tampons%s), %d refusés (code %d), notes reçues : classique %d / liste %d, notes jouées %d (+%d), crête de sortie %.4f",
+				lklog("AU son : %d blocs demandés (+%d, dernier %d images, %d tampons%s), %d refusés (code %d), messages MIDI reçus : classique %d / liste %d, notes jouées %d (+%d), crête de sortie %.4f",
 					cur[0], cur[0]-last[0], cur[3], cur[4], map[bool]string{true: ", entrelacé", false: ""}[cur[7] != 0],
 					cur[1], int32(cur[2]), cur[5], cur[6], n, n-notes, pk)
 				last, notes = cur, n

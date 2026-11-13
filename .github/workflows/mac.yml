@@ -104,6 +104,10 @@ jobs:
           echo "=== x86_64 (Intel, ou Rosetta sur Apple Silicon)" >> /tmp/lklogs/05e_logic_test.txt
           runwatch x86_64 arch -x86_64 /tmp/au_logic_test; I=$?
           echo "EXIT arm64=$A x86_64=$I" >> /tmp/lklogs/05e_logic_test.txt
+          # gardien « comme Logic Pro 13 » sur le plugin réellement livré (sans licence : le son est muet, mais tout le reste tourne)
+          echo "=== gardien sur le plugin livré" >> /tmp/lklogs/05e_logic_test.txt
+          runwatch gardien /tmp/au_logic_test --gardien; G=$?
+          echo "EXIT gardien=$G" >> /tmp/lklogs/05e_logic_test.txt
           cp ~/Library/Logs/LayersKeys.log /tmp/lklogs/05f_journal_plugin.txt 2>/dev/null || true
           cat /tmp/lklogs/05e_logic_test.txt
           [ $A -eq 0 ] && [ $I -eq 0 ]
@@ -142,7 +146,9 @@ jobs:
           for a in arm64 amd64; do
             CGO_ENABLED=1 GOOS=darwin GOARCH=$a CC=clang MACOSX_DEPLOYMENT_TARGET=11.0 \
               CGO_CFLAGS="-O2 -mmacosx-version-min=11.0" CGO_LDFLAGS="-mmacosx-version-min=11.0" \
-              go build -tags "au lktest" -buildmode=c-shared -trimpath -o /tmp/testau/b/LK_$a.dylib . 2>&1 | tail -5
+              go build -tags "au lktest" -buildmode=c-shared -trimpath \
+              -ldflags="-X=runtime.godebugDefault=$(go list -tags 'au lktest' -f '{{.DefaultGODEBUG}}' .),asyncpreemptoff=1" \
+              -o /tmp/testau/b/LK_$a.dylib . 2>&1 | tail -5
           done
           lipo -create /tmp/testau/b/LK_arm64.dylib /tmp/testau/b/LK_amd64.dylib -output $T/Contents/MacOS/LayersKeys
           cp mac/au_Info.plist $T/Contents/Info.plist; printf 'BNDL????' > $T/Contents/PkgInfo
@@ -154,6 +160,15 @@ jobs:
           /tmp/au_logic_test --son >> /tmp/lklogs/05h_son.txt 2>&1; echo "EXIT $?" >> /tmp/lklogs/05h_son.txt
           echo "=== x86_64" >> /tmp/lklogs/05h_son.txt
           arch -x86_64 /tmp/au_logic_test --son >> /tmp/lklogs/05h_son.txt 2>&1; echo "EXIT $?" >> /tmp/lklogs/05h_son.txt
+          # gardien « comme Logic Pro 13 » : aucun signal ne doit arriver pendant le jeu (05i_gardien.txt)
+          echo "=== gardien natif ($(uname -m)), plugin tel que livré" > /tmp/lklogs/05i_gardien.txt
+          /tmp/au_logic_test --gardien >> /tmp/lklogs/05i_gardien.txt 2>&1; echo "EXIT $?" >> /tmp/lklogs/05i_gardien.txt
+          echo "=== gardien x86_64" >> /tmp/lklogs/05i_gardien.txt
+          arch -x86_64 /tmp/au_logic_test --gardien >> /tmp/lklogs/05i_gardien.txt 2>&1; echo "EXIT $?" >> /tmp/lklogs/05i_gardien.txt
+          # contre-épreuve : on remet le réglage des versions 1.0.5 et avant (GODEBUG), le gardien doit alors voir des signaux
+          echo "=== contre-épreuve : comme la 1.0.5 (asyncpreemptoff=0)" >> /tmp/lklogs/05i_gardien.txt
+          GODEBUG=asyncpreemptoff=0 /tmp/au_logic_test --gardien >> /tmp/lklogs/05i_gardien.txt 2>&1; echo "EXIT $?" >> /tmp/lklogs/05i_gardien.txt
+          cat /tmp/lklogs/05i_gardien.txt
           rm -rf ~/Library/Audio/Plug-Ins/Components/LayersKeys.component
           echo "=== journal du plugin (diagnostic du son)" >> /tmp/lklogs/05h_son.txt
           grep 'AU son' ~/Library/Logs/LayersKeys.log | tail -12 >> /tmp/lklogs/05h_son.txt

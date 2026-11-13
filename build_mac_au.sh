@@ -14,8 +14,15 @@ export CGO_LDFLAGS="${CGO_LDFLAGS} -mmacosx-version-min=11.0"
 OUT=dist/mac
 PLUG="$OUT/LayersKeys.component"
 rm -rf "$PLUG" "$OUT/au" && mkdir -p "$PLUG/Contents/MacOS" "$OUT/au"
+# Logic Pro 13 prend tout signal reçu pendant un appel au plugin pour un plantage (« reported a problem… »).
+# Go envoie de lui-même des signaux (SIGURG) pour interrompre ses fils : on les coupe dans le plugin
+# (asyncpreemptoff=1, ajouté aux réglages par défaut de Go). Vérifié par : tools/au_logic_test.m --gardien
+LKGODEBUG="$(go list -tags au -f '{{.DefaultGODEBUG}}' .)"
+LKGODEBUG="${LKGODEBUG:+$LKGODEBUG,}asyncpreemptoff=1"
+export LK_AU_LDFLAGS="-X=runtime.godebugDefault=$LKGODEBUG"
+echo "réglages Go du plugin : $LKGODEBUG"
 for a in arm64 amd64; do
-  CGO_ENABLED=1 GOOS=darwin GOARCH=$a CC=clang go build -tags au -buildmode=c-shared -trimpath \
+  CGO_ENABLED=1 GOOS=darwin GOARCH=$a CC=clang go build -tags au -buildmode=c-shared -trimpath -ldflags="$LK_AU_LDFLAGS" \
     -o "$OUT/au/LayersKeys_$a.dylib" .
 done
 lipo -create "$OUT/au/LayersKeys_arm64.dylib" "$OUT/au/LayersKeys_amd64.dylib" -output "$PLUG/Contents/MacOS/LayersKeys"
