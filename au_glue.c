@@ -39,6 +39,22 @@ static void tr(const char *fmt, ...) {
 #define LK_SUBTYPE FOURCC('L', 'k', 'y', 's')
 #define LK_MANUF FOURCC('J', 'B', 'P', 'r')
 
+/* diagnostic du son (journal) : compteurs lus depuis Go (au_darwin.go) */
+_Atomic uint64_t lk_st_renders, lk_st_rendErr, lk_st_lastErr, lk_st_frames, lk_st_nbuf, lk_st_midiOld, lk_st_midiList, lk_st_interleaved;
+uint64_t lk_st(int i) { /* lu par au_darwin.go pour le journal */
+    switch (i) {
+    case 0: return atomic_load(&lk_st_renders);
+    case 1: return atomic_load(&lk_st_rendErr);
+    case 2: return atomic_load(&lk_st_lastErr);
+    case 3: return atomic_load(&lk_st_frames);
+    case 4: return atomic_load(&lk_st_nbuf);
+    case 5: return atomic_load(&lk_st_midiOld);
+    case 6: return atomic_load(&lk_st_midiList);
+    }
+    return atomic_load(&lk_st_interleaved);
+}
+#define RFAIL(code) do { atomic_fetch_add(&lk_st_rendErr, 1); atomic_store(&lk_st_lastErr, (uint64_t)(uint32_t)(code)); return (code); } while (0)
+
 #define LK_MQ 1024        /* taille de la file MIDI (puissance de 2) */
 #define LK_GRAIN 16       /* les notes sont placées au 16e d'échantillon près (0,4 ms) : assez précis, peu de découpage */
 #define LK_TAIL_SEC 10.0  /* le son continue jusqu'à 10 s après la dernière note (relâchement, réverbération, delay) */
@@ -343,11 +359,24 @@ static OSStatus au_setprop(void *self, AudioUnitPropertyID id, AudioUnitScope sc
     }
     case kAudioUnitProperty_StreamFormat: {
         const AudioStreamBasicDescription *f = (const AudioStreamBasicDescription *)in;
+        {
+            char m[200];
+            snprintf(m, sizeof m, "AU son : format demandé par l'hôte : %.0f Hz, %u canaux, %u bits, %s, %s",
+                     f->mSampleRate, (unsigned)f->mChannelsPerFrame, (unsigned)f->mBitsPerChannel,
+                     (f->mFormatFlags & kAudioFormatFlagIsFloat) ? "réels" : "entiers",
+                     (f->mFormatFlags & kAudioFormatFlagIsNonInterleaved) ? "séparés" : "entrelacés");
+            lkAULog(m);
+        }
         if (f->mFormatID != kAudioFormatLinearPCM || f->mChannelsPerFrame != 2 || f->mBitsPerChannel != 32 ||
-            !(f->mFormatFlags & kAudioFormatFlagIsFloat) || !(f->mFormatFlags & kAudioFormatFlagIsNonInterleaved))
+            !(f->mFormatFlags & kAudioFormatFlagIsFloat)) {
+            lkAULog((char *)"AU son : format refusé");
             return kAudioUnitErr_FormatNotSupported;
+        }
         if (f->mSampleRate < 8000.0 || f->mSampleRate > 384000.0) return kAudioUnitErr_FormatNotSupported;
-        if (a->initialized && f->mSampleRate != a->rate) return kAudioUnitErr_Initialized;
+        if (a->initialized && f->mSampleRate != a->rate) {
+            lkAULog((char *)"AU son : changement de fréquence refusé pendant le jeu");
+            return kAudioUnitErr_Initialized;
+        }
         a->rate = f->mSampleRate;
         return noErr;
     }
@@ -356,7 +385,7 @@ static OSStatus au_setprop(void *self, AudioUnitPropertyID id, AudioUnitScope sc
         a->rate = *(const Float64 *)in;
         return noErr;
     case kAudioUnitProperty_MaximumFramesPerSlice:
-        if (a->initialized) return kAudioUnitErr_Initialized;
+        /* accepté même pendant le jeu (Logic récent le change parfois après l'initialisation) */
         a->maxFrames = *(const UInt32 *)in;
         fire_prop(a, id, scope, elem);
         return noErr;
@@ -396,10 +425,18 @@ static OSStatus au_render(void *self, AudioUnitRenderActionFlags *flags, const A
     LKAU *a = (LKAU *)self;
     (void)flags; (void)ts;
     { static int cnt = 0; if (cnt < 3) { cnt++; tr("render bus=%u frames=%u nbuf=%u", (unsigned)bus, (unsigned)nframes, io ? (unsigned)io->mNumberBuffers : 0u); } }
-    if (!a->initialized) return kAudioUnitErr_Uninitialized;
-    if (bus != 0) return kAudioUnitErr_InvalidElement;
-    if (a->maxFrames && n > a->maxFrames) return kAudioUnitErr_TooManyFramesToProcess;
-    if (!io || io->mNumberBuffers < 2) return kAudioUnitErr_FormatNotSupported;
+    atomic_fetch_add(&lk_st_renders, 1);
+    atomic_store(&lk_st_frames, n);
+    atomic_store(&lk_st_nbuf, io ? io->mNumberBuffers : 0);
+    if (!a->initialized) RFAIL(kAudioUnitErr_Uninitialized);
+    if (bus != 0) RFAIL(kAudioUnitErr_InvalidElement);
+    /* blocs plus grands que prévu (l'hôte a changé la taille après l'initialisation) : on suit, au lieu de refuser */
+    if (a->maxFrames && n > a->maxFrames) a->maxFrames = n;
+    if (!io || io->mNumberBuffers < 1) RFAIL(kAudioUnitErr_FormatNotSupported);
+    /* stéréo entrelacée dans un seul tampon (gauche, droite, gauche…) : on calcule à part puis on entrelace */
+    int inter = io->mNumberBuffers == 1;
+    if (inter && io->mBuffers[0].mNumberChannels != 2) RFAIL(kAudioUnitErr_FormatNotSupported);
+    if (inter) atomic_store(&lk_st_interleaved, 1);
     if (a->sn < n) {
         free(a->sl); free(a->sr);
         a->sn = n < 4096 ? 4096 : n;
@@ -407,12 +444,19 @@ static OSStatus au_render(void *self, AudioUnitRenderActionFlags *flags, const A
         a->sr = (float *)calloc(a->sn, sizeof(float));
         if (!a->sl || !a->sr) { a->sn = 0; return kAudio_MemFullError; }
     }
-    for (int i = 0; i < 2; i++) {
-        if (!io->mBuffers[i].mData) io->mBuffers[i].mData = i ? a->sr : a->sl;
-        io->mBuffers[i].mDataByteSize = n * sizeof(float);
-        io->mBuffers[i].mNumberChannels = 1;
+    float *L, *R;
+    if (inter) {
+        L = a->sl;
+        R = a->sr;
+    } else {
+        for (int i = 0; i < 2; i++) {
+            if (!io->mBuffers[i].mData) io->mBuffers[i].mData = i ? a->sr : a->sl;
+            io->mBuffers[i].mDataByteSize = n * sizeof(float);
+            io->mBuffers[i].mNumberChannels = 1;
+        }
+        L = (float *)io->mBuffers[0].mData;
+        R = (float *)io->mBuffers[1].mData;
     }
-    float *L = (float *)io->mBuffers[0].mData, *R = (float *)io->mBuffers[1].mData;
     /* les notes en attente découpent le bloc : son jusqu'à la position de la note, la note, puis la suite */
     uint32_t w = atomic_load_explicit(&a->mqw, memory_order_acquire);
     uint32_t r = atomic_load_explicit(&a->mqr, memory_order_relaxed);
@@ -429,6 +473,14 @@ static OSStatus au_render(void *self, AudioUnitRenderActionFlags *flags, const A
     }
     atomic_store_explicit(&a->mqr, r, memory_order_release);
     if (pos < n) lkProcess(a->h, L + pos, R + pos, (int)(n - pos));
+    if (inter) {
+        float *o = (float *)io->mBuffers[0].mData;
+        if (!o) { io->mBuffers[0].mData = a->sl; o = a->sl; } /* (cas improbable : l'hôte ne fournit pas de tampon) */
+        if (o != a->sl) {
+            for (UInt32 i = 0; i < n; i++) { o[2 * i] = L[i]; o[2 * i + 1] = R[i]; }
+            io->mBuffers[0].mDataByteSize = n * 2 * sizeof(float);
+        }
+    }
     return noErr;
 }
 
@@ -436,6 +488,7 @@ static OSStatus au_render(void *self, AudioUnitRenderActionFlags *flags, const A
 static OSStatus au_midi(void *self, UInt32 status, UInt32 d1, UInt32 d2, UInt32 offset) {
     LKAU *a = (LKAU *)self;
     tr("midi %x %u %u off=%u", (unsigned)status, (unsigned)d1, (unsigned)d2, (unsigned)offset);
+    atomic_fetch_add(&lk_st_midiOld, 1);
     uint32_t w = atomic_load_explicit(&a->mqw, memory_order_relaxed);
     uint32_t r = atomic_load_explicit(&a->mqr, memory_order_acquire);
     if (!a->initialized || w - r >= LK_MQ) { /* pas de son en cours ou file pleine : la note est jouée tout de suite */
@@ -502,6 +555,7 @@ static void ump_one(void *self, const uint32_t *w, UInt32 off) {
 static OSStatus au_midilist(void *self, UInt32 offset, const MIDIEventList *list) {
     if (!list) return noErr;
     tr("liste MIDI : %u paquets, protocole %d", (unsigned)list->numPackets, (int)list->protocol);
+    atomic_fetch_add(&lk_st_midiList, 1);
     const MIDIEventPacket *p = &list->packet[0];
     for (UInt32 i = 0; i < list->numPackets && i < 4096; i++) {
         UInt32 off = offset + (UInt32)p->timeStamp; /* pour une Audio Unit : position dans le bloc */

@@ -155,6 +155,8 @@ jobs:
           echo "=== x86_64" >> /tmp/lklogs/05h_son.txt
           arch -x86_64 /tmp/au_logic_test --son >> /tmp/lklogs/05h_son.txt 2>&1; echo "EXIT $?" >> /tmp/lklogs/05h_son.txt
           rm -rf ~/Library/Audio/Plug-Ins/Components/LayersKeys.component
+          echo "=== journal du plugin (diagnostic du son)" >> /tmp/lklogs/05h_son.txt
+          grep 'AU son' ~/Library/Logs/LayersKeys.log | tail -12 >> /tmp/lklogs/05h_son.txt
           cat /tmp/lklogs/05h_son.txt
       - name: Paquet
         run: |
