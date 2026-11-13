@@ -67,6 +67,14 @@ public class MainActivity extends Activity {
 
     @Override protected void onCreate(Bundle b) {
         super.onCreate(b);
+        makeWeb();
+        readOldCodes();
+        if (b != null) web.restoreState(b);
+        if (web.getUrl() == null) web.loadUrl(HOME);
+    }
+
+    /** Crée la WebView (aussi après un plantage du moteur d'affichage). */
+    private void makeWeb() {
         web = new WebView(this);
         web.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         boolean night = (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
@@ -86,9 +94,6 @@ public class MainActivity extends Activity {
         web.setWebViewClient(new Client());
         web.setWebChromeClient(new Chrome());
         setContentView(web);
-        readOldCodes();
-        if (b != null) web.restoreState(b);
-        if (web.getUrl() == null) web.loadUrl(HOME);
     }
 
     @Override protected void onResume() {
@@ -242,6 +247,19 @@ public class MainActivity extends Activity {
     }
 
     private class Client extends WebViewClient {
+        /** Le moteur d'affichage s'est arrêté (manque de mémoire…) : on recrée la page au lieu de fermer l'appli. */
+        @Override public boolean onRenderProcessGone(WebView v, android.webkit.RenderProcessGoneDetail d) {
+            if (v != web) return true;
+            ViewGroup parent = (ViewGroup) web.getParent();
+            if (parent != null) parent.removeView(web);
+            web.destroy();
+            web = null;
+            if (isFinishing() || isDestroyed()) return true;
+            makeWeb();
+            web.loadUrl(HOME);
+            return true;
+        }
+
         @Override public WebResourceResponse shouldInterceptRequest(WebView v, WebResourceRequest r) {
             Uri u = r.getUrl();
             if (HOST.equals(u.getHost())) return serve(u.getPath());

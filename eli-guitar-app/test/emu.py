@@ -153,6 +153,8 @@ adb("shell", "input", "keyevent", "4")
 time.sleep(1)
 log = adb("logcat", "-d")
 open(f"{OUT}/logcat.txt", "w").write(log)
+rd = log.count("crashed service " + PKG)
+print("info : arrêts du moteur d'affichage WebView pendant le test :", rd)
 crash = re.findall(r"FATAL EXCEPTION.*\n.*Process: ([\w.:]+)", log)
 for c in re.finditer(r"FATAL EXCEPTION[\s\S]{0,1500}", log):
     print(c.group(0)[:1500])
