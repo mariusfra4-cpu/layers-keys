@@ -14,6 +14,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <signal.h>
+#include <pthread.h>
+#include <stdatomic.h>
+#include <unistd.h>
 
 static int fails = 0;
 #define CHECK(cond, ...) do { if (cond) { printf("OK    "); } else { printf("ÉCHEC "); fails++; } printf(__VA_ARGS__); printf("\n"); fflush(stdout); } while (0)
@@ -189,6 +193,96 @@ static int soundTest(AudioComponent comp) {
     return fails ? 1 : 0;
 }
 
+/* --gardien : imite la surveillance de Logic Pro 13. Logic attrape les signaux (SIGSEGV, SIGBUS, SIGURG…) qui arrivent
+   pendant qu'il appelle un plugin, et affiche alors « The Audio Unit plug-in reported a problem… ». Ici, on installe
+   un gardien APRÈS le chargement du plugin (comme Logic), on fait tourner le son sur une ligne audio séparée avec des notes,
+   la fenêtre ouverte et un son chargé, puis on compte chaque signal reçu. Le plugin ne doit en produire AUCUN. */
+static const int g_sigs[] = {SIGURG, SIGSEGV, SIGBUS, SIGILL, SIGTRAP, SIGABRT, SIGFPE, SIGPROF, SIGUSR1, SIGUSR2};
+#define NSIGS (int)(sizeof g_sigs / sizeof g_sigs[0])
+static struct sigaction g_old[NSIGS];
+static _Atomic int g_cnt[NSIGS], g_cntAudio[NSIGS];
+static pthread_t g_audioThread;
+static _Atomic int g_run = 1;
+static void guard(int sig, siginfo_t *si, void *uc) {
+    for (int i = 0; i < NSIGS; i++) {
+        if (g_sigs[i] != sig) continue;
+        atomic_fetch_add(&g_cnt[i], 1);
+        if (pthread_equal(pthread_self(), g_audioThread)) atomic_fetch_add(&g_cntAudio[i], 1);
+        /* on rend la main au gestionnaire d'avant (celui de Go), pour que le plugin continue comme sans gardien */
+        if (g_old[i].sa_flags & SA_SIGINFO) { if (g_old[i].sa_sigaction) g_old[i].sa_sigaction(sig, si, uc); }
+        else if (g_old[i].sa_handler != SIG_DFL && g_old[i].sa_handler != SIG_IGN) g_old[i].sa_handler(sig);
+        return;
+    }
+}
+static void *audioLoop(void *p) {
+    AudioUnit au = (AudioUnit)p;
+    while (atomic_load(&g_run)) { render(au, 512, 1, NULL); usleep(10000); } /* ≈ un bloc de 512 images toutes les 10 ms */
+    return NULL;
+}
+static int guardTest(AudioComponent comp) {
+    AudioUnit au = NULL;
+    OSStatus st = AudioComponentInstanceNew(comp, &au);
+    CHECK(st == noErr && au, "gardien : instance créée");
+    if (!au) return 1;
+    UInt32 maxf = 1024;
+    AudioUnitSetProperty(au, kAudioUnitProperty_MaximumFramesPerSlice, kAudioUnitScope_Global, 0, &maxf, sizeof maxf);
+    st = AudioUnitInitialize(au);
+    CHECK(st == noErr, "gardien : initialisation");
+    /* le gardien est posé maintenant, après le chargement du plugin, comme Logic */
+    for (int i = 0; i < NSIGS; i++) {
+        struct sigaction sa;
+        memset(&sa, 0, sizeof sa);
+        sa.sa_sigaction = guard;
+        sa.sa_flags = SA_SIGINFO | SA_ONSTACK | SA_RESTART;
+        sigemptyset(&sa.sa_mask);
+        sigaction(g_sigs[i], &sa, &g_old[i]);
+    }
+    pthread_create(&g_audioThread, NULL, audioLoop, au);
+    NSWindow *w = nil;
+    NSView *v = openEditor(au, &w);
+    /* un son chargé par l'état du plugin (comme un projet Logic), puis 12 s de jeu avec des notes */
+    CFPropertyListRef pl = NULL;
+    UInt32 sz = sizeof pl;
+    if (AudioUnitGetProperty(au, kAudioUnitProperty_ClassInfo, kAudioUnitScope_Global, 0, &pl, &sz) == noErr && pl) {
+        NSDictionary *d = (__bridge_transfer NSDictionary *)pl;
+        NSMutableDictionary *js = [NSJSONSerialization JSONObjectWithData:d[@kAUPresetDataKey] options:NSJSONReadingMutableContainers error:nil];
+        if ([js[@"setup"] isKindOfClass:[NSArray class]]) {
+            js[@"setup"][0][@"src"] = [@{@"kind": @"builtin", @"builtin": @0, @"name": @"Grand Piano"} mutableCopy];
+            NSMutableDictionary *nd = [d mutableCopy];
+            nd[@kAUPresetDataKey] = [NSJSONSerialization dataWithJSONObject:js options:0 error:nil];
+            CFPropertyListRef npl = (__bridge CFPropertyListRef)nd;
+            AudioUnitSetProperty(au, kAudioUnitProperty_ClassInfo, kAudioUnitScope_Global, 0, &npl, sizeof npl);
+        }
+    }
+    for (int k = 0; k < 120; k++) {
+        int n = 48 + (k * 7) % 36;
+        MusicDeviceMIDIEvent(au, 0x90, n, 100, 64);
+        spin(0.05);
+        MusicDeviceMIDIEvent(au, 0x80, n, 0, 0);
+        if (k % 20 == 0) { /* Logic lit l'état régulièrement (sauvegarde automatique du projet) */
+            CFPropertyListRef p2 = NULL; UInt32 s2 = sizeof p2;
+            if (AudioUnitGetProperty(au, kAudioUnitProperty_ClassInfo, kAudioUnitScope_Global, 0, &p2, &s2) == noErr && p2) CFRelease(p2);
+        }
+        spin(0.05);
+    }
+    atomic_store(&g_run, 0);
+    pthread_join(g_audioThread, NULL);
+    if (v) [w close];
+    spin(0.3);
+    int total = 0;
+    static const char *names[] = {"SIGURG", "SIGSEGV", "SIGBUS", "SIGILL", "SIGTRAP", "SIGABRT", "SIGFPE", "SIGPROF", "SIGUSR1", "SIGUSR2"};
+    for (int i = 0; i < NSIGS; i++) {
+        int c = atomic_load(&g_cnt[i]);
+        total += c;
+        if (c) printf("      signal %s : %d fois (dont %d sur la ligne audio)\n", names[i], c, atomic_load(&g_cntAudio[i]));
+    }
+    CHECK(total == 0, "gardien : aucun signal pendant 12 s de jeu (ce que Logic Pro 13 prendrait pour un plantage) : %d signal(aux)", total);
+    AudioUnitUninitialize(au);
+    AudioComponentInstanceDispose(au);
+    printf("\n%s (%d échec(s))\n", fails ? "GARDIEN : PROBLÈME" : "GARDIEN : TOUT VA BIEN", fails);
+    return fails ? 1 : 0;
+}
+
 int main(int argc, char **argv) {
     @autoreleasepool {
         [NSApplication sharedApplication];
@@ -202,6 +296,7 @@ int main(int argc, char **argv) {
         AudioComponentGetVersion(comp, &ver);
         printf("      version annoncée : %u.%u.%u\n", ver >> 16, (ver >> 8) & 0xFF, ver & 0xFF);
         if (argc > 1 && strcmp(argv[1], "--son") == 0) return soundTest(comp);
+        if (argc > 1 && strcmp(argv[1], "--gardien") == 0) return guardTest(comp);
 
         AudioUnit au = NULL;
         OSStatus st = AudioComponentInstanceNew(comp, &au);

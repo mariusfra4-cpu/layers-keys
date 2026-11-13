@@ -1,5 +1,11 @@
 //go:build darwin && (vst3 || au)
 
+// Logic Pro 13 surveille les signaux qui arrivent pendant qu'il appelle un plugin et prend chacun pour un plantage
+// (« The Audio Unit plug-in reported a problem… »). Go en envoie normalement de lui-même (SIGURG) pour interrompre
+// ses fils pendant le nettoyage de la mémoire : dans le plugin, on coupe ces signaux. Go s'interrompt alors seulement
+// aux appels de fonction, sans aucun signal. Le réglage (asyncpreemptoff=1) est posé à la construction : voir
+// build_mac_au.sh. Vérifié par le test « gardien » : tools/au_logic_test.m --gardien.
+
 package main
 
 /*
@@ -11,6 +17,7 @@ import "C"
 // Plugin VST3 : la colle en C (vst3_glue.c) appelle ces fonctions. Un « instance » = un exemplaire du plugin dans le DAW.
 
 import (
+	"os"
 	"runtime/debug"
 	"sync"
 	"sync/atomic"
@@ -46,7 +53,7 @@ func getInst(h C.uintptr_t) *lkInst {
 //export lkNew
 func lkNew() C.uintptr_t {
 	defer recoverPlugin()
-	lklog("plugin : création d'une instance (macOS %s)", macVersionPlugin())
+	lklog("plugin %s : création d'une instance (macOS %s, GODEBUG %s)", pluginVersion, macVersionPlugin(), os.Getenv("GODEBUG"))
 	gcOnce.Do(func() { debug.SetGCPercent(400) })
 	eng := NewEngine()
 	lklog("plugin : moteur créé")
@@ -226,6 +233,8 @@ func recoverPlugin() {
 }
 
 var pluginErrors int
+
+const pluginVersion = "1.0.6"
 
 func macVersionPlugin() string { return macVersionSysctl() }
 
