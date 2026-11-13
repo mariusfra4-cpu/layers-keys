@@ -82,7 +82,7 @@ jobs:
         run: |
           set +e
           clang -fobjc-arc -arch arm64 -arch x86_64 tools/au_logic_test.m -o /tmp/au_logic_test \
-            -framework AudioToolbox -framework AppKit -framework CoreAudioKit 2>&1 | tee /tmp/lklogs/05e_logic_test.txt
+            -framework AudioToolbox -framework AppKit -framework CoreAudioKit -framework CoreMIDI 2>&1 | tee /tmp/lklogs/05e_logic_test.txt
           killall -9 AudioComponentRegistrar 2>/dev/null || true
           sleep 3
           echo "=== natif ($(uname -m))" >> /tmp/lklogs/05e_logic_test.txt

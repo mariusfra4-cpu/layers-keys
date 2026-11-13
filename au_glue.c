@@ -13,6 +13,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdatomic.h>
+#include <CoreMIDI/CoreMIDI.h>
 
 /* Une bibliothèque Go ne peut pas être déchargée : si le logiciel hôte tente un dlclose, tout planterait.
    On demande donc au système de la garder en mémoire (RTLD_NODELETE). */
@@ -450,6 +451,72 @@ static OSStatus au_midi(void *self, UInt32 status, UInt32 d1, UInt32 d2, UInt32 
 }
 static OSStatus au_sysex(void *self, const UInt8 *data, UInt32 len) { (void)self; (void)data; (void)len; return noErr; }
 
+/* ---- MIDI « nouvelle façon » (listes d'événements UMP, MIDI 1.0 ou MIDI 2.0) : Logic Pro récent envoie les notes
+   ainsi. On les convertit en messages MIDI classiques, placés au bon moment dans le bloc (comme au_midi). */
+static uint32_t ump_words(uint32_t w0) {
+    switch (w0 >> 28) {
+    case 0x0: case 0x1: case 0x2: case 0x6: case 0x7: return 1;
+    case 0x3: case 0x4: case 0x8: case 0x9: case 0xA: return 2;
+    case 0xB: case 0xC: return 3;
+    default: return 4;
+    }
+}
+
+static void ump_one(void *self, const uint32_t *w, UInt32 off) {
+    uint32_t t = w[0] >> 28;
+    uint32_t st = (w[0] >> 16) & 0xFF;     /* octet d'état (type de message + canal) */
+    uint32_t kind = st & 0xF0;
+    if (t == 0x2) { /* MIDI 1.0 dans un paquet UMP : déjà des messages classiques */
+        au_midi(self, st, (w[0] >> 8) & 0x7F, w[0] & 0x7F, off);
+        return;
+    }
+    if (t != 0x4) return; /* (messages système, sysex… : ignorés) */
+    uint32_t idx = (w[0] >> 8) & 0x7F;
+    switch (kind) {
+    case 0x90: { /* note : vitesse sur 16 bits */
+        uint32_t v = (w[1] >> 16) >> 9;
+        if (v == 0 && (w[1] >> 16) != 0) v = 1;
+        au_midi(self, st, idx, v, off);
+        break;
+    }
+    case 0x80:
+        au_midi(self, st, idx, 0, off);
+        break;
+    case 0xA0: case 0xB0: /* pression par touche, contrôleur : valeur sur 32 bits */
+        au_midi(self, st, idx, w[1] >> 25, off);
+        break;
+    case 0xC0: /* changement de programme */
+        au_midi(self, st, (w[1] >> 24) & 0x7F, 0, off);
+        break;
+    case 0xD0: /* pression du canal */
+        au_midi(self, st, w[1] >> 25, 0, off);
+        break;
+    case 0xE0: { /* pitch bend sur 32 bits → 14 bits */
+        uint32_t v = w[1] >> 18;
+        au_midi(self, st, v & 0x7F, (v >> 7) & 0x7F, off);
+        break;
+    }
+    }
+}
+
+static OSStatus au_midilist(void *self, UInt32 offset, const MIDIEventList *list) {
+    if (!list) return noErr;
+    tr("liste MIDI : %u paquets, protocole %d", (unsigned)list->numPackets, (int)list->protocol);
+    const MIDIEventPacket *p = &list->packet[0];
+    for (UInt32 i = 0; i < list->numPackets && i < 4096; i++) {
+        UInt32 off = offset + (UInt32)p->timeStamp; /* pour une Audio Unit : position dans le bloc */
+        UInt32 k = 0;
+        while (k < p->wordCount && k < 64) {
+            uint32_t n = ump_words(p->words[k]);
+            if (k + n > p->wordCount) break;
+            ump_one(self, &p->words[k], off);
+            k += n;
+        }
+        p = MIDIEventPacketNext(p);
+    }
+    return noErr;
+}
+
 /* ---- table des fonctions demandées par le système */
 static AudioComponentMethod au_lookup(SInt16 sel) {
     tr("lookup %d", (int)sel);
@@ -470,6 +537,7 @@ static AudioComponentMethod au_lookup(SInt16 sel) {
     case kAudioUnitRenderSelect:                       return (AudioComponentMethod)au_render;
     case kAudioUnitResetSelect:                        return (AudioComponentMethod)au_reset;
     case kMusicDeviceMIDIEventSelect:                  return (AudioComponentMethod)au_midi;
+    case kMusicDeviceMIDIEventListSelect:              return (AudioComponentMethod)au_midilist;
     case kMusicDeviceSysExSelect:                      return (AudioComponentMethod)au_sysex;
     default: return NULL;
     }

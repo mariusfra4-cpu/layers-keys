@@ -9,6 +9,7 @@
 
 #import <AppKit/AppKit.h>
 #import <AudioToolbox/AudioToolbox.h>
+#import <CoreMIDI/CoreMIDI.h>
 #import <AudioUnit/AUCocoaUIView.h>
 #include <stdio.h>
 #include <string.h>
@@ -130,6 +131,22 @@ static int soundTest(AudioComponent comp) {
     for (int i = 0; i < 60; i++) render(au, 512, 1, &peak);
     CHECK(peak > 0.01, "son : la note joue, le son sort du plugin (crête %.4f)", peak);
     MusicDeviceMIDIEvent(au, 0x80, 60, 0, 0);
+    /* notes envoyées « à la nouvelle façon » (listes UMP), comme Logic Pro récent : MIDI 1.0 puis MIDI 2.0 */
+    for (int proto = 1; proto <= 2; proto++) {
+        MIDIEventList list;
+        MIDIEventPacket *pk = MIDIEventListInit(&list, proto == 1 ? kMIDIProtocol_1_0 : kMIDIProtocol_2_0);
+        UInt32 words[2];
+        int nw;
+        if (proto == 1) { words[0] = 0x20000000u | (0x90u << 16) | (67u << 8) | 110u; nw = 1; }          /* note 67 */
+        else { words[0] = 0x40000000u | (0x90u << 16) | (69u << 8); words[1] = 0xE0000000u; nw = 2; }    /* note 69, vitesse 16 bits */
+        pk = MIDIEventListAdd(&list, sizeof list, pk, 64, nw, words);
+        OSStatus est = MusicDeviceMIDIEventList(au, 0, &list);
+        peak = 0;
+        for (int i = 0; i < 60; i++) render(au, 512, 1, &peak);
+        CHECK(est == noErr && peak > 0.01, "son : note reçue en liste MIDI %d.0 (comme Logic récent), crête %.4f (code %d)", proto, peak, (int)est);
+        MusicDeviceMIDIEvent(au, 0xB0, 123, 0, 0);
+        for (int i = 0; i < 100; i++) render(au, 512, 1, NULL);
+    }
     /* même chose avec la fenêtre du plugin ouverte (comme dans Logic) */
     NSWindow *w = nil;
     NSView *v = openEditor(au, &w);
