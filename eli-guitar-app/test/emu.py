@@ -73,6 +73,7 @@ class Q(http.server.SimpleHTTPRequestHandler):
         super().__init__(*a, directory=OUT, **k)
     def log_message(self, *a):
         pass
+socketserver.TCPServer.allow_reuse_address = True
 srv = socketserver.TCPServer(("127.0.0.1", 8099), Q)
 threading.Thread(target=srv.serve_forever, daemon=True).start()
 print(adb("reverse", "tcp:8099", "tcp:8099").strip())
