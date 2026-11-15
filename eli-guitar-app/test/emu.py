@@ -195,7 +195,10 @@ check("désactivée" in x and not is_app(x), "clé + « bloque » dans la liste 
 
 # 6. déblocage
 write_list("anciens-codes 2099-12-31\n")
-tap(x, "Vérifier ma licence")
+for _ in range(3):
+    if tap(dump(), "Vérifier ma licence"):
+        break
+    scroll_down()
 x = wait_for(is_app, 30)
 check(is_app(x), "retiré de la liste des blocages : l'application se rouvre")
 
@@ -232,7 +235,19 @@ tap(x, "déjà un code")
 time.sleep(1.5)
 scroll_down()
 x = dump()
-e = sorted(edits(x), key=lambda q: q[1])[-1:]   # le champ le plus bas = celui de l'ancien code
+e = []
+for mm in re.finditer(r'<node [^>]*>', x):   # le champ dont le texte (ou l'indication) est exactement ELI-XXXX-XXXX
+    n = mm.group(0)
+    if re.search(r'(text|hint)="ELI-XXXX-XXXX"', n):
+        b = re.search(r'bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"', n)
+        if b:
+            a1, c1, d1, e1 = map(int, b.groups())
+            e = [((a1 + d1) // 2, (c1 + e1) // 2)]
+if not e:
+    v = node(x, "Valider le code")
+    if v:
+        e = [(v[0], v[1] - 50)]   # le champ est juste au-dessus du bouton
+print("info : champ ancien code", e)
 if e:
     adb("shell", "input", "tap", str(e[-1][0]), str(e[-1][1]))
     time.sleep(0.8)
