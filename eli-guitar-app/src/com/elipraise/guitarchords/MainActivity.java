@@ -160,7 +160,7 @@ public class MainActivity extends Activity {
         return "{\"open\":" + open + ",\"code\":" + q(Licence.deviceCode(this))
                 + ",\"why\":" + q(Licence.reason(this)) + ",\"msg\":" + q(Licence.message(this))
                 + ",\"until\":" + q(ok > 0 ? Licence.fr(Licence.today(ok + Licence.GRACE_MS)) : "")
-                + ",\"old\":" + q(Licence.oldCode(this)) + "}";
+                + ",\"old\":" + q(Licence.oldCode(this)) + ",\"key\":" + Licence.keyOk(this) + "}";
     }
 
     @Override protected void onSaveInstanceState(Bundle out) {
@@ -446,6 +446,21 @@ public class MainActivity extends Activity {
         @JavascriptInterface public void checkLicence(String cb) {
             final String js = cb != null && cb.matches("[A-Za-z_$][A-Za-z0-9_$.]*") ? cb : "void";
             runOnUiThread(() -> MainActivity.this.checkLicence(js));
+        }
+
+        /** Clé de licence (envoyée par Eli Praise) : 1 = valable pour ce téléphone (vérification lancée), 0 = refusée. */
+        @JavascriptInterface public int activateKey(String key, String cb) {
+            if (!Licence.setKey(MainActivity.this, key)) return 0;
+            checkLicence(cb);
+            return 1;
+        }
+
+        /** Texte du presse-papiers (pour « Coller ma clé »). */
+        @JavascriptInterface public String clipboard() {
+            ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+            if (cm == null || !cm.hasPrimaryClip() || cm.getPrimaryClip().getItemCount() == 0) return "";
+            CharSequence t = cm.getPrimaryClip().getItemAt(0).coerceToText(MainActivity.this);
+            return t == null ? "" : t.toString();
         }
 
         /** Ancien code d'accès : 1 = reconnu (vérification lancée), 0 = code inconnu. */

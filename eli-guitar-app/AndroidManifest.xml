@@ -11,8 +11,8 @@
     <application
         android:allowBackup="true"
         android:label="Eli Guitar Chords"
-        android:icon="@drawable/ic_launcher"
-        android:roundIcon="@drawable/ic_launcher"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
         android:hardwareAccelerated="true"
         android:largeHeap="true"
         android:theme="@style/EliTheme">

@@ -34,7 +34,12 @@ import java.util.TimeZone;
  *   message Texte…                          message affiché à tous sur l'écran de licence
  *   # …                                     commentaire
  *
- * Sans Internet, l'appli reste ouverte 7 jours après la dernière vérification réussie.
+ * Clé de licence (générateur « Eli Clés ») : elle active le téléphone pour toujours, même sans Internet.
+ * La liste sert alors seulement à BLOQUER ce téléphone (« bloque CODE » ou « tout-bloquer »),
+ * dès que l'appli arrive à la lire.
+ *
+ * Sans clé (activation par la liste ou ancien code) : l'appli reste ouverte 7 jours après la dernière
+ * vérification réussie.
  */
 final class Licence {
     static final String LIST_URL = "https://raw.githubusercontent.com/mariusfra4-cpu/eli-licences/main/licences.txt";
@@ -172,8 +177,36 @@ final class Licence {
 
     // ---------------------------------------------------------------- état mémorisé
 
-    /** L'appli peut-elle s'ouvrir maintenant (dernière vérification réussie depuis moins de 7 jours) ? */
+    // ---------------------------------------------------------------- clé de licence
+
+    private static String keyChecked = null; // dernière clé vérifiée avec succès (la vérification prend un peu de temps)
+
+    static String key(Context c) { return prefs(c).getString("key", ""); }
+
+    /** La clé enregistrée est-elle valable pour ce téléphone ? */
+    static synchronized boolean keyOk(Context c) {
+        String k = key(c);
+        if (k.isEmpty()) return false;
+        if (k.equals(keyChecked)) return true;
+        if (EdKey.check(deviceCode(c), k)) { keyChecked = k; return true; }
+        return false;
+    }
+
+    /** Enregistre la clé si elle est valable pour ce téléphone. */
+    static boolean setKey(Context c, String key) {
+        if (!EdKey.check(deviceCode(c), key)) return false;
+        String k = key.trim();
+        synchronized (Licence.class) { keyChecked = k; }
+        prefs(c).edit().putString("key", k).apply();
+        return true;
+    }
+
+    /** Bloqué d'après la dernière liste lue (vaut aussi pour les clés). */
+    static boolean blocked(Context c) { return prefs(c).getBoolean("blk", false); }
+
+    /** L'appli peut-elle s'ouvrir maintenant ? */
     static boolean isOpen(Context c, long now) {
+        if (keyOk(c)) return !blocked(c);
         SharedPreferences p = prefs(c);
         long ok = p.getLong("ok", 0), seen = p.getLong("seen", 0);
         if (ok <= 0) return false;
@@ -215,14 +248,20 @@ final class Licence {
             r.reached = false;
             r.open = isOpen(c, now);
             long ok = p.getLong("ok", 0);
-            r.why = ok > 0 && r.open
+            r.why = keyOk(c) ? (r.open ? "" : "La licence de ce téléphone a été désactivée.")
+                    : ok > 0 && r.open
                     ? "Pas de connexion : l’appli reste ouverte jusqu’au " + fr(today(ok + GRACE_MS)) + "."
                     : "Impossible de vérifier la licence : connecte-toi à Internet puis réessaie.";
             p.edit().putString("why", r.why).apply();
             return r;
         }
         Liste l = parse(text);
-        String v = verdict(l, deviceCode(c), p.getString("old", ""), salt, today(now));
+        String code = norm(deviceCode(c));
+        boolean blk = l.toutBloquer || l.bloques.contains(code);
+        String v;
+        if (keyOk(c)) v = !blk ? null : l.toutBloquer ? "L’application est momentanément suspendue." : "La licence de ce téléphone a été désactivée.";
+        else v = verdict(l, deviceCode(c), p.getString("old", ""), salt, today(now));
+        p.edit().putBoolean("blk", blk).apply();
         r.reached = true;
         r.open = v == null;
         r.why = v == null ? "" : v;

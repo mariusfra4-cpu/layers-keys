@@ -5,3 +5,5 @@ dist/
 eli-guitar-app/build/
 eli-guitar-app/build_test/
 __pycache__/
+eli-keygen/build/
+eli-keygen/build_test/

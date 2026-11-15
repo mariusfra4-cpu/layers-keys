@@ -3,7 +3,7 @@
 name: Eli Guitar Chords Android
 on:
   push:
-    paths: ['eli-guitar-app/**', '.github/workflows/eli.yml']
+    paths: ['eli-guitar-app/**', 'eli-keygen/**', '.github/workflows/eli.yml']
   workflow_dispatch:
 permissions:
   contents: write
@@ -18,6 +18,18 @@ jobs:
         run: |
           OUT=$PWD/eli-guitar-app/build_test APKNAME=eliguitarchords-test LICENCE_URL=http://127.0.0.1:8099/licences.txt \
             ./eli-guitar-app/build.sh 2>&1 | tail -3
+      - name: Générateur Eli Clés (vrai) et version de test (mot de passe TEST-TEST-TEST-TEST)
+        run: |
+          VCODE=${{ github.run_number }} ./eli-keygen/build.sh 2>&1 | tail -3
+          OUT=build_test SECRET_JAVA=$PWD/eli-keygen/test/SecretTest.java ./eli-keygen/build.sh 2>&1 | tail -2
+          mv eli-keygen/build_test/eliclees.apk eli-keygen/build_test/eliclees-test.apk
+      - name: Vérification croisée générateur -> appli (Java)
+        run: |
+          set -e
+          mkdir -p /tmp/kc
+          cp eli-keygen/test/SecretTest.java /tmp/kc/Secret.java
+          javac -nowarn -d /tmp/kc eli-keygen/src/com/elipraise/keygen/KeyCore.java /tmp/kc/Secret.java eli-keygen/test/CrossTest.java eli-keygen/test/SecretAccess.java eli-guitar-app/build_test/src/com/elipraise/guitarchords/EdKey.java
+          java -cp /tmp/kc com.elipraise.guitarchords.CrossTest | tee /tmp/croise.txt
       - name: Contenu
         run: |
           set -e
@@ -32,12 +44,15 @@ jobs:
           path: |
             eli-guitar-app/build/eliguitarchords.apk
             eli-guitar-app/build_test/eliguitarchords-test.apk
+            eli-keygen/build/eliclees.apk
+            eli-keygen/build_test/eliclees-test.apk
       - name: Publier
         if: always()
         run: |
           mkdir -p /tmp/o
           cp eli-guitar-app/build/eliguitarchords.apk /tmp/o/Eli-Guitar-Chords.apk 2>/dev/null || true
-          cp /tmp/build.txt /tmp/contenu.txt /tmp/o/ 2>/dev/null || true
+          cp eli-keygen/build/eliclees.apk /tmp/o/Eli-Cles-Generateur.apk 2>/dev/null || true
+          cp /tmp/build.txt /tmp/contenu.txt /tmp/croise.txt /tmp/o/ 2>/dev/null || true
           git config user.name ci; git config user.email ci@users.noreply.github.com
           git checkout --orphan ci-eli-tmp
           git rm -rf . >/dev/null 2>&1 || true
@@ -65,7 +80,7 @@ jobs:
           arch: x86_64
           target: google_apis
           disable-animations: true
-          script: bash -c 'A=$(find /tmp/art -name eliguitarchords-test.apk); for i in 1 2 3; do echo "=== passage $i"; OUT=/tmp/emu/passage$i bash eli-guitar-app/test/emu.sh "$A" || exit 1; done'
+          script: bash -c 'A=$(find /tmp/art -name eliguitarchords-test.apk); G=$(find /tmp/art -name eliclees-test.apk); for i in 1 2 3; do echo "=== passage $i"; OUT=/tmp/emu/passage$i bash eli-guitar-app/test/emu.sh "$A" "$G" || exit 1; done'
         env:
           OUT: /tmp/emu
       - name: Publier
