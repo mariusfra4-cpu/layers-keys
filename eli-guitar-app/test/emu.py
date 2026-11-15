@@ -83,7 +83,6 @@ def type_in(p, text):
     time.sleep(0.8)
     adb("shell", "input", "text", text)
     time.sleep(0.8)
-    adb("shell", "input", "keyevent", "111")  # ferme le clavier
     time.sleep(0.5)
 
 def scroll_down():
@@ -103,6 +102,9 @@ srv = socketserver.TCPServer(("127.0.0.1", 8099), Q)
 threading.Thread(target=srv.serve_forever, daemon=True).start()
 print(adb("reverse", "tcp:8099", "tcp:8099").strip())
 
+# clavier virtuel désactivé : le test tape le texte lui-même, et le clavier cacherait les boutons
+for ime in adb("shell", "ime", "list", "-s").split():
+    print("clavier désactivé :", ime, adb("shell", "ime", "disable", ime).strip())
 write_list("anciens-codes 2099-12-31\n")
 adb("uninstall", PKG)
 adb("uninstall", GPKG)
