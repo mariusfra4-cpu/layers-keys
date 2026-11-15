@@ -149,8 +149,12 @@ print("clé :", key)
 check(code in x, "générateur : clé faite pour le code du client")
 
 # 3. le client colle la clé dans l'appli
-start()
-x = wait_for(lambda x: "pas encore activ" in x)
+for essai in range(3):
+    start()
+    x = wait_for(lambda x: "pas encore activ" in x)
+    if "pas encore activ" in x:
+        break
+    print("info : l'appli n'est pas à l'écran, nouvel essai")
 scroll_down()
 x = dump()
 e = edits(x)

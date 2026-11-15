@@ -78,7 +78,7 @@ jobs:
         with:
           api-level: 33
           arch: x86_64
-          target: google_apis
+          target: default
           disable-animations: true
           script: bash -c 'A=$(find /tmp/art -name eliguitarchords-test.apk); G=$(find /tmp/art -name eliclees-test.apk); for i in 1 2 3; do echo "=== passage $i"; OUT=/tmp/emu/passage$i bash eli-guitar-app/test/emu.sh "$A" "$G" || exit 1; done'
         env:
