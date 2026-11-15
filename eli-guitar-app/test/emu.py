@@ -78,11 +78,21 @@ def edits(x):
             out.append(((a + d) // 2, (c + e) // 2))
     return out
 
+def hide_kb():
+    # comme un utilisateur : « Retour » ferme le clavier s'il est affiché (et seulement dans ce cas)
+    for _ in range(3):
+        st = adb("shell", "dumpsys", "input_method")
+        if "mInputShown=true" not in st and "isInputViewShown=true" not in st:
+            return
+        adb("shell", "input", "keyevent", "4")
+        time.sleep(0.8)
+
 def type_in(p, text):
     adb("shell", "input", "tap", str(p[0]), str(p[1]))
     time.sleep(0.8)
     adb("shell", "input", "text", text)
     time.sleep(0.8)
+    hide_kb()
     time.sleep(0.5)
 
 def scroll_down():
@@ -220,14 +230,17 @@ scroll_down()
 x = dump()
 tap(x, "déjà un code")
 time.sleep(1.5)
+scroll_down()
 x = dump()
-e = edits(x)
+e = sorted(edits(x), key=lambda q: q[1])[-1:]   # le champ le plus bas = celui de l'ancien code
 if e:
     adb("shell", "input", "tap", str(e[-1][0]), str(e[-1][1]))
     time.sleep(0.8)
     adb("shell", "input", "text", "ELI-TEST-2026")
     time.sleep(0.8)
     adb("shell", "input", "keyevent", "66")
+    time.sleep(1)
+    hide_kb()
 x = wait_for(is_app, 30)
 shot("9-ancien-code")
 check(e and is_app(x), "ancien code ELI-TEST-2026 accepté pendant la transition")
