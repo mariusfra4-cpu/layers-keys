@@ -24,11 +24,13 @@ def shot(name):
     open(f"{OUT}/{name}.png", "wb").write(b)
 
 def dump():
-    for _ in range(3):
-        adb("shell", "uiautomator", "dump", "/sdcard/ui.xml")
+    for _ in range(6):
+        adb("shell", "rm", "-f", "/sdcard/ui.xml")
+        r = adb("shell", "uiautomator", "dump", "/sdcard/ui.xml")
         x = adb("shell", "cat", "/sdcard/ui.xml")
         if "<hierarchy" in x:
             return html.unescape(x)
+        print("info : lecture de l'écran ratée, nouvel essai :", r.strip()[:120])
         time.sleep(1.5)
     return ""
 
@@ -208,7 +210,7 @@ srv.server_close()
 start()
 x = wait_for(is_app, 30)
 time.sleep(4)
-x = dump()
+x = wait_for(is_app, 15)
 shot("7-cle-sans-internet")
 check(is_app(x), "clé sans Internet : l'application s'ouvre")
 
@@ -234,7 +236,7 @@ x = dump()
 tap(x, "déjà un code")
 time.sleep(1.5)
 scroll_down()
-x = dump()
+x = wait_for(lambda x: "Valider le code" in x, 15)
 e = []
 for mm in re.finditer(r'<node [^>]*>', x):   # le champ dont le texte (ou l'indication) est exactement ELI-XXXX-XXXX
     n = mm.group(0)
@@ -266,7 +268,7 @@ srv.server_close()
 start()
 x = wait_for(is_app, 30)
 time.sleep(4)
-x = dump()
+x = wait_for(is_app, 15)
 check(is_app(x), "sans clé et sans Internet : ouverte pendant le délai de 7 jours")
 
 adb("shell", "input", "keyevent", "4")
