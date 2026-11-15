@@ -30,7 +30,7 @@ def dump():
         x = adb("shell", "cat", "/sdcard/ui.xml")
         if "<hierarchy" in x:
             return html.unescape(x)
-        print("info : lecture de l'écran ratée, nouvel essai :", r.strip()[:120])
+        print("info : lecture de l'écran ratée, nouvel essai :", (r.strip() + " | " + x.strip())[:200])
         time.sleep(1.5)
     return ""
 
@@ -211,6 +211,7 @@ start()
 x = wait_for(is_app, 30)
 time.sleep(4)
 x = wait_for(is_app, 15)
+open(f"{OUT}/ui-7.xml", "w").write(x)
 shot("7-cle-sans-internet")
 check(is_app(x), "clé sans Internet : l'application s'ouvre")
 
@@ -237,6 +238,8 @@ tap(x, "déjà un code")
 time.sleep(1.5)
 scroll_down()
 x = wait_for(lambda x: "Valider le code" in x, 15)
+open(f"{OUT}/ui-9.xml", "w").write(x)
+shot("9a-ancien-code-champ")
 e = []
 for mm in re.finditer(r'<node [^>]*>', x):   # le champ dont le texte (ou l'indication) est exactement ELI-XXXX-XXXX
     n = mm.group(0)
@@ -269,6 +272,8 @@ start()
 x = wait_for(is_app, 30)
 time.sleep(4)
 x = wait_for(is_app, 15)
+open(f"{OUT}/ui-10.xml", "w").write(x)
+shot("10-grace")
 check(is_app(x), "sans clé et sans Internet : ouverte pendant le délai de 7 jours")
 
 adb("shell", "input", "keyevent", "4")

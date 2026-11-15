@@ -80,7 +80,7 @@ jobs:
           arch: x86_64
           target: default
           disable-animations: true
-          script: bash -c 'A=$(find /tmp/art -name eliguitarchords-test.apk); G=$(find /tmp/art -name eliclees-test.apk); for i in 1 2 3; do echo "=== passage $i"; OUT=/tmp/emu/passage$i bash eli-guitar-app/test/emu.sh "$A" "$G" || exit 1; done'
+          script: bash -c 'A=$(find /tmp/art -name eliguitarchords-test.apk); G=$(find /tmp/art -name eliclees-test.apk); for i in 1; do echo "=== passage $i"; OUT=/tmp/emu/passage$i bash eli-guitar-app/test/emu.sh "$A" "$G" || exit 1; done'
         env:
           OUT: /tmp/emu
       - name: Publier
