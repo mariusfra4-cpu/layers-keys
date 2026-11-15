@@ -220,6 +220,7 @@ public class MainActivity extends Activity {
                 boolean open = Licence.isOpen(this, System.currentTimeMillis());
                 if (!open) { p = "licence.html"; data = asset(p); mime = "text/html"; }
                 shownOpen = open && p.equals("index.html");
+                android.util.Log.i("EliGuitarChords", "page affichée : " + (shownOpen ? "application" : "écran de licence"));
                 String html = new String(data, StandardCharsets.UTF_8);
                 if (shownOpen) // la licence est gérée par l'appli : l'ancien écran de code et « Verrouiller » sont masqués
                     html = html.replaceFirst("</head>", "<style>#lk,[data-lock]{display:none!important}</style></head>");

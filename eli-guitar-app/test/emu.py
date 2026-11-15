@@ -65,6 +65,23 @@ def start():
     adb("shell", "am", "force-stop", PKG)
     adb("shell", "am", "start", "-n", PKG + "/.MainActivity")
 
+def last_page():
+    out = adb("logcat", "-d", "-s", "EliGuitarChords:I")
+    m = re.findall(r"page affichée : (application|écran de licence)", out)
+    return m[-1] if m else None
+
+def wait_page(want, secs=30):
+    end = time.time() + secs
+    while time.time() < end:
+        if last_page() == want:
+            return True
+        time.sleep(1)
+    return last_page() == want
+
+def start_clean():
+    adb("logcat", "-c")
+    start()
+
 def is_app(x):
     return "Tonalit" in x and "Progressions" in x
 
@@ -207,13 +224,12 @@ check(is_app(x), "retiré de la liste des blocages : l'application se rouvre")
 # 7. clé sans Internet : l'appli s'ouvre
 srv.shutdown()
 srv.server_close()
-start()
-x = wait_for(is_app, 30)
-time.sleep(4)
-x = wait_for(is_app, 15)
-open(f"{OUT}/ui-7.xml", "w").write(x)
+start_clean()
+ok7 = wait_page("application", 30)
+time.sleep(6)   # le temps que la vérification (sans réseau) se termine
+ok7 = ok7 and last_page() == "application"
 shot("7-cle-sans-internet")
-check(is_app(x), "clé sans Internet : l'application s'ouvre")
+check(ok7, "clé sans Internet : l'application s'ouvre (et reste ouverte)")
 
 # 8. activation par la liste (sans clé)
 srv = socketserver.TCPServer(("127.0.0.1", 8099), Q)
@@ -229,14 +245,13 @@ check(is_app(x), "activation par la liste seule : l'application s'ouvre")
 adb("shell", "pm", "clear", PKG)
 adb("shell", "pm", "grant", PKG, "android.permission.RECORD_AUDIO")
 write_list("anciens-codes 2099-12-31\n")
-start()
+start_clean()
 x = wait_for(lambda x: "pas encore activ" in x)
 scroll_down()
 scroll_down()
 x = dump()
-tap(x, "déjà un code")
+summ = tap(x, "déjà un code")
 time.sleep(1.5)
-scroll_down()
 x = wait_for(lambda x: "Valider le code" in x, 15)
 open(f"{OUT}/ui-9.xml", "w").write(x)
 shot("9a-ancien-code-champ")
@@ -252,6 +267,8 @@ if not e:
     v = node(x, "Valider le code")
     if v:
         e = [(v[0], v[1] - 50)]   # le champ est juste au-dessus du bouton
+if not e and summ:
+    e = [(summ[0], summ[1] + 45)]   # sinon : juste sous « J'ai déjà un code »
 print("info : champ ancien code", e)
 if e:
     adb("shell", "input", "tap", str(e[-1][0]), str(e[-1][1]))
@@ -261,20 +278,19 @@ if e:
     adb("shell", "input", "keyevent", "66")
     time.sleep(1)
     hide_kb()
-x = wait_for(is_app, 30)
+ok9 = wait_page("application", 30)
 shot("9-ancien-code")
-check(e and is_app(x), "ancien code ELI-TEST-2026 accepté pendant la transition")
+check(e and ok9, "ancien code ELI-TEST-2026 accepté pendant la transition")
 
 # 10. sans Internet, sans clé : délai de grâce
 srv.shutdown()
 srv.server_close()
-start()
-x = wait_for(is_app, 30)
-time.sleep(4)
-x = wait_for(is_app, 15)
-open(f"{OUT}/ui-10.xml", "w").write(x)
+start_clean()
+ok10 = wait_page("application", 30)
+time.sleep(6)
+ok10 = ok10 and last_page() == "application"
 shot("10-grace")
-check(is_app(x), "sans clé et sans Internet : ouverte pendant le délai de 7 jours")
+check(ok10, "sans clé et sans Internet : ouverte pendant le délai de 7 jours")
 
 adb("shell", "input", "keyevent", "4")
 time.sleep(1)
