@@ -1,0 +1,7 @@
+#!/bin/bash
+[ -e "/Library/Audio/Plug-Ins/VST3/Spacepad.vst3" ] && xattr -cr "/Library/Audio/Plug-Ins/VST3/Spacepad.vst3" 2>/dev/null
+# dossier commun des librairies (partagé par l'application, le VST3 et l'AU, pour tous les comptes du Mac)
+mkdir -p "/Library/Application Support/JB Praise/Spacepad" 2>/dev/null
+chmod 777 "/Library/Application Support/JB Praise" "/Library/Application Support/JB Praise/Spacepad" 2>/dev/null
+[ -f "/Library/Application Support/JB Praise/Spacepad/libraries.json" ] && chmod 666 "/Library/Application Support/JB Praise/Spacepad/libraries.json" 2>/dev/null
+exit 0

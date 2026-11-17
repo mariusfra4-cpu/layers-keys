@@ -1,0 +1,10 @@
+#!/bin/bash
+# Après l'installation : enlève la « quarantaine » de macOS pour que l'application s'ouvre normalement.
+for p in "/Applications/Spacepad.app" "/Applications/Désinstaller Spacepad.app"; do
+  [ -e "$p" ] && xattr -cr "$p" 2>/dev/null
+done
+# dossier commun des librairies (partagé par l'application, le VST3 et l'AU, pour tous les comptes du Mac)
+mkdir -p "/Library/Application Support/JB Praise/Spacepad" 2>/dev/null
+chmod 777 "/Library/Application Support/JB Praise" "/Library/Application Support/JB Praise/Spacepad" 2>/dev/null
+[ -f "/Library/Application Support/JB Praise/Spacepad/libraries.json" ] && chmod 666 "/Library/Application Support/JB Praise/Spacepad/libraries.json" 2>/dev/null
+exit 0

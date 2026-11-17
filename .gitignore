@@ -2,3 +2,7 @@ installer/payload/
 android-app/build/
 android-app/build_test/
 dist/
+spacepad/installer/windows/payload/
+spacepad/installer/windows/*.exe
+spacepad/dist/
+spacepad/build/

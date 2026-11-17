@@ -1,0 +1,9 @@
+#!/bin/bash
+# Enlève la quarantaine puis demande à macOS de relire la liste des Audio Units (Logic Pro, GarageBand).
+[ -e "/Library/Audio/Plug-Ins/Components/Spacepad.component" ] && xattr -cr "/Library/Audio/Plug-Ins/Components/Spacepad.component" 2>/dev/null
+killall -9 AudioComponentRegistrar 2>/dev/null
+# dossier commun des librairies (partagé par l'application, le VST3 et l'AU, pour tous les comptes du Mac)
+mkdir -p "/Library/Application Support/JB Praise/Spacepad" 2>/dev/null
+chmod 777 "/Library/Application Support/JB Praise" "/Library/Application Support/JB Praise/Spacepad" 2>/dev/null
+[ -f "/Library/Application Support/JB Praise/Spacepad/libraries.json" ] && chmod 666 "/Library/Application Support/JB Praise/Spacepad/libraries.json" 2>/dev/null
+exit 0

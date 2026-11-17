@@ -1,0 +1,222 @@
+# Spacepad by JB Praise : construit et teste l'application, les plugins (VST3, Audio Unit) et les installateurs.
+# Résultats :
+#   - branche « ci-spacepad-win » : Spacepad-Setup-<version>.exe + journaux des tests
+#   - branche « ci-spacepad-mac » : Spacepad-<version>.pkg + journaux des tests (auval compris)
+#   - branche « ci-spacepad-tests » : tests automatiques + captures de l'interface
+# Lancer à la main : onglet « Actions » > « Spacepad » > « Run workflow ».
+name: Spacepad
+on:
+  push:
+    paths: ['spacepad/**', '.github/workflows/spacepad.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+env:
+  SPVER: "1.0.0"
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Outils
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ninja-build libasound2-dev libxrandr-dev libxinerama-dev libxcursor-dev libxext-dev libxcomposite-dev libfontconfig1-dev libfreetype-dev libgl-dev xvfb
+      - name: Construction
+        run: |
+          mkdir -p /tmp/sp
+          cmake -S spacepad -B build -G Ninja -DCMAKE_BUILD_TYPE=Release 2>&1 | tail -3
+          cmake --build build --target SpacepadTests Spacepad_VST3 Spacepad_Standalone 2>&1 | tee /tmp/sp/01_construction.txt | grep -E "error|warning: unused" || true
+      - name: Tests
+        run: |
+          xvfb-run -a build/SpacepadTests_artefacts/Release/SpacepadTests /tmp/sp 2>&1 | tee /tmp/sp/02_tests.txt
+      - name: Publier
+        if: always()
+        run: |
+          git config user.name ci; git config user.email ci@users.noreply.github.com
+          git checkout --orphan ci-spacepad-tests-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          git clean -fdxq -e build
+          cp /tmp/sp/* . 2>/dev/null || true
+          rm -rf build
+          echo "run $GITHUB_RUN_ID" > run.txt
+          git add -A && git commit -qm "tests spacepad $GITHUB_RUN_ID"
+          git push -f origin HEAD:refs/heads/ci-spacepad-tests
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Construction (application + VST3 + tests)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path C:\splogs | Out-Null
+          cmake -S spacepad -B build -G "Visual Studio 17 2022" -A x64 2>&1 | Select-Object -Last 3
+          cmake --build build --config Release --target Spacepad_Standalone Spacepad_VST3 SpacepadTests -- /m /v:minimal 2>&1 | Tee-Object C:\splogs\01_construction.txt | Select-String -Pattern "error|Spacepad\." | Select-Object -Last 30
+          Get-ChildItem -Recurse build\Spacepad_artefacts\Release | Select-Object FullName,Length | Format-Table -AutoSize | Out-String -Width 300 | Tee-Object -Append C:\splogs\01_construction.txt
+      - name: Tests
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path C:\splogs\captures | Out-Null
+          & build\SpacepadTests_artefacts\Release\SpacepadTests.exe C:\splogs\captures 2>&1 | Tee-Object C:\splogs\02_tests.txt
+          if ($LASTEXITCODE -ne 0) { throw "tests en échec" }
+      - name: NSIS
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "C:\Program Files (x86)\NSIS\makensis.exe")) {
+            foreach ($u in @("https://downloads.sourceforge.net/project/nsis/NSIS%203/3.10/nsis-3.10.zip", "https://prdownloads.sourceforge.net/nsis/nsis-3.10.zip?download")) {
+              try {
+                Invoke-WebRequest -Uri $u -OutFile C:\nsis.zip -MaximumRedirection 10 -UserAgent "Mozilla/5.0" -TimeoutSec 120
+                Expand-Archive C:\nsis.zip -DestinationPath C:\nsisx -Force
+                $d = Get-ChildItem C:\nsisx -Directory | Select-Object -First 1
+                New-Item -ItemType Directory -Force -Path "C:\Program Files (x86)" | Out-Null
+                Move-Item $d.FullName "C:\Program Files (x86)\NSIS" -Force
+                break
+              } catch { "telechargement direct : $_" }
+            }
+          }
+          for ($i = 1; $i -le 3 -and -not (Test-Path "C:\Program Files (x86)\NSIS\makensis.exe"); $i++) {
+            choco install nsis -y --no-progress --force
+            if (-not (Test-Path "C:\Program Files (x86)\NSIS\makensis.exe")) { Start-Sleep -Seconds (15 * $i) }
+          }
+      - name: Installateur
+        shell: pwsh
+        run: |
+          $env:Path += ";C:\Program Files (x86)\NSIS"
+          $pl = "$env:GITHUB_WORKSPACE\spacepad\installer\windows\payload"
+          New-Item -ItemType Directory -Force -Path $pl | Out-Null
+          Copy-Item build\Spacepad_artefacts\Release\Standalone\Spacepad.exe $pl\
+          Copy-Item -Recurse build\Spacepad_artefacts\Release\VST3\Spacepad.vst3 $pl\
+          Set-Location spacepad\installer\windows
+          makensis /V3 "/DAPPVER=$env:SPVER" spacepad.nsi 2>&1 | Tee-Object C:\splogs\03_makensis.txt
+          if (-not (Test-Path "Spacepad-Setup-$env:SPVER.exe")) { throw "installateur absent" }
+      - name: Test installation, mise à jour, désinstallation
+        shell: pwsh
+        run: |
+          $log = "C:\splogs\04_installation.txt"
+          $setup = (Resolve-Path "spacepad\installer\windows\Spacepad-Setup-$env:SPVER.exe").Path
+          $p = Start-Process $setup -ArgumentList "/S" -Wait -PassThru
+          "code installation: $($p.ExitCode)" | Tee-Object $log
+          $pf = ${env:ProgramFiles}; $cf = ${env:CommonProgramW6432}
+          $sm = "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\Spacepad"
+          foreach ($x in @("$pf\Spacepad\Spacepad.exe","$pf\Spacepad\Desinstaller.exe","$cf\VST3\Spacepad.vst3\Contents\x86_64-win\Spacepad.vst3","$env:PUBLIC\Desktop\Spacepad.lnk","$sm\Spacepad.lnk","$env:ProgramData\JB Praise\Spacepad")) {
+            "{0} : {1}" -f $x, (Test-Path -LiteralPath $x) | Tee-Object -Append $log
+          }
+          Get-ItemProperty "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Spacepad" | Select-Object DisplayName,DisplayVersion,Publisher | Format-List | Out-String | Tee-Object -Append $log
+          # une librairie enregistrée par l'application doit survivre à une mise à jour
+          Set-Content -Path "$env:ProgramData\JB Praise\Spacepad\libraries.json" -Value '{"app":"test","version":1,"libraries":[]}'
+          $app = Start-Process "$pf\Spacepad\Spacepad.exe" -PassThru
+          Start-Sleep 6
+          "application en marche après 6 s : " + (-not $app.HasExited) | Tee-Object -Append $log
+          $p = Start-Process $setup -ArgumentList "/S" -Wait -PassThru
+          "code mise à jour: $($p.ExitCode)" | Tee-Object -Append $log
+          "application fermée par la mise à jour : " + ($null -eq (Get-Process Spacepad -ErrorAction SilentlyContinue)) | Tee-Object -Append $log
+          "librairies conservées après mise à jour : " + (Test-Path "$env:ProgramData\JB Praise\Spacepad\libraries.json") | Tee-Object -Append $log
+          $p = Start-Process "$pf\Spacepad\Desinstaller.exe" -ArgumentList "/S" -Wait -PassThru
+          Start-Sleep 5
+          "code désinstallation: $($p.ExitCode)" | Tee-Object -Append $log
+          foreach ($x in @("$pf\Spacepad\Spacepad.exe","$cf\VST3\Spacepad.vst3","$env:PUBLIC\Desktop\Spacepad.lnk")) {
+            "{0} encore présent : {1}" -f $x, (Test-Path -LiteralPath $x) | Tee-Object -Append $log
+          }
+          "librairies conservées après désinstallation (attendu True) : " + (Test-Path "$env:ProgramData\JB Praise\Spacepad\libraries.json") | Tee-Object -Append $log
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Spacepad_Windows
+          path: spacepad/installer/windows/Spacepad-Setup-*.exe
+      - name: Publier (branche ci-spacepad-win)
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p /tmp/o
+          cp -r /c/splogs/* /tmp/o/ 2>/dev/null || true
+          cp spacepad/installer/windows/Spacepad-Setup-*.exe /tmp/o/ 2>/dev/null || true
+          git config user.name ci; git config user.email ci@users.noreply.github.com
+          git checkout --orphan ci-spacepad-win-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          rm -rf build spacepad
+          cp -r /tmp/o/* . 2>/dev/null || true
+          echo "run $GITHUB_RUN_ID" > run.txt
+          git add -A && git commit -qm "spacepad windows $GITHUB_RUN_ID"
+          git push -f origin HEAD:refs/heads/ci-spacepad-win
+
+  mac:
+    runs-on: macos-15
+    defaults:
+      run:
+        shell: bash -o pipefail {0}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Construction universelle (Apple Silicon + Intel)
+        run: |
+          mkdir -p /tmp/splogs
+          sw_vers | tee /tmp/splogs/00_systeme.txt
+          cmake -S spacepad -B build -G Ninja -DCMAKE_BUILD_TYPE=Release "-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64" 2>&1 | tail -3
+          cmake --build build --target Spacepad_Standalone Spacepad_VST3 Spacepad_AU SpacepadTests 2>&1 | tee /tmp/splogs/01_construction.txt | grep -E " error|FAILED" || true
+          A=build/Spacepad_artefacts/Release
+          ls -la $A/Standalone $A/VST3 $A/AU | tee -a /tmp/splogs/01_construction.txt
+          for b in "$A/Standalone/Spacepad.app" "$A/VST3/Spacepad.vst3" "$A/AU/Spacepad.component"; do
+            codesign --force --deep -s - "$b"
+            lipo -archs "$b/Contents/MacOS/Spacepad" | sed "s|^|$b : |" | tee -a /tmp/splogs/01_construction.txt
+          done
+      - name: Tests
+        run: |
+          mkdir -p /tmp/splogs/captures
+          build/SpacepadTests_artefacts/Release/SpacepadTests /tmp/splogs/captures 2>&1 | tee /tmp/splogs/02_tests.txt
+      - name: Test officiel Apple de l'Audio Unit (auval, Apple et Intel)
+        run: |
+          mkdir -p ~/Library/Audio/Plug-Ins/Components
+          cp -R build/Spacepad_artefacts/Release/AU/Spacepad.component ~/Library/Audio/Plug-Ins/Components/
+          killall -9 AudioComponentRegistrar 2>/dev/null || true
+          sleep 3
+          auval -v aumu Spcp JBPr 2>&1 | tee /tmp/splogs/03_auval.txt | tail -15
+          grep -q "AU VALIDATION SUCCEEDED" /tmp/splogs/03_auval.txt
+          arch -x86_64 auval -v aumu Spcp JBPr > /tmp/splogs/03b_auval_intel.txt 2>&1 || true
+          tail -5 /tmp/splogs/03b_auval_intel.txt
+          rm -rf ~/Library/Audio/Plug-Ins/Components/Spacepad.component
+      - name: Test de démarrage de l'application (Apple et Intel)
+        shell: bash {0}
+        run: |
+          B=build/Spacepad_artefacts/Release/Standalone/Spacepad.app/Contents/MacOS/Spacepad
+          for a in arm64 x86_64; do
+            arch -$a "$B" > /tmp/splogs/04_run_$a.txt 2>&1 &
+            P=$!; sleep 6
+            if kill -0 $P 2>/dev/null; then echo "$a : application en marche après 6 s : OK" | tee -a /tmp/splogs/04_app.txt; kill $P; else wait $P; echo "$a : PLANTÉ code $?" | tee -a /tmp/splogs/04_app.txt; fi
+          done
+      - name: Installateur .pkg
+        run: |
+          mkdir -p /tmp/in
+          A=build/Spacepad_artefacts/Release
+          cp -R $A/Standalone/Spacepad.app $A/VST3/Spacepad.vst3 $A/AU/Spacepad.component /tmp/in/
+          spacepad/installer/mac/build_pkg.sh /tmp/in "$SPVER" 2>&1 | tee /tmp/splogs/05_pkg.txt
+      - name: Test installation complète
+        run: |
+          {
+            sudo installer -pkg spacepad/dist/Spacepad-$SPVER.pkg -target / 2>&1 | tail -5
+            for x in "/Applications/Spacepad.app/Contents/MacOS/Spacepad" "/Applications/Désinstaller Spacepad.app/Contents/Resources/desinstaller.sh" "/Library/Audio/Plug-Ins/VST3/Spacepad.vst3/Contents/MacOS/Spacepad" "/Library/Audio/Plug-Ins/Components/Spacepad.component/Contents/MacOS/Spacepad" "/Library/Application Support/JB Praise/Spacepad"; do
+              [ -e "$x" ] && echo "présent : $x" || echo "ABSENT : $x"
+            done
+            ls -ld "/Library/Application Support/JB Praise/Spacepad"
+            pkgutil --pkgs | grep spacepad
+            sleep 3
+            auval -v aumu Spcp JBPr 2>&1 | tail -3
+            sudo /bin/bash "/Applications/Désinstaller Spacepad.app/Contents/Resources/desinstaller.sh" --silent
+            [ -e /Applications/Spacepad.app ] && echo "ERREUR : encore installé" || echo "désinstallation : OK"
+          } 2>&1 | tee /tmp/splogs/06_installation.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Spacepad_Mac
+          path: spacepad/dist/Spacepad-*.pkg
+      - name: Publier (branche ci-spacepad-mac)
+        if: always()
+        run: |
+          mkdir -p /tmp/o
+          cp -R /tmp/splogs/* /tmp/o/ 2>/dev/null || true
+          cp spacepad/dist/Spacepad-*.pkg /tmp/o/ 2>/dev/null || true
+          git config user.name ci; git config user.email ci@users.noreply.github.com
+          git checkout --orphan ci-spacepad-mac-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          rm -rf build spacepad
+          cp -R /tmp/o/* . 2>/dev/null || true
+          echo "run $GITHUB_RUN_ID" > run.txt
+          git add -A && git commit -qm "spacepad mac $GITHUB_RUN_ID"
+          git push -f origin HEAD:refs/heads/ci-spacepad-mac
