@@ -11,6 +11,7 @@ public:
     void resized() override;
     void paint (juce::Graphics& g) override { g.fillAll (theme::bg); }
     MainView& view() { return main; }
+    void applyScale (int percent);
 
 private:
     MainView main;

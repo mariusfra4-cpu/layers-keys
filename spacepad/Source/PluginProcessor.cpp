@@ -35,9 +35,7 @@ SpacepadProcessor::SpacepadProcessor()
       juce::Thread ("Spacepad commandes"),
       params (*this, nullptr, "SPACEPAD", createLayout())
 {
-    // première bibliothèque de pads par défaut
-    for (auto& l : store.snapshot())
-        if (l.type == LibType::Pad) { padLib = l.id; break; }
+    autoSelectLibraries();
     startThread (juce::Thread::Priority::normal);
 }
 
@@ -60,6 +58,26 @@ void SpacepadProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     pad.prepare (sampleRate);
     crowd.prepare (sampleRate);
     fx.prepare (sampleRate, maxBlock);
+}
+
+// première librairie de pads majeurs et de pads mineurs, si rien n'est encore choisi
+void SpacepadProcessor::autoSelectLibraries()
+{
+    const juce::ScopedLock sl (stateLock);
+    for (int mode = 0; mode < 2; ++mode)
+    {
+        if (padLibs[mode].isNotEmpty() && store.find (padLibs[mode]) != nullptr) continue;
+        padLibs[mode] = {};
+        for (auto& l : store.snapshot())
+            if (l.type == LibType::Pad && l.countMode (mode) > 0) { padLibs[mode] = l.id; break; }
+    }
+}
+
+void SpacepadProcessor::copyScope (float* dest, int n) const
+{
+    n = juce::jmin (n, scopeSize);
+    const int end = scopePos.load();
+    for (int i = 0; i < n; ++i) dest[i] = scope[(size_t) ((end - n + i + scopeSize * 2) % scopeSize)];
 }
 
 FxParams SpacepadProcessor::readFx() const
@@ -114,6 +132,14 @@ void SpacepadProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
                 peak = juce::jmax (peak, std::abs (x));
             }
         }
+        // copie pour le visualiseur (moyenne gauche + droite)
+        {
+            int w = scopePos.load();
+            const float* l = mainBuf.getReadPointer (0);
+            const float* r = mainBuf.getReadPointer (1);
+            for (int i = 0; i < n; ++i) { scope[(size_t) w] = 0.5f * (l[i] + r[i]); w = (w + 1) % scopeSize; }
+            scopePos = w;
+        }
         if (outCh >= 2)
         {
             buffer.copyFrom (0, start, mainBuf, 0, 0, n);
@@ -133,14 +159,22 @@ void SpacepadProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
 // ---------------------------------------------------------------------------------------------
 // Commandes
 // ---------------------------------------------------------------------------------------------
-juce::String SpacepadProcessor::padLibraryId() const { const juce::ScopedLock sl (stateLock); return padLib; }
+juce::String SpacepadProcessor::padLibraryId() const { return padLibraryId (modeNow.load()); }
+juce::String SpacepadProcessor::padLibraryId (int mode) const { const juce::ScopedLock sl (stateLock); return padLibs[mode == 1 ? 1 : 0]; }
+bool SpacepadProcessor::missingPadLibrary() const { return store.find (padLibraryId()) == nullptr; }
+juce::String SpacepadProcessor::crowdSoundName() const { const juce::ScopedLock sl (stateLock); return crowdSoundNow; }
 juce::String SpacepadProcessor::crowdLibraryId() const { const juce::ScopedLock sl (stateLock); return crowdLib; }
 juce::String SpacepadProcessor::padSoundName() const { const juce::ScopedLock sl (stateLock); return padSoundNow; }
 
 void SpacepadProcessor::startPadKey (int key, int mode, bool fromSilence)
 {
-    auto lib = store.find (padLibraryId());
-    if (lib == nullptr || key < 0) return;
+    auto lib = store.find (padLibraryId (mode));
+    if (lib == nullptr || key < 0)
+    {
+        // pas de librairie pour ce mode : on ne joue jamais un accord du mauvais mode
+        pad.stop (0.6f);
+        return;
+    }
     auto slot = lib->slotFor (key, mode);
     auto* s = lib->sound (slot.sound);
     if (s == nullptr) return;
@@ -160,14 +194,15 @@ void SpacepadProcessor::startPadKey (int key, int mode, bool fromSilence)
     });
 }
 
-void SpacepadProcessor::selectPadLibrary (const juce::String& id)
+void SpacepadProcessor::selectPadLibrary (const juce::String& id, int mode)
 {
+    mode = mode == 1 ? 1 : 0;
     {
         const juce::ScopedLock sl (stateLock);
-        if (padLib == id) return;
-        padLib = id;
+        if (padLibs[mode] == id) return;
+        padLibs[mode] = id;
     }
-    if (padOn) startPadKey (keyNow, modeNow, false); // la nouvelle librairie prend le relais en fondu
+    if (padOn && mode == modeNow.load()) startPadKey (keyNow, modeNow, false); // la nouvelle librairie prend le relais en fondu
 }
 
 void SpacepadProcessor::pressKey (int key)
@@ -219,6 +254,7 @@ void SpacepadProcessor::playCrowd (const juce::String& libId, int index)
     {
         const juce::ScopedLock sl (stateLock);
         crowdLib = libId;
+        crowdSoundNow = s->name;
     }
     crowdIndex = index;
     const bool loop = loopOn();
@@ -266,15 +302,14 @@ void SpacepadProcessor::run()
         const int prog = midiProgram.exchange (-1);
         if (prog >= 0)
         {
+            const int m = modeNow.load();
             std::vector<juce::String> pads;
-            for (auto& l : store.snapshot()) if (l.type == LibType::Pad) pads.push_back (l.id);
-            if (! pads.empty()) selectPadLibrary (pads[(size_t) prog % pads.size()]);
+            for (auto& l : store.snapshot()) if (l.type == LibType::Pad && l.countMode (m) > 0) pads.push_back (l.id);
+            if (! pads.empty()) selectPadLibrary (pads[(size_t) prog % pads.size()], m);
         }
         if (++tick % 200 == 0) // environ 1 fois par seconde
         {
-            if (store.reloadIfChanged() && padLibraryId().isEmpty())
-                for (auto& l : store.snapshot())
-                    if (l.type == LibType::Pad) { const juce::ScopedLock sl (stateLock); padLib = l.id; break; }
+            if (store.reloadIfChanged()) autoSelectLibraries();
         }
     }
 }
@@ -285,7 +320,8 @@ void SpacepadProcessor::run()
 void SpacepadProcessor::getStateInformation (juce::MemoryBlock& dest)
 {
     auto state = params.copyState();
-    state.setProperty ("padLibrary", padLibraryId(), nullptr);
+    state.setProperty ("padLibraryMajor", padLibraryId (0), nullptr);
+    state.setProperty ("padLibraryMinor", padLibraryId (1), nullptr);
     state.setProperty ("crowdLibrary", crowdLibraryId(), nullptr);
     state.setProperty ("key", keyNow.load(), nullptr);
     state.setProperty ("mode", modeNow.load(), nullptr);
@@ -299,12 +335,20 @@ void SpacepadProcessor::setStateInformation (const void* data, int size)
         auto state = juce::ValueTree::fromXml (*xml);
         if (! state.isValid() || ! state.hasType (params.state.getType())) return;
         params.replaceState (state);
-        const juce::ScopedLock sl (stateLock);
-        auto lib = state.getProperty ("padLibrary").toString();
-        if (lib.isNotEmpty() && store.find (lib) != nullptr) padLib = lib;
-        crowdLib = state.getProperty ("crowdLibrary").toString();
-        keyNow = juce::jlimit (0, 11, (int) state.getProperty ("key", 4));
-        modeNow = (int) state.getProperty ("mode", 1) == 1 ? 1 : 0;
+        {
+            const juce::ScopedLock sl (stateLock);
+            const char* keys[] = { "padLibraryMajor", "padLibraryMinor" };
+            for (int m = 0; m < 2; ++m)
+            {
+                auto lib = state.getProperty (keys[m]).toString();
+                if (lib.isEmpty()) lib = state.getProperty ("padLibrary").toString();   // projets de la première version
+                if (lib.isNotEmpty() && store.find (lib) != nullptr) padLibs[m] = lib;
+            }
+            crowdLib = state.getProperty ("crowdLibrary").toString();
+            keyNow = juce::jlimit (0, 11, (int) state.getProperty ("key", 4));
+            modeNow = (int) state.getProperty ("mode", 1) == 1 ? 1 : 0;
+        }
+        autoSelectLibraries();
     }
 }
 

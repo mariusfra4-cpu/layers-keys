@@ -35,7 +35,8 @@ juce_add_binary_data(SpacepadData SOURCES
   resources/fonts/Michroma-Regular.ttf
   resources/fonts/Inter-Regular.ttf
   resources/fonts/Inter-SemiBold.ttf
-  resources/fonts/Inter-Bold.ttf)
+  resources/fonts/Inter-Bold.ttf
+  resources/galaxie.jpg)
 set_target_properties(SpacepadData PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 juce_add_plugin(Spacepad
@@ -70,7 +71,10 @@ target_sources(Spacepad PRIVATE
   ${SPACEPAD_CORE_SOURCES}
   Source/PluginProcessor.cpp
   Source/PluginEditor.cpp
-  Source/UI.cpp)
+  Source/UI.cpp
+  Source/UISpace.cpp
+  Source/UIPanels.cpp
+  Source/UIMain.cpp)
 
 target_compile_definitions(Spacepad PUBLIC
   JUCE_WEB_BROWSER=0
@@ -102,6 +106,9 @@ target_sources(SpacepadTests PRIVATE
   Source/PluginProcessor.cpp
   Source/PluginEditor.cpp
   Source/UI.cpp
+  Source/UISpace.cpp
+  Source/UIPanels.cpp
+  Source/UIMain.cpp
   tests/Tests.cpp)
 target_include_directories(SpacepadTests PRIVATE Source)
 target_compile_definitions(SpacepadTests PRIVATE

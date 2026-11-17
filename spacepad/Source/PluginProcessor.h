@@ -36,7 +36,7 @@ public:
     void setStateInformation (const void*, int) override;
 
     // --- commandes (depuis l'interface) ---
-    void selectPadLibrary (const juce::String& id);
+    void selectPadLibrary (const juce::String& id, int mode);   // librairie choisie pour le majeur (0) ou le mineur (1)
     void pressKey (int key);                 // joue la tonalité ; rappuyer sur la tonalité jouée l'arrête
     void setMode (int mode);                 // 0 majeur, 1 mineur
     void playPad();                          // relance la tonalité courante
@@ -46,7 +46,9 @@ public:
     void stopAll();
 
     // --- état (pour l'affichage) ---
-    juce::String padLibraryId() const;
+    juce::String padLibraryId() const;                    // librairie du mode en cours
+    juce::String padLibraryId (int mode) const;
+    bool missingPadLibrary() const;                       // aucune librairie choisie pour le mode en cours
     int currentKey() const { return keyNow.load(); }
     int currentMode() const { return modeNow.load(); }
     bool padActive() const { return padOn.load(); }
@@ -54,6 +56,10 @@ public:
     bool crowdSounding() const { return crowd.isPlaying(); }
     juce::String crowdLibraryId() const;
     int crowdSoundIndex() const { return crowdIndex.load(); }
+    float crowdPosition() const { return crowd.position(); }
+    juce::String crowdSoundName() const;
+    // derniers échantillons de sortie (pour le visualiseur), du plus ancien au plus récent
+    void copyScope (float* dest, int n) const;
     float padPosition() const { return pad.position(); }
     std::shared_ptr<const SampleData> padSample() const { return pad.current(); }
     float outputLevel() const { return level.load(); }
@@ -83,7 +89,12 @@ private:
     int maxBlock = 512;
 
     mutable juce::CriticalSection stateLock;
-    juce::String padLib, crowdLib;
+    juce::String padLibs[2], crowdLib;
+    juce::String crowdSoundNow;
+    static constexpr int scopeSize = 4096;
+    std::array<float, scopeSize> scope {};
+    std::atomic<int> scopePos { 0 };
+    void autoSelectLibraries();
     std::atomic<int> keyNow { 4 }, modeNow { 1 }, crowdIndex { -1 };
     std::atomic<bool> padOn { false };
     std::atomic<int> midiKey { -1 }, midiProgram { -1 };

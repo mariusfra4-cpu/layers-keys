@@ -1,26 +1,38 @@
-// Spacepad by JB Praise — interface "Orbit" : bibliothèques, anneau des tonalités, forme d'onde, effets, analyse.
+// Spacepad by JB Praise — interface "Orbit" : espace animé derrière l'orbe, anneau des tonalités, crochet majeur/mineur,
+// visualiseur audio, bibliothèques (pads et crowds séparés), effets, analyse des dossiers, paramètres.
 #pragma once
 #include <juce_gui_extra/juce_gui_extra.h>
 #include <juce_audio_processors/juce_audio_processors.h>
+#include <juce_dsp/juce_dsp.h>
 #include "PluginProcessor.h"
+#include "Lang.h"
 
 namespace spacepad
 {
 namespace theme
 {
-    const juce::Colour bg { 0xff070a14 }, panel { 0xff0d1220 }, panel2 { 0xff0f1524 }, lcd { 0xff050912 };
-    const juce::Colour accent { 0xff6fd8ff }, accentLight { 0xffbdf1ff }, amber { 0xffffb86b }, violet { 0xffa78bfa };
+    // couleurs qui changent avec les Paramètres (thème et couleur principale)
+    inline juce::Colour bg { 0xff070a14 }, panel { 0xff0d1220 }, panel2 { 0xff0f1524 }, lcd { 0xff050912 };
+    inline juce::Colour chassisTop { 0xff121828 }, chassisBottom { 0xff0b0f1a }, headerTop { 0xff1a2135 }, headerBottom { 0xff111727 };
+    inline juce::Colour accent { 0xff6fd8ff }, accentLight { 0xffbdf1ff };
+    // couleurs fixes
+    const juce::Colour amber { 0xffffb86b }, violet { 0xffa78bfa }, gold { 0xffffcf7a }, lilac { 0xffc9b8ff };
     const juce::Colour green { 0xff5cffb0 }, text { 0xffe8edf7 }, muted { 0xff8b97ad }, line { 0x18ffffff }, red { 0xffff6b6b };
+    void apply (const UiSettings&);
+    juce::Colour accentChoice (int index);
     juce::Font title (float h);                   // Michroma (logo, tonalités)
     juce::Font ui (float h, int weight = 0);      // Inter : 0 normal, 1 demi-gras, 2 gras
     juce::Colour colourFor (const juce::String& name);
 }
+
+juce::String keyText (int key);                    // nom de note selon le réglage (C D E ou Do Ré Mi)
 
 class SpaceLook : public juce::LookAndFeel_V4
 {
 public:
     SpaceLook();
     void drawRotarySlider (juce::Graphics&, int x, int y, int w, int h, float pos, float start, float end, juce::Slider&) override;
+    void drawLinearSlider (juce::Graphics&, int x, int y, int w, int h, float pos, float, float, juce::Slider::SliderStyle, juce::Slider&) override;
     void drawButtonBackground (juce::Graphics&, juce::Button&, const juce::Colour&, bool over, bool down) override;
     void drawButtonText (juce::Graphics&, juce::TextButton&, bool over, bool down) override;
     juce::Font getTextButtonFont (juce::TextButton&, int h) override;
@@ -29,6 +41,8 @@ public:
     juce::Font getLabelFont (juce::Label&) override { return theme::ui (14.0f); }
     void drawComboBox (juce::Graphics&, int w, int h, bool down, int bx, int by, int bw, int bh, juce::ComboBox&) override;
     void drawScrollbar (juce::Graphics&, juce::ScrollBar&, int x, int y, int w, int h, bool vertical, int thumbStart, int thumbSize, bool over, bool down) override;
+    void drawTooltip (juce::Graphics&, const juce::String&, int w, int h) override;
+    void refreshColours();
 };
 
 // --------------------------------------------------------------------------------------------
@@ -40,6 +54,8 @@ public:
     void paint (juce::Graphics&) override;
     juce::Slider slider;
     void setLabel (const juce::String& l) { label = l; repaint(); }
+    void setColour (juce::Colour c) { slider.setColour (juce::Slider::rotarySliderFillColourId, c); repaint(); }
+    bool usesAccent = false;
 private:
     SpacepadProcessor& proc;
     juce::String id, label;
@@ -47,33 +63,92 @@ private:
 };
 
 // --------------------------------------------------------------------------------------------
+// État de l'animation, commun à l'espace, à l'orbe et au visualiseur
+struct AnimState
+{
+    float env = 0;        // le pad joue (0..1, monte et descend en douceur)
+    float surge = 0;      // élan au changement de tonalité ou de mode
+    float t = 0;          // temps
+    float phi = 0;        // rotation de la galaxie
+    float orb = 0;        // rotation de l'orbe
+};
+
+// L'espace animé derrière l'orbe : galaxie qui tourne, tourbillon d'étoiles, ou fond sobre
+class SpaceView : public juce::Component
+{
+public:
+    SpaceView (SpacepadProcessor& p, AnimState& a) : proc (p), anim (a) { setInterceptsMouseClicks (false, false); }
+    void paint (juce::Graphics&) override;
+    void resized() override { farStars = {}; layer = {}; needsRender = true; }
+    void tick (float dt);
+    juce::Point<float> centre;   // centre de l'orbe (dans ce composant)
+    float coreRadius = 110;      // rayon de l'orbe
+private:
+    void buildPlane (int mode);
+    SpacepadProcessor& proc;
+    AnimState& anim;
+    void renderLayer (float px);
+    juce::Image plane, farStars, layer;   // layer : galaxie + étoiles en orbite, recalculée une image sur deux
+    int planeMode = -1, frames = 0;
+    bool needsRender = true;
+    struct Star { float r, th, b, s; };
+    std::vector<Star> orbit;
+    juce::Random rng { 17 };
+};
+
 class KeyRing : public juce::Component
 {
 public:
-    explicit KeyRing (SpacepadProcessor& p) : proc (p) {}
+    KeyRing (SpacepadProcessor& p, AnimState& a) : proc (p), anim (a) {}
     void paint (juce::Graphics&) override;
     void mouseDown (const juce::MouseEvent&) override;
     void mouseMove (const juce::MouseEvent&) override;
     void mouseExit (const juce::MouseEvent&) override { hover = -2; repaint(); }
-    float phase = 0;   // animation
+    bool hitTest (int x, int y) override { return keyAt ({ (float) x, (float) y }) >= -1; }
+    float coreRadius() const { return juce::jmin (getWidth(), getHeight()) * 0.234f; }
 private:
     int keyAt (juce::Point<float>) const;   // 0..11, -1 = centre, -2 = rien
     void paintKey (juce::Graphics&, int i, bool sel, bool active, bool hov, int mode, float D, juce::Point<float> c) const;
     SpacepadProcessor& proc;
+    AnimState& anim;
     int hover = -2;
     juce::Image base, labelImg;              // décor fixe et nom de la tonalité, préparés une fois
-    int baseSize = 0, labelW = 0;
+    int baseKey = 0, labelW = 0;
     float baseScale = 0, labelScale = 0;
     juce::String labelText;
 };
 
-class Waveform : public juce::Component
+// Le crochet : passe du majeur au mineur (et inversement)
+class HookButton : public juce::Button
 {
 public:
-    explicit Waveform (SpacepadProcessor& p) : proc (p) {}
-    void paint (juce::Graphics&) override;
+    explicit HookButton (SpacepadProcessor& p) : juce::Button ("mode"), proc (p) {}
+    void paintButton (juce::Graphics&, bool over, bool down) override;
+    void tick (float dt);
 private:
     SpacepadProcessor& proc;
+    float angle = 0;                          // la flèche fait un demi-tour à chaque changement
+};
+
+// Visualiseur : le son réel découpé en fréquences, qui bouillonne
+class Visualizer : public juce::Component
+{
+public:
+    Visualizer (SpacepadProcessor& p, AnimState& a);
+    void paint (juce::Graphics&) override;
+    void tick (float dt);
+private:
+    SpacepadProcessor& proc;
+    AnimState& anim;
+    static constexpr int order = 11, N = 1 << order, bands = 34;
+    juce::dsp::FFT fft { order };
+    juce::dsp::WindowingFunction<float> window { (size_t) N, juce::dsp::WindowingFunction<float>::hann };
+    std::array<float, N * 2> fftData {};
+    std::array<float, N> wave {};
+    std::array<float, bands> level {};
+    struct Bubble { float x, y, r, v, a; };
+    std::vector<Bubble> bubbles;
+    juce::Random rng { 3 };
 };
 
 class Header : public juce::Component
@@ -81,6 +156,7 @@ class Header : public juce::Component
 public:
     explicit Header (SpacepadProcessor& p) : proc (p) {}
     void paint (juce::Graphics&) override;
+    void invalidate() { logoImg = {}; nameImg = {}; }
 private:
     SpacepadProcessor& proc;
     juce::Image logoImg, nameImg;            // lueurs préparées une fois
@@ -90,7 +166,33 @@ private:
 };
 
 // --------------------------------------------------------------------------------------------
-class LibraryPanel : public juce::Component, private juce::ListBoxModel
+// Liste à lignes de hauteurs différentes (titres de rangées + librairies ou sons)
+class RowList : public juce::Component
+{
+public:
+    struct Row
+    {
+        bool header = false;
+        juce::String name, sub, tag;
+        juce::Colour colour;
+        bool on = false, playing = false;
+        std::function<void()> onClick;
+        std::function<void()> onMenu;
+    };
+    void setRows (std::vector<Row> r);
+    void paint (juce::Graphics&) override;
+    void mouseUp (const juce::MouseEvent&) override;
+    void mouseMove (const juce::MouseEvent&) override;
+    void mouseExit (const juce::MouseEvent&) override { hover = -1; repaint(); }
+    int contentHeight() const;
+    juce::String emptyText;
+private:
+    int rowAt (int y) const;
+    std::vector<Row> rows;
+    int hover = -1;
+};
+
+class LibraryPanel : public juce::Component
 {
 public:
     explicit LibraryPanel (SpacepadProcessor&);
@@ -98,51 +200,55 @@ public:
     void resized() override;
     void refresh();                            // relit les bibliothèques
     void showTab (bool crowdTab);
+    bool crowdTabShown() const { return crowd; }
     void updateState();                        // états lumineux (son joué, mode)
     void retranslate();                        // textes dans la langue choisie
-    std::function<void()> onChooseFolder;
+    std::function<void (bool crowdTab)> onChooseFolder;
 
 private:
-    int getNumRows() override;
-    void paintListBoxItem (int row, juce::Graphics&, int w, int h, bool selected) override;
-    void listBoxItemClicked (int row, const juce::MouseEvent&) override;
     void rebuildChips();
+    void rebuildRows();
     const Library* currentCrowd() const;
     const Category* currentCategory() const;
+    void libraryMenu (const Library& l);
 
     SpacepadProcessor& proc;
     juce::TextButton padTab { "PAD LIBRARY" }, crowdTab { "CROWD LIBRARY" };
-    juce::TextButton chooseBtn { juce::String::fromUTF8 ("Choisir un dossier\xe2\x80\xa6") };
+    juce::TextButton chooseBtn;
     juce::ComboBox crowdPicker;
     std::vector<std::unique_ptr<juce::TextButton>> chips;
-    juce::ListBox list;
+    juce::Viewport viewport;
+    RowList rows;
+    // lecteur de crowd (indépendant du pad)
+    juce::TextButton crowdStop;
+    juce::Slider crowdVol;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> crowdVolAtt;
+    juce::Rectangle<int> playerArea;
     bool crowd = false;
     std::vector<Library> libs;
-    std::vector<int> padIdx, crowdIdx;          // positions dans libs
     juce::String crowdLibId;
     int category = 0;
-    int chipsBottom = 0;
-    juce::Rectangle<int> statusArea, titleArea;
-    int lastMode = -1;
+    juce::Rectangle<int> statusArea;
     juce::String lastStateSig;
 };
 
 // --------------------------------------------------------------------------------------------
-class ScanOverlay : public juce::Component, private juce::Timer, private juce::ListBoxModel
+class ScanOverlay : public juce::Component, private juce::Timer
 {
 public:
-    ScanOverlay (SpacepadProcessor&, const juce::File& folder);
+    ScanOverlay (SpacepadProcessor&, const juce::File& folder, LibType type);
     ~ScanOverlay() override;
     void paint (juce::Graphics&) override;
     void resized() override;
-    std::function<void (bool saved, bool crowdFirst)> onClose;
+    std::function<void (bool saved)> onClose;
 
 private:
     struct Job : juce::Thread
     {
-        explicit Job (juce::File f) : juce::Thread ("Spacepad analyse"), folder (std::move (f)) {}
+        Job (juce::File f, LibType t) : juce::Thread ("Spacepad analyse"), folder (std::move (f)), type (t) {}
         void run() override;
         juce::File folder;
+        LibType type;
         std::vector<Library> result;
         std::atomic<double> progress { 0 };
         juce::CriticalSection lock;
@@ -150,18 +256,48 @@ private:
         std::atomic<bool> finished { false };
     };
     void timerCallback() override;
-    int getNumRows() override { return (int) results.size(); }
-    void paintListBoxItem (int row, juce::Graphics&, int w, int h, bool selected) override;
-    void selectedRowsChanged (int) override { updateTypeButton(); repaint(); }
-    void updateTypeButton();
     juce::Rectangle<int> card() const;
 
     SpacepadProcessor& proc;
     Job job;
     std::vector<Library> results;
     bool done = false;
-    juce::TextButton cancelBtn { "Annuler" }, saveBtn { "Enregistrer" }, typeBtn { "Type : Pad" };
-    juce::ListBox list;
+    int selected = 0;
+    juce::TextButton cancelBtn, saveBtn;
+    RowList list;
+};
+
+// --------------------------------------------------------------------------------------------
+// Fenêtre « Personnaliser Spacepad »
+class SettingsOverlay : public juce::Component
+{
+public:
+    explicit SettingsOverlay (std::function<void()> changed);
+    void paint (juce::Graphics&) override;
+    void resized() override;
+    void mouseUp (const juce::MouseEvent&) override;
+    std::function<void()> onClose;
+private:
+    struct Choice { juce::String label; juce::Rectangle<int> r; };
+    struct Group { juce::String title; std::vector<Choice> choices; int* value; juce::Rectangle<int> area; };
+    void load();
+    void save();
+    juce::Rectangle<int> card() const;
+    std::function<void()> changed;
+    UiSettings s;
+    int accent = 0, themeIdx = 0, bgIdx = 0, vizIdx = 0, namesIdx = 0, sizeIdx = 1, langIdx = 0, animIdx = 1, awakeIdx = 1;
+    std::vector<Group> groups;
+    std::vector<juce::Rectangle<int>> swatches, tiles;
+    juce::Rectangle<int> accentArea, bgArea;
+    juce::Slider brightness, speed;
+    juce::TextButton resetBtn, doneBtn;
+};
+
+class GearButton : public juce::Button
+{
+public:
+    GearButton() : juce::Button ("settings") {}
+    void paintButton (juce::Graphics&, bool over, bool down) override;
 };
 
 // --------------------------------------------------------------------------------------------
@@ -174,27 +310,37 @@ public:
     void paintOverChildren (juce::Graphics&) override;
     void resized() override;
     static constexpr int W = 1400, H = 880;
-    void chooseFolder();
-    void openScan (const juce::File& folder);   // aussi utilisé par les tests
+    void chooseFolder (bool crowdTab);
+    void openScan (const juce::File& folder, LibType type = LibType::Pad);   // aussi utilisé par les tests
+    void openSettings();
     void retranslate();                         // textes dans la langue choisie (FR, EN, ES)
+    void applySettings();                       // couleurs, thème, taille… depuis les Paramètres
+    void animateForTests (float seconds);       // fait avancer l'animation sans attendre (tests, captures)
+    std::function<void (int percent)> onScaleChange;
 
 private:
     void timerCallback() override;
+    void step (float dt);
     SpacepadProcessor& proc;
     SpaceLook look;
+    AnimState anim;
     Header header { proc };
+    GearButton gear;
     LibraryPanel library { proc };
-    KeyRing ring { proc };
-    Waveform wave { proc };
-    juce::TextButton playBtn, stopBtn, loopBtn { "LOOP" }, stopAllBtn { juce::String::fromUTF8 ("TOUT ARR\xc3\x8aTER") };
+    SpaceView space { proc, anim };
+    KeyRing ring { proc, anim };
+    HookButton hook { proc };
+    Visualizer viz { proc, anim };
+    juce::TextButton playBtn, stopBtn, loopBtn { "LOOP" }, stopAllBtn;
     juce::TextButton freezeBtn { "FREEZE" }, swellBtn { "SWELL" };
-    juce::TextButton langBtns[3];
     std::vector<std::unique_ptr<Knob>> knobs;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> loopAtt, freezeAtt, swellAtt;
     std::unique_ptr<ScanOverlay> scan;
+    std::unique_ptr<SettingsOverlay> settings;
     std::unique_ptr<juce::FileChooser> chooser;
-    int lastChanges = -1, langTick = 0;
-    juce::uint32 midiFlashUntil = 0;
-    std::vector<juce::Point<float>> stars;
+    juce::TooltipWindow tooltips { this, 500 };
+    int lastChanges = -1, tick = 0, lastKey = -1, lastMode = -1, lastSettings = -1, lastScale = 100;
+    juce::uint32 midiFlashUntil = 0, lastMs = 0;
+    bool screenSaverOff = false;
 };
 }

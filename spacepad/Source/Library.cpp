@@ -57,6 +57,15 @@ int Library::exactSlots (int mode) const
     return n;
 }
 
+int Library::countMode (int mode) const
+{
+    int n = 0;
+    for (auto& c : categories)
+        for (auto& s : c.sounds)
+            if ((s.mode == 1 ? 1 : 0) == mode) ++n;
+    return n;
+}
+
 juce::String Library::summary() const
 {
     const int n = numSounds();
@@ -354,6 +363,27 @@ std::vector<Library> FolderAnalyzer::analyze (const juce::File& root)
     return libs;
 }
 
+std::vector<Library> FolderAnalyzer::analyzeAs (const juce::File& root, LibType type)
+{
+    forced = true;
+    forcedType = type;
+    totalFiles = audioIn (root, true).size();
+    doneFiles = 0;
+    if (onProgress) onProgress (0.0, root.getFileName());
+    std::vector<Library> libs;
+    if (type == LibType::Crowd)
+    {
+        // Crowd : une seule librairie au nom du dossier, une catégorie par sous-dossier
+        auto lib = buildLibrary (root);
+        if (lib.numSounds() > 0) libs.push_back (std::move (lib));
+    }
+    else
+        libs = analyzeDir (root, 0);
+    if (onProgress) onProgress (1.0, L ("Analyse termin\xc3\xa9""e", "Analysis complete", "An\xc3\xa1lisis terminado"));
+    forced = false;
+    return libs;
+}
+
 std::vector<Library> FolderAnalyzer::analyzeDir (const juce::File& dir, int depth)
 {
     std::vector<Library> out;
@@ -381,7 +411,7 @@ std::vector<Library> FolderAnalyzer::analyzeDir (const juce::File& dir, int dept
     // "Mes Crowds/Worship FX, Natural…" : une seule Crowd Library avec une catégorie par sous-dossier
     bool allSingleCrowd = ! parts.empty();
     for (auto& p : parts) if (p.size() != 1 || p[0].type != LibType::Crowd) allSingleCrowd = false;
-    if (allSingleCrowd || (nameHintsCrowd (dir.getFileName()) && ! nameHintsPad (dir.getFileName()) && ! parts.empty()))
+    if (! forced && (allSingleCrowd || (nameHintsCrowd (dir.getFileName()) && ! nameHintsPad (dir.getFileName()) && ! parts.empty())))
     {
         Library merged;
         merged.name = dir.getFileName();
@@ -433,6 +463,7 @@ Library FolderAnalyzer::buildLibrary (const juce::File& dir)
 
 LibType FolderAnalyzer::decideType (const Library& lib, const juce::File& dir)
 {
+    if (forced) return forcedType;
     const auto n = dir.getFileName();
     if (nameHintsPad (n)) return LibType::Pad;
     if (nameHintsCrowd (n)) return LibType::Crowd;

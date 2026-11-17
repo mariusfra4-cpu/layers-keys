@@ -7,6 +7,7 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include "Lang.h"
+#include <map>
 
 using namespace spacepad;
 
@@ -273,7 +274,8 @@ static void testProcessor()
     juce::String warmId;
     for (auto& l : p.libraries().snapshot()) if (l.name == "Warm Pad") warmId = l.id;
     CHECK (warmId.isNotEmpty(), "Warm Pad present dans la bibliotheque du plugin");
-    p.selectPadLibrary (warmId);
+    p.selectPadLibrary (warmId, 0);
+    p.selectPadLibrary (warmId, 1);
     p.setMode (0);
     p.pressKey (0);
     p.waitIdleForTests (3000);
@@ -335,7 +337,7 @@ static void testProcessor()
     p.getStateInformation (state);
     SpacepadProcessor q;
     q.setStateInformation (state.getData(), (int) state.getSize());
-    CHECK (q.padLibraryId() == warmId, "le projet rouvre la meme librairie");
+    CHECK (q.padLibraryId (0) == warmId && q.padLibraryId (1) == warmId, "le projet rouvre les memes librairies (majeur et mineur)");
     CHECK (q.currentKey() == 2 && q.currentMode() == 1, "le projet rouvre la meme tonalite");
     CHECK (q.params.getParameter ("reverb")->getValue() > 0.99f, "le projet rouvre les memes effets");
 
@@ -351,7 +353,7 @@ static void snapshot (const juce::File& outDir, const juce::File& root)
     outDir.createDirectory();
     SpacepadProcessor p;
     p.prepareToPlay (48000, 256);
-    for (auto& l : p.libraries().snapshot()) if (l.name == "Warm Pad") p.selectPadLibrary (l.id);
+    for (auto& l : p.libraries().snapshot()) if (l.name == "Warm Pad") { p.selectPadLibrary (l.id, 0); p.selectPadLibrary (l.id, 1); }
     p.setMode (1);
     p.pressKey (4);
     p.waitIdleForTests (3000);
@@ -362,6 +364,7 @@ static void snapshot (const juce::File& outDir, const juce::File& root)
         std::unique_ptr<juce::AudioProcessorEditor> ed (p.createEditor());
         ed->setSize (MainView::W, MainView::H);
         auto& v = dynamic_cast<SpacepadEditor&> (*ed).view();
+        v.animateForTests (4.0f);
         auto img = v.createComponentSnapshot (v.getLocalBounds(), true, 2.0f);
         juce::PNGImageFormat png;
         auto f = outDir.getChildFile ("spacepad_pad.png");
@@ -381,7 +384,10 @@ static void snapshot (const juce::File& outDir, const juce::File& root)
         if (auto os = f.createOutputStream()) png.writeImageToStream (img, *os);
 
         // écran d'analyse (résultats)
-        v.openScan (root);
+        // le crochet passe du mineur au majeur
+        for (auto* c : v.getChildren())
+            if (auto* hk = dynamic_cast<HookButton*> (c)) { const int m0 = p.currentMode(); hk->onClick(); CHECK (p.currentMode() == 1 - m0, "le crochet change de mode"); hk->onClick(); }
+        v.openScan (root.getChildFile ("Mes Pads"), LibType::Pad);
         for (int i = 0; i < 400; ++i)
         {
             juce::MessageManager::getInstance()->runDispatchLoopUntil (20);
@@ -401,8 +407,27 @@ static void snapshot (const juce::File& outDir, const juce::File& root)
         // langues : anglais puis espagnol (le réglage est partagé, comme entre l'application et les plugins)
         for (auto* c : v.getChildren())
             if (auto* so = dynamic_cast<ScanOverlay*> (c)) { so->setVisible (false); }
+        // fenêtre Paramètres
+        v.openSettings();
+        img = v.createComponentSnapshot (v.getLocalBounds(), true, 2.0f);
+        f = outDir.getChildFile ("spacepad_parametres.png");
+        f.deleteFile();
+        if (auto os = f.createOutputStream()) png.writeImageToStream (img, *os);
+        CHECK (f.getSize() > 10000, "capture Parametres");
+        for (auto* c : v.getChildren())
+            if (auto* so = dynamic_cast<SettingsOverlay*> (c)) so->setVisible (false);
+        // une autre couleur et le fond tourbillon, appliqués tout de suite
+        {
+            auto u = uiSettings(); u.accent = 2; u.background = 1; setUiSettings (u);
+            v.applySettings(); v.animateForTests (2.0f);
+            img = v.createComponentSnapshot (v.getLocalBounds(), true, 2.0f);
+            f = outDir.getChildFile ("spacepad_or_tourbillon.png");
+            f.deleteFile();
+            if (auto os = f.createOutputStream()) png.writeImageToStream (img, *os);
+            setUiSettings (UiSettings()); v.applySettings();
+        }
         struct LC { Lang l; const char* file; const char* word; };
-        for (auto lc : { LC { Lang::EN, "spacepad_en.png", "Choose a folder" }, LC { Lang::ES, "spacepad_es.png", "Elegir una carpeta" } })
+        for (auto lc : { LC { Lang::EN, "spacepad_en.png", "Choose a pads folder" }, LC { Lang::ES, "spacepad_es.png", "Elegir una carpeta de pads" } })
         {
             setLang (lc.l);
             v.retranslate();
@@ -433,7 +458,7 @@ static void benchPaint (const juce::File& root)
     section ("Vitesse de dessin (ms par image)");
     SpacepadProcessor p;
     p.prepareToPlay (48000, 256);
-    for (auto& l : p.libraries().snapshot()) if (l.name == "Warm Pad") p.selectPadLibrary (l.id);
+    for (auto& l : p.libraries().snapshot()) if (l.name == "Warm Pad") { p.selectPadLibrary (l.id, 0); p.selectPadLibrary (l.id, 1); }
     p.pressKey (4);
     p.waitIdleForTests (3000);
     juce::AudioBuffer<float> buf (2, 256); juce::MidiBuffer midi;
@@ -441,22 +466,281 @@ static void benchPaint (const juce::File& root)
     std::unique_ptr<juce::AudioProcessorEditor> ed (p.createEditor());
     ed->setSize (MainView::W, MainView::H);
     auto& v = dynamic_cast<SpacepadEditor&> (*ed).view();
+    v.animateForTests (3.0f);
     juce::Image img (juce::Image::ARGB, MainView::W, MainView::H, true);
-    auto timeIt = [&] (const char* name, juce::Component& c)
+    auto timeIt = [&] (juce::Component& c) -> double
     {
-        const int N = 15;
+        { juce::Graphics g (img); c.paintEntireComponent (g, false); }   // préparation des images (une seule fois)
+        const int N = 20;
         auto t0 = juce::Time::getMillisecondCounterHiRes();
-        for (int i = 0; i < N; ++i) { juce::Graphics g (img); c.paintEntireComponent (g, false); }
-        std::cout << "  " << name << " : " << juce::String ((juce::Time::getMillisecondCounterHiRes() - t0) / N, 2) << " ms\n";
+        for (int i = 0; i < N; ++i) { v.animateForTests (1.0f / 30.0f); juce::Graphics g (img); c.paintEntireComponent (g, false); }
+        return (juce::Time::getMillisecondCounterHiRes() - t0) / N;
     };
-    timeIt ("fenetre entiere", v);
-    for (auto* c : v.getChildren())
+    for (int bgMode = 0; bgMode < 3; ++bgMode)
     {
-        juce::String n = dynamic_cast<KeyRing*> (c) ? "anneau" : dynamic_cast<Header*> (c) ? "entete" : dynamic_cast<Waveform*> (c) ? "forme d'onde"
-                       : dynamic_cast<LibraryPanel*> (c) ? "bibliotheque" : dynamic_cast<Knob*> (c) ? "" : "";
-        if (n.isNotEmpty()) timeIt (n.toRawUTF8(), *c);
+        auto u = uiSettings(); u.background = bgMode; setUiSettings (u); v.applySettings();
+        double perFrame = 0;
+        juce::String detail;
+        for (auto* c : v.getChildren())
+        {
+            juce::String n = dynamic_cast<SpaceView*> (c) ? "espace" : dynamic_cast<KeyRing*> (c) ? "anneau+orbe" : dynamic_cast<Visualizer*> (c) ? "visualiseur"
+                           : dynamic_cast<HookButton*> (c) ? "crochet" : dynamic_cast<Header*> (c) ? "entete" : "";
+            if (n.isEmpty()) continue;
+            const double ms = timeIt (*c);
+            perFrame += n == "entete" ? ms * 0.5 : ms;                     // l'en-tête est redessiné une image sur deux
+            detail << n << " " << juce::String (ms, 2) << "  ";
+        }
+        const char* names[] = { "Galaxie", "Tourbillon", "Aucun" };
+        std::cout << "  fond " << names[bgMode] << " : " << juce::String (perFrame, 2) << " ms par image  (" << detail << ")\n";
+        CHECK (perFrame < 14.0, "animation legere (fond " << names[bgMode] << " : " << juce::String (perFrame, 2) << " ms par image, limite 14 ms)");
     }
+    setUiSettings (UiSettings());
     juce::ignoreUnused (root);
+}
+
+// ---------------------------------------------------------------------------------------------
+// Chaque effet, mesuré
+// ---------------------------------------------------------------------------------------------
+static juce::AudioBuffer<float> sineChord (std::vector<int> notes, double sr, double seconds)
+{
+    const int n = (int) (sr * seconds);
+    juce::AudioBuffer<float> b (2, n);
+    b.clear();
+    for (int note : notes)
+        for (int i = 0; i < n; ++i)
+        {
+            const float v = 0.08f * (float) std::sin (juce::MathConstants<double>::twoPi * midiHz (note) * i / sr);
+            b.addSample (0, i, v); b.addSample (1, i, v * 0.9f);
+        }
+    return b;
+}
+
+static juce::AudioBuffer<float> brightChord (double sr, double seconds)
+{
+    const int n = (int) (sr * seconds);
+    juce::AudioBuffer<float> b (2, n);
+    b.clear();
+    juce::Random r (9);
+    for (int note : { 48, 60, 64, 67 })
+        for (int det = -1; det <= 1; det += 2)
+        {
+            const double f = midiHz (note) * (1.0 + det * 0.002);
+            for (int i = 0; i < n; ++i)
+            {
+                const double ph = std::fmod (f * i / sr, 1.0);
+                b.addSample (det < 0 ? 0 : 1, i, 0.03f * (float) (2.0 * ph - 1.0));     // dents de scie : riches en aigus
+            }
+        }
+    for (int i = 0; i < n; ++i) { b.addSample (0, i, 0.004f * (r.nextFloat() * 2 - 1)); b.addSample (1, i, 0.004f * (r.nextFloat() * 2 - 1)); }
+    return b;
+}
+
+static double bandEnergy (const juce::AudioBuffer<float>& b, int start, int len, double sr, double f0, double f1)
+{
+    constexpr int order = 13, N = 1 << order;
+    juce::dsp::FFT fft (order);
+    juce::dsp::WindowingFunction<float> win (N, juce::dsp::WindowingFunction<float>::hann);
+    std::vector<float> d ((size_t) N * 2);
+    double sum = 0; int frames = 0;
+    for (int s = start; s + N <= start + len && s + N <= b.getNumSamples(); s += N / 2)
+    {
+        std::fill (d.begin(), d.end(), 0.0f);
+        for (int i = 0; i < N; ++i) d[(size_t) i] = 0.5f * (b.getSample (0, s + i) + b.getSample (1, s + i));
+        win.multiplyWithWindowingTable (d.data(), (size_t) N);
+        fft.performFrequencyOnlyForwardTransform (d.data());
+        for (int k = (int) (f0 / sr * N); k <= (int) (f1 / sr * N) && k < N / 2; ++k) sum += (double) d[(size_t) k] * d[(size_t) k];
+        ++frames;
+    }
+    return frames ? sum / frames : 0;
+}
+
+static double rmsOf (const juce::AudioBuffer<float>& b, int start, int len)
+{
+    double s = 0; len = juce::jmin (len, b.getNumSamples() - start);
+    for (int i = 0; i < len; ++i) { const double m = 0.5 * (b.getSample (0, start + i) + b.getSample (1, start + i)); s += m * m; }
+    return len > 0 ? std::sqrt (s / len) : 0;
+}
+
+struct FxRun
+{
+    std::map<juce::String, float> params;   // valeurs réelles (secondes pour attack/xfade, 0..1 sinon)
+    juce::String lib;                        // nom de la librairie de test
+    double seconds = 4;
+    double stopAt = -1;                      // arrêt du pad à cet instant (s)
+    std::function<void (SpacepadProcessor&, double)> atTime;   // action pendant le rendu
+    bool crowd = false;
+};
+
+static juce::AudioBuffer<float> render (const FxRun& run)
+{
+    constexpr double sr = 48000; constexpr int block = 512;
+    SpacepadProcessor p;
+    p.prepareToPlay (sr, block);
+    std::map<juce::String, float> base { { "shimmer", 0 }, { "warm", 0 }, { "air", 0 }, { "reverb", 0 }, { "motion", 0 }, { "width", 0.5f }, { "sub", 0 },
+                                         { "lowcut", 0 }, { "padvol", 0.8f }, { "crowdvol", 0.8f }, { "attack", 0.05f }, { "xfade", 0.2f }, { "freeze", 0 }, { "swell", 0 }, { "loop", 1 } };
+    for (auto& kv : run.params) base[kv.first] = kv.second;
+    for (auto& kv : base)
+    {
+        auto* prm = p.params.getParameter (kv.first);
+        prm->setValueNotifyingHost (prm->convertTo0to1 (kv.second));
+    }
+    juce::String id;
+    for (auto& l : p.libraries().snapshot()) if (l.name == run.lib) id = l.id;
+    CHECK (id.isNotEmpty(), "librairie de test presente : " << run.lib);
+    if (run.crowd) { p.playCrowd (id, 0); }
+    else { p.selectPadLibrary (id, 0); p.setMode (0); p.pressKey (0); }
+    p.waitIdleForTests (5000);
+    juce::Thread::sleep (30);
+    const int total = (int) (run.seconds * sr);
+    juce::AudioBuffer<float> out (2, total), buf (2, block);
+    juce::MidiBuffer midi;
+    bool stopped = false;
+    for (int pos = 0; pos < total; pos += block)
+    {
+        const double t = pos / sr;
+        if (run.stopAt >= 0 && ! stopped && t >= run.stopAt) { p.stopPad(); stopped = true; }
+        if (run.atTime) run.atTime (p, t);
+        buf.clear();
+        p.processBlock (buf, midi);
+        const int n = juce::jmin (block, total - pos);
+        out.copyFrom (0, pos, buf, 0, 0, n);
+        out.copyFrom (1, pos, buf, 1, 0, n);
+    }
+    return out;
+}
+
+static void testEffects (const juce::File& tmp)
+{
+    section ("Chaque effet, mesure");
+    constexpr double sr = 48000;
+    // deux librairies de test : accord de sinus purs (C4 E4 G4) et accord riche en aigus (dents de scie + souffle)
+    writeWav (tmp.getChildFile ("Effets/Sine Pad/Sine Pad C.wav"), sineChord ({ 60, 64, 67 }, sr, 6), sr);
+    writeWav (tmp.getChildFile ("Effets/Bright Pad/Bright Pad C.wav"), brightChord (sr, 6), sr);
+    writeWav (tmp.getChildFile ("Effets/Crowd Test/Room/Room.wav"), noise (sr, 6), sr);
+    {
+        LibraryStore store;
+        FolderAnalyzer a;
+        store.addOrReplace (a.analyzeAs (tmp.getChildFile ("Effets/Sine Pad"), LibType::Pad));
+        store.addOrReplace (a.analyzeAs (tmp.getChildFile ("Effets/Bright Pad"), LibType::Pad));
+        store.addOrReplace (a.analyzeAs (tmp.getChildFile ("Effets/Crowd Test"), LibType::Crowd));
+    }
+    const int s1 = (int) (1.5 * sr), len = (int) (2.0 * sr);
+    auto ratio = [] (double a, double b) { return b > 1e-12 ? a / b : 0.0; };
+
+    // Low cut : les basses baissent
+    { auto b0 = render ({ {}, "Bright Pad" }), b1 = render ({ { { "lowcut", 1.0f } }, "Bright Pad" });
+      const double r = ratio (bandEnergy (b1, s1, len, sr, 40, 200), bandEnergy (b0, s1, len, sr, 40, 200));
+      std::cout << "  Low cut : basses x" << juce::String (r, 3) << "\n"; CHECK (r < 0.25, "Low cut enleve les basses (x" << r << ")"); }
+    // Air : les aigus montent
+    { auto b0 = render ({ {}, "Bright Pad" }), b1 = render ({ { { "air", 1.0f } }, "Bright Pad" });
+      const double r = ratio (bandEnergy (b1, s1, len, sr, 9000, 16000), bandEnergy (b0, s1, len, sr, 9000, 16000));
+      std::cout << "  Air : aigus x" << juce::String (r, 2) << "\n"; CHECK (r > 1.8, "Air ajoute de la brillance (x" << r << ")"); }
+    // Warm : les aigus s'adoucissent
+    { auto b0 = render ({ {}, "Bright Pad" }), b1 = render ({ { { "warm", 1.0f } }, "Bright Pad" });
+      const double r = ratio (bandEnergy (b1, s1, len, sr, 6000, 16000), bandEnergy (b0, s1, len, sr, 6000, 16000));
+      std::cout << "  Warm : aigus x" << juce::String (r, 2) << "\n"; CHECK (r < 0.6, "Warm adoucit le son (x" << r << ")"); }
+    // Sub : l'octave en dessous apparaît (E3 = 164,8 Hz sous E4)
+    { auto b0 = render ({ {}, "Sine Pad" }), b1 = render ({ { { "sub", 1.0f } }, "Sine Pad" });
+      const double r = ratio (bandEnergy (b1, s1, len, sr, 158, 172), bandEnergy (b0, s1, len, sr, 158, 172));
+      std::cout << "  Sub oct. : octave grave x" << juce::String (r, 1) << "\n"; CHECK (r > 20, "Sub ajoute l'octave en dessous (x" << r << ")"); }
+    // Shimmer : l'octave au-dessus apparaît dans la réverbération (E5 = 659 Hz au-dessus de E4)
+    { auto b0 = render ({ {}, "Sine Pad" }), b1 = render ({ { { "shimmer", 1.0f } }, "Sine Pad" });
+      const double r = ratio (bandEnergy (b1, s1, len, sr, 650, 668), bandEnergy (b0, s1, len, sr, 650, 668));
+      std::cout << "  Shimmer : octave aigue x" << juce::String (r, 1) << "\n"; CHECK (r > 20, "Shimmer ajoute l'octave au-dessus (x" << r << ")"); }
+    // Reverb : le son continue après l'arrêt
+    { auto b0 = render ({ {}, "Bright Pad", 6, 3 }), b1 = render ({ { { "reverb", 1.0f } }, "Bright Pad", 6, 3 });
+      const double t0 = rmsOf (b0, (int) (4.5 * sr), (int) sr), t1 = rmsOf (b1, (int) (4.5 * sr), (int) sr);
+      std::cout << "  Reverb : queue apres l'arret " << juce::String (t1, 5) << " (sans : " << juce::String (t0, 5) << ")\n";
+      CHECK (t1 > 0.002 && t1 > t0 * 8, "Reverb prolonge le son apres l'arret"); }
+    // Freeze : appuyé pendant le jeu, le son reste tenu après l'arrêt
+    { FxRun f { { { "reverb", 0.6f } }, "Bright Pad", 9, 4 };
+      f.atTime = [] (SpacepadProcessor& p, double t) { if (t >= 3.0 && p.params.getParameter ("freeze")->getValue() < 0.5f) p.params.getParameter ("freeze")->setValueNotifyingHost (1.0f); };
+      auto b1 = render (f);
+      auto b0 = render ({ { { "reverb", 0.6f } }, "Bright Pad", 9, 4 });
+      const double t1 = rmsOf (b1, (int) (7.5 * sr), (int) sr), t0 = rmsOf (b0, (int) (7.5 * sr), (int) sr);
+      std::cout << "  Freeze : son tenu 3,5 s apres l'arret " << juce::String (t1, 5) << " (sans : " << juce::String (t0, 5) << ")\n";
+      CHECK (t1 > 0.003 && t1 > t0 * 5, "Freeze tient le son"); }
+    // Swell : le volume monte et descend lentement
+    { auto b1 = render ({ { { "swell", 1.0f } }, "Sine Pad", 18 }), b0 = render ({ {}, "Sine Pad", 18 });
+      auto spread = [&] (const juce::AudioBuffer<float>& b) { double lo = 1e9, hi = 0; for (double t = 2; t < 17.5; t += 0.5) { const double v = rmsOf (b, (int) (t * sr), (int) (0.5 * sr)); lo = juce::jmin (lo, v); hi = juce::jmax (hi, v); } return hi / juce::jmax (lo, 1e-9); };
+      const double r1 = spread (b1), r0 = spread (b0);
+      std::cout << "  Swell : ecart de volume x" << juce::String (r1, 2) << " (sans : x" << juce::String (r0, 2) << ")\n";
+      CHECK (r1 > 1.6 && r0 < 1.25, "Swell fait monter et descendre le volume"); }
+    // Motion : les aigus bougent dans le temps
+    { auto b1 = render ({ { { "motion", 1.0f } }, "Bright Pad", 14 }), b0 = render ({ {}, "Bright Pad", 14 });
+      auto cv = [&] (const juce::AudioBuffer<float>& b) { std::vector<double> v; for (double t = 2; t < 13.5; t += 0.5) v.push_back (bandEnergy (b, (int) (t * sr), (int) (0.5 * sr), sr, 2500, 9000));
+          double m = 0; for (auto x : v) m += x; m /= (double) v.size(); double s = 0; for (auto x : v) s += (x - m) * (x - m); return std::sqrt (s / (double) v.size()) / juce::jmax (m, 1e-12); };
+      const double c1 = cv (b1), c0 = cv (b0);
+      std::cout << "  Motion : variation des aigus " << juce::String (c1, 2) << " (sans : " << juce::String (c0, 2) << ")\n";
+      CHECK (c1 > 0.25 && c1 > c0 * 3, "Motion fait respirer le son"); }
+    // Width : l'écart gauche / droite change
+    { auto bw0 = render ({ { { "width", 0.0f } }, "Bright Pad" }), bw1 = render ({ { { "width", 1.0f } }, "Bright Pad" }), bn = render ({ {}, "Bright Pad" });
+      auto side = [&] (const juce::AudioBuffer<float>& b) { double s = 0, m = 0; for (int i = s1; i < s1 + len; ++i) { const double l = b.getSample (0, i), r = b.getSample (1, i); s += (l - r) * (l - r); m += (l + r) * (l + r); } return std::sqrt (s / juce::jmax (m, 1e-12)); };
+      const double w0 = side (bw0), w1 = side (bw1), wn = side (bn);
+      std::cout << "  Width : stereo " << juce::String (w0, 3) << " (mono) / " << juce::String (wn, 3) << " (normal) / " << juce::String (w1, 3) << " (large)\n";
+      CHECK (w0 < 0.01 && w1 > wn * 1.6, "Width resserre et elargit la stereo"); }
+    // Attack : la montée suit le réglage
+    { auto slow = render ({ { { "attack", 4.0f } }, "Sine Pad", 7 }), fast = render ({ { { "attack", 0.3f } }, "Sine Pad", 7 });
+      const double rs = rmsOf (slow, (int) (0.8 * sr), (int) (0.3 * sr)) / juce::jmax (1e-9, rmsOf (slow, (int) (6 * sr), (int) (0.5 * sr)));
+      const double rf = rmsOf (fast, (int) (0.8 * sr), (int) (0.3 * sr)) / juce::jmax (1e-9, rmsOf (fast, (int) (6 * sr), (int) (0.5 * sr)));
+      std::cout << "  Attack : niveau a 1 s = " << juce::String (rs * 100, 0) << " % (lent) / " << juce::String (rf * 100, 0) << " % (rapide)\n";
+      CHECK (rs < 0.45 && rf > 0.8, "Attack regle la montee du son"); }
+    // Fondu : le passage d'une tonalité à l'autre dure le temps réglé
+    { FxRun f { { { "xfade", 4.0f } }, "Sine Pad", 8 };
+      f.atTime = [] (SpacepadProcessor& p, double t) { if (t >= 3.0 && p.currentKey() == 0) p.pressKey (7); };
+      auto b = render (f);
+      // à mi-fondu, l'ancienne note (C) est encore là
+      const double cMid = bandEnergy (b, (int) (4.0 * sr), (int) (0.6 * sr), sr, 258, 266), cEnd = bandEnergy (b, (int) (7.3 * sr), (int) (0.6 * sr), sr, 258, 266);
+      const double cStart = bandEnergy (b, (int) (2.0 * sr), (int) (0.6 * sr), sr, 258, 266);
+      std::cout << "  Fondu : note de depart a mi-fondu " << juce::String (ratio (cMid, cStart) * 100, 0) << " %, a la fin " << juce::String (ratio (cEnd, cStart) * 100, 1) << " %\n";
+      CHECK (ratio (cMid, cStart) > 0.08 && ratio (cEnd, cStart) < 0.02, "Fondu enchaine en douceur"); }
+    // Volumes
+    { auto a = render ({ { { "padvol", 0.8f } }, "Sine Pad" }), b = render ({ { { "padvol", 0.4f } }, "Sine Pad" });
+      const double r = rmsOf (b, s1, len) / juce::jmax (1e-9, rmsOf (a, s1, len));
+      std::cout << "  Vol. Pad : 40 % / 80 % = " << juce::String (r, 2) << "\n"; CHECK (r > 0.42 && r < 0.58, "Vol. Pad regle le volume du pad"); }
+    { FxRun c1 { { { "crowdvol", 0.8f } }, "Crowd Test" }; c1.crowd = true;
+      FxRun c2 { { { "crowdvol", 0.4f } }, "Crowd Test" }; c2.crowd = true;
+      auto a = render (c1), b = render (c2);
+      const double r = rmsOf (b, s1, len) / juce::jmax (1e-9, rmsOf (a, s1, len));
+      std::cout << "  Vol. Crowd : 40 % / 80 % = " << juce::String (r, 2) << "\n"; CHECK (r > 0.42 && r < 0.58, "Vol. Crowd regle le volume du crowd"); }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Pads et crowds séparés, majeur et mineur indépendants
+// ---------------------------------------------------------------------------------------------
+static void testSeparation (const juce::File& root)
+{
+    section ("Pads et crowds separes, majeur / mineur independants");
+    FolderAnalyzer a;
+    auto crowd = a.analyzeAs (root.getChildFile ("Mes Crowds"), LibType::Crowd);
+    CHECK (crowd.size() == 1 && crowd[0].type == LibType::Crowd && crowd[0].name == "Mes Crowds", "onglet Crowd : une seule Crowd Library au nom du dossier");
+    if (! crowd.empty()) CHECK (crowd[0].categories.size() == 2, "onglet Crowd : une categorie par sous-dossier");
+    auto pads = a.analyzeAs (root.getChildFile ("Mes Pads"), LibType::Pad);
+    bool allPads = ! pads.empty();
+    for (auto& l : pads) allPads &= l.type == LibType::Pad;
+    CHECK (pads.size() == 2 && allPads, "onglet Pad : uniquement des Pad Libraries (" << (int) pads.size() << ")");
+    auto mixed = a.analyzeAs (root, LibType::Pad);
+    bool noCrowd = true;
+    for (auto& l : mixed) noCrowd &= l.type == LibType::Pad;
+    CHECK (noCrowd, "un dossier choisi dans Pad ne cree jamais de crowd");
+
+    SpacepadProcessor p;
+    p.prepareToPlay (48000, 256);
+    juce::String warm, myst;
+    for (auto& l : p.libraries().snapshot()) { if (l.name == "Warm Pad") warm = l.id; if (l.name == "Pad Mystere") myst = l.id; }
+    p.selectPadLibrary (warm, 0);
+    p.selectPadLibrary (myst, 1);
+    CHECK (p.padLibraryId (0) == warm && p.padLibraryId (1) == myst, "une librairie pour le majeur, une autre pour le mineur");
+    p.setMode (1);
+    CHECK (p.padLibraryId() == myst, "en mineur, la librairie mineure est utilisee");
+    p.selectPadLibrary ({}, 1);
+    CHECK (p.missingPadLibrary(), "sans librairie mineure : signale");
+    p.pressKey (2);
+    p.waitIdleForTests (2000);
+    juce::AudioBuffer<float> buf (2, 256); juce::MidiBuffer midi;
+    float peak = 0;
+    for (int i = 0; i < 400; ++i) { buf.clear(); p.processBlock (buf, midi); peak = juce::jmax (peak, buf.getMagnitude (0, 256)); }
+    CHECK (peak < 1e-4f, "sans librairie mineure, aucun accord du mauvais mode n'est joue");
 }
 
 int main (int argc, char** argv)
@@ -479,6 +763,8 @@ int main (int argc, char** argv)
     testStore (root);
     testLoopSeam();
     testProcessor();
+    testSeparation (root);
+    testEffects (tmp);
     if (argc > 1) snapshot (juce::File (juce::String (argv[1])), root);
     if (juce::SystemStats::getEnvironmentVariable ("SPACEPAD_BENCH", {}).isNotEmpty()) benchPaint (root);
 

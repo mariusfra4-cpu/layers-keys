@@ -4,8 +4,11 @@
 namespace spacepad
 {
 static std::atomic<int> current { -1 };
+static std::atomic<int> version { 1 };
 static juce::Time lastSeen;
 static juce::CriticalSection langLock;
+static UiSettings ui;
+static bool uiLoaded = false;
 
 static juce::File settingsFile() { return LibraryStore::storageFolder().getChildFile ("settings.json"); }
 
@@ -25,47 +28,112 @@ static Lang fromCode (const juce::String& c, Lang fallback)
     return fallback;
 }
 
+// à appeler avec langLock tenu
 static void loadSetting()
 {
     auto f = settingsFile();
     lastSeen = f.getLastModificationTime();
     Lang l = systemLang();
+    UiSettings u;
     if (f.existsAsFile())
-        l = fromCode (juce::JSON::parse (f.loadFileAsString())["language"].toString(), l);
+    {
+        auto v = juce::JSON::parse (f.loadFileAsString());
+        l = fromCode (v["language"].toString(), l);
+        if (auto* ui2 = v["ui"].getDynamicObject())
+        {
+            auto gi = [&] (const char* k, int def, int lo, int hi) { return ui2->hasProperty (k) ? juce::jlimit (lo, hi, (int) ui2->getProperty (k)) : def; };
+            auto gf = [&] (const char* k, float def) { return ui2->hasProperty (k) ? juce::jlimit (0.0f, 1.0f, (float) (double) ui2->getProperty (k)) : def; };
+            auto gb = [&] (const char* k, bool def) { return ui2->hasProperty (k) ? (bool) ui2->getProperty (k) : def; };
+            u.accent = gi ("accent", 0, 0, 6);
+            u.theme = gi ("theme", 0, 0, 2);
+            u.background = gi ("background", 0, 0, 2);
+            u.brightness = gf ("brightness", 0.5f);
+            u.speed = gf ("speed", 0.5f);
+            u.viz = gi ("viz", 0, 0, 3);
+            u.solfegeNames = gb ("solfege", false);
+            u.scale = gi ("scale", 100, 90, 150);
+            u.animations = gb ("animations", true);
+            u.keepAwake = gb ("keepAwake", true);
+        }
+    }
     current = (int) l;
+    ui = u;
+    uiLoaded = true;
+    ++version;
+}
+
+static void ensureLoaded()
+{
+    if (current.load() < 0 || ! uiLoaded)
+    {
+        const juce::ScopedLock sl (langLock);
+        if (current.load() < 0 || ! uiLoaded) loadSetting();
+    }
+}
+
+// à appeler avec langLock tenu
+static void saveAll()
+{
+    auto f = settingsFile();
+    auto v = f.existsAsFile() ? juce::JSON::parse (f.loadFileAsString()) : juce::var();
+    if (! v.isObject()) v = juce::var (new juce::DynamicObject());
+    static const char* codes[] = { "fr", "en", "es" };
+    v.getDynamicObject()->setProperty ("language", codes[juce::jlimit (0, 2, current.load())]);
+    auto* o = new juce::DynamicObject();
+    o->setProperty ("accent", ui.accent);
+    o->setProperty ("theme", ui.theme);
+    o->setProperty ("background", ui.background);
+    o->setProperty ("brightness", ui.brightness);
+    o->setProperty ("speed", ui.speed);
+    o->setProperty ("viz", ui.viz);
+    o->setProperty ("solfege", ui.solfegeNames);
+    o->setProperty ("scale", ui.scale);
+    o->setProperty ("animations", ui.animations);
+    o->setProperty ("keepAwake", ui.keepAwake);
+    v.getDynamicObject()->setProperty ("ui", juce::var (o));
+    f.replaceWithText (juce::JSON::toString (v));
+    lastSeen = f.getLastModificationTime();
+    ++version;
 }
 
 Lang lang()
 {
-    if (current.load() < 0)
-    {
-        const juce::ScopedLock sl (langLock);
-        if (current.load() < 0) loadSetting();
-    }
+    ensureLoaded();
     return (Lang) current.load();
 }
 
 void setLang (Lang l)
 {
+    ensureLoaded();
     const juce::ScopedLock sl (langLock);
     current = (int) l;
-    auto f = settingsFile();
-    auto v = f.existsAsFile() ? juce::JSON::parse (f.loadFileAsString()) : juce::var();
-    if (! v.isObject()) v = juce::var (new juce::DynamicObject());
-    static const char* codes[] = { "fr", "en", "es" };
-    v.getDynamicObject()->setProperty ("language", codes[(int) l]);
-    f.replaceWithText (juce::JSON::toString (v));
-    lastSeen = f.getLastModificationTime();
+    saveAll();
 }
+
+UiSettings uiSettings()
+{
+    ensureLoaded();
+    const juce::ScopedLock sl (langLock);
+    return ui;
+}
+
+void setUiSettings (const UiSettings& u)
+{
+    ensureLoaded();
+    const juce::ScopedLock sl (langLock);
+    ui = u;
+    saveAll();
+}
+
+int settingsVersion() { return version.load(); }
 
 bool reloadLangIfChanged()
 {
     const juce::ScopedLock sl (langLock);
     auto f = settingsFile();
     if (! f.existsAsFile() || f.getLastModificationTime() == lastSeen) return false;
-    const int before = current.load();
     loadSetting();
-    return before != current.load();
+    return true;
 }
 
 juce::String L (const char* fr, const char* en, const char* es)
@@ -78,14 +146,21 @@ juce::String L (const char* fr, const char* en, const char* es)
     }
 }
 
+static const char* const solFr[] = { "Do", "Do#", "R\xc3\xa9", "Mib", "Mi", "Fa", "Fa#", "Sol", "Lab", "La", "Sib", "Si" };
+static const char* const solEs[] = { "Do", "Do#", "Re", "Mib", "Mi", "Fa", "Fa#", "Sol", "Lab", "La", "Sib", "Si" };
+static const char* const letters[] = { "C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B" };
+
 juce::String noteName (int k)
 {
     if (k < 0 || k > 11) return "-";
-    static const char* fr[] = { "Do", "Do#", "R\xc3\xa9", "Mib", "Mi", "Fa", "Fa#", "Sol", "Lab", "La", "Sib", "Si" };
-    static const char* en[] = { "C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B" };
-    static const char* es[] = { "Do", "Do#", "Re", "Mib", "Mi", "Fa", "Fa#", "Sol", "Lab", "La", "Sib", "Si" };
     const auto l = lang();
-    return juce::String::fromUTF8 (l == Lang::EN ? en[k] : l == Lang::ES ? es[k] : fr[k]);
+    return juce::String::fromUTF8 (l == Lang::EN ? letters[k] : l == Lang::ES ? solEs[k] : solFr[k]);
+}
+
+juce::String solfege (int k)
+{
+    if (k < 0 || k > 11) return "-";
+    return juce::String::fromUTF8 (lang() == Lang::ES ? solEs[k] : solFr[k]);
 }
 
 juce::String modeWord (int mode)

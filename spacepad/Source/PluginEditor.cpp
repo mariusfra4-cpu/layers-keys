@@ -9,15 +9,20 @@ SpacepadEditor::SpacepadEditor (SpacepadProcessor& p)
     setResizable (true, true);
     setResizeLimits (MainView::W / 2, MainView::H / 2, MainView::W * 2, MainView::H * 2);
     getConstrainer()->setFixedAspectRatio ((double) MainView::W / MainView::H);
-    // taille de départ : adaptée à l'écran (portable compris)
-    int w = MainView::W, h = MainView::H;
+    main.onScaleChange = [this] (int percent) { applyScale (percent); };
+    applyScale (uiSettings().scale);
+}
+
+// taille de l'interface (Paramètres) : 90 %, 100 %, 125 %, 150 %, sans jamais dépasser l'écran
+void SpacepadEditor::applyScale (int percent)
+{
+    double s = percent / 100.0;
     if (auto* d = juce::Desktop::getInstance().getDisplays().getPrimaryDisplay())
     {
         const auto area = d->userArea;
-        const double s = juce::jmin (1.0, (area.getWidth() - 40) / (double) w, (area.getHeight() - 80) / (double) h);
-        w = juce::roundToInt (w * s); h = juce::roundToInt (h * s);
+        s = juce::jmin (s, (area.getWidth() - 40) / (double) MainView::W, (area.getHeight() - 80) / (double) MainView::H);
     }
-    setSize (w, h);
+    setSize (juce::roundToInt (MainView::W * s), juce::roundToInt (MainView::H * s));
 }
 
 void SpacepadEditor::resized()

@@ -3,9 +3,8 @@
 # Résultat : branche « ci-spacepad-mac » (Spacepad-<version>.pkg + journaux).
 # Lancer : onglet « Actions » > « Spacepad Mac » > « Run workflow » (on peut choisir le modèle de Mac).
 name: Spacepad Mac
+# Pour l'instant : seulement au lancement manuel (on termine d'abord la version Windows)
 on:
-  push:
-    paths: ['spacepad/**', '.github/workflows/spacepad-mac.yml']
   workflow_dispatch:
     inputs:
       runner:

@@ -41,6 +41,7 @@ struct Library
     struct Slot { int sound = -1; int semitones = 0; bool exact = false; };
     Slot slotFor (int key, int mode) const;
     int exactSlots (int mode) const;                // nombre de tonalités présentes telles quelles (0..12)
+    int countMode (int mode) const;                 // nombre de sons majeurs (0) ou mineurs (1)
     juce::String summary() const;                   // "24 WAV · 24/24 tonalités"
 };
 
@@ -94,6 +95,8 @@ public:
     std::function<void (double, const juce::String&)> onProgress;
 
     std::vector<Library> analyze (const juce::File& root);
+    // analyse depuis un onglet : tout est rangé en Pad (onglet Pad Library) ou en une seule Crowd Library (onglet Crowd)
+    std::vector<Library> analyzeAs (const juce::File& root, LibType type);
 
     static bool nameHintsCrowd (const juce::String& folderName);
     static bool nameHintsPad (const juce::String& folderName);
@@ -107,5 +110,7 @@ private:
     juce::AudioFormatManager fm;
     std::function<bool()> stop;
     int totalFiles = 0, doneFiles = 0;
+    bool forced = false;
+    LibType forcedType = LibType::Pad;
 };
 }
