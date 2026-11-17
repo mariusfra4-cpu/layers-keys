@@ -354,11 +354,18 @@ func (u *UI) drawPresets(c *Canvas) {
 		}
 		if on {
 			c.Glow(x, y, w, h, 9, 10, colGold, 0.3)
-			top, bot = 0x2a2a1a, 0x16140c
+			// fond légèrement teinté par l'accent du thème
+			top, bot = mixColor(c.tc(0x1a2538), c.tc(colGold), 0.2), mixColor(c.tc(0x0f1625), c.tc(colGold), 0.08)
 		} else {
 			c.Glow(x, y+1, w, h, 9, 5, 0x000000, 0.4)
 		}
-		c.RRectGrad(x, y, w, h, 9, top, bot, 1)
+		if on {
+			c.NoTheme = true
+			c.RRectGrad(x, y, w, h, 9, top, bot, 1)
+			c.NoTheme = false
+		} else {
+			c.RRectGrad(x, y, w, h, 9, top, bot, 1)
+		}
 		if on {
 			c.RRectStroke(x, y, w, h, 9, 2, colGoldHi, 1)
 		} else {
