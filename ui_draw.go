@@ -766,7 +766,7 @@ func (u *UI) drawPlayer(c *Canvas, x, y int) {
 		}
 		go func() {
 			if err := pl.Load(p); err != nil {
-				u.Toast(filepath.Base(p) + " : " + err.Error())
+				u.Toast(filepath.Base(p) + " : " + fileErrText(err))
 			} else {
 				u.markDirty()
 			}

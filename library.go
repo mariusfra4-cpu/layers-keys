@@ -387,7 +387,7 @@ func (u *UI) libScan(dir string) {
 		u.libs.mu.Unlock()
 		lklog("bibliothèque : %s → %d sons en %v (erreur : %v)", dir, len(sounds), time.Since(t0).Round(time.Millisecond), err)
 		if err != nil && len(sounds) == 0 {
-			u.Toast(Tf("Dossier illisible : %s", err.Error()))
+			u.Toast(Tf("Dossier illisible : %s", fileErrText(err)))
 		} else {
 			u.libSave()
 			u.Toast(Tf("%d sons trouvés et rangés.", len(sounds)))

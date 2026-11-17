@@ -440,7 +440,7 @@ func (u *UI) loadSource(i int, sc SrcCfg) {
 					fallback = baseNoExt(sc.File)
 				}
 				u.eng.SetSource(i, nil, fallback, "ERREUR · NON CHARGÉ")
-				u.Toast(err.Error())
+				u.Toast(fileErrText(err))
 			} else {
 				u.eng.SetSource(i, src, name, cat)
 				if ic >= 0 {
@@ -512,7 +512,7 @@ func (u *UI) openFileFor(ch int, path string) {
 	case ".sf2", ".sf3":
 		sf, err := u.getSF2(path)
 		if err != nil {
-			u.Toast(filepath.Base(path) + " : " + err.Error())
+			u.Toast(filepath.Base(path) + " : " + fileErrText(err))
 			return
 		}
 		u.addRecent(path)

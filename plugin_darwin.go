@@ -234,7 +234,7 @@ func recoverPlugin() {
 
 var pluginErrors int
 
-const pluginVersion = "1.0.6"
+const pluginVersion = "1.1.1"
 
 func macVersionPlugin() string { return macVersionSysctl() }
 

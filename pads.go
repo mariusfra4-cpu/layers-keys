@@ -434,7 +434,7 @@ func (u *UI) padChooseDir() {
 func (u *UI) padScanDir(dir string) {
 	files, n, err := scanPads(dir)
 	if err != nil {
-		u.Toast(Tf("Dossier illisible : %s", err.Error()))
+		u.Toast(Tf("Dossier illisible : %s", fileErrText(err)))
 		return
 	}
 	u.padSet(func(p *PadCfg) { p.Dir, p.Files = dir, files })
@@ -500,7 +500,7 @@ func (u *UI) padPlay(key int) {
 		}
 		u.pads.mu.Unlock()
 		if err != nil {
-			u.Toast(filepath.Base(file) + " : " + err.Error())
+			u.Toast(filepath.Base(file) + " : " + fileErrText(err))
 		} else if stillWanted && u.padCfg().On {
 			u.eng.Pads.start(d, rate)
 		}
