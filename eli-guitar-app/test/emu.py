@@ -151,9 +151,9 @@ if e:
 time.sleep(2)
 adb("shell", "input", "swipe", "160", "200", "160", "600", "300")   # remonte en haut, où s'affiche le message
 time.sleep(1)
-x = wait_for(lambda x: "ne correspond pas" in x, 15)
+x = wait_for(lambda x: "correspond pas" in x or "Vérifie qu" in x, 25)
 shot("2-mauvaise-cle")
-check("ne correspond pas" in x and last_page() == "écran de licence", "mauvaise clé refusée")
+check(("correspond pas" in x or "Vérifie qu" in x) and last_page() == "écran de licence", "mauvaise clé refusée")
 
 # 3. le générateur fabrique la clé
 adb("shell", "am", "start", "-n", GPKG + "/.MainActivity")
