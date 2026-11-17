@@ -61,6 +61,7 @@ juce_add_plugin(Spacepad
 
 set(SPACEPAD_CORE_SOURCES
   Source/KeyDetect.cpp
+  Source/Lang.cpp
   Source/Library.cpp
   Source/PadEngine.cpp
   Source/Effects.cpp)

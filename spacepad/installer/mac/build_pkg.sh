@@ -47,7 +47,7 @@ mk au com.jbpraise.spacepad.au
 cat > "$P/distribution.xml" <<XML
 <?xml version="1.0" encoding="utf-8"?>
 <installer-gui-script minSpecVersion="2">
-  <title>Spacepad</title>
+  <title>SP_TITLE</title>
   <organization>com.jbpraise</organization>
   <options customize="always" require-scripts="false" hostArchitectures="arm64,x86_64"/>
   <allowed-os-versions><os-version min="11.0"/></allowed-os-versions>
@@ -64,13 +64,13 @@ cat > "$P/distribution.xml" <<XML
     <line choice="au"/>
     <line choice="vst3"/>
   </choices-outline>
-  <choice id="app" title="Spacepad (obligatoire)" description="L’application Spacepad, installée dans le dossier Applications, avec « Désinstaller Spacepad »." enabled="false" selected="true">
+  <choice id="app" title="SP_APP_T" description="SP_APP_D" enabled="false" selected="true">
     <pkg-ref id="com.jbpraise.spacepad.app"/>
   </choice>
-  <choice id="au" title="Plugin Audio Unit (Logic Pro, GarageBand)" description="Le plugin Audio Unit, installé dans /Library/Audio/Plug-Ins/Components." start_selected="true">
+  <choice id="au" title="SP_AU_T" description="SP_AU_D" start_selected="true">
     <pkg-ref id="com.jbpraise.spacepad.au"/>
   </choice>
-  <choice id="vst3" title="Plugin VST3 (Ableton Live, Cubase, Studio One…)" description="Le plugin VST3, installé dans /Library/Audio/Plug-Ins/VST3." start_selected="true">
+  <choice id="vst3" title="SP_VST_T" description="SP_VST_D" start_selected="true">
     <pkg-ref id="com.jbpraise.spacepad.vst3"/>
   </choice>
   <pkg-ref id="com.jbpraise.spacepad.app" version="$VER" onConclusion="none">Spacepad_app.pkg</pkg-ref>

@@ -39,6 +39,7 @@ public:
     void resized() override;
     void paint (juce::Graphics&) override;
     juce::Slider slider;
+    void setLabel (const juce::String& l) { label = l; repaint(); }
 private:
     SpacepadProcessor& proc;
     juce::String id, label;
@@ -89,6 +90,7 @@ public:
     void refresh();                            // relit les bibliothèques
     void showTab (bool crowdTab);
     void updateState();                        // états lumineux (son joué, mode)
+    void retranslate();                        // textes dans la langue choisie
     std::function<void()> onChooseFolder;
 
 private:
@@ -164,6 +166,7 @@ public:
     static constexpr int W = 1400, H = 880;
     void chooseFolder();
     void openScan (const juce::File& folder);   // aussi utilisé par les tests
+    void retranslate();                         // textes dans la langue choisie (FR, EN, ES)
 
 private:
     void timerCallback() override;
@@ -175,11 +178,12 @@ private:
     Waveform wave { proc };
     juce::TextButton playBtn, stopBtn, loopBtn { "LOOP" }, stopAllBtn { juce::String::fromUTF8 ("TOUT ARR\xc3\x8aTER") };
     juce::TextButton freezeBtn { "FREEZE" }, swellBtn { "SWELL" };
+    juce::TextButton langBtns[3];
     std::vector<std::unique_ptr<Knob>> knobs;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> loopAtt, freezeAtt, swellAtt;
     std::unique_ptr<ScanOverlay> scan;
     std::unique_ptr<juce::FileChooser> chooser;
-    int lastChanges = -1;
+    int lastChanges = -1, langTick = 0;
     juce::uint32 midiFlashUntil = 0;
     std::vector<juce::Point<float>> stars;
 };

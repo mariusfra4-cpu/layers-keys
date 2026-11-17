@@ -30,8 +30,8 @@ juce::String fold (juce::String s)
     return out;
 }
 
-bool isMinorWord (const juce::String& f) { return f == "m" || f == "min" || f == "minor" || f == "mineur" || f == "moll" || f == "mi"; }
-bool isMajorWord (const juce::String& f) { return f == "maj" || f == "major" || f == "majeur" || f == "dur" || f == "ma"; }
+bool isMinorWord (const juce::String& f) { return f == "m" || f == "min" || f == "minor" || f == "mineur" || f == "menor" || f == "moll" || f == "mi"; }
+bool isMajorWord (const juce::String& f) { return f == "maj" || f == "major" || f == "majeur" || f == "mayor" || f == "dur" || f == "ma"; }
 bool isSharpWord (const juce::String& f) { return f == "sharp" || f == "diese" || f == "#"; }
 bool isFlatWord  (const juce::String& f) { return f == "flat" || f == "bemol"; }
 
@@ -96,8 +96,8 @@ Match parseFrench (const juce::String& tok)
         int mode = -1;
         if (rest.isNotEmpty())
         {
-            if (rest == "m" || rest == "min" || rest == "mineur") mode = 1;
-            else if (rest == "maj" || rest == "majeur") mode = 0;
+            if (rest == "m" || rest == "min" || rest == "mineur" || rest == "menor") mode = 1;
+            else if (rest == "maj" || rest == "majeur" || rest == "mayor") mode = 0;
             else return {};
         }
         Match m;
@@ -160,8 +160,8 @@ int modeFromFolderName (const juce::String& nameIn)
     for (auto& t : tokens)
     {
         auto f = fold (t);
-        if (f == "minor" || f == "mineur" || f == "minors" || f == "mineurs" || f == "min" || f == "moll") return 1;
-        if (f == "major" || f == "majeur" || f == "majors" || f == "majeurs" || f == "maj" || f == "dur") return 0;
+        if (f == "minor" || f == "mineur" || f == "minors" || f == "mineurs" || f == "menor" || f == "menores" || f == "min" || f == "moll") return 1;
+        if (f == "major" || f == "majeur" || f == "majors" || f == "majeurs" || f == "mayor" || f == "mayores" || f == "maj" || f == "dur") return 0;
     }
     return -1;
 }

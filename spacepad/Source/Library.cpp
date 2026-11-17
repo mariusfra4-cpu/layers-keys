@@ -1,4 +1,5 @@
 #include "Library.h"
+#include "Lang.h"
 #include <map>
 #include <set>
 #if ! JUCE_WINDOWS
@@ -59,15 +60,15 @@ int Library::exactSlots (int mode) const
 juce::String Library::summary() const
 {
     const int n = numSounds();
-    juce::String s = juce::String (n) + (n > 1 ? " sons" : " son");
+    juce::String s = juce::String (n) + (n > 1 ? L (" sons", " sounds", " sonidos") : L (" son", " sound", " sonido"));
     if (type == LibType::Pad)
     {
         int mj = exactSlots (0), mn = exactSlots (1);
-        s << juce::String::fromUTF8 (" \xc2\xb7 ") << juce::String (mj + mn) << "/24 " << juce::String::fromUTF8 ("tonalit\xc3\xa9s");
+        s << juce::String::fromUTF8 (" \xc2\xb7 ") << juce::String (mj + mn) << "/24 " << L ("tonalit\xc3\xa9s", "keys", "tonalidades");
     }
     else
     {
-        s << juce::String::fromUTF8 (" \xc2\xb7 ") << juce::String ((int) categories.size()) << (categories.size() > 1 ? juce::String::fromUTF8 (" cat\xc3\xa9gories") : juce::String::fromUTF8 (" cat\xc3\xa9gorie"));
+        s << juce::String::fromUTF8 (" \xc2\xb7 ") << juce::String ((int) categories.size()) << (categories.size() > 1 ? L (" cat\xc3\xa9gories", " categories", " categor\xc3\xad""as") : L (" cat\xc3\xa9gorie", " category", " categor\xc3\xad""a"));
     }
     return s;
 }
@@ -349,7 +350,7 @@ std::vector<Library> FolderAnalyzer::analyze (const juce::File& root)
     doneFiles = 0;
     if (onProgress) onProgress (0.0, root.getFileName());
     auto libs = analyzeDir (root, 0);
-    if (onProgress) onProgress (1.0, juce::String::fromUTF8 ("Analyse termin\xc3\xa9""e"));
+    if (onProgress) onProgress (1.0, L ("Analyse termin\xc3\xa9""e", "Analysis complete", "An\xc3\xa1lisis terminado"));
     return libs;
 }
 

@@ -21,6 +21,7 @@ application autonome, plugin VST3, et plugin Audio Unit pour Logic Pro et Garage
   - Majeur et Mineur se choisissent avec deux boutons.
   - Un changement de programme MIDI passe à une autre librairie.
 - **Effets** : Shimmer, Warm, Air, Reverb, Motion, Width, Sub oct., Low cut, Attack, Fondu, Freeze, Swell. Les volumes du pad et des crowds se règlent séparément.
+- **Langues** : français, anglais et espagnol. Au premier lancement, Spacepad prend la langue de l'ordinateur. Les boutons FR · EN · ES en bas de la fenêtre changent la langue de l'application et des plugins. Les installeurs sont aussi traduits.
 - **Projet** : la librairie, la tonalité et les réglages sont enregistrés dans le projet Logic ou Ableton.
 
 ## Construire

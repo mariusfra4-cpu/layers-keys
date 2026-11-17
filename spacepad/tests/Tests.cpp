@@ -6,6 +6,7 @@
 #include "PadEngine.h"
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "Lang.h"
 
 using namespace spacepad;
 
@@ -86,7 +87,7 @@ static void testNames()
         { "C", 0, -1 }, { "Pad - C#", 1, -1 }, { "Warm Pad Db", 1, -1 }, { "Em", 4, 1 }, { "Pad_E_minor", 4, 1 },
         { "Ambient Pad A - D minor", 2, 1 }, { "F# Major", 6, 0 }, { "Gbmaj", 6, 0 }, { "Bbm", 10, 1 }, { "Abm7", 8, 1 },
         { "Pad Do", 0, -1 }, { "Pad R\xc3\xa9 mineur", 2, 1 }, { "Mi b\xc3\xa9mol majeur", 3, 0 }, { "Sol#m", 8, 1 },
-        { "Fa diese mineur", 6, 1 }, { "Pad C3", 0, -1 }, { "E_m", 4, 1 }, { "(Am)", 9, 1 }, { "Pad A", 9, -1 },
+        { "Fa diese mineur", 6, 1 }, { "Pad Re menor", 2, 1 }, { "Sol mayor", 7, 0 }, { "Pad C3", 0, -1 }, { "E_m", 4, 1 }, { "(Am)", 9, 1 }, { "Pad A", 9, -1 },
         { "B flat minor", 10, 1 }, { "C sharp", 1, -1 }, { "Pad-D-Maj", 2, 0 }, { "AM", 9, 0 }, { "Shimmer Pad - Eb", 3, -1 },
         { "Choir Ahh", -1, -1 }, { "Applause Big", -1, -1 }, { "La Gloire Room", -1, -1 }, { "Riser 01", -1, -1 },
         { "A New Day", -1, -1 }, { "Bass Drop", -1, -1 }, { "Ambience", -1, -1 }, { "pad 7", -1, -1 },
@@ -396,6 +397,32 @@ static void snapshot (const juce::File& outDir, const juce::File& root)
         f.deleteFile();
         if (auto os = f.createOutputStream()) png.writeImageToStream (img, *os);
         CHECK (f.getSize() > 10000, "capture analyse");
+
+        // langues : anglais puis espagnol (le réglage est partagé, comme entre l'application et les plugins)
+        for (auto* c : v.getChildren())
+            if (auto* so = dynamic_cast<ScanOverlay*> (c)) { so->setVisible (false); }
+        struct LC { Lang l; const char* file; const char* word; };
+        for (auto lc : { LC { Lang::EN, "spacepad_en.png", "Choose a folder" }, LC { Lang::ES, "spacepad_es.png", "Elegir una carpeta" } })
+        {
+            setLang (lc.l);
+            v.retranslate();
+            for (auto* c : v.getChildren())
+                if (auto* lp = dynamic_cast<LibraryPanel*> (c)) lp->showTab (false);
+            bool found = false;
+            std::function<void (juce::Component*)> scanFor = [&] (juce::Component* c)
+            {
+                if (auto* b = dynamic_cast<juce::TextButton*> (c)) found |= b->getButtonText().startsWith (lc.word);
+                for (auto* cc : c->getChildren()) scanFor (cc);
+            };
+            scanFor (&v);
+            CHECK (found, "bouton traduit : " << lc.word);
+            img = v.createComponentSnapshot (v.getLocalBounds(), true, 2.0f);
+            f = outDir.getChildFile (lc.file);
+            f.deleteFile();
+            if (auto os = f.createOutputStream()) png.writeImageToStream (img, *os);
+        }
+        CHECK (reloadLangIfChanged() == false, "langue enregistree");
+        setLang (Lang::FR);
     }
     std::cout << "  images : " << outDir.getFullPathName() << "\n";
 }
