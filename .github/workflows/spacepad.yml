@@ -51,8 +51,10 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path C:\splogs | Out-Null
-          cmake -S spacepad -B build -G "Visual Studio 17 2022" -A x64 2>&1 | Select-Object -Last 3
-          cmake --build build --config Release --target Spacepad_Standalone Spacepad_VST3 SpacepadTests -- /m /v:minimal 2>&1 | Tee-Object C:\splogs\01_construction.txt | Select-String -Pattern "error|Spacepad\." | Select-Object -Last 30
+          cmake -S spacepad -B build -A x64 2>&1 | Select-Object -Last 5
+          if ($LASTEXITCODE -ne 0) { throw "configuration CMake en échec" }
+          cmake --build build --config Release --target Spacepad_Standalone Spacepad_VST3 SpacepadTests -- /m /v:minimal 2>&1 | Tee-Object C:\splogs\01_construction.txt | Select-String -Pattern " error |Spacepad\." | Select-Object -Last 30
+          if (-not (Test-Path build\Spacepad_artefacts\Release\Standalone\Spacepad.exe)) { Get-Content C:\splogs\01_construction.txt -Tail 60; throw "construction en échec" }
           Get-ChildItem -Recurse build\Spacepad_artefacts\Release | Select-Object FullName,Length | Format-Table -AutoSize | Out-String -Width 300 | Tee-Object -Append C:\splogs\01_construction.txt
       - name: Tests
         shell: pwsh
