@@ -9,8 +9,8 @@ on:
   workflow_dispatch:
     inputs:
       runner:
-        description: "Machine Mac de GitHub (macos-15, macos-14, macos-latest, macos-26…)"
-        default: macos-15
+        description: "Machine Mac de GitHub (macos-15-intel, macos-15, macos-14, macos-latest…)"
+        default: macos-15-intel
         required: false
 permissions:
   contents: write
@@ -18,7 +18,7 @@ env:
   SPVER: "1.0.0"
 jobs:
   mac:
-    runs-on: ${{ inputs.runner || 'macos-15' }}
+    runs-on: ${{ inputs.runner || 'macos-15-intel' }}
     timeout-minutes: 90
     defaults:
       run:
@@ -49,14 +49,16 @@ jobs:
           sleep 3
           auval -v aumu Spcp JBPr 2>&1 | tee /tmp/splogs/03_auval.txt | tail -15
           grep -q "AU VALIDATION SUCCEEDED" /tmp/splogs/03_auval.txt
-          arch -x86_64 auval -v aumu Spcp JBPr > /tmp/splogs/03b_auval_intel.txt 2>&1 || true
+          [ "$(uname -m)" = arm64 ] && { arch -x86_64 auval -v aumu Spcp JBPr > /tmp/splogs/03b_auval_intel.txt 2>&1 || true; } || echo "machine Intel : auval ci-dessus = version Intel" > /tmp/splogs/03b_auval_intel.txt
           tail -5 /tmp/splogs/03b_auval_intel.txt
           rm -rf ~/Library/Audio/Plug-Ins/Components/Spacepad.component
       - name: Test de démarrage de l'application (Apple et Intel)
         shell: bash {0}
         run: |
           B=build/Spacepad_artefacts/Release/Standalone/Spacepad.app/Contents/MacOS/Spacepad
-          for a in arm64 x86_64; do
+          # on ne peut lancer que l'architecture de la machine (un Mac Intel ne fait pas tourner le code Apple Silicon)
+          HOSTA=$(uname -m); [ "$HOSTA" = arm64 ] && ARCHS="arm64 x86_64" || ARCHS="x86_64"
+          for a in $ARCHS; do
             arch -$a "$B" > /tmp/splogs/04_run_$a.txt 2>&1 &
             P=$!; sleep 6
             if kill -0 $P 2>/dev/null; then echo "$a : application en marche après 6 s : OK" | tee -a /tmp/splogs/04_app.txt; kill $P; else wait $P; echo "$a : PLANTÉ code $?" | tee -a /tmp/splogs/04_app.txt; fi
