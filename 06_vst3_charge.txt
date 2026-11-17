@@ -1,0 +1,1 @@
+Plugin chargé : fabrique VST3 OK

@@ -1,0 +1,334 @@
+2026-11-17 18:26:30  plugin 1.1.1 : création d'une instance (macOS 15.7.9, GODEBUG )
+2026-11-17 18:26:30  plugin : moteur créé
+2026-11-17 18:26:30  plugin : cocoa prêt, création de l'interface
+2026-11-17 18:26:30  licence : identifiant lu par le système (sans programme externe)
+2026-11-17 18:26:30  plugin : interface créée
+2026-11-17 18:26:30  plugin : instance 1 créée
+2026-11-17 18:26:30  plugin 1.1.1 : création d'une instance (macOS 15.7.9, GODEBUG )
+2026-11-17 18:26:30  plugin : moteur créé
+2026-11-17 18:26:30  plugin : cocoa prêt, création de l'interface
+2026-11-17 18:26:30  licence : identifiant lu par le système (sans programme externe)
+2026-11-17 18:26:30  plugin : interface créée
+2026-11-17 18:26:30  plugin : instance 2 créée
+2026-11-17 18:26:30  AU : le logiciel hôte demande les informations d'interface (CocoaUI)
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 1 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 1 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 2 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 4 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 4 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 5 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 5 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 6 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 6 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 7 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 7 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 8 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 8 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 2 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 4 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 4 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 5 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 5 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 6 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 6 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 7 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 7 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 8 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 8 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 4 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 4 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 5 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 5 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 5 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 5 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 6 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 6 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 7 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 7 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 8 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 8 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 1 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 1 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 2 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 4 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 4 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 5 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 5 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 6 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 6 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 7 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 7 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 8 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 8 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 2 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 1 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 1 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:30  AU son : format refusé
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 2 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 22050 Hz, 2 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 96000 Hz, 2 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 48000 Hz, 2 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 192000 Hz, 2 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 11025 Hz, 2 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 2 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:30  AU son : format demandé par l'hôte : 44100 Hz, 2 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:40  plugin 1.1.1 : création d'une instance (macOS 15.7.9, GODEBUG )
+2026-11-17 18:26:40  plugin : moteur créé
+2026-11-17 18:26:40  plugin : cocoa prêt, création de l'interface
+2026-11-17 18:26:40  licence : identifiant lu par le système (sans programme externe)
+2026-11-17 18:26:40  plugin : interface créée
+2026-11-17 18:26:40  plugin : instance 1 créée
+2026-11-17 18:26:40  plugin 1.1.1 : création d'une instance (macOS 15.7.9, GODEBUG )
+2026-11-17 18:26:40  plugin : moteur créé
+2026-11-17 18:26:40  plugin : cocoa prêt, création de l'interface
+2026-11-17 18:26:40  licence : identifiant lu par le système (sans programme externe)
+2026-11-17 18:26:40  plugin : interface créée
+2026-11-17 18:26:40  plugin : instance 2 créée
+2026-11-17 18:26:40  AU : le logiciel hôte demande les informations d'interface (CocoaUI)
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 1 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 1 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 2 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 4 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 4 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 5 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 5 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 6 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 6 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 7 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 7 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 8 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 8 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 2 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 4 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 4 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 5 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 5 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 6 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 6 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 7 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 7 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 8 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 8 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 4 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 4 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 5 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 5 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 5 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 5 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 6 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 6 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 7 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 7 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 8 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 8 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 1 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 1 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 2 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 4 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 4 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 5 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 5 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 6 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 6 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 7 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 7 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 8 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 8 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 2 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 1 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 1 canaux, 32 bits, réels, entrelacés
+2026-11-17 18:26:40  AU son : format refusé
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 2 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 22050 Hz, 2 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 96000 Hz, 2 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 48000 Hz, 2 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 192000 Hz, 2 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 11025 Hz, 2 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 2 canaux, 32 bits, réels, séparés
+2026-11-17 18:26:40  AU son : format demandé par l'hôte : 44100 Hz, 2 canaux, 32 bits, réels, séparés
+2026-11-17 18:27:04  plugin 1.1.1 : création d'une instance (macOS 15.7.9, GODEBUG )
+2026-11-17 18:27:04  plugin : moteur créé
+2026-11-17 18:27:04  plugin : cocoa prêt, création de l'interface
+2026-11-17 18:27:04  licence : identifiant lu par le système (sans programme externe)
+2026-11-17 18:27:04  plugin : interface créée
+2026-11-17 18:27:04  plugin : instance 1 créée
+2026-11-17 18:27:04  AU son : format demandé par l'hôte : 48000 Hz, 2 canaux, 32 bits, réels, séparés
+2026-11-17 18:27:04  AU : le logiciel hôte demande les informations d'interface (CocoaUI)
+2026-11-17 18:27:04  AU : le logiciel hôte demande l'interface
+2026-11-17 18:27:04  éditeur : taille 1200 x 744 (échelle 1.00)
+2026-11-17 18:27:05  éditeur : graphiques prêts
+2026-11-17 18:27:05  éditeur : première image dessinée
+2026-11-17 18:27:05  AU : interface fournie au logiciel hôte (1200 x 744)
+2026-11-17 18:27:07  AU son : 424 blocs demandés (+424, dernier 512 images, 2 tampons), 0 refusés (code 0), messages MIDI reçus : classique 5408 / liste 0, notes jouées 2700 (+2700), crête de sortie 0.0000
+2026-11-17 18:27:10  AU son : 437 blocs demandés (+13, dernier 512 images, 2 tampons), 0 refusés (code 0), messages MIDI reçus : classique 5408 / liste 0, notes jouées 2700 (+0), crête de sortie 0.0000
+2026-11-17 18:27:14  AU : le logiciel hôte demande les informations d'interface (CocoaUI)
+2026-11-17 18:27:14  AU : le logiciel hôte demande l'interface
+2026-11-17 18:27:14  éditeur : taille 1200 x 744 (échelle 1.00)
+2026-11-17 18:27:14  éditeur : graphiques prêts
+2026-11-17 18:27:14  AU : interface fournie au logiciel hôte (1200 x 744)
+2026-11-17 18:27:16  AU son : 470 blocs demandés (+33, dernier 512 images, 2 tampons), 0 refusés (code 0), messages MIDI reçus : classique 5408 / liste 0, notes jouées 2700 (+0), crête de sortie 0.0000
+2026-11-17 18:27:19  AU son : 473 blocs demandés (+3, dernier 512 images, 2 tampons), 0 refusés (code 0), messages MIDI reçus : classique 5408 / liste 0, notes jouées 2700 (+0), crête de sortie 0.0000
+2026-11-17 18:27:21  AU : le logiciel hôte demande les informations d'interface (CocoaUI)
+2026-11-17 18:27:21  AU : le logiciel hôte demande l'interface
+2026-11-17 18:27:21  éditeur : taille 1200 x 744 (échelle 1.00)
+2026-11-17 18:27:21  éditeur : graphiques prêts
+2026-11-17 18:27:21  AU : interface fournie au logiciel hôte (1200 x 744)
+2026-11-17 18:27:22  éditeur : fenêtre cachée par le logiciel hôte (gardée pour sa réouverture)
+2026-11-17 18:27:26  éditeur : fenêtre de nouveau affichée
+2026-11-17 18:27:28  AU son : 479 blocs demandés (+6, dernier 512 images, 2 tampons), 0 refusés (code 0), messages MIDI reçus : classique 5408 / liste 0, notes jouées 2700 (+0), crête de sortie 0.0000
+2026-11-17 18:27:29  plugin 1.1.1 : création d'une instance (macOS 15.7.9, GODEBUG )
+2026-11-17 18:27:29  plugin : moteur créé
+2026-11-17 18:27:29  plugin : cocoa prêt, création de l'interface
+2026-11-17 18:27:29  licence : identifiant lu par le système (sans programme externe)
+2026-11-17 18:27:29  plugin : interface créée
+2026-11-17 18:27:29  plugin : instance 2 créée
+2026-11-17 18:27:30  plugin 1.1.1 : création d'une instance (macOS 15.7.9, GODEBUG )
+2026-11-17 18:27:30  plugin : moteur créé
+2026-11-17 18:27:30  plugin : cocoa prêt, création de l'interface
+2026-11-17 18:27:30  licence : identifiant lu par le système (sans programme externe)
+2026-11-17 18:27:30  plugin : interface créée
+2026-11-17 18:27:30  plugin : instance 1 créée
+2026-11-17 18:27:30  AU son : format demandé par l'hôte : 48000 Hz, 2 canaux, 32 bits, réels, séparés
+2026-11-17 18:27:30  AU : le logiciel hôte demande les informations d'interface (CocoaUI)
+2026-11-17 18:27:30  AU : le logiciel hôte demande l'interface
+2026-11-17 18:27:30  éditeur : taille 1200 x 744 (échelle 1.00)
+2026-11-17 18:27:30  éditeur : graphiques prêts
+2026-11-17 18:27:30  éditeur : première image dessinée
+2026-11-17 18:27:30  AU : interface fournie au logiciel hôte (1200 x 744)
+2026-11-17 18:27:33  AU son : 432 blocs demandés (+432, dernier 512 images, 2 tampons), 0 refusés (code 0), messages MIDI reçus : classique 5408 / liste 0, notes jouées 2700 (+2700), crête de sortie 0.0000
+2026-11-17 18:27:36  AU son : 437 blocs demandés (+5, dernier 512 images, 2 tampons), 0 refusés (code 0), messages MIDI reçus : classique 5408 / liste 0, notes jouées 2700 (+0), crête de sortie 0.0000
+2026-11-17 18:27:38  AU : le logiciel hôte demande les informations d'interface (CocoaUI)
+2026-11-17 18:27:38  AU : le logiciel hôte demande l'interface
+2026-11-17 18:27:38  éditeur : taille 1200 x 744 (échelle 1.00)
+2026-11-17 18:27:38  éditeur : graphiques prêts
+2026-11-17 18:27:38  AU : interface fournie au logiciel hôte (1200 x 744)
+2026-11-17 18:27:39  AU son : 451 blocs demandés (+14, dernier 512 images, 2 tampons), 0 refusés (code 0), messages MIDI reçus : classique 5408 / liste 0, notes jouées 2700 (+0), crête de sortie 0.0000
+2026-11-17 18:27:42  AU son : 473 blocs demandés (+22, dernier 512 images, 2 tampons), 0 refusés (code 0), messages MIDI reçus : classique 5408 / liste 0, notes jouées 2700 (+0), crête de sortie 0.0000
+2026-11-17 18:27:46  AU : le logiciel hôte demande les informations d'interface (CocoaUI)
+2026-11-17 18:27:46  AU : le logiciel hôte demande l'interface
+2026-11-17 18:27:46  éditeur : taille 1200 x 744 (échelle 1.00)
+2026-11-17 18:27:46  éditeur : graphiques prêts
+2026-11-17 18:27:46  AU : interface fournie au logiciel hôte (1200 x 744)
+2026-11-17 18:27:47  éditeur : fenêtre cachée par le logiciel hôte (gardée pour sa réouverture)
+2026-11-17 18:27:51  éditeur : fenêtre de nouveau affichée
+2026-11-17 18:27:54  AU son : 479 blocs demandés (+6, dernier 512 images, 2 tampons), 0 refusés (code 0), messages MIDI reçus : classique 5408 / liste 0, notes jouées 2700 (+0), crête de sortie 0.0000
+2026-11-17 18:27:54  plugin 1.1.1 : création d'une instance (macOS 15.7.9, GODEBUG )
+2026-11-17 18:27:54  plugin : moteur créé
+2026-11-17 18:27:54  plugin : cocoa prêt, création de l'interface
+2026-11-17 18:27:54  licence : identifiant lu par le système (sans programme externe)
+2026-11-17 18:27:54  plugin : interface créée
+2026-11-17 18:27:54  plugin : instance 2 créée
+2026-11-17 18:27:55  plugin 1.1.1 : création d'une instance (macOS 15.7.9, GODEBUG )
+2026-11-17 18:27:55  plugin : moteur créé
+2026-11-17 18:27:55  plugin : cocoa prêt, création de l'interface
+2026-11-17 18:27:55  licence : identifiant lu par le système (sans programme externe)
+2026-11-17 18:27:55  plugin : interface créée
+2026-11-17 18:27:55  plugin : instance 1 créée
+2026-11-17 18:27:55  AU : le logiciel hôte demande les informations d'interface (CocoaUI)
+2026-11-17 18:27:55  AU : le logiciel hôte demande l'interface
+2026-11-17 18:27:55  éditeur : taille 1200 x 744 (échelle 1.00)
+2026-11-17 18:27:55  éditeur : graphiques prêts
+2026-11-17 18:27:55  éditeur : première image dessinée
+2026-11-17 18:27:55  AU : interface fournie au logiciel hôte (1200 x 744)
+2026-11-17 18:27:58  AU son : 84 blocs demandés (+84, dernier 512 images, 2 tampons), 0 refusés (code 0), messages MIDI reçus : classique 32 / liste 0, notes jouées 16 (+16), crête de sortie 0.0000
+2026-11-17 18:28:01  AU son : 188 blocs demandés (+104, dernier 512 images, 2 tampons), 0 refusés (code 0), messages MIDI reçus : classique 67 / liste 0, notes jouées 34 (+18), crête de sortie 0.0000
+2026-11-17 18:28:04  AU son : 287 blocs demandés (+99, dernier 512 images, 2 tampons), 0 refusés (code 0), messages MIDI reçus : classique 93 / liste 0, notes jouées 47 (+13), crête de sortie 0.0000
+2026-11-17 18:28:07  AU son : 395 blocs demandés (+108, dernier 512 images, 2 tampons), 0 refusés (code 0), messages MIDI reçus : classique 120 / liste 0, notes jouées 60 (+13), crête de sortie 0.0000
+2026-11-17 18:28:10  AU son : 497 blocs demandés (+102, dernier 512 images, 2 tampons), 0 refusés (code 0), messages MIDI reçus : classique 149 / liste 0, notes jouées 75 (+15), crête de sortie 0.0000
+2026-11-17 18:28:13  AU son : 613 blocs demandés (+116, dernier 512 images, 2 tampons), 0 refusés (code 0), messages MIDI reçus : classique 182 / liste 0, notes jouées 91 (+16), crête de sortie 0.0000
+2026-11-17 18:28:16  AU son : 731 blocs demandés (+118, dernier 512 images, 2 tampons), 0 refusés (code 0), messages MIDI reçus : classique 210 / liste 0, notes jouées 105 (+14), crête de sortie 0.0000
+2026-11-17 18:28:19  AU son : 847 blocs demandés (+116, dernier 512 images, 2 tampons), 0 refusés (code 0), messages MIDI reçus : classique 240 / liste 0, notes jouées 120 (+15), crête de sortie 0.0000
