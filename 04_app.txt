@@ -1,0 +1,1 @@
+x86_64 : application en marche après 6 s : OK

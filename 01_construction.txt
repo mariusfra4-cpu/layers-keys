@@ -1,0 +1,204 @@
+[0/2] Re-checking globbed directories...
+[1/105] Copying OS X Content Spacepad_artefacts/Release/Standalone/Spacepad.app/Contents/Resources/Icon.icns
+[2/105] Copying OS X Content Spacepad_artefacts/Release/Standalone/Spacepad.app/Contents/Resources/RecentFilesMenuTemplate.nib
+[3/105] Copying OS X Content Spacepad_artefacts/Release/AU/Spacepad.component/Contents/Resources/Icon.icns
+[4/105] Copying OS X Content Spacepad_artefacts/Release/VST3/Spacepad.vst3/Contents/Resources/Icon.icns
+[5/105] Generating juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData1.cpp, juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData2.cpp, juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData3.cpp, juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData4.cpp, juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData.h
+[6/105] Building CXX object CMakeFiles/SpacepadData.dir/juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData1.cpp.o
+[7/105] Building CXX object CMakeFiles/SpacepadData.dir/juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData2.cpp.o
+[8/105] Building CXX object CMakeFiles/SpacepadData.dir/juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData4.cpp.o
+[9/105] Building CXX object CMakeFiles/SpacepadData.dir/juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData3.cpp.o
+[10/105] Linking CXX static library libSpacepadData.a
+[11/105] Building CXX object CMakeFiles/Spacepad.dir/Source/Lang.cpp.o
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/Lang.cpp:73:13: warning: enumeration value 'FR' not explicitly handled in switch [-Wswitch-enum]
+   73 |     switch (lang())
+      |             ^~~~~~
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/Lang.cpp:73:13: note: add missing switch cases
+   73 |     switch (lang())
+      |             ^
+   74 |     {
+   75 |         case Lang::EN: return juce::String::fromUTF8 (en);
+1 warning generated.
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/Lang.cpp:73:13: warning: enumeration value 'FR' not explicitly handled in switch [-Wswitch-enum]
+   73 |     switch (lang())
+      |             ^~~~~~
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/Lang.cpp:73:13: note: add missing switch cases
+   73 |     switch (lang())
+      |             ^
+   74 |     {
+   75 |         case Lang::EN: return juce::String::fromUTF8 (en);
+1 warning generated.
+[12/105] Building CXX object CMakeFiles/Spacepad.dir/Source/KeyDetect.cpp.o
+[13/105] Building CXX object CMakeFiles/Spacepad.dir/Source/PadEngine.cpp.o
+[14/105] Building CXX object CMakeFiles/Spacepad.dir/Source/Library.cpp.o
+[15/105] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_ara.cpp.o
+[16/105] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_lv2_libs.cpp.o
+[17/105] Building CXX object CMakeFiles/Spacepad.dir/Source/Effects.cpp.o
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/Effects.cpp:95:74: warning: implicit conversion loses floating-point precision: 'double' to 'float' [-Wimplicit-float-conversion]
+   95 |         auto c = juce::dsp::IIR::Coefficients<float>::makeHighShelf (sr, juce::jmin (8000.0, sr * 0.4), 0.7f, juce::Decibels::decibelsToGain (airDb));
+      |                  ~~~~                                                    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1 warning generated.
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/Effects.cpp:95:74: warning: implicit conversion loses floating-point precision: 'double' to 'float' [-Wimplicit-float-conversion]
+   95 |         auto c = juce::dsp::IIR::Coefficients<float>::makeHighShelf (sr, juce::jmin (8000.0, sr * 0.4), 0.7f, juce::Decibels::decibelsToGain (airDb));
+      |                  ~~~~                                                    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1 warning generated.
+[18/105] Building CXX object CMakeFiles/juce_vst3_helper.dir/_deps/juce-src/modules/juce_audio_plugin_client/VST3/juce_VST3ManifestHelper.mm.o
+[19/105] Building CXX object CMakeFiles/Spacepad.dir/Source/PluginEditor.cpp.o
+[20/105] Building CXX object CMakeFiles/Spacepad.dir/Source/PluginProcessor.cpp.o
+[21/105] Building C object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_graphics/juce_graphics_Sheenbidi.c.o
+[22/105] Building CXX object CMakeFiles/Spacepad.dir/Source/UI.cpp.o
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.cpp:39:17: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+   39 |     if (kerning != 0) f.setExtraKerningFactor (kerning);
+      |         ~~~~~~~ ^  ~
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.cpp:1:
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:120:9: warning: private field 'chipsBottom' is not used [-Wunused-private-field]
+  120 |     int chipsBottom = 0;
+      |         ^
+2 warnings generated.
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.cpp:39:17: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+   39 |     if (kerning != 0) f.setExtraKerningFactor (kerning);
+      |         ~~~~~~~ ^  ~
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.cpp:1:
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:120:9: warning: private field 'chipsBottom' is not used [-Wunused-private-field]
+  120 |     int chipsBottom = 0;
+      |         ^
+2 warnings generated.
+[23/105] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_gui_extra/juce_gui_extra.mm.o
+[24/105] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_core/juce_core_CompilationTime.cpp.o
+[25/105] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_events/juce_events.mm.o
+[26/105] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_data_structures/juce_data_structures.mm.o
+[27/105] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.mm.o
+[28/105] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_audio_basics/juce_audio_basics.mm.o
+[29/105] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_audio_utils/juce_audio_utils.mm.o
+[30/105] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_core/juce_core.mm.o
+[31/105] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_graphics/juce_graphics.mm.o
+[32/105] Linking CXX executable juce_vst3_helper
+[33/105] Building CXX object CMakeFiles/SpacepadTests.dir/Source/KeyDetect.cpp.o
+[34/105] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_graphics/juce_graphics_Harfbuzz.cpp.o
+[35/105] Building CXX object CMakeFiles/SpacepadTests.dir/Source/Lang.cpp.o
+[36/105] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_audio_devices/juce_audio_devices.mm.o
+[37/105] Building CXX object CMakeFiles/SpacepadTests.dir/Source/Library.cpp.o
+[38/105] Building CXX object CMakeFiles/SpacepadTests.dir/Source/PadEngine.cpp.o
+[39/105] Building CXX object CMakeFiles/SpacepadTests.dir/Source/Effects.cpp.o
+[40/105] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_dsp/juce_dsp.mm.o
+[41/105] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_audio_formats/juce_audio_formats.mm.o
+[42/105] Building CXX object CMakeFiles/SpacepadTests.dir/Source/PluginEditor.cpp.o
+[43/105] Building CXX object CMakeFiles/SpacepadTests.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_ara.cpp.o
+[44/105] Building CXX object CMakeFiles/SpacepadTests.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_lv2_libs.cpp.o
+[45/105] Building CXX object CMakeFiles/SpacepadTests.dir/Source/PluginProcessor.cpp.o
+[46/105] Building CXX object CMakeFiles/SpacepadTests.dir/tests/Tests.cpp.o
+[47/105] Building CXX object CMakeFiles/SpacepadTests.dir/Source/UI.cpp.o
+[48/105] Building CXX object CMakeFiles/SpacepadTests.dir/_deps/juce-src/modules/juce_audio_utils/juce_audio_utils.mm.o
+[49/105] Building C object CMakeFiles/SpacepadTests.dir/_deps/juce-src/modules/juce_graphics/juce_graphics_Sheenbidi.c.o
+[50/105] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.mm.o
+In file included from /Users/runner/work/layers-keys/layers-keys/build/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.mm:35:
+/Users/runner/work/layers-keys/layers-keys/build/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.cpp:61:2: warning: This version of JUCE does not use the splash screen, the flag JUCE_DISPLAY_SPLASH_SCREEN is ignored [-W#pragma-messages]
+   61 |  JUCE_COMPILER_WARNING ("This version of JUCE does not use the splash screen, the flag JUCE_DISPLAY_SPLASH_SCREEN is ignored")
+      |  ^
+/Users/runner/work/layers-keys/layers-keys/build/_deps/juce-src/modules/juce_core/system/juce_PlatformDefs.h:286:38: note: expanded from macro 'JUCE_COMPILER_WARNING'
+  286 |  #define JUCE_COMPILER_WARNING(msg)  _Pragma (JUCE_STRINGIFY (message (msg)))
+      |                                      ^
+<scratch space>:201:2: note: expanded from here
+  201 |  message ("This version of JUCE does not use the splash screen, the flag JUCE_DISPLAY_SPLASH_SCREEN is ignored")
+      |  ^
+In file included from /Users/runner/work/layers-keys/layers-keys/build/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.mm:35:
+In file included from /Users/runner/work/layers-keys/layers-keys/build/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.cpp:187:
+/Users/runner/work/layers-keys/layers-keys/build/_deps/juce-src/modules/juce_gui_basics/native/juce_NSViewComponentPeer_mac.mm:1636:23: warning: variable 'target' set but not used [-Wunused-but-set-variable]
+ 1636 |             if (auto* target = findCurrentTextInputTarget())
+      |                       ^
+2 warnings generated.
+In file included from /Users/runner/work/layers-keys/layers-keys/build/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.mm:35:
+/Users/runner/work/layers-keys/layers-keys/build/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.cpp:61:2: warning: This version of JUCE does not use the splash screen, the flag JUCE_DISPLAY_SPLASH_SCREEN is ignored [-W#pragma-messages]
+   61 |  JUCE_COMPILER_WARNING ("This version of JUCE does not use the splash screen, the flag JUCE_DISPLAY_SPLASH_SCREEN is ignored")
+      |  ^
+/Users/runner/work/layers-keys/layers-keys/build/_deps/juce-src/modules/juce_core/system/juce_PlatformDefs.h:286:38: note: expanded from macro 'JUCE_COMPILER_WARNING'
+  286 |  #define JUCE_COMPILER_WARNING(msg)  _Pragma (JUCE_STRINGIFY (message (msg)))
+      |                                      ^
+<scratch space>:78:2: note: expanded from here
+   78 |  message ("This version of JUCE does not use the splash screen, the flag JUCE_DISPLAY_SPLASH_SCREEN is ignored")
+      |  ^
+In file included from /Users/runner/work/layers-keys/layers-keys/build/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.mm:35:
+In file included from /Users/runner/work/layers-keys/layers-keys/build/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.cpp:187:
+/Users/runner/work/layers-keys/layers-keys/build/_deps/juce-src/modules/juce_gui_basics/native/juce_NSViewComponentPeer_mac.mm:1636:23: warning: variable 'target' set but not used [-Wunused-but-set-variable]
+ 1636 |             if (auto* target = findCurrentTextInputTarget())
+      |                       ^
+2 warnings generated.
+[51/105] Linking CXX static library Spacepad_artefacts/Release/libSpacepad_SharedCode.a
+[52/105] Generating Spacepad_artefacts/JuceLibraryCode/Spacepad_Standalone/PkgInfo
+[53/105] Generating Spacepad_artefacts/JuceLibraryCode/Spacepad_AU/PkgInfo
+[54/105] Generating Spacepad_artefacts/JuceLibraryCode/Spacepad_VST3/PkgInfo
+[55/105] Building CXX object CMakeFiles/Spacepad_Standalone.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_AAX_utils.cpp.o
+[56/105] Building CXX object CMakeFiles/Spacepad_Standalone.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_ARA.cpp.o
+[57/105] Building CXX object CMakeFiles/SpacepadTests.dir/_deps/juce-src/modules/juce_gui_extra/juce_gui_extra.mm.o
+[58/105] Building CXX object CMakeFiles/Spacepad_Standalone.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_Unity.cpp.o
+[59/105] Building CXX object CMakeFiles/Spacepad_Standalone.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_AAX.mm.o
+[60/105] Building CXX object CMakeFiles/Spacepad_Standalone.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_AU_1.mm.o
+[61/105] Building CXX object CMakeFiles/Spacepad_Standalone.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_AU_2.mm.o
+[62/105] Building CXX object CMakeFiles/Spacepad_Standalone.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_AUv3.mm.o
+[63/105] Building CXX object CMakeFiles/Spacepad_Standalone.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_LV2.mm.o
+[64/105] Building CXX object CMakeFiles/Spacepad_Standalone.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_VST2.mm.o
+[65/105] Building CXX object CMakeFiles/Spacepad_Standalone.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_VST3.mm.o
+[66/105] Building CXX object CMakeFiles/Spacepad_AU.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_AAX_utils.cpp.o
+[67/105] Building CXX object CMakeFiles/Spacepad_AU.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_ARA.cpp.o
+[68/105] Building CXX object CMakeFiles/Spacepad_AU.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_Standalone.cpp.o
+[69/105] Building CXX object CMakeFiles/Spacepad_AU.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_Unity.cpp.o
+[70/105] Building CXX object CMakeFiles/Spacepad_AU.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_AAX.mm.o
+[71/105] Building CXX object CMakeFiles/Spacepad_Standalone.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_Standalone.cpp.o
+[72/105] Building CXX object CMakeFiles/SpacepadTests.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.mm.o
+[73/105] Building CXX object CMakeFiles/Spacepad_AU.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_AUv3.mm.o
+[74/105] Building CXX object CMakeFiles/Spacepad_AU.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_LV2.mm.o
+[75/105] Building CXX object CMakeFiles/Spacepad_AU.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_VST2.mm.o
+[76/105] Building CXX object CMakeFiles/Spacepad_AU.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_VST3.mm.o
+[77/105] Building CXX object CMakeFiles/Spacepad_VST3.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_AAX_utils.cpp.o
+[78/105] Building CXX object CMakeFiles/Spacepad_VST3.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_ARA.cpp.o
+[79/105] Building CXX object CMakeFiles/Spacepad_VST3.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_Standalone.cpp.o
+[80/105] Building CXX object CMakeFiles/Spacepad_VST3.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_Unity.cpp.o
+[81/105] Building CXX object CMakeFiles/Spacepad_VST3.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_AAX.mm.o
+[82/105] Building CXX object CMakeFiles/Spacepad_VST3.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_AU_1.mm.o
+[83/105] Building CXX object CMakeFiles/Spacepad_VST3.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_AU_2.mm.o
+[84/105] Building CXX object CMakeFiles/Spacepad_VST3.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_AUv3.mm.o
+[85/105] Building CXX object CMakeFiles/Spacepad_VST3.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_LV2.mm.o
+[86/105] Building CXX object CMakeFiles/Spacepad_VST3.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_VST2.mm.o
+[87/105] Building CXX object CMakeFiles/Spacepad_AU.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_AU_2.mm.o
+[88/105] Building CXX object CMakeFiles/Spacepad_AU.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_AU_1.mm.o
+[89/105] Building CXX object CMakeFiles/SpacepadTests.dir/_deps/juce-src/modules/juce_core/juce_core_CompilationTime.cpp.o
+[90/105] Building CXX object CMakeFiles/SpacepadTests.dir/_deps/juce-src/modules/juce_events/juce_events.mm.o
+[91/105] Building CXX object CMakeFiles/SpacepadTests.dir/_deps/juce-src/modules/juce_data_structures/juce_data_structures.mm.o
+[92/105] Building CXX object CMakeFiles/Spacepad_VST3.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_VST3.mm.o
+[93/105] Building CXX object CMakeFiles/SpacepadTests.dir/_deps/juce-src/modules/juce_audio_basics/juce_audio_basics.mm.o
+[94/105] Building CXX object CMakeFiles/SpacepadTests.dir/_deps/juce-src/modules/juce_graphics/juce_graphics.mm.o
+[95/105] Building CXX object CMakeFiles/SpacepadTests.dir/_deps/juce-src/modules/juce_graphics/juce_graphics_Harfbuzz.cpp.o
+[96/105] Building CXX object CMakeFiles/SpacepadTests.dir/_deps/juce-src/modules/juce_core/juce_core.mm.o
+[97/105] Building CXX object CMakeFiles/SpacepadTests.dir/_deps/juce-src/modules/juce_audio_devices/juce_audio_devices.mm.o
+[98/105] Building CXX object CMakeFiles/SpacepadTests.dir/_deps/juce-src/modules/juce_audio_formats/juce_audio_formats.mm.o
+[99/105] Building CXX object CMakeFiles/SpacepadTests.dir/_deps/juce-src/modules/juce_dsp/juce_dsp.mm.o
+[100/105] Building CXX object CMakeFiles/SpacepadTests.dir/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.mm.o
+[101/105] Linking CXX executable SpacepadTests_artefacts/Release/SpacepadTests
+[102/105] Linking CXX executable Spacepad_artefacts/Release/Standalone/Spacepad.app/Contents/MacOS/Spacepad
+[103/105] Linking CXX CFBundle shared module Spacepad_artefacts/Release/AU/Spacepad.component/Contents/MacOS/Spacepad
+[104/105] Linking CXX CFBundle shared module Spacepad_artefacts/Release/VST3/Spacepad.vst3/Contents/MacOS/Spacepad
+/Users/runner/work/layers-keys/layers-keys/build/Spacepad_artefacts/Release/VST3/Spacepad.vst3: code object is not signed at all
+In architecture: x86_64
+-- Replacing invalid signature with ad-hoc signature
+removing moduleinfo.json
+creating /Users/runner/work/layers-keys/layers-keys/build/Spacepad_artefacts/Release/VST3/Spacepad.vst3/Contents/Resources/moduleinfo.json
+build/Spacepad_artefacts/Release/AU:
+total 0
+drwxr-xr-x  3 runner  staff   96 Nov 17 19:21 .
+drwxr-xr-x  6 runner  staff  192 Nov 17 19:24 ..
+drwxr-xr-x  3 runner  staff   96 Nov 17 19:21 Spacepad.component
+
+build/Spacepad_artefacts/Release/Standalone:
+total 0
+drwxr-xr-x  3 runner  staff   96 Nov 17 19:21 .
+drwxr-xr-x  6 runner  staff  192 Nov 17 19:24 ..
+drwxr-xr-x  3 runner  staff   96 Nov 17 19:21 Spacepad.app
+
+build/Spacepad_artefacts/Release/VST3:
+total 0
+drwxr-xr-x  3 runner  staff   96 Nov 17 19:21 .
+drwxr-xr-x  6 runner  staff  192 Nov 17 19:24 ..
+drwxr-xr-x  3 runner  staff   96 Nov 17 19:21 Spacepad.vst3
+build/Spacepad_artefacts/Release/Standalone/Spacepad.app : x86_64 arm64
+build/Spacepad_artefacts/Release/VST3/Spacepad.vst3 : x86_64 arm64
+build/Spacepad_artefacts/Release/AU/Spacepad.component : x86_64 arm64

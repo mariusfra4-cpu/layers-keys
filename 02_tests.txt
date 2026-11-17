@@ -1,0 +1,25 @@
+
+== Tonalite dans les noms de fichiers
+
+== Tonalite a l'ecoute
+  accords reconnus : 24 / 24
+  bruit (foule/ambiance) : force tonale 0
+
+== Analyse d'un dossier complet
+  - Mes Crowds [CROWD] 4 sounds · 2 categories
+  - Pad Mystere [PAD] 2 sounds · 2/24 keys
+  - Warm Pad [PAD] 18 sounds · 18/24 keys
+
+== Enregistrement commun (application + VST3 + AU)
+
+== Boucle sans clic
+  plus grand saut entre deux echantillons : 0.0235638 (sinus seul : ~0.019)
+
+== Moteur complet (comme dans Logic / Ableton)
+  niveau apres 2 s : 0.0413324, crete 0.119027
+
+== Capture de l'interface
+  images : /tmp/splogs/captures
+
+106 / 106 verifications reussies
+TOUT EST BON

@@ -1,0 +1,16 @@
+pkgbuild: Reading components from /var/folders/20/jp1_0n3n7kndh6rnbqb5344m0000gn/T/tmp.kLf58mXrQO/app.plist
+pkgbuild: Adding component at Applications/Spacepad.app
+pkgbuild: Adding component at Applications/Désinstaller Spacepad.app
+pkgbuild: Adding top-level preinstall script
+pkgbuild: Adding top-level postinstall script
+pkgbuild: Wrote package to /var/folders/20/jp1_0n3n7kndh6rnbqb5344m0000gn/T/tmp.kLf58mXrQO/Spacepad_app.pkg
+pkgbuild: Reading components from /var/folders/20/jp1_0n3n7kndh6rnbqb5344m0000gn/T/tmp.kLf58mXrQO/vst3.plist
+pkgbuild: Adding component at Library/Audio/Plug-Ins/VST3/Spacepad.vst3
+pkgbuild: Adding top-level postinstall script
+pkgbuild: Wrote package to /var/folders/20/jp1_0n3n7kndh6rnbqb5344m0000gn/T/tmp.kLf58mXrQO/Spacepad_vst3.pkg
+pkgbuild: Reading components from /var/folders/20/jp1_0n3n7kndh6rnbqb5344m0000gn/T/tmp.kLf58mXrQO/au.plist
+pkgbuild: Adding component at Library/Audio/Plug-Ins/Components/Spacepad.component
+pkgbuild: Adding top-level postinstall script
+pkgbuild: Wrote package to /var/folders/20/jp1_0n3n7kndh6rnbqb5344m0000gn/T/tmp.kLf58mXrQO/Spacepad_au.pkg
+productbuild: Wrote product to /Users/runner/work/layers-keys/layers-keys/spacepad/installer/mac/../../dist/Spacepad-1.0.0.pkg
+-rw-r--r--  1 runner  staff  20279600 Nov 17 19:29 /Users/runner/work/layers-keys/layers-keys/spacepad/installer/mac/../../dist/Spacepad-1.0.0.pkg
