@@ -64,7 +64,8 @@ func mkOnCol(name string, base uint32) lookOnCol {
 }
 
 var lookOnCols = []lookOnCol{
-	{"Or", colGold, 0xffe27a, 0xffd23a, 0xb98200}, // couleur d'origine
+	{"Assortie au thème", colGold, 0xffe27a, 0xffd23a, 0xb98200}, // d'origine : suit l'accent du thème
+	{"Or", colGold, 0xffe27a, 0xffd23a, 0xb98200},
 	mkOnCol("Bleu", 0x38a1ff),
 	mkOnCol("Turquoise", 0x22c7b8),
 	mkOnCol("Vert", 0x3ddc84),
@@ -123,7 +124,14 @@ func (u *UI) applyLook() {
 	u.host.Invalidate()
 }
 
-func curOnCol() lookOnCol  { return lookOnCols[clamp(look.on, 0, len(lookOnCols)-1)] }
+func curOnCol() lookOnCol {
+	if look.on == 0 && look.theme > 0 { // notes jouées dans la couleur d'accent du thème
+		th := curTheme()
+		m := func(c uint32) uint32 { return mapThemeColor(c, th, textThemes[0]) }
+		return lookOnCol{"Assortie au thème", m(colGold), m(0xffe27a), m(0xffd23a), m(0xb98200)}
+	}
+	return lookOnCols[clamp(look.on, 0, len(lookOnCols)-1)]
+}
 func curWhite() lookKeyCol { return lookWhiteCols[clamp(look.white, 0, len(lookWhiteCols)-1)] }
 func curBlack() lookKeyCol { return lookBlackCols[clamp(look.black, 0, len(lookBlackCols)-1)] }
 func curFam() int          { return clamp(look.font, 0, nFams-1) }
@@ -167,30 +175,35 @@ func (u *UI) drawLook(c *Canvas, r rect) {
 		cw, ch := (r.w-12-3*10)/4, 70
 		for i, th := range uiThemes {
 			i, th := i, th
-			bx, by := x+(i%4)*(cw+10), y+(i/4)*(ch+30)
+			bx, by := x+(i%4)*(cw+10), y+(i/4)*(ch+42)
+			m := func(col uint32) uint32 { return mapThemeColor(col, th, textThemes[0]) }
+			bg, pn, ac, acd, tx, tx2 := m(colBg), m(colRow), m(colGold), m(colGoldDim), m(colText), m(colText2)
 			c.NoTheme = true
-			c.RRect(float64(bx), float64(by), float64(cw), float64(ch), 8, th.swatchA, 1)
-			c.RRect(float64(bx+10), float64(by+10), float64(cw-20), 12, 4, th.swatchB, 1)
-			c.RRect(float64(bx+10), float64(by+30), float64(cw/2), 8, 3, mixColor(th.swatchA, 0xffffff, 0.25), 1)
-			c.RRect(float64(bx+10), float64(by+44), float64(cw/3), 8, 3, mixColor(th.swatchA, th.swatchB, 0.5), 1)
-			c.Circle(float64(bx+cw-22), float64(by+48), 10, th.swatchB, 1)
-			sel := uint32(0x4a5a78)
+			c.RRectGrad(float64(bx), float64(by), float64(cw), float64(ch), 8, pn, bg, 1)
+			c.RRectGrad(float64(bx+10), float64(by+10), float64(cw-20), 12, 4, m(colGoldHi), ac, 1)
+			c.RRect(float64(bx+10), float64(by+30), float64(cw/2), 7, 3, tx, 0.85)
+			c.RRect(float64(bx+10), float64(by+44), float64(cw/3), 7, 3, tx2, 0.7)
+			c.Circle(float64(bx+cw-24), float64(by+46), 11, bg, 1)
+			c.Arc(float64(bx+cw-24), float64(by+46), 11, 2.4, 5.6, 3, ac, 1)
+			c.Rect(bx+10, by+ch-9, cw-20, 2, acd, 0.8)
+			sel := m(colLine)
 			if i == look.theme {
 				sel = 0xffffff
 			}
 			c.RRectStroke(float64(bx), float64(by), float64(cw), float64(ch), 8, 2, sel, 1)
 			c.NoTheme = false
-			c.Text(bx, by+ch+4, cw, 18, T(th.name), fontSm, colText, 1)
+			c.Text(bx-4, by+ch+3, cw+8, 16, T(th.name), fontXs, colText, 1)
+			c.Text(bx-4, by+ch+18, cw+8, 13, T(th.desc), fontXs, colText2, 1)
 			u.reg(region{r: rect{bx, by, cw, ch + 22}, id: fmt.Sprintf("lookTh%d", i), down: func(int, int) { u.setLook(func(c *Config) { c.LookTheme = i }) }})
 		}
-		y += 2 * (ch + 30)
+		y += 2 * (ch + 42)
 		c.Text(x, y+6, r.w-12, 16, T("Le thème change les fonds, les cadres, les boutons et les curseurs. Le clavier garde ses couleurs (onglet Clavier)."), fontXs, colText2, 0)
 	case 1: // écritures
 		row(T("Couleur des écritures"), T(curTextTh().name))
 		for i, tt := range textThemes {
 			i, tt := i, tt
-			bx := x + i*96
-			br := rect{bx, y, 88, 44}
+			bx := x + i*98
+			br := rect{bx, y, 92, 44}
 			c.RRect(float64(br.x), float64(br.y), float64(br.w), float64(br.h), 6, colRow, 1)
 			if i == look.text {
 				c.RRectStroke(float64(br.x), float64(br.y), float64(br.w), float64(br.h), 6, 2, colGold, 1)

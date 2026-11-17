@@ -10,23 +10,24 @@ import (
 )
 
 type uiTheme struct {
-	name             string
-	accH, accS       float64 // accent : nouvelle teinte (degrés, <0 = garder) et facteur de saturation
-	accV             float64 // facteur de lumière de l'accent
-	bgH, bgS, bgV    float64 // fonds et cadres
-	light            bool    // thème clair : fonds clairs, écritures foncées
-	swatchA, swatchB uint32  // pastille dans l'écran de choix (fond, accent)
+	name          string
+	desc          string  // ambiance, affichée sous le nom
+	accH, accS    float64 // accent (l'or d'origine) : teinte et saturation visées (accH < 0 = garder)
+	accV          float64 // lumière de l'accent (facteur)
+	bgH, bgS, bgV float64 // fonds et cadres : teinte, saturation visée, lumière (facteur)
+	txH, txS      float64 // teinte et saturation des écritures avec ce thème (txS < 0 = garder)
 }
 
+// harmonies à deux tons, comme le matériel de studio : un fond profond et nuancé, un accent « métal » ou pastel
 var uiThemes = []uiTheme{
-	{"Or & Bleu nuit", -1, 1, 1, -1, 1, 1, false, colPanel, colGold}, // d'origine
-	{"Saphir", 208, 0.85, 1, 214, 1.1, 1, false, 0x0d1830, 0x38a1ff},
-	{"Émeraude", 148, 0.8, 0.92, 168, 0.8, 0.95, false, 0x0a1a17, 0x2fd583},
-	{"Rubis", 354, 0.85, 0.95, 350, 0.7, 1, false, 0x1a0d12, 0xe8414f},
-	{"Violet royal", 272, 0.7, 1, 262, 0.85, 1.05, false, 0x140f24, 0xa77bff},
-	{"Graphite & Argent", 215, 0.12, 1.05, 220, 0.12, 1.08, false, 0x16181c, 0xd3d9e3},
-	{"Orange & Charbon", 26, 1, 1, 25, 0.1, 1.05, false, 0x171513, 0xff8a1f},
-	{"Clair", -1, 1, 0.78, 215, 0.3, 1, true, 0xeef1f6, 0xc99600},
+	{"Or & Bleu nuit", "l'original", -1, 0, 1, -1, 0, 1, -1, -1},
+	{"Champagne & Ébène", "luxe, piano de concert", 40, 0.34, 0.97, 30, 0.16, 1.05, 38, 0.06},
+	{"Bordeaux & Or rose", "chaleureux, velours", 14, 0.5, 0.98, 344, 0.55, 1.05, 12, 0.07},
+	{"Vert anglais & Laiton", "console vintage", 43, 0.62, 0.9, 162, 0.5, 1.0, 50, 0.07},
+	{"Bleu pétrole & Cuivre", "studio moderne", 21, 0.66, 0.97, 194, 0.62, 1.0, 190, 0.07},
+	{"Prune & Lavande", "doux, élégant", 266, 0.38, 1.0, 286, 0.42, 1.08, 270, 0.08},
+	{"Ardoise & Glacier", "frais, épuré", 193, 0.36, 1.0, 212, 0.3, 1.12, 200, 0.06},
+	{"Minuit & Corail", "scène, lumière chaude", 9, 0.58, 1.0, 232, 0.55, 1.0, 230, 0.05},
 }
 
 type textTheme struct {
@@ -36,12 +37,12 @@ type textTheme struct {
 }
 
 var textThemes = []textTheme{
-	{"Blanc", -1, -1, colText}, // d'origine
-	{"Crème", 44, 0.16, 0xf3ead2},
-	{"Gris clair", 0, 0, 0xd5d8dd},
-	{"Or", 45, 0.55, 0xf4d77a},
-	{"Bleu glacier", 198, 0.25, 0xcfe9f7},
-	{"Vert menthe", 150, 0.22, 0xcdf3df},
+	{"Assortie au thème", -1, -1, colText}, // d'origine
+	{"Ivoire", 44, 0.1, 0xf6f0e1},
+	{"Champagne", 38, 0.24, 0xf1dfbd},
+	{"Perle", 220, 0.03, 0xe3e5ea},
+	{"Or doux", 44, 0.42, 0xf2d891},
+	{"Glacier", 198, 0.2, 0xd6ecf7},
 }
 
 var (
@@ -125,34 +126,23 @@ func themeColor(col uint32) uint32 {
 func mapThemeColor(col uint32, th uiTheme, tt textTheme) uint32 {
 	h, s, v := rgbToHSV(col)
 	switch {
-	case s >= 0.45 && h >= 28 && h <= 62 && v >= 0.25: // accent (or)
-		if th.accH >= 0 {
-			h = th.accH
+	case s >= 0.45 && h >= 25 && h <= 62: // accent (or, ambre, brun doré)
+		if th.accH < 0 {
+			return col
 		}
-		return hsvToRGB(h, s*th.accS, v*th.accV)
+		return hsvToRGB(th.accH, th.accS*math.Min(1, s/0.95), math.Min(1, v*th.accV))
 	case h >= 190 && h <= 245 && s > 0.06 && v < 0.55 && s < 0.8: // fonds, cadres, lignes (bleu nuit)
-		if th.light {
-			return hsvToRGB(th.bgH, s*th.bgS, 0.985-v*0.55)
+		if th.bgH < 0 {
+			return col
 		}
-		if th.bgH >= 0 {
-			h = th.bgH
-		}
-		return hsvToRGB(h, s*th.bgS, v*th.bgV)
+		return hsvToRGB(th.bgH, th.bgS*math.Min(1.3, s/0.6), v*th.bgV)
 	case s < 0.3 && v >= 0.5 && (s < 0.06 || (h >= 185 && h <= 245)): // écritures (blanc bleuté, gris bleu)
-		if th.light {
-			v = 1.02 - v
+		switch {
+		case tt.s >= 0:
+			return hsvToRGB(tt.h, tt.s*(0.6+0.4*v), v)
+		case th.txS >= 0:
+			return hsvToRGB(th.txH, th.txS+s*0.5, v)
 		}
-		if tt.s >= 0 {
-			h, s = tt.h, tt.s*(0.6+0.4*v)
-			if th.light {
-				s = tt.s * 1.6
-			}
-		} else if th.light {
-			h, s = 218, s+0.1
-		}
-		return hsvToRGB(h, s, v)
-	case th.light && s < 0.06 && v < 0.12 && col != 0: // presque noir (texte sur bouton doré) : inchangé
-		return col
 	}
 	return col
 }
