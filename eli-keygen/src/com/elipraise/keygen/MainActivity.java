@@ -35,8 +35,6 @@ import org.json.JSONObject;
 public class MainActivity extends Activity {
     static final int BG = 0xFF0F172A, PANEL = 0xFF1E293B, GOLD = 0xFFFB923C, GOLD_HI = 0xFFFDBA74, TEXT = 0xFFF1F5F9, GREY = 0xFF94A3B8, RED = 0xFFF87171, GREEN = 0xFF4ADE80;
 
-    static final String LIST_EDIT = "https://github.com/mariusfra4-cpu/eli-licences/edit/main/licences.txt";
-
     SharedPreferences prefs;
     byte[] seed;
     String pendingCode; // code reçu par « Partager vers… »
@@ -250,32 +248,6 @@ public class MainActivity extends Activity {
         sp.leftMargin = dp(10);
         r2.addView(send, sp);
         resultCard.addView(r2, lp(-1, -2, 14));
-        Button block = button("BLOQUER CE CLIENT", false);
-        block.setTextColor(RED);
-        resultCard.addView(block, lp(-1, -2, 10));
-        block.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                if (lastCode.length() == 0) return;
-                final String line = "bloque " + lastCode;
-                new android.app.AlertDialog.Builder(MainActivity.this)
-                        .setTitle("Bloquer " + lastCode + " ?")
-                        .setMessage("La ligne « " + line + " » va être copiée. Colle-la dans licences.txt (dépôt eli-licences sur GitHub) puis enregistre (Commit changes).\n\nL'appli du client se verrouillera à sa prochaine connexion à Internet.")
-                        .setPositiveButton("Copier et ouvrir GitHub", new android.content.DialogInterface.OnClickListener() {
-                            public void onClick(android.content.DialogInterface d, int w) {
-                                ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-                                cm.setPrimaryClip(ClipData.newPlainText("blocage", line));
-                                toast("Ligne copiée : " + line);
-                                try {
-                                    startActivity(new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(LIST_EDIT)));
-                                } catch (Exception e) {
-                                    toast("Ouvre github.com/mariusfra4-cpu/eli-licences dans ton navigateur.");
-                                }
-                            }
-                        })
-                        .setNegativeButton("Annuler", null)
-                        .show();
-            }
-        });
         col.addView(resultCard, lp(-1, -2, 14));
 
         col.addView(text("Historique", 16, GOLD, true), lp(-1, -2, 28));
@@ -286,7 +258,7 @@ public class MainActivity extends Activity {
         col.addView(exp, lp(-1, -2, 12));
         Button lock = button("VERROUILLER", false);
         col.addView(lock, lp(-1, -2, 10));
-        col.addView(text("Les clés sont fabriquées sur ce téléphone, sans Internet. Pour retirer une licence : « Bloquer ce client » (liste eli-licences sur GitHub).", 12, GREY, false), lp(-1, -2, 18));
+        col.addView(text("Les clés sont fabriquées sur ce téléphone, sans Internet. Une clé active l'appli pour toujours, uniquement sur le téléphone dont elle porte le code.", 12, GREY, false), lp(-1, -2, 18));
 
         paste.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {

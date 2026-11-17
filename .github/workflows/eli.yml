@@ -14,9 +14,9 @@ jobs:
       - uses: actions/checkout@v4
       - name: Construction de l'APK
         run: VCODE=${{ github.run_number }} ./eli-guitar-app/build.sh 2>&1 | tee /tmp/build.txt
-      - name: APK de test (liste des licences servie par l'émulateur, jamais distribué)
+      - name: APK de test (clé publique de test, jamais distribué)
         run: |
-          OUT=$PWD/eli-guitar-app/build_test APKNAME=eliguitarchords-test LICENCE_URL=http://127.0.0.1:8099/licences.txt \
+          OUT=$PWD/eli-guitar-app/build_test APKNAME=eliguitarchords-test TEST_KEY=1 \
             ./eli-guitar-app/build.sh 2>&1 | tail -3
       - name: Générateur Eli Clés (vrai) et version de test (mot de passe TEST-TEST-TEST-TEST)
         run: |
@@ -34,9 +34,11 @@ jobs:
         run: |
           set -e
           unzip -l eli-guitar-app/build/eliguitarchords.apk | tee /tmp/contenu.txt
-          # l'APK distribué lit la vraie liste et n'autorise pas le http en clair
-          unzip -p eli-guitar-app/build/eliguitarchords.apk classes.dex | strings | grep -q "raw.githubusercontent.com/mariusfra4-cpu/eli-licences"
-          if unzip -p eli-guitar-app/build/eliguitarchords.apk classes.dex | strings | grep -q "127.0.0.1:8099"; then echo "ERREUR : adresse de test dans l'APK distribué"; exit 1; fi
+          # l'APK distribué n'a pas la permission Internet et contient la vraie clé publique (pas celle de test)
+          A2=$(ls -d "$ANDROID_HOME"/build-tools/* | grep -v rc | sort -V | tail -1)/aapt2
+          "$A2" dump permissions eli-guitar-app/build/eliguitarchords.apk | tee -a /tmp/contenu.txt
+          if "$A2" dump permissions eli-guitar-app/build/eliguitarchords.apk 2>/dev/null | grep -q INTERNET; then echo "ERREUR : permission Internet"; exit 1; fi
+          if grep -q "$(cut -c1-40 eli-guitar-app/test/test-public.txt)" eli-guitar-app/build/src/com/elipraise/guitarchords/EdKey.java; then echo "ERREUR : clé de test dans l'APK distribué"; exit 1; fi
           echo "contenu vérifié" | tee -a /tmp/contenu.txt
       - uses: actions/upload-artifact@v4
         with:

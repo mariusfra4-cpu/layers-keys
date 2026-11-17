@@ -1,14 +1,12 @@
-# Contrôle automatique d'Eli Guitar Chords dans un émulateur Android (version de test : la liste des licences
-# est servie par cet ordinateur sur http://127.0.0.1:8099/licences.txt).
+# Contrôle automatique d'Eli Guitar Chords et du générateur « Eli Clés » dans un émulateur Android
+# (versions de test : graine de test, mot de passe TEST-TEST-TEST-TEST). Aucune connexion Internet.
 # De bout en bout : le générateur « Eli Clés » (version de test) fabrique la clé du téléphone, l'appli l'accepte.
-# Étapes : non activé -> clé du générateur -> réouverture -> blocage à distance -> déblocage -> clé sans Internet
-#          -> activation par la liste -> ancien code d'accès -> délai de grâce sans Internet.
-import html, http.server, os, re, socketserver, subprocess, sys, threading, time
+# Étapes : non activé -> mauvaise clé refusée -> clé du générateur -> activé -> réouverture (toujours activé).
+import html, os, re, subprocess, sys, time
 
 OUT, APK, GEN = sys.argv[1], sys.argv[2], sys.argv[3]
 GPKG = "com.elipraise.keygen"
 PKG = "com.elipraise.guitarchords"
-LIST = os.path.join(OUT, "licences.txt")
 ok = True
 
 def adb(*a):
@@ -85,9 +83,6 @@ def start_clean():
 def is_app(x):
     return "Tonalit" in x and "Progressions" in x
 
-def write_list(text):
-    open(LIST, "w").write(text)
-
 def edits(x):
     out = []
     for mm in re.finditer(r'<node [^>]*class="android.widget.EditText"[^>]*>', x):
@@ -120,42 +115,47 @@ def scroll_down():
 
 KEYRE = r"(?:[A-Z2-7]{8}-){12}[A-Z2-7]{7}"
 
-# ---- serveur de la liste ----
-class Q(http.server.SimpleHTTPRequestHandler):
-    def __init__(self, *a, **k):
-        super().__init__(*a, directory=OUT, **k)
-    def log_message(self, *a):
-        pass
-socketserver.TCPServer.allow_reuse_address = True
-srv = socketserver.TCPServer(("127.0.0.1", 8099), Q)
-threading.Thread(target=srv.serve_forever, daemon=True).start()
-print(adb("reverse", "tcp:8099", "tcp:8099").strip())
-
 # clavier virtuel désactivé : le test tape le texte lui-même, et le clavier cacherait les boutons
 for ime in adb("shell", "ime", "list", "-s").split():
     print("clavier désactivé :", ime, adb("shell", "ime", "disable", ime).strip())
-write_list("anciens-codes 2099-12-31\n")
 adb("uninstall", PKG)
 adb("uninstall", GPKG)
 print(adb("install", "-r", "-g", APK).strip())
 print(adb("install", "-r", GEN).strip())
-adb("logcat", "-c")
+perms = adb("shell", "dumpsys", "package", PKG)
+check("android.permission.INTERNET" not in perms, "l'appli n'a pas la permission Internet")
 
 # 1. téléphone non activé
-start()
+start_clean()
 x = wait_for(lambda x: "pas encore activ" in x)
 open(f"{OUT}/ui-1.xml", "w").write(x)
 shot("1-non-active")
-check("pas encore activ" in x, "écran de licence : téléphone non activé")
+check("pas encore activ" in x and last_page() == "écran de licence", "écran de licence : téléphone non activé")
 m = re.search(r"ELI-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}", x)
 check(m, "code du téléphone affiché")
 code = m.group(0) if m else "ELI-AUCUN"
 print("code :", code)
 
-# 2. le générateur fabrique la clé
+# 2. une mauvaise clé est refusée
+scroll_down()
+x = dump()
+e = edits(x)
+check(e, "champ de la clé visible")
+fausse = "AAAAAAAA-" * 12 + "AAAAAAA"
+if e:
+    type_in(e[0], fausse)
+    x = dump()
+    if not tap(x, "Activer"):
+        scroll_down()
+        tap(dump(), "Activer")
+x = wait_for(lambda x: "ne correspond pas" in x, 15)
+shot("2-mauvaise-cle")
+check("ne correspond pas" in x and last_page() == "écran de licence", "mauvaise clé refusée")
+
+# 3. le générateur fabrique la clé
 adb("shell", "am", "start", "-n", GPKG + "/.MainActivity")
 x = wait_for(lambda x: "DÉVERROUILLER" in x, 30)
-shot("2a-generateur-verrou")
+shot("3a-generateur-verrou")
 check("DÉVERROUILLER" in x, "générateur : demande du mot de passe")
 e = edits(x)
 if e:
@@ -172,132 +172,45 @@ if e:
 time.sleep(2)
 adb("shell", "input", "swipe", "160", "500", "160", "250", "300")
 x = wait_for(lambda x: re.search(KEYRE, x), 30)
-shot("2b-generateur-cle")
+shot("3b-generateur-cle")
 km = re.search(KEYRE, x)
 check(km, "générateur : clé de licence fabriquée")
 key = km.group(0) if km else "AUCUNE"
 print("clé :", key)
 check(code in x, "générateur : clé faite pour le code du client")
 
-# 3. le client colle la clé dans l'appli
-for essai in range(3):
-    start()
-    x = wait_for(lambda x: "pas encore activ" in x)
-    if "pas encore activ" in x:
-        break
-    print("info : l'appli n'est pas à l'écran, nouvel essai")
+# 4. le client colle la clé dans l'appli
+start_clean()
+x = wait_for(lambda x: "pas encore activ" in x)
 scroll_down()
 x = dump()
 e = edits(x)
-check(e, "champ de la clé visible")
 if e:
+    adb("shell", "input", "tap", str(e[0][0]), str(e[0][1]))
+    time.sleep(0.5)
+    for _ in range(len(fausse) + 5):
+        adb("shell", "input", "keyevent", "67")   # efface l'ancienne saisie
     type_in(e[0], key)
     x = dump()
     if not tap(x, "Activer"):
         scroll_down()
         tap(dump(), "Activer")
-x = wait_for(is_app, 30)
-shot("3-cle-activee")
-check(is_app(x), "clé du générateur acceptée : l'application s'ouvre")
+ok4 = wait_page("application", 30)
+shot("4-cle-activee")
+check(ok4, "clé du générateur acceptée : l'application s'ouvre")
 
-# 4. réouverture
-start()
-x = wait_for(is_app, 30)
-check(is_app(x), "réouverture : l'application s'ouvre directement")
-
-# 5. blocage à distance d'un téléphone qui a une clé
-write_list("bloque " + code + "\n")
-start()
-x = wait_for(lambda x: "désactivée" in x, 40)
-shot("5-bloque")
-check("désactivée" in x and not is_app(x), "clé + « bloque » dans la liste : l'application se verrouille")
-
-# 6. déblocage
-write_list("anciens-codes 2099-12-31\n")
-for _ in range(3):
-    if tap(dump(), "Vérifier ma licence"):
-        break
-    scroll_down()
-x = wait_for(is_app, 30)
-check(is_app(x), "retiré de la liste des blocages : l'application se rouvre")
-
-# 7. clé sans Internet : l'appli s'ouvre
-srv.shutdown()
-srv.server_close()
+# 5. réouverture : toujours activée
 start_clean()
-ok7 = wait_page("application", 30)
-time.sleep(6)   # le temps que la vérification (sans réseau) se termine
-ok7 = ok7 and last_page() == "application"
-shot("7-cle-sans-internet")
-check(ok7, "clé sans Internet : l'application s'ouvre (et reste ouverte)")
-
-# 8. activation par la liste (sans clé)
-srv = socketserver.TCPServer(("127.0.0.1", 8099), Q)
-threading.Thread(target=srv.serve_forever, daemon=True).start()
-adb("shell", "pm", "clear", PKG)
-adb("shell", "pm", "grant", PKG, "android.permission.RECORD_AUDIO")
-write_list(code + "\n")
-start()
-x = wait_for(is_app, 40)
-check(is_app(x), "activation par la liste seule : l'application s'ouvre")
-
-# 9. ancien code d'accès
-adb("shell", "pm", "clear", PKG)
-adb("shell", "pm", "grant", PKG, "android.permission.RECORD_AUDIO")
-write_list("anciens-codes 2099-12-31\n")
-start_clean()
-x = wait_for(lambda x: "pas encore activ" in x)
-scroll_down()
-scroll_down()
-x = dump()
-summ = tap(x, "déjà un code")
-time.sleep(1.5)
-x = wait_for(lambda x: "Valider le code" in x, 15)
-open(f"{OUT}/ui-9.xml", "w").write(x)
-shot("9a-ancien-code-champ")
-e = []
-for mm in re.finditer(r'<node [^>]*>', x):   # le champ dont le texte (ou l'indication) est exactement ELI-XXXX-XXXX
-    n = mm.group(0)
-    if re.search(r'(text|hint)="ELI-XXXX-XXXX"', n):
-        b = re.search(r'bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"', n)
-        if b:
-            a1, c1, d1, e1 = map(int, b.groups())
-            e = [((a1 + d1) // 2, (c1 + e1) // 2)]
-if not e:
-    v = node(x, "Valider le code")
-    if v:
-        e = [(v[0], v[1] - 50)]   # le champ est juste au-dessus du bouton
-if not e and summ:
-    e = [(summ[0], summ[1] + 45)]   # sinon : juste sous « J'ai déjà un code »
-print("info : champ ancien code", e)
-if e:
-    adb("shell", "input", "tap", str(e[-1][0]), str(e[-1][1]))
-    time.sleep(0.8)
-    adb("shell", "input", "text", "ELI-TEST-2026")
-    time.sleep(0.8)
-    adb("shell", "input", "keyevent", "66")
-    time.sleep(1)
-    hide_kb()
-ok9 = wait_page("application", 30)
-shot("9-ancien-code")
-check(e and ok9, "ancien code ELI-TEST-2026 accepté pendant la transition")
-
-# 10. sans Internet, sans clé : délai de grâce
-srv.shutdown()
-srv.server_close()
-start_clean()
-ok10 = wait_page("application", 30)
-time.sleep(6)
-ok10 = ok10 and last_page() == "application"
-shot("10-grace")
-check(ok10, "sans clé et sans Internet : ouverte pendant le délai de 7 jours")
+ok5 = wait_page("application", 30)
+time.sleep(3)
+ok5 = ok5 and last_page() == "application"
+shot("5-reouverture")
+check(ok5, "réouverture : l'application s'ouvre directement")
 
 adb("shell", "input", "keyevent", "4")
 time.sleep(1)
 log = adb("logcat", "-d")
 open(f"{OUT}/logcat.txt", "w").write(log)
-rd = log.count("crashed service " + PKG)
-print("info : arrêts du moteur d'affichage WebView pendant le test :", rd)
 crash = re.findall(r"FATAL EXCEPTION.*\n.*Process: ([\w.:]+)", log)
 for c in re.finditer(r"FATAL EXCEPTION[\s\S]{0,1500}", log):
     print(c.group(0)[:1500])

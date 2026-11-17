@@ -10,19 +10,13 @@ PLAT=$(ls -d "$SDK"/platforms/android-* | grep -Ev "beta|ext|rc|preview" | sort 
 AJ="$PLAT/android.jar"
 OUT=${OUT:-$HERE/build}
 VCODE=${VCODE:-1}
-VNAME=${VNAME:-1.2.0}
+VNAME=${VNAME:-2.0.0}
 echo "build-tools: $BT ; plateforme: $PLAT"
 rm -rf "$OUT" && mkdir -p "$OUT/classes" "$OUT/src"
 cp -r src/. "$OUT/src/"
 cp AndroidManifest.xml "$OUT/AndroidManifest.xml"
-# version de test automatique : autre adresse de la liste des licences, vérification à chaque ouverture
-if [ -n "$LICENCE_URL" ]; then
-  L="$OUT/src/com/elipraise/guitarchords/Licence.java"
-  sed -i "s#static final String LIST_URL = \".*\";#static final String LIST_URL = \"$LICENCE_URL\";#" "$L"
-  sed -i "s#static final long RECHECK_MS = .*;#static final long RECHECK_MS = 0;#" "$L"
-  sed -i 's#<application#<application android:usesCleartextTraffic="true"#' "$OUT/AndroidManifest.xml"
-  grep -q "$LICENCE_URL" "$L"
-  # clé publique de TEST (graine publique de test : les clés réelles ne marchent pas dans cette version)
+# version de test automatique : clé publique de TEST (graine publique de test : les vraies clés n'y marchent pas)
+if [ -n "$TEST_KEY" ]; then
   E="$OUT/src/com/elipraise/guitarchords/EdKey.java"
   sed -i "s#static final byte\[\] PUBLIC = {.*};#static final byte[] PUBLIC = {$(cat test/test-public.txt)};#" "$E"
   grep -q "$(cut -c1-40 test/test-public.txt)" "$E"
