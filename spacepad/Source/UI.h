@@ -83,6 +83,10 @@ public:
     void paint (juce::Graphics&) override;
 private:
     SpacepadProcessor& proc;
+    juce::Image logoImg, nameImg;            // lueurs préparées une fois
+    float logoScale = 0, nameScale = 0;
+    int nameW = 0;
+    juce::String nameText;
 };
 
 // --------------------------------------------------------------------------------------------

@@ -290,6 +290,17 @@ void Knob::paint (juce::Graphics& g)
     g.drawText (prm->getText (prm->getValue(), 16), r.removeFromTop (15), juce::Justification::centred);
 }
 
+// lueur douce : dégradé radial (aussi beau qu'un flou, mais presque gratuit à dessiner à chaque image)
+static void softGlow (juce::Graphics& g, juce::Point<float> c, float r0, float r1, juce::Colour col)
+{
+    if (r1 <= r0 || col.getAlpha() == 0) return;
+    juce::ColourGradient gr (col, c.x, c.y, col.withAlpha (0.0f), c.x + r1, c.y, true);
+    gr.addColour (juce::jlimit (0.0, 0.99, (double) (r0 / r1)), col);
+    gr.addColour (juce::jlimit (0.0, 0.995, (double) ((r0 + (r1 - r0) * 0.45f) / r1)), col.withMultipliedAlpha (0.35f));
+    g.setGradientFill (gr);
+    g.fillEllipse (c.x - r1, c.y - r1, r1 * 2, r1 * 2);
+}
+
 // ============================================================================================
 // Header
 // ============================================================================================
@@ -302,7 +313,17 @@ void Header::paint (juce::Graphics& g)
     g.drawLine (0, r.getBottom() - 0.5f, r.getRight(), r.getBottom() - 0.5f, 1.0f);
 
     // logo
-    glowText (g, "SPACEPAD", theme::title (25.0f), { 28, 18, 260, 32 }, juce::Justification::centredLeft, juce::Colour (0xfff2f6ff), theme::accent.withAlpha (0.45f), 14, 0.22f);
+    const float px = juce::jlimit (1.0f, 3.0f, g.getInternalContext().getPhysicalPixelScaleFactor());
+    // logo avec sa lueur : préparé une seule fois
+    if (! logoImg.isValid() || std::abs (logoScale - px) > 0.01f)
+    {
+        logoScale = px;
+        logoImg = juce::Image (juce::Image::ARGB, juce::roundToInt (290 * px), juce::roundToInt (56 * px), true);
+        juce::Graphics lg (logoImg);
+        lg.addTransform (juce::AffineTransform::scale (px));
+        glowText (lg, "SPACEPAD", theme::title (25.0f), { 14, 12, 260, 32 }, juce::Justification::centredLeft, juce::Colour (0xfff2f6ff), theme::accent.withAlpha (0.45f), (int) (14 * px), 0.22f);
+    }
+    g.drawImage (logoImg, juce::Rectangle<float> (14, 6, 290, 56));
     auto by = theme::ui (11.5f, 1); by.setExtraKerningFactor (0.28f);
     g.setFont (by);
     g.setColour (juce::Colour (0xff9aa6bd));
@@ -313,7 +334,7 @@ void Header::paint (juce::Graphics& g)
     insetBox (g, lcd, 12.0f);
     const bool sounding = proc.padSounding() || proc.crowdSounding();
     auto dot = juce::Rectangle<float> (lcd.getX() + 20, lcd.getCentreY() - 5, 10, 10);
-    if (sounding) glowEllipse (g, juce::DropShadow (theme::green, 10, {}), dot);
+    if (sounding) softGlow (g, dot.getCentre(), 4, 13, theme::green.withAlpha (0.6f));
     g.setColour (sounding ? theme::green : theme::muted.withAlpha (0.5f));
     g.fillEllipse (dot);
 
@@ -324,7 +345,17 @@ void Header::paint (juce::Graphics& g)
     auto tr = lcd.reduced (44, 0).withTrimmedRight (110);
     auto f1 = theme::ui (17.0f, 1);
     const float w1 = juce::jmin (tr.getWidth() * 0.55f, juce::GlyphArrangement::getStringWidth (f1, libName) + 4);
-    glowText (g, libName, f1, tr.removeFromLeft (w1), juce::Justification::centredLeft, theme::accentLight, theme::accent.withAlpha (0.5f), 8);
+    auto nameArea = tr.removeFromLeft (w1);
+    // nom de la librairie avec sa lueur : préparé seulement quand il change
+    if (libName != nameText || ! nameImg.isValid() || std::abs (nameScale - px) > 0.01f || nameW != juce::roundToInt (nameArea.getWidth()))
+    {
+        nameText = libName; nameScale = px; nameW = juce::roundToInt (nameArea.getWidth());
+        nameImg = juce::Image (juce::Image::ARGB, juce::jmax (1, juce::roundToInt ((nameArea.getWidth() + 20) * px)), juce::roundToInt ((nameArea.getHeight() + 20) * px), true);
+        juce::Graphics ng (nameImg);
+        ng.addTransform (juce::AffineTransform::scale (px));
+        glowText (ng, libName, f1, { 10, 10, nameArea.getWidth(), nameArea.getHeight() }, juce::Justification::centredLeft, theme::accentLight, theme::accent.withAlpha (0.5f), (int) (8 * px));
+    }
+    g.drawImage (nameImg, nameArea.expanded (10));
     g.setColour (juce::Colour (0xff7f8ca6));
     g.setFont (theme::ui (13.0f));
     g.drawText (sub, tr.withTrimmedLeft (16), juce::Justification::centredLeft, true);
@@ -380,17 +411,6 @@ void KeyRing::mouseMove (const juce::MouseEvent& e)
     const int h = keyAt (e.position);
     if (h != hover) { hover = h; repaint(); }
     setMouseCursor (h >= -1 ? juce::MouseCursor::PointingHandCursor : juce::MouseCursor::NormalCursor);
-}
-
-// lueur douce : dégradé radial (aussi beau qu'un flou, mais presque gratuit à dessiner à chaque image)
-static void softGlow (juce::Graphics& g, juce::Point<float> c, float r0, float r1, juce::Colour col)
-{
-    if (r1 <= r0 || col.getAlpha() == 0) return;
-    juce::ColourGradient gr (col, c.x, c.y, col.withAlpha (0.0f), c.x + r1, c.y, true);
-    gr.addColour (juce::jlimit (0.0, 0.99, (double) (r0 / r1)), col);
-    gr.addColour (juce::jlimit (0.0, 0.995, (double) ((r0 + (r1 - r0) * 0.45f) / r1)), col.withMultipliedAlpha (0.35f));
-    g.setGradientFill (gr);
-    g.fillEllipse (c.x - r1, c.y - r1, r1 * 2, r1 * 2);
 }
 
 void KeyRing::paintKey (juce::Graphics& g, int i, bool sel, bool active, bool hov, int mode, float D, juce::Point<float> c) const
