@@ -6,3 +6,4 @@ spacepad/installer/windows/payload/
 spacepad/installer/windows/*.exe
 spacepad/dist/
 spacepad/build/
+spacepad/build-mac/
