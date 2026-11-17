@@ -104,18 +104,22 @@ var lookFamNames = [nFams]string{"Moderne", "Classique", "Lisible", "Machine à 
 var lookFamWin = [nFams]string{"Segoe UI", "Georgia", "Verdana", "Consolas"}
 
 // réglage en cours (le même pour toutes les fenêtres du programme)
-var look struct{ on, white, black, font int }
+var look struct{ on, white, black, font, theme, text, tab int }
 
 func (c *Config) sanitizeLook() {
 	c.LookOn = clamp(c.LookOn, 0, len(lookOnCols)-1)
 	c.LookWhite = clamp(c.LookWhite, 0, len(lookWhiteCols)-1)
 	c.LookBlack = clamp(c.LookBlack, 0, len(lookBlackCols)-1)
 	c.LookFont = clamp(c.LookFont, 0, nFams-1)
+	c.LookTheme = clamp(c.LookTheme, 0, len(uiThemes)-1)
+	c.LookText = clamp(c.LookText, 0, len(textThemes)-1)
 }
 
 func (u *UI) applyLook() {
 	u.cfg.sanitizeLook()
-	look.on, look.white, look.black, look.font = u.cfg.LookOn, u.cfg.LookWhite, u.cfg.LookBlack, u.cfg.LookFont
+	c := u.cfg
+	look.on, look.white, look.black, look.font = c.LookOn, c.LookWhite, c.LookBlack, c.LookFont
+	look.theme, look.text = c.LookTheme, c.LookText
 	u.host.Invalidate()
 }
 
@@ -123,8 +127,10 @@ func curOnCol() lookOnCol  { return lookOnCols[clamp(look.on, 0, len(lookOnCols)
 func curWhite() lookKeyCol { return lookWhiteCols[clamp(look.white, 0, len(lookWhiteCols)-1)] }
 func curBlack() lookKeyCol { return lookBlackCols[clamp(look.black, 0, len(lookBlackCols)-1)] }
 func curFam() int          { return clamp(look.font, 0, nFams-1) }
+func curTheme() uiTheme    { return uiThemes[clamp(look.theme, 0, len(uiThemes)-1)] }
+func curTextTh() textTheme { return textThemes[clamp(look.text, 0, len(textThemes)-1)] }
 func (u *UI) lookText() string {
-	return Tf("%s · %s / %s · %s", T(curOnCol().name), T(curWhite().name), T(curBlack().name), T(lookFamNames[curFam()]))
+	return Tf("%s · %s · %s", T(curTheme().name), T(curTextTh().name), T(lookFamNames[curFam()]))
 }
 
 func (u *UI) setLook(f func(c *Config)) {
@@ -133,89 +139,140 @@ func (u *UI) setLook(f func(c *Config)) {
 	u.dirty = true
 }
 
-// écran « Personnalisation »
+// écran « Personnaliser l'interface » : onglets Interface, Écritures, Clavier
 func (u *UI) OpenLook() {
-	u.ov = &overlay{title: T("Personnalisation"), hint: T("Clique sur une couleur ou une police : le changement est immédiat · Échap pour fermer"),
+	u.ov = &overlay{title: T("Personnaliser l'interface"), hint: T("Clique sur un choix : le changement est immédiat · Échap pour fermer"),
 		back: u.OpenSettings, sel: -1}
 	u.ov.custom = u.drawLook
 	u.host.Invalidate()
 }
 
 func (u *UI) drawLook(c *Canvas, r rect) {
-	x, y := r.x+6, r.y+4
-	sw := 40 // pas entre deux pastilles
+	x, y := r.x+6, r.y
+	tabs := []string{T("Interface"), T("Écritures"), T("Clavier")}
+	tw := (r.w - 12 - 2*8) / 3
+	for i, t := range tabs {
+		i := i
+		u.button(c, fmt.Sprintf("lookTab%d", i), rect{x + i*(tw+8), y, tw, 30}, t, look.tab == i, fontSm, func() { look.tab = i; u.host.Invalidate() })
+	}
+	y += 44
 	row := func(title, val string) {
 		c.Text(x, y, 300, 16, title, fontXs, colGold, 0)
 		c.Text(x+300, y, r.w-312, 16, val, fontSm, colText, 2)
 		y += 22
 	}
-
-	// notes jouées
-	row(T("Couleur des notes jouées"), T(curOnCol().name))
-	for i, oc := range lookOnCols {
-		i, oc := i, oc
-		cx := float64(x + 14 + i*sw)
-		cy := float64(y + 14)
-		if i == look.on {
-			c.Circle(cx, cy, 16, colText, 1)
-			c.Circle(cx, cy, 14, colPanel, 1)
-		}
-		c.GlowCircle(cx, cy, 11, 6, oc.base, 0.35)
-		c.Circle(cx, cy, 11, oc.base, 1)
-		c.Circle(cx-3, cy-3, 4, oc.light, 0.8)
-		u.reg(region{r: rect{int(cx) - 16, int(cy) - 16, 32, 32}, id: fmt.Sprintf("lookOn%d", i),
-			down: func(int, int) { u.setLook(func(c *Config) { c.LookOn = i }) }})
-	}
-	y += 40
-
-	// touches blanches et noires
-	keyRow := func(title string, cols []lookKeyCol, cur int, id string, set func(i int)) {
-		row(title, T(cols[clamp(cur, 0, len(cols)-1)].name))
-		for i, kc := range cols {
-			i := i
-			bx := x + i*62
-			if i == cur {
-				c.RRectStroke(float64(bx-3), float64(y-3), 56, 38, 6, 2, colGold, 1)
+	switch look.tab {
+	case 0: // thème de l'interface
+		row(T("Thème de l'interface"), T(curTheme().name))
+		cw, ch := (r.w-12-3*10)/4, 70
+		for i, th := range uiThemes {
+			i, th := i, th
+			bx, by := x+(i%4)*(cw+10), y+(i/4)*(ch+30)
+			c.NoTheme = true
+			c.RRect(float64(bx), float64(by), float64(cw), float64(ch), 8, th.swatchA, 1)
+			c.RRect(float64(bx+10), float64(by+10), float64(cw-20), 12, 4, th.swatchB, 1)
+			c.RRect(float64(bx+10), float64(by+30), float64(cw/2), 8, 3, mixColor(th.swatchA, 0xffffff, 0.25), 1)
+			c.RRect(float64(bx+10), float64(by+44), float64(cw/3), 8, 3, mixColor(th.swatchA, th.swatchB, 0.5), 1)
+			c.Circle(float64(bx+cw-22), float64(by+48), 10, th.swatchB, 1)
+			sel := uint32(0x4a5a78)
+			if i == look.theme {
+				sel = 0xffffff
 			}
-			c.VGrad(bx, y, 50, 32, kc.top, kc.bot)
-			c.RRectStroke(float64(bx), float64(y), 50, 32, 4, 1, 0x4a5a78, 1)
-			u.reg(region{r: rect{bx - 3, y - 3, 56, 38}, id: fmt.Sprintf("%s%d", id, i), down: func(int, int) { set(i) }})
+			c.RRectStroke(float64(bx), float64(by), float64(cw), float64(ch), 8, 2, sel, 1)
+			c.NoTheme = false
+			c.Text(bx, by+ch+4, cw, 18, T(th.name), fontSm, colText, 1)
+			u.reg(region{r: rect{bx, by, cw, ch + 22}, id: fmt.Sprintf("lookTh%d", i), down: func(int, int) { u.setLook(func(c *Config) { c.LookTheme = i }) }})
 		}
-		y += 46
-	}
-	keyRow(T("Couleur des touches blanches"), lookWhiteCols, look.white, "lookW", func(i int) { u.setLook(func(c *Config) { c.LookWhite = i }) })
-	keyRow(T("Couleur des touches noires"), lookBlackCols, look.black, "lookB", func(i int) { u.setLook(func(c *Config) { c.LookBlack = i }) })
-
-	// police
-	row(T("Police des lettres"), T(lookFamNames[curFam()]))
-	bw := (r.w - 12 - 3*8) / 4
-	for f := 0; f < nFams; f++ {
-		f := f
-		br := rect{x + f*(bw+8), y, bw, 34}
-		on := f == curFam()
-		bg, fg := uint32(colRow), uint32(colText)
-		if on {
-			bg, fg = colGold, colDark
+		y += 2 * (ch + 30)
+		c.Text(x, y+6, r.w-12, 16, T("Le thème change les fonds, les cadres, les boutons et les curseurs. Le clavier garde ses couleurs (onglet Clavier)."), fontXs, colText2, 0)
+	case 1: // écritures
+		row(T("Couleur des écritures"), T(curTextTh().name))
+		for i, tt := range textThemes {
+			i, tt := i, tt
+			bx := x + i*96
+			br := rect{bx, y, 88, 44}
+			c.RRect(float64(br.x), float64(br.y), float64(br.w), float64(br.h), 6, colRow, 1)
+			if i == look.text {
+				c.RRectStroke(float64(br.x), float64(br.y), float64(br.w), float64(br.h), 6, 2, colGold, 1)
+			}
+			c.NoTheme = true
+			c.TextFam(br.x, br.y+2, br.w, 24, "Aa", fontLg, tt.col, 1, curFam())
+			c.NoTheme = false
+			c.Text(br.x, br.y+26, br.w, 14, T(tt.name), fontXs, colText2, 1)
+			u.reg(region{r: br, id: fmt.Sprintf("lookTx%d", i), down: func(int, int) { u.setLook(func(c *Config) { c.LookText = i }) }})
 		}
-		c.RRect(float64(br.x), float64(br.y), float64(br.w), float64(br.h), 6, bg, 1)
-		c.RRectStroke(float64(br.x), float64(br.y), float64(br.w), float64(br.h), 6, 1, colLine, 1)
-		c.TextFam(br.x+4, br.y, br.w-8, br.h, T(lookFamNames[f]), fontMdB, fg, 1, f)
-		u.reg(region{r: br, id: fmt.Sprintf("lookF%d", f), down: func(int, int) { u.setLook(func(c *Config) { c.LookFont = f }) }})
+		y += 60
+		row(T("Police des lettres"), T(lookFamNames[curFam()]))
+		bw := (r.w - 12 - 3*8) / 4
+		for f := 0; f < nFams; f++ {
+			f := f
+			br := rect{x + f*(bw+8), y, bw, 34}
+			on := f == curFam()
+			bg, fg := uint32(colRow), uint32(colText)
+			if on {
+				bg, fg = colGold, colDark
+			}
+			c.RRect(float64(br.x), float64(br.y), float64(br.w), float64(br.h), 6, bg, 1)
+			c.RRectStroke(float64(br.x), float64(br.y), float64(br.w), float64(br.h), 6, 1, colLine, 1)
+			c.TextFam(br.x+4, br.y, br.w-8, br.h, T(lookFamNames[f]), fontMdB, fg, 1, f)
+			u.reg(region{r: br, id: fmt.Sprintf("lookF%d", f), down: func(int, int) { u.setLook(func(c *Config) { c.LookFont = f }) }})
+		}
+		y += 52
+		c.Text(x, y, 300, 16, T("Aperçu"), fontXs, colGold, 0)
+		y += 20
+		c.RRect(float64(x), float64(y), float64(r.w-12), 110, 8, colPanel, 1)
+		c.RRectStroke(float64(x), float64(y), float64(r.w-12), 110, 8, 1, colLine, 1)
+		c.Text(x+16, y+10, r.w-44, 34, "Fa Maj7  ·  Do  Ré  Mi", fontXl, colGold, 0)
+		c.Text(x+16, y+48, r.w-44, 22, "Grand Piano · Nappe Gospel · Strings", fontLg, colText, 0)
+		c.Text(x+16, y+76, r.w-44, 20, "Layers Keys · By JB Praise · for church musician", fontMd, colText2, 0)
+	default: // clavier
+		sw := 40
+		row(T("Couleur des notes jouées"), T(curOnCol().name))
+		for i, oc := range lookOnCols {
+			i, oc := i, oc
+			cx := float64(x + 14 + i*sw)
+			cy := float64(y + 14)
+			if i == look.on {
+				c.Circle(cx, cy, 16, colText, 1)
+				c.Circle(cx, cy, 14, colPanel, 1)
+			}
+			c.NoTheme = true
+			c.GlowCircle(cx, cy, 11, 6, oc.base, 0.35)
+			c.Circle(cx, cy, 11, oc.base, 1)
+			c.Circle(cx-3, cy-3, 4, oc.light, 0.8)
+			c.NoTheme = false
+			u.reg(region{r: rect{int(cx) - 16, int(cy) - 16, 32, 32}, id: fmt.Sprintf("lookOn%d", i),
+				down: func(int, int) { u.setLook(func(c *Config) { c.LookOn = i }) }})
+		}
+		y += 40
+		keyRow := func(title string, cols []lookKeyCol, cur int, id string, set func(i int)) {
+			row(title, T(cols[clamp(cur, 0, len(cols)-1)].name))
+			for i, kc := range cols {
+				i := i
+				bx := x + i*62
+				if i == cur {
+					c.RRectStroke(float64(bx-3), float64(y-3), 56, 38, 6, 2, colGold, 1)
+				}
+				c.NoTheme = true
+				c.VGrad(bx, y, 50, 32, kc.top, kc.bot)
+				c.RRectStroke(float64(bx), float64(y), 50, 32, 4, 1, 0x4a5a78, 1)
+				c.NoTheme = false
+				u.reg(region{r: rect{bx - 3, y - 3, 56, 38}, id: fmt.Sprintf("%s%d", id, i), down: func(int, int) { set(i) }})
+			}
+			y += 46
+		}
+		keyRow(T("Couleur des touches blanches"), lookWhiteCols, look.white, "lookW", func(i int) { u.setLook(func(c *Config) { c.LookWhite = i }) })
+		keyRow(T("Couleur des touches noires"), lookBlackCols, look.black, "lookB", func(i int) { u.setLook(func(c *Config) { c.LookBlack = i }) })
+		c.Text(x, y, 300, 16, T("Aperçu"), fontXs, colGold, 0)
+		y += 20
+		u.drawKeysPreview(c, x, y, 21*28, 96, map[int]bool{0: true, 4: true, 7: true, 13: true, 23: true})
 	}
-	y += 50
-
-	// aperçu : deux octaves, quelques notes jouées
-	c.Text(x, y, 300, 16, T("Aperçu"), fontXs, colGold, 0)
-	y += 20
-	u.drawKeysPreview(c, x, y, 14*28, 92, map[int]bool{0: true, 4: true, 7: true, 13: true})
-	px := x + 14*28 + 16
-	c.Text(px, y, r.w-(px-r.x)-6, 30, "Do  Ré  Mi  Fa  Sol", fontLg, colText, 0)
-	c.Text(px, y+32, r.w-(px-r.x)-6, 20, "Layers Keys · By JB Praise", fontMd, colText2, 0)
-	c.Text(px, y+56, r.w-(px-r.x)-6, 20, "C  Dm  Em  F  G  Am", fontMdB, colGold, 0)
 
 	// retour aux réglages d'origine
-	u.button(c, "lookReset", rect{r.x + r.w - 220, r.y + r.h - 34, 214, 30}, T("Couleurs et police d'origine"), false, fontSm, func() {
-		u.setLook(func(c *Config) { c.LookOn, c.LookWhite, c.LookBlack, c.LookFont = 0, 0, 0, 0 })
+	u.button(c, "lookReset", rect{r.x + r.w - 220, r.y + r.h - 34, 214, 30}, T("Revenir à l'original"), false, fontSm, func() {
+		u.setLook(func(c *Config) {
+			c.LookOn, c.LookWhite, c.LookBlack, c.LookFont, c.LookTheme, c.LookText = 0, 0, 0, 0, 0, 0
+		})
 	})
 }
 
@@ -225,6 +282,8 @@ func (u *UI) drawKeysPreview(c *Canvas, x, y, w, h int, on map[int]bool) {
 	n := w / 28
 	kw := w / n
 	oc, wc, bc := curOnCol(), curWhite(), curBlack()
+	c.NoTheme = true
+	defer func() { c.NoTheme = false }()
 	c.RRect(float64(x-4), float64(y-4), float64(n*kw+8), float64(h+8), 6, 0x05070b, 1)
 	for i := 0; i < n; i++ {
 		note := i/7*12 + wk[i%7]

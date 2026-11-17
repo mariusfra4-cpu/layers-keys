@@ -119,6 +119,7 @@ func (d *droidApp) drawPiano(c *Canvas) {
 	c.Rect(0, top-4, W, 4, 0x000000, 0.5)
 	first := int(s.first)
 	oc, wc, bc := curOnCol(), curWhite(), curBlack() // couleurs choisies dans la Personnalisation
+	c.NoTheme = true
 	for i := first; i <= first+s.vis && i < len(u.whites); i++ {
 		n := u.whites[i]
 		x0 := int((float64(i) - s.first) * s.ww)
@@ -172,6 +173,7 @@ func (d *droidApp) drawPiano(c *Canvas) {
 			c.Rect(int(cx-bw/2)+4, top, 3, bh-14, 0xffffff, 0.14)
 		}
 	}
+	c.NoTheme = false
 	u.drawToast(c)
 	c.FlushText()
 }

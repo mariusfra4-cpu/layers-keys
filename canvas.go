@@ -34,11 +34,22 @@ type Canvas struct {
 	AllTexts []TextCmd
 	// appelé avec les textes en attente quand on demande de les afficher (aperçus de test, Windows)
 	FlushHook func(texts []TextCmd)
+	// NoTheme : dessine les vraies couleurs (touches du piano, pastilles de la Personnalisation)
+	NoTheme bool
+}
+
+// tc : couleur passée par le thème de l'interface choisi dans la Personnalisation
+func (c *Canvas) tc(col uint32) uint32 {
+	if c.NoTheme || themeIdentity() {
+		return col
+	}
+	return themeColor(col)
 }
 
 func NewCanvas(w, h int) *Canvas { return &Canvas{W: w, H: h, Pix: make([]uint32, w*h)} }
 
 func (c *Canvas) Text(x, y, w, h int, s string, font int, col uint32, align int) {
+	col = c.tc(col)
 	if s == "" {
 		return
 	}
@@ -47,6 +58,7 @@ func (c *Canvas) Text(x, y, w, h int, s string, font int, col uint32, align int)
 
 // TextFam : texte dans une police précise (aperçu des polices dans la Personnalisation)
 func (c *Canvas) TextFam(x, y, w, h int, s string, font int, col uint32, align, fam int) {
+	col = c.tc(col)
 	if s == "" {
 		return
 	}
@@ -103,6 +115,10 @@ func (c *Canvas) clipBox(x0, y0, x1, y1 *int) bool {
 
 // rectangle plein (pixels entiers), avec transparence a
 func (c *Canvas) Rect(x, y, w, h int, col uint32, a float64) {
+	c.rect0(x, y, w, h, c.tc(col), a)
+}
+
+func (c *Canvas) rect0(x, y, w, h int, col uint32, a float64) {
 	x0, y0, x1, y1 := x, y, x+w, y+h
 	if !c.clipBox(&x0, &y0, &x1, &y1) {
 		return
@@ -132,8 +148,9 @@ func (c *Canvas) Rect(x, y, w, h int, col uint32, a float64) {
 
 // dégradé vertical
 func (c *Canvas) VGrad(x, y, w, h int, top, bottom uint32) {
+	top, bottom = c.tc(top), c.tc(bottom)
 	for i := 0; i < h; i++ {
-		c.Rect(x, y+i, w, 1, mixColor(top, bottom, float64(i)/float64(maxi(h-1, 1))), 1)
+		c.rect0(x, y+i, w, 1, mixColor(top, bottom, float64(i)/float64(maxi(h-1, 1))), 1)
 	}
 }
 
@@ -268,6 +285,7 @@ func rowSpan(py int, x0, x1 int, x, y, w, h, r, cx, cy, hw, hh float64) (int, in
 }
 
 func (c *Canvas) RRect(x, y, w, h, r float64, col uint32, a float64) {
+	col = c.tc(col)
 	if r > w/2 {
 		r = w / 2
 	}
@@ -299,6 +317,7 @@ func (c *Canvas) RRect(x, y, w, h, r float64, col uint32, a float64) {
 
 // contour d'épaisseur t, dessiné à l'intérieur du rectangle
 func (c *Canvas) RRectStroke(x, y, w, h, r, t float64, col uint32, a float64) {
+	col = c.tc(col)
 	ix, iy, iw, ih := x+t/2, y+t/2, w-t, h-t
 	ir := r - t/2
 	if ir < 0 {
@@ -347,6 +366,7 @@ func (c *Canvas) RRectStroke(x, y, w, h, r, t float64, col uint32, a float64) {
 }
 
 func (c *Canvas) Circle(cx, cy, r float64, col uint32, a float64) {
+	col = c.tc(col)
 	x0, y0 := int(math.Floor(cx-r))-1, int(math.Floor(cy-r))-1
 	x1, y1 := int(math.Ceil(cx+r))+1, int(math.Ceil(cy+r))+1
 	if !c.clipBox(&x0, &y0, &x1, &y1) {
@@ -363,6 +383,7 @@ func (c *Canvas) Circle(cx, cy, r float64, col uint32, a float64) {
 }
 
 func (c *Canvas) Ring(cx, cy, r, t float64, col uint32, a float64) {
+	col = c.tc(col)
 	x0, y0 := int(math.Floor(cx-r-t))-1, int(math.Floor(cy-r-t))-1
 	x1, y1 := int(math.Ceil(cx+r+t))+1, int(math.Ceil(cy+r+t))+1
 	if !c.clipBox(&x0, &y0, &x1, &y1) {
@@ -380,6 +401,7 @@ func (c *Canvas) Ring(cx, cy, r, t float64, col uint32, a float64) {
 
 // arc de cercle (angles en radians, sens horaire à l'écran, a1 > a0), extrémités arrondies
 func (c *Canvas) Arc(cx, cy, r, a0, a1, t float64, col uint32, a float64) {
+	col = c.tc(col)
 	if a1 < a0 {
 		a0, a1 = a1, a0
 	}
@@ -418,6 +440,7 @@ func (c *Canvas) Arc(cx, cy, r, a0, a1, t float64, col uint32, a float64) {
 
 // segment d'épaisseur t, extrémités arrondies
 func (c *Canvas) Line(ax, ay, bx, by, t float64, col uint32, a float64) {
+	col = c.tc(col)
 	x0, y0 := int(math.Floor(math.Min(ax, bx)-t))-1, int(math.Floor(math.Min(ay, by)-t))-1
 	x1, y1 := int(math.Ceil(math.Max(ax, bx)+t))+1, int(math.Ceil(math.Max(ay, by)+t))+1
 	if !c.clipBox(&x0, &y0, &x1, &y1) {
@@ -446,6 +469,7 @@ func lerpColor(a, b uint32, t float64) uint32 { return mixColor(a, b, clamp01(t)
 
 // rectangle arrondi rempli d'un dégradé vertical (top en haut, bottom en bas)
 func (c *Canvas) RRectGrad(x, y, w, h, r float64, top, bottom uint32, a float64) {
+	top, bottom = c.tc(top), c.tc(bottom)
 	if r > w/2 {
 		r = w / 2
 	}
@@ -477,6 +501,7 @@ func (c *Canvas) RRectGrad(x, y, w, h, r float64, top, bottom uint32, a float64)
 
 // rectangle arrondi rempli d'un dégradé horizontal
 func (c *Canvas) RRectHGrad(x, y, w, h, r float64, left, right uint32, a float64) {
+	left, right = c.tc(left), c.tc(right)
 	if r > w/2 {
 		r = w / 2
 	}
@@ -511,6 +536,7 @@ func (c *Canvas) RRectHGrad(x, y, w, h, r float64, left, right uint32, a float64
 
 // halo lumineux (ou ombre si la couleur est sombre) autour d'un rectangle arrondi
 func (c *Canvas) Glow(x, y, w, h, r, spread float64, col uint32, a float64) {
+	col = c.tc(col)
 	if r > w/2 {
 		r = w / 2
 	}
@@ -558,6 +584,7 @@ func (c *Canvas) Glow(x, y, w, h, r, spread float64, col uint32, a float64) {
 
 // halo rond
 func (c *Canvas) GlowCircle(cx, cy, r, spread float64, col uint32, a float64) {
+	col = c.tc(col)
 	x0, y0 := int(math.Floor(cx-r-spread))-1, int(math.Floor(cy-r-spread))-1
 	x1, y1 := int(math.Ceil(cx+r+spread))+1, int(math.Ceil(cy+r+spread))+1
 	if !c.clipBox(&x0, &y0, &x1, &y1) {
@@ -578,6 +605,7 @@ func (c *Canvas) GlowCircle(cx, cy, r, spread float64, col uint32, a float64) {
 
 // triangle plein (pour les icônes)
 func (c *Canvas) Tri(ax, ay, bx, by, cx, cy float64, col uint32, a float64) {
+	col = c.tc(col)
 	x0, y0 := int(math.Floor(math.Min(ax, math.Min(bx, cx))))-1, int(math.Floor(math.Min(ay, math.Min(by, cy))))-1
 	x1, y1 := int(math.Ceil(math.Max(ax, math.Max(bx, cx))))+1, int(math.Ceil(math.Max(ay, math.Max(by, cy))))+1
 	if !c.clipBox(&x0, &y0, &x1, &y1) {

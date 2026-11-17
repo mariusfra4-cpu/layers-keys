@@ -271,7 +271,7 @@ func (u *UI) OpenSettings() {
 		u.OpenSettings()
 	}})
 	items = append(items, olItem{text: T("Personnalisation"), header: true})
-	items = append(items, olItem{text: T("Couleurs du clavier et police des lettres…"), sub: u.lookText(), action: u.OpenLook})
+	items = append(items, olItem{text: T("Personnaliser l'interface…"), sub: u.lookText(), action: u.OpenLook})
 	items = append(items, u.libSettingsItems()...)
 	items = append(items, u.playingSettingsItems()...)
 	items = append(items, olItem{text: T("Télécommande Android"), header: true})

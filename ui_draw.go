@@ -680,6 +680,7 @@ func (u *UI) drawKeyboard(c *Canvas) {
 	if wc.dark {
 		refl = 0.12
 	}
+	c.NoTheme = true // les touches gardent les couleurs de l'onglet Clavier
 	for _, w := range u.whites {
 		x := u.whiteX[w]
 		top, bot := wc.top, wc.bot
@@ -713,6 +714,7 @@ func (u *UI) drawKeyboard(c *Canvas) {
 			c.Rect(b.r.x+2, b.r.y, 2, b.r.h-14, 0xffffff, 0.16) // reflet laqué
 		}
 	}
+	c.NoTheme = false
 	u.reg(region{r: rect{kbX, kbY, n * whiteW, whiteH}, id: "keys",
 		down: func(x, y int) {
 			if k := u.keyAt(x, y); k >= 0 {

@@ -83,6 +83,8 @@ type Config struct {
 	LookWhite int `json:"lookWhite,omitempty"` // couleur des touches blanches
 	LookBlack int `json:"lookBlack,omitempty"` // couleur des touches noires
 	LookFont  int `json:"lookFont,omitempty"`  // police des lettres
+	LookTheme int `json:"lookTheme,omitempty"` // thème de l'interface
+	LookText  int `json:"lookText,omitempty"`  // couleur des écritures
 }
 
 const (
