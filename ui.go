@@ -248,6 +248,7 @@ func NewUI(eng *Engine, host Host, cfgPath string) *UI {
 	u.projPath, u.changed = u.cfg.Project, u.cfg.Changed
 	SetLang(langFromCode(u.cfg.Lang))
 	u.setNotation()
+	u.applyLook()
 	u.lic = licenseFactory()
 	u.refreshLicense()
 	u.licShow = u.licSt.State != LicLicensed

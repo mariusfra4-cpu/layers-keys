@@ -77,6 +77,12 @@ type Config struct {
 	VelLo    int        `json:"vello,omitempty"`    // vélocité minimale envoyée aux sons
 	VelHi    int        `json:"velhi,omitempty"`    // vélocité maximale
 	Learn    []LearnCfg `json:"learn,omitempty"`    // MIDI Learn : associations CC → réglages
+
+	// Personnalisation (0 = réglage d'origine)
+	LookOn    int `json:"lookOn,omitempty"`    // couleur des notes jouées
+	LookWhite int `json:"lookWhite,omitempty"` // couleur des touches blanches
+	LookBlack int `json:"lookBlack,omitempty"` // couleur des touches noires
+	LookFont  int `json:"lookFont,omitempty"`  // police des lettres
 }
 
 const (
@@ -137,6 +143,7 @@ func (c *ChanCfg) sanitize() {
 }
 
 func (c *Config) sanitize() {
+	c.sanitizeLook()
 	for i := range c.Setup {
 		c.Setup[i].sanitize()
 	}

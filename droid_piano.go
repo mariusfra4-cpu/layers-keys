@@ -118,21 +118,31 @@ func (d *droidApp) drawPiano(c *Canvas) {
 	bh := kh * 62 / 100
 	c.Rect(0, top-4, W, 4, 0x000000, 0.5)
 	first := int(s.first)
+	oc, wc, bc := curOnCol(), curWhite(), curBlack() // couleurs choisies dans la Personnalisation
 	for i := first; i <= first+s.vis && i < len(u.whites); i++ {
 		n := u.whites[i]
 		x0 := int((float64(i) - s.first) * s.ww)
 		x1 := int((float64(i+1) - s.first) * s.ww)
 		on := u.counts[n] > 0
 		topc, botc := uint32(0xfdfbf4), uint32(0xe6e0d2)
+		if look.white != 0 {
+			topc, botc = wc.top, wc.bot
+		}
 		if on {
-			topc, botc = colGoldHi, colGold
+			topc, botc = oc.light, oc.base
+			if look.on == 0 {
+				topc, botc = colGoldHi, colGold
+			}
 		}
 		c.VGrad(x0+1, top, x1-x0-2, kh, topc, botc)
 		c.Rect(x0, top, 1, kh, 0x8a8576, 0.6)
 		if nm := frNames[n%12]; nm != "" {
 			lbl := nm
 			col := uint32(0x6b6759)
-			if n%12 == 0 {
+			if look.white != 0 {
+				col = wc.label
+			}
+			if n%12 == 0 && !wc.dark {
 				lbl = fmt.Sprintf("%s %d", nm, n/12-1)
 				col = 0x2a2518
 			}
@@ -147,11 +157,17 @@ func (d *droidApp) drawPiano(c *Canvas) {
 		cx := (float64(i+1) - s.first) * s.ww
 		bw := s.ww * 0.62
 		on := u.counts[n] > 0
-		tc, bc := uint32(0x2a2f38), uint32(0x07090d)
-		if on {
-			tc, bc = colGoldHi, colGoldDim
+		tc, bc2 := uint32(0x2a2f38), uint32(0x07090d)
+		if look.black != 0 {
+			tc, bc2 = bc.top, bc.bot
 		}
-		c.RRectGrad(cx-bw/2, float64(top-2), bw, float64(bh+2), 7, tc, bc, 1)
+		if on {
+			tc, bc2 = oc.bHi, oc.bLo
+			if look.on == 0 {
+				tc, bc2 = colGoldHi, colGoldDim
+			}
+		}
+		c.RRectGrad(cx-bw/2, float64(top-2), bw, float64(bh+2), 7, tc, bc2, 1)
 		if !on {
 			c.Rect(int(cx-bw/2)+4, top, 3, bh-14, 0xffffff, 0.14)
 		}

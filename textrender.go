@@ -25,6 +25,21 @@ var fontBoldData []byte
 //go:embed fonts/DejaVuSans.ttf
 var fontSymbolData []byte
 
+//go:embed fonts/DejaVuSans-Bold.ttf
+var fontSansBoldData []byte
+
+//go:embed fonts/DejaVuSerif.ttf
+var fontSerifData []byte
+
+//go:embed fonts/DejaVuSerif-Bold.ttf
+var fontSerifBoldData []byte
+
+//go:embed fonts/DejaVuSansMono.ttf
+var fontMonoData []byte
+
+//go:embed fonts/DejaVuSansMono-Bold.ttf
+var fontMonoBoldData []byte
+
 type glyphImg struct {
 	ok      bool
 	dx, dy  int // position du coin haut-gauche par rapport au point d'écriture
@@ -45,7 +60,9 @@ type textStyle struct{ main, alt *textFace }
 
 // TextRenderer dessine les TextCmd d'un Canvas dans ses pixels.
 type TextRenderer struct {
-	styles [nFonts]textStyle
+	styles [nFams][nFonts]textStyle
+	built  [nFams]bool
+	sym    *sfnt.Font
 	mu     sync.Mutex
 	buf    sfnt.Buffer
 }
@@ -72,11 +89,35 @@ func newTextFace(f *sfnt.Font, size float64) *textFace {
 
 func newTextRenderer() *TextRenderer {
 	r := &TextRenderer{}
-	reg, e1 := opentype.Parse(fontRegularData)
-	bold, e2 := opentype.Parse(fontBoldData)
-	sym, e3 := opentype.Parse(fontSymbolData)
-	if e1 != nil || e2 != nil || e3 != nil {
+	sym, err := opentype.Parse(fontSymbolData)
+	if err != nil {
 		return r // sans polices : aucun texte, mais pas de plantage
+	}
+	r.sym = sym
+	r.build(famModern)
+	return r
+}
+
+// build prépare une police (lue seulement la première fois qu'on la choisit)
+func (r *TextRenderer) build(fam int) {
+	if r.built[fam] || r.sym == nil {
+		return
+	}
+	r.built[fam] = true
+	data := [nFams][2][]byte{
+		{fontRegularData, fontBoldData},
+		{fontSerifData, fontSerifBoldData},
+		{fontSymbolData, fontSansBoldData},
+		{fontMonoData, fontMonoBoldData},
+	}[fam]
+	reg, e1 := opentype.Parse(data[0])
+	bold, e2 := opentype.Parse(data[1])
+	if e1 != nil || e2 != nil {
+		if fam != famModern {
+			r.build(famModern)
+			r.styles[fam] = r.styles[famModern]
+		}
+		return
 	}
 	spec := [nFonts]struct {
 		px   float64
@@ -87,9 +128,20 @@ func newTextRenderer() *TextRenderer {
 		if s.bold {
 			f = bold
 		}
-		r.styles[i] = textStyle{main: newTextFace(f, s.px), alt: newTextFace(sym, s.px)}
+		px := s.px
+		if fam != famModern && px >= 13 { // DejaVu est plus large qu'Inter : un peu plus petit pour garder la même place
+			px = px * 0.92
+		}
+		r.styles[fam][i] = textStyle{main: newTextFace(f, px), alt: newTextFace(r.sym, s.px)}
 	}
-	return r
+}
+
+func (r *TextRenderer) style(fam, font int) textStyle {
+	if fam < 0 || fam >= nFams {
+		fam = famModern
+	}
+	r.build(fam)
+	return r.styles[fam][font]
 }
 
 // glyph : l'image d'une lettre (mise en mémoire), posée à un quart de pixel près
@@ -153,7 +205,7 @@ func (r *TextRenderer) Draw(c *Canvas, t TextCmd) {
 	if t.Font < 0 || t.Font >= nFonts || t.S == "" {
 		return
 	}
-	st := r.styles[t.Font]
+	st := r.style(t.Fam, t.Font)
 	if st.main == nil {
 		return
 	}

@@ -675,30 +675,35 @@ func (u *UI) drawKeyboard(c *Canvas) {
 	c.Glow(fx, fy+2, fw, fh, 10, 10, 0x000000, 0.5)
 	c.RRectGrad(fx, fy, fw, fh, 10, colGoldHi, colGoldDim, 1) // liseré doré
 	c.RRectGrad(fx+1.5, fy+1.5, fw-3, fh-3, 9, 0x131a27, 0x05070b, 1)
+	oc, wc, bc := curOnCol(), curWhite(), curBlack() // couleurs choisies dans la Personnalisation
+	refl := 0.6
+	if wc.dark {
+		refl = 0.12
+	}
 	for _, w := range u.whites {
 		x := u.whiteX[w]
-		top, bot := uint32(colKeyW), uint32(0xcfc9b6)
+		top, bot := wc.top, wc.bot
 		on := u.counts[w] > 0
 		if on {
-			top, bot = 0xffe27a, colGold
-			c.Glow(float64(x), float64(kbY), whiteW-1, whiteH-4, 3, 14, colGold, 0.35)
+			top, bot = oc.light, oc.base
+			c.Glow(float64(x), float64(kbY), whiteW-1, whiteH-4, 3, 14, oc.base, 0.35)
 		}
 		c.VGrad(x, kbY, whiteW-1, whiteH-4, top, bot)
 		c.RRect(float64(x), float64(kbY+whiteH-10), whiteW-1, 10, 4, bot, 1)
 		if !on {
-			c.Rect(x, kbY, 1, whiteH-4, 0xffffff, 0.6) // reflet à gauche
+			c.Rect(x, kbY, 1, whiteH-4, 0xffffff, refl) // reflet à gauche
 			c.Rect(x+whiteW-2, kbY, 1, whiteH-4, 0x000000, 0.18)
 		}
 		if w%12 == 0 {
-			c.Text(x, kbY+whiteH-18, whiteW-1, 12, fmt.Sprintf("C%d", w/12-1), fontXs, 0x7a7566, 1)
+			c.Text(x, kbY+whiteH-18, whiteW-1, 12, fmt.Sprintf("C%d", w/12-1), fontXs, wc.label, 1)
 		}
 	}
 	for _, b := range u.blacks {
-		top, bot := uint32(0x2c323d), uint32(colKeyB)
+		top, bot := bc.top, bc.bot
 		on := u.counts[b.note] > 0
 		if on {
-			top, bot = 0xffd23a, 0xb98200
-			c.Glow(float64(b.r.x), float64(b.r.y), float64(b.r.w), float64(b.r.h), 3, 12, colGold, 0.4)
+			top, bot = oc.bHi, oc.bLo
+			c.Glow(float64(b.r.x), float64(b.r.y), float64(b.r.w), float64(b.r.h), 3, 12, oc.base, 0.4)
 		} else {
 			c.Glow(float64(b.r.x), float64(b.r.y+3), float64(b.r.w), float64(b.r.h), 3, 6, 0x000000, 0.45)
 		}

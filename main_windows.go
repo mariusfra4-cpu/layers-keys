@@ -274,7 +274,7 @@ type winApp struct {
 	bmp    uintptr
 	oldBmp uintptr
 	canvas *Canvas
-	fonts  [nFonts]uintptr
+	fonts  [nFams][nFonts]uintptr // une série par police (Personnalisation), créée à la demande
 	scale  float64
 	cw, ch int
 
@@ -443,7 +443,7 @@ func (a *winApp) flushText(texts []TextCmd) {
 		if len(u) == 0 {
 			continue
 		}
-		call(pSelectObject, a.memDC, a.fonts[t.Font])
+		call(pSelectObject, a.memDC, a.font(t.Fam, t.Font))
 		call(pSetTextColor, a.memDC, colorRef(t.Col))
 		rc := rectT{int32(t.X), int32(t.Y), int32(t.X + t.W), int32(t.Y + t.H)}
 		flags := uintptr(dtSingle | dtVCenter | dtNoPrefix | dtEndEllipsis)
@@ -475,19 +475,41 @@ func (a *winApp) setupGraphics() bool {
 	call(pSetBkMode, a.memDC, 1) // TRANSPARENT
 	a.canvas = &Canvas{W: WinW, H: WinH, Pix: unsafe.Slice((*uint32)(bits), WinW*WinH)}
 	a.canvas.FlushHook = a.flushText
-	face := unsafe.Pointer(u16("Segoe UI"))
-	mk := func(h, w int) uintptr {
-		return call(pCreateFont, i32(-h), 0, 0, 0, uintptr(w), 0, 0, 0, 1, 0, 0, 5, 0, uintptr(face))
-	}
-	a.fonts[fontXs] = mk(10, 700)
-	a.fonts[fontSm] = mk(11, 700)
-	a.fonts[fontMd] = mk(13, 400)
-	a.fonts[fontMdB] = mk(13, 700)
-	a.fonts[fontLg] = mk(16, 700)
-	a.fonts[fontXl] = mk(24, 700)
-	a.fonts[fontHg] = mk(34, 700)
-	runtime.KeepAlive(face)
+	a.makeFonts(famModern)
 	return true
+}
+
+// makeFonts crée les 7 tailles d'une police de Windows (Segoe UI, Georgia, Verdana, Consolas)
+func (a *winApp) makeFonts(fam int) {
+	face := u16(lookFamWin[fam])
+	mk := func(h, w int) uintptr {
+		return call(pCreateFont, i32(-h), 0, 0, 0, uintptr(w), 0, 0, 0, 1, 0, 0, 5, 0, ptr(face))
+	}
+	f := &a.fonts[fam]
+	f[fontXs] = mk(10, 700)
+	f[fontSm] = mk(11, 700)
+	f[fontMd] = mk(13, 400)
+	f[fontMdB] = mk(13, 700)
+	f[fontLg] = mk(16, 700)
+	f[fontXl] = mk(24, 700)
+	f[fontHg] = mk(34, 700)
+	runtime.KeepAlive(face)
+}
+
+func (a *winApp) font(fam, font int) uintptr {
+	if fam < 0 || fam >= nFams {
+		fam = famModern
+	}
+	if font < 0 || font >= nFonts {
+		font = fontMd
+	}
+	if a.fonts[fam][font] == 0 {
+		a.makeFonts(fam)
+	}
+	if a.fonts[fam][font] == 0 {
+		return a.fonts[famModern][font]
+	}
+	return a.fonts[fam][font]
 }
 
 func (a *winApp) paint(hwnd uintptr) {
@@ -612,9 +634,13 @@ func (a *winApp) cleanupGraphics() {
 	if a.memDC != 0 {
 		call(pSelectObject, a.memDC, a.oldBmp) // la bitmap ne doit plus être dans le DC avant d'être supprimée
 	}
-	for i, f := range a.fonts {
-		call(pDeleteObject, f)
-		a.fonts[i] = 0
+	for fam := range a.fonts {
+		for i, f := range a.fonts[fam] {
+			if f != 0 {
+				call(pDeleteObject, f)
+			}
+			a.fonts[fam][i] = 0
+		}
 	}
 	call(pDeleteObject, a.bmp)
 	call(pDeleteDC, a.memDC)

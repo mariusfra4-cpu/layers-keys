@@ -12,6 +12,7 @@ type TextCmd struct {
 	Font       int
 	Col        uint32
 	Align      int // 0 gauche, 1 centre, 2 droite
+	Fam        int // police (famModern, famSerif…), choisie dans la Personnalisation
 }
 
 const (
@@ -41,7 +42,15 @@ func (c *Canvas) Text(x, y, w, h int, s string, font int, col uint32, align int)
 	if s == "" {
 		return
 	}
-	c.Texts = append(c.Texts, TextCmd{x, y, w, h, T(s), font, col, align})
+	c.Texts = append(c.Texts, TextCmd{x, y, w, h, T(s), font, col, align, curFam()})
+}
+
+// TextFam : texte dans une police précise (aperçu des polices dans la Personnalisation)
+func (c *Canvas) TextFam(x, y, w, h int, s string, font int, col uint32, align, fam int) {
+	if s == "" {
+		return
+	}
+	c.Texts = append(c.Texts, TextCmd{x, y, w, h, s, font, col, align, fam})
 }
 
 func (c *Canvas) FlushText() {

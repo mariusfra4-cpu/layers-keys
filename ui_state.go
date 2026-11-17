@@ -46,6 +46,7 @@ func (u *UI) SetStateBytes(b []byte) bool {
 		SetLang(langFromCode(c.Lang))
 	}
 	u.setNotation()
+	u.applyLook()
 	u.changed = false
 	u.host.Invalidate()
 	return true
