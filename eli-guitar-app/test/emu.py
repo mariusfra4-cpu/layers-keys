@@ -148,6 +148,9 @@ if e:
     if not tap(x, "Activer"):
         scroll_down()
         tap(dump(), "Activer")
+time.sleep(2)
+adb("shell", "input", "swipe", "160", "200", "160", "600", "300")   # remonte en haut, où s'affiche le message
+time.sleep(1)
 x = wait_for(lambda x: "ne correspond pas" in x, 15)
 shot("2-mauvaise-cle")
 check("ne correspond pas" in x and last_page() == "écran de licence", "mauvaise clé refusée")
@@ -186,11 +189,7 @@ scroll_down()
 x = dump()
 e = edits(x)
 if e:
-    adb("shell", "input", "tap", str(e[0][0]), str(e[0][1]))
-    time.sleep(0.5)
-    for _ in range(len(fausse) + 5):
-        adb("shell", "input", "keyevent", "67")   # efface l'ancienne saisie
-    type_in(e[0], key)
+    type_in(e[0], key)   # l'appli vient d'être relancée : le champ est vide
     x = dump()
     if not tap(x, "Activer"):
         scroll_down()
