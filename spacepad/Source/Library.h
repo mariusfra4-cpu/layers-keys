@@ -68,6 +68,7 @@ public:
     void setType (const juce::String& id, LibType t);
 
     std::vector<Library> snapshot() const;
+    int count() const { const juce::ScopedLock sl (lock); return (int) libs.size(); }
     std::shared_ptr<const Library> find (const juce::String& id) const;
     int changeCount() const { return changes.load(); }
 

@@ -60,6 +60,7 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path C:\splogs\captures | Out-Null
+          $env:SPACEPAD_BENCH = "1"   # mesure aussi la vitesse de dessin de l'interface
           & build\SpacepadTests_artefacts\Release\SpacepadTests.exe C:\splogs\captures 2>&1 | Tee-Object C:\splogs\02_tests.txt
           if ($LASTEXITCODE -ne 0) { throw "tests en échec" }
       - name: NSIS

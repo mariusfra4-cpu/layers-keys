@@ -113,14 +113,20 @@ void SpaceLook::drawRotarySlider (juce::Graphics& g, int x, int y, int w, int h,
     if (pos > 0.001f)
     {
         valArc.addCentredArc (c.x, c.y, ringR, ringR, 0, a0, ang, true);
-        juce::DropShadow (col.withAlpha (0.55f), 8, {}).drawForPath (g, valArc.createPathWithRoundedCorners (0));
+        g.setColour (col.withAlpha (0.25f));
+        g.strokePath (valArc, juce::PathStrokeType (11.0f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
         g.setColour (col);
         g.strokePath (valArc, juce::PathStrokeType (5.0f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
     }
     // bouton
     const float kr = d * 0.5f - 12;
     auto body = juce::Rectangle<float> (kr * 2, kr * 2).withCentre (c);
-    glowEllipse (g, juce::DropShadow (juce::Colours::black.withAlpha (0.8f), 10, { 0, 5 }), body);
+    {
+        juce::ColourGradient sh (juce::Colours::black.withAlpha (0.7f), c.x, c.y + 5, juce::Colours::transparentBlack, c.x + kr + 10, c.y + 5, true);
+        sh.addColour (kr / (kr + 10.0f), juce::Colours::black.withAlpha (0.55f));
+        g.setGradientFill (sh);
+        g.fillEllipse (c.x - kr - 10, c.y + 5 - kr - 10, (kr + 10) * 2, (kr + 10) * 2);
+    }
     juce::ColourGradient grad (juce::Colour (0xff4a5570), c.x - kr * 0.4f, c.y - kr * 0.5f, juce::Colour (0xff0c0f18), c.x + kr, c.y + kr, true);
     grad.addColour (0.55, juce::Colour (0xff1a2032));
     g.setGradientFill (grad);
@@ -131,7 +137,6 @@ void SpaceLook::drawRotarySlider (juce::Graphics& g, int x, int y, int w, int h,
     juce::Path ptr;
     ptr.addRoundedRectangle (-1.5f, -kr + 4, 3.0f, kr * 0.42f, 1.5f);
     ptr.applyTransform (juce::AffineTransform::rotation (ang).translated (c.x, c.y));
-    juce::DropShadow (col, 6, {}).drawForPath (g, ptr);
     g.setColour (juce::Colours::white);
     g.fillPath (ptr);
 }
@@ -377,72 +382,93 @@ void KeyRing::mouseMove (const juce::MouseEvent& e)
     setMouseCursor (h >= -1 ? juce::MouseCursor::PointingHandCursor : juce::MouseCursor::NormalCursor);
 }
 
+// lueur douce : dégradé radial (aussi beau qu'un flou, mais presque gratuit à dessiner à chaque image)
+static void softGlow (juce::Graphics& g, juce::Point<float> c, float r0, float r1, juce::Colour col)
+{
+    if (r1 <= r0 || col.getAlpha() == 0) return;
+    juce::ColourGradient gr (col, c.x, c.y, col.withAlpha (0.0f), c.x + r1, c.y, true);
+    gr.addColour (juce::jlimit (0.0, 0.99, (double) (r0 / r1)), col);
+    gr.addColour (juce::jlimit (0.0, 0.995, (double) ((r0 + (r1 - r0) * 0.45f) / r1)), col.withMultipliedAlpha (0.35f));
+    g.setGradientFill (gr);
+    g.fillEllipse (c.x - r1, c.y - r1, r1 * 2, r1 * 2);
+}
+
+void KeyRing::paintKey (juce::Graphics& g, int i, bool sel, bool active, bool hov, int mode, float D, juce::Point<float> c) const
+{
+    const float s = D / 470.0f, R = D * 0.425f, btn = D * 0.0617f;
+    const float a = (i * 30.0f - 90.0f) * juce::MathConstants<float>::pi / 180.0f;
+    auto kc = juce::Point<float> (c.x + R * std::cos (a), c.y + R * std::sin (a));
+    auto kr = juce::Rectangle<float> (btn * 2, btn * 2).withCentre (kc);
+    if (sel && active)
+    {
+        softGlow (g, kc, btn * 0.9f, btn * 2.1f, theme::accent.withAlpha (0.55f));
+        juce::ColourGradient kg (juce::Colours::white, kc.x - btn * 0.3f, kc.y - btn * 0.5f, juce::Colour (0xff1f5e8a), kc.x + btn, kc.y + btn, true);
+        kg.addColour (0.5, theme::accent);
+        g.setGradientFill (kg);
+        g.fillEllipse (kr);
+        g.setColour (juce::Colours::white);
+        g.drawEllipse (kr.reduced (1), 2.0f);
+        g.setColour (juce::Colour (0xff04121c));
+    }
+    else
+    {
+        softGlow (g, kc.translated (0, 6 * s), btn * 0.8f, btn * 1.45f, juce::Colours::black.withAlpha (0.55f));
+        juce::ColourGradient kg (juce::Colour (hov ? 0xff4a5878 : 0xff3a4560), kc.x - btn * 0.3f, kc.y - btn * 0.5f, juce::Colour (0xff151b2b), kc.x + btn, kc.y + btn, true);
+        g.setGradientFill (kg);
+        g.fillEllipse (kr);
+        g.setColour (sel ? theme::accent : juce::Colours::white.withAlpha (0.14f));
+        g.drawEllipse (kr.reduced (0.5f), sel ? 2.0f : 1.0f);
+        g.setColour (sel ? theme::accentLight : juce::Colour (0xffdfe6f5));
+    }
+    g.setFont (theme::ui (17.0f * s, 2));
+    g.drawText (keyName (i) + (sel && mode == 1 ? "m" : ""), kr, juce::Justification::centred);
+}
+
 void KeyRing::paint (juce::Graphics& g)
 {
     auto b = getLocalBounds().toFloat();
     const float D = juce::jmin (b.getWidth(), b.getHeight());
     const auto c = b.getCentre();
     const float s = D / 470.0f;
-    auto disc = juce::Rectangle<float> (D, D).withCentre (c);
+    const bool active = proc.padActive();
+    const int key = proc.currentKey(), mode = proc.currentMode();
 
-    glowEllipse (g, juce::DropShadow (juce::Colours::black.withAlpha (0.7f), (int) (40 * s), { 0, (int) (24 * s) }), disc);
-    juce::ColourGradient grad (juce::Colour (0xff0b1020), c.x, c.y, juce::Colour (0xff0a0e18), c.x + D * 0.5f, c.y, true);
-    grad.addColour (0.76, juce::Colour (0xff0b1020));
-    grad.addColour (0.97, juce::Colour (0xff1a2440));
-    g.setGradientFill (grad);
-    g.fillEllipse (disc);
-    g.setColour (juce::Colours::white.withAlpha (0.08f));
-    g.drawEllipse (disc.reduced (1), 1.0f);
-
-    // cercle pointillé
+    // 1. le décor fixe (disque, pointillés, 12 touches au repos) est dessiné une seule fois puis réutilisé
+    const float px = juce::jlimit (1.0f, 3.0f, g.getInternalContext().getPhysicalPixelScaleFactor());
+    if (! base.isValid() || baseSize != getLocalBounds().getWidth() * 10000 + getLocalBounds().getHeight() || std::abs (baseScale - px) > 0.01f)
     {
+        baseSize = getLocalBounds().getWidth() * 10000 + getLocalBounds().getHeight();
+        baseScale = px;
+        base = juce::Image (juce::Image::ARGB, juce::roundToInt (b.getWidth() * px), juce::roundToInt (b.getHeight() * px), true);
+        juce::Graphics bg (base);
+        bg.addTransform (juce::AffineTransform::scale (px));
+        auto disc = juce::Rectangle<float> (D, D).withCentre (c);
+        softGlow (bg, c.translated (0, 24 * s), D * 0.45f, D * 0.56f, juce::Colours::black.withAlpha (0.6f));
+        juce::ColourGradient grad (juce::Colour (0xff0b1020), c.x, c.y, juce::Colour (0xff0a0e18), c.x + D * 0.5f, c.y, true);
+        grad.addColour (0.76, juce::Colour (0xff0b1020));
+        grad.addColour (0.97, juce::Colour (0xff1a2440));
+        bg.setGradientFill (grad);
+        bg.fillEllipse (disc);
+        bg.setColour (juce::Colours::white.withAlpha (0.08f));
+        bg.drawEllipse (disc.reduced (1), 1.0f);
         juce::Path circ; circ.addEllipse (disc.reduced (34 * s));
         juce::Path dash; const float dl[] = { 4.0f * s, 5.0f * s };
         juce::PathStrokeType (1.0f).createDashedStroke (dash, circ, dl, 2);
-        g.setColour (theme::accent.withAlpha (0.22f));
-        g.fillPath (dash);
+        bg.setColour (theme::accent.withAlpha (0.22f));
+        bg.fillPath (dash);
+        for (int i = 0; i < 12; ++i) paintKey (bg, i, false, false, false, 0, D, c);
     }
+    g.drawImage (base, b);
 
-    const bool active = proc.padActive();
-    const int key = proc.currentKey(), mode = proc.currentMode();
-    const float R = D * 0.425f, btn = D * 0.0617f;
-    for (int i = 0; i < 12; ++i)
-    {
-        const float a = (i * 30.0f - 90.0f) * juce::MathConstants<float>::pi / 180.0f;
-        auto kc = juce::Point<float> (c.x + R * std::cos (a), c.y + R * std::sin (a));
-        auto kr = juce::Rectangle<float> (btn * 2, btn * 2).withCentre (kc);
-        const bool sel = i == key;
-        if (sel && active)
-        {
-            glowEllipse (g, juce::DropShadow (theme::accent, (int) (30 * s), {}), kr);
-            juce::ColourGradient kg (juce::Colours::white, kc.x - btn * 0.3f, kc.y - btn * 0.5f, juce::Colour (0xff1f5e8a), kc.x + btn, kc.y + btn, true);
-            kg.addColour (0.5, theme::accent);
-            g.setGradientFill (kg);
-            g.fillEllipse (kr);
-            g.setColour (juce::Colours::white);
-            g.drawEllipse (kr.reduced (1), 2.0f);
-            g.setColour (juce::Colour (0xff04121c));
-        }
-        else
-        {
-            glowEllipse (g, juce::DropShadow (juce::Colours::black.withAlpha (0.7f), (int) (12 * s), { 0, (int) (6 * s) }), kr);
-            juce::ColourGradient kg (juce::Colour (hover == i ? 0xff4a5878 : 0xff3a4560), kc.x - btn * 0.3f, kc.y - btn * 0.5f, juce::Colour (0xff151b2b), kc.x + btn, kc.y + btn, true);
-            g.setGradientFill (kg);
-            g.fillEllipse (kr);
-            g.setColour (sel ? theme::accent : juce::Colours::white.withAlpha (0.14f));
-            g.drawEllipse (kr.reduced (0.5f), sel ? 2.0f : 1.0f);
-            g.setColour (sel ? theme::accentLight : juce::Colour (0xffdfe6f5));
-        }
-        g.setFont (theme::ui (17.0f * s, 2));
-        g.drawText (keyName (i) + (sel && mode == 1 ? "m" : ""), kr, juce::Justification::centred);
-    }
+    // 2. ce qui bouge : touche survolée, touche jouée, cœur lumineux
+    if (hover >= 0 && hover != key) paintKey (g, hover, false, false, true, mode, D, c);
+    paintKey (g, key, true, active, hover == key, mode, D, c);
 
-    // cœur lumineux
     const float coreR = D * 0.234f;
     auto core = juce::Rectangle<float> (coreR * 2, coreR * 2).withCentre (c);
     const float pulse = active ? 0.85f + 0.15f * std::sin (phase) : 0.35f;
-    glowEllipse (g, juce::DropShadow (theme::accent.withAlpha (0.45f * pulse), (int) (70 * s), {}), core);
-    glowEllipse (g, juce::DropShadow (theme::violet.withAlpha (0.25f * pulse), (int) (120 * s), {}), core);
+    softGlow (g, c, coreR * 0.95f, coreR * 1.75f, theme::violet.withAlpha (0.22f * pulse));
+    softGlow (g, c, coreR * 0.95f, coreR * 1.38f, theme::accent.withAlpha (0.42f * pulse));
     juce::ColourGradient cg (juce::Colour (0xffd8f6ff).withMultipliedBrightness (0.4f + 0.6f * pulse), c.x - coreR * 0.2f, c.y - coreR * 0.36f, juce::Colour (0xff070b16), c.x + coreR, c.y + coreR, true);
     cg.addColour (0.15, theme::accent.withMultipliedBrightness (0.45f + 0.55f * pulse));
     cg.addColour (0.42, juce::Colour (0xff2a5f9e).withMultipliedBrightness (0.5f + 0.5f * pulse));
@@ -451,8 +477,19 @@ void KeyRing::paint (juce::Graphics& g)
     g.fillEllipse (core);
     if (hover == -1) { g.setColour (juce::Colours::white.withAlpha (0.15f)); g.drawEllipse (core.reduced (2), 2.0f); }
 
-    glowText (g, keyLabel (key, mode), theme::title (58.0f * s), core.withSizeKeepingCentre (core.getWidth(), 70 * s).translated (0, -14 * s),
-              juce::Justification::centred, juce::Colours::white, theme::accentLight.withAlpha (0.8f), (int) (22 * s));
+    // nom de la tonalité avec sa lueur : préparé une fois par tonalité, puis réutilisé
+    const auto label = keyLabel (key, mode);
+    auto labelArea = core.withSizeKeepingCentre (core.getWidth(), 70 * s).translated (0, -14 * s);
+    if (label != labelText || ! labelImg.isValid() || std::abs (labelScale - px) > 0.01f || labelW != juce::roundToInt (labelArea.getWidth()))
+    {
+        labelText = label; labelScale = px; labelW = juce::roundToInt (labelArea.getWidth());
+        labelImg = juce::Image (juce::Image::ARGB, juce::roundToInt (labelArea.getWidth() * px), juce::roundToInt (labelArea.getHeight() * px), true);
+        juce::Graphics lg (labelImg);
+        lg.addTransform (juce::AffineTransform::scale (px));
+        glowText (lg, label, theme::title (58.0f * s), labelArea.withPosition (0, 0), juce::Justification::centred, juce::Colours::white, theme::accentLight.withAlpha (0.8f), (int) (22 * s * px));
+    }
+    g.drawImage (labelImg, labelArea);
+
     auto f = theme::ui (12.0f * s, 1); f.setExtraKerningFactor (0.3f);
     g.setFont (f);
     g.setColour (juce::Colour (0xffd9f4ff));
@@ -473,7 +510,7 @@ void Waveform::paint (juce::Graphics& g)
     {
         g.setColour (theme::muted);
         g.setFont (theme::ui (13.0f));
-        g.drawText (proc.libraries().snapshot().empty() ? L ("Choisissez le dossier de vos sons \xe2\x80\x94 Spacepad l'analyse tout seul", "Choose your sounds folder \xe2\x80\x94 Spacepad analyzes it on its own", "Elige la carpeta de tus sonidos \xe2\x80\x94 Spacepad la analiza solo")
+        g.drawText (proc.libraries().count() == 0 ? L ("Choisissez le dossier de vos sons \xe2\x80\x94 Spacepad l'analyse tout seul", "Choose your sounds folder \xe2\x80\x94 Spacepad analyzes it on its own", "Elige la carpeta de tus sonidos \xe2\x80\x94 Spacepad la analiza solo")
                                                         : L ("Choisissez une tonalit\xc3\xa9 sur l'anneau pour lancer le pad", "Pick a key on the ring to start the pad", "Elige una tonalidad en el anillo para iniciar el pad"),
                     r, juce::Justification::centred);
         return;
@@ -632,7 +669,9 @@ void LibraryPanel::retranslate()
 void LibraryPanel::updateState()
 {
     if (! crowd && proc.currentMode() != lastMode) rebuildChips();
-    list.repaint();
+    // la liste n'est redessinée que si la librairie choisie ou le son joué change
+    const auto sig = proc.padLibraryId() + "|" + proc.crowdLibraryId() + "|" + juce::String (proc.crowdSoundIndex()) + "|" + juce::String ((int) proc.crowdSounding()) + "|" + juce::String ((int) proc.loopOn());
+    if (sig != lastStateSig) { lastStateSig = sig; list.repaint(); }
 }
 
 void LibraryPanel::resized()
@@ -978,8 +1017,11 @@ void ScanOverlay::paint (juce::Graphics& g)
 {
     g.fillAll (juce::Colour (0xd002040a));
     auto c = card().toFloat();
-    juce::DropShadow (juce::Colours::black, 60, { 0, 20 }).drawForRectangle (g, c.toNearestInt());
-    juce::DropShadow (theme::accent.withAlpha (0.12f), 80, {}).drawForRectangle (g, c.toNearestInt());
+    for (int i = 1; i <= 6; ++i)
+    {
+        g.setColour (juce::Colours::black.withAlpha (0.12f));
+        g.fillRoundedRectangle (c.expanded ((float) i * 4).translated (0, (float) i * 2), 24.0f + i * 4);
+    }
     g.setGradientFill (juce::ColourGradient (theme::accent.withAlpha (0.55f), c.getTopLeft(), theme::violet.withAlpha (0.4f), c.getBottomRight(), false));
     g.fillRoundedRectangle (c, 24.0f);
     panelBg (g, c.reduced (2), 22.0f, juce::Colour (0xff121a2c), juce::Colour (0xff0a0e18));

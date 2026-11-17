@@ -427,6 +427,38 @@ static void snapshot (const juce::File& outDir, const juce::File& root)
     std::cout << "  images : " << outDir.getFullPathName() << "\n";
 }
 
+
+static void benchPaint (const juce::File& root)
+{
+    section ("Vitesse de dessin (ms par image)");
+    SpacepadProcessor p;
+    p.prepareToPlay (48000, 256);
+    for (auto& l : p.libraries().snapshot()) if (l.name == "Warm Pad") p.selectPadLibrary (l.id);
+    p.pressKey (4);
+    p.waitIdleForTests (3000);
+    juce::AudioBuffer<float> buf (2, 256); juce::MidiBuffer midi;
+    for (int i = 0; i < 200; ++i) { buf.clear(); p.processBlock (buf, midi); }
+    std::unique_ptr<juce::AudioProcessorEditor> ed (p.createEditor());
+    ed->setSize (MainView::W, MainView::H);
+    auto& v = dynamic_cast<SpacepadEditor&> (*ed).view();
+    juce::Image img (juce::Image::ARGB, MainView::W, MainView::H, true);
+    auto timeIt = [&] (const char* name, juce::Component& c)
+    {
+        const int N = 15;
+        auto t0 = juce::Time::getMillisecondCounterHiRes();
+        for (int i = 0; i < N; ++i) { juce::Graphics g (img); c.paintEntireComponent (g, false); }
+        std::cout << "  " << name << " : " << juce::String ((juce::Time::getMillisecondCounterHiRes() - t0) / N, 2) << " ms\n";
+    };
+    timeIt ("fenetre entiere", v);
+    for (auto* c : v.getChildren())
+    {
+        juce::String n = dynamic_cast<KeyRing*> (c) ? "anneau" : dynamic_cast<Header*> (c) ? "entete" : dynamic_cast<Waveform*> (c) ? "forme d'onde"
+                       : dynamic_cast<LibraryPanel*> (c) ? "bibliotheque" : dynamic_cast<Knob*> (c) ? "" : "";
+        if (n.isNotEmpty()) timeIt (n.toRawUTF8(), *c);
+    }
+    juce::ignoreUnused (root);
+}
+
 int main (int argc, char** argv)
 {
     juce::ScopedJuceInitialiser_GUI gui;
@@ -448,6 +480,7 @@ int main (int argc, char** argv)
     testLoopSeam();
     testProcessor();
     if (argc > 1) snapshot (juce::File (juce::String (argv[1])), root);
+    if (juce::SystemStats::getEnvironmentVariable ("SPACEPAD_BENCH", {}).isNotEmpty()) benchPaint (root);
 
     std::cout << "\n" << (checks - failures) << " / " << checks << " verifications reussies\n";
     std::cout << (failures == 0 ? "TOUT EST BON\n" : "ECHECS\n");

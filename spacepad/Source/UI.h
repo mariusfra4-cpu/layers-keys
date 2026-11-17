@@ -58,8 +58,13 @@ public:
     float phase = 0;   // animation
 private:
     int keyAt (juce::Point<float>) const;   // 0..11, -1 = centre, -2 = rien
+    void paintKey (juce::Graphics&, int i, bool sel, bool active, bool hov, int mode, float D, juce::Point<float> c) const;
     SpacepadProcessor& proc;
     int hover = -2;
+    juce::Image base, labelImg;              // décor fixe et nom de la tonalité, préparés une fois
+    int baseSize = 0, labelW = 0;
+    float baseScale = 0, labelScale = 0;
+    juce::String labelText;
 };
 
 class Waveform : public juce::Component
@@ -115,6 +120,7 @@ private:
     int chipsBottom = 0;
     juce::Rectangle<int> statusArea, titleArea;
     int lastMode = -1;
+    juce::String lastStateSig;
 };
 
 // --------------------------------------------------------------------------------------------
