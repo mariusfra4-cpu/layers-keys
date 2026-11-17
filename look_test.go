@@ -35,7 +35,9 @@ func TestLook(t *testing.T) {
 		u.loadSource(1, SrcCfg{Kind: "builtin", Builtin: iPad})
 		u.loadSource(2, SrcCfg{Kind: "builtin", Builtin: iPad})
 		u.labels[0], u.labels[1], u.labels[2] = "Grand Piano", "Nappe Gospel", "Strings"
-		u.setLook(func(c *Config) { c.LookOn, c.LookWhite, c.LookBlack, c.LookFont, c.LookTheme, c.LookText = 0, 0, 0, 0, 0, 0 })
+		u.setLook(func(c *Config) {
+			c.LookOn, c.LookWhite, c.LookBlack, c.LookFont, c.LookTheme, c.LookText = 0, 0, 0, 0, 0, 0
+		})
 		for _, n := range []int{53, 57, 60, 64} {
 			u.counts[n] = 1
 		}
@@ -59,5 +61,7 @@ func TestLook(t *testing.T) {
 		shotPNG(t, dir, "21_emeraude_creme_page", u)
 		u.closeOverlay()
 	}
-	u.setLook(func(c *Config) { c.LookOn, c.LookWhite, c.LookBlack, c.LookFont, c.LookTheme, c.LookText = 0, 0, 0, 0, 0, 0 })
+	u.setLook(func(c *Config) {
+		c.LookOn, c.LookWhite, c.LookBlack, c.LookFont, c.LookTheme, c.LookText = 0, 0, 0, 0, 0, 0
+	})
 }
