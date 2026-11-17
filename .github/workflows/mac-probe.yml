@@ -1,0 +1,16 @@
+# Test rapide : quelles machines Mac de GitHub sont disponibles pour ce dépôt ? (quelques secondes chacune)
+name: Mac disponibles
+on:
+  workflow_dispatch:
+  push:
+    paths: ['.github/workflows/mac-probe.yml']
+jobs:
+  probe:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, macos-14, macos-latest, macos-26, macos-15-intel, macos-13]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    steps:
+      - run: sw_vers; uname -m

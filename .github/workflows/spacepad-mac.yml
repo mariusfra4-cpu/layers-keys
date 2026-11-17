@@ -1,0 +1,101 @@
+# Spacepad by JB Praise — version Mac : application + plugins Audio Unit et VST3 (Apple Silicon + Intel),
+# tests (dont auval, le test officiel d'Apple), installateur .pkg testé sur une vraie installation.
+# Résultat : branche « ci-spacepad-mac » (Spacepad-<version>.pkg + journaux).
+# Lancer : onglet « Actions » > « Spacepad Mac » > « Run workflow » (on peut choisir le modèle de Mac).
+name: Spacepad Mac
+on:
+  push:
+    paths: ['spacepad/**', '.github/workflows/spacepad-mac.yml']
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: "Machine Mac de GitHub (macos-15, macos-14, macos-latest, macos-26…)"
+        default: macos-15
+        required: false
+permissions:
+  contents: write
+env:
+  SPVER: "1.0.0"
+jobs:
+  mac:
+    runs-on: ${{ inputs.runner || 'macos-15' }}
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: bash -o pipefail {0}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Construction universelle (Apple Silicon + Intel)
+        run: |
+          mkdir -p /tmp/splogs
+          sw_vers | tee /tmp/splogs/00_systeme.txt
+          cmake -S spacepad -B build -G Ninja -DCMAKE_BUILD_TYPE=Release "-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64" 2>&1 | tail -3
+          cmake --build build --target Spacepad_Standalone Spacepad_VST3 Spacepad_AU SpacepadTests 2>&1 | tee /tmp/splogs/01_construction.txt | grep -E " error|FAILED" || true
+          A=build/Spacepad_artefacts/Release
+          ls -la $A/Standalone $A/VST3 $A/AU | tee -a /tmp/splogs/01_construction.txt
+          for b in "$A/Standalone/Spacepad.app" "$A/VST3/Spacepad.vst3" "$A/AU/Spacepad.component"; do
+            codesign --force --deep -s - "$b"
+            lipo -archs "$b/Contents/MacOS/Spacepad" | sed "s|^|$b : |" | tee -a /tmp/splogs/01_construction.txt
+          done
+      - name: Tests
+        run: |
+          mkdir -p /tmp/splogs/captures
+          build/SpacepadTests_artefacts/Release/SpacepadTests /tmp/splogs/captures 2>&1 | tee /tmp/splogs/02_tests.txt
+      - name: Test officiel Apple de l'Audio Unit (auval, Apple et Intel)
+        run: |
+          mkdir -p ~/Library/Audio/Plug-Ins/Components
+          cp -R build/Spacepad_artefacts/Release/AU/Spacepad.component ~/Library/Audio/Plug-Ins/Components/
+          killall -9 AudioComponentRegistrar 2>/dev/null || true
+          sleep 3
+          auval -v aumu Spcp JBPr 2>&1 | tee /tmp/splogs/03_auval.txt | tail -15
+          grep -q "AU VALIDATION SUCCEEDED" /tmp/splogs/03_auval.txt
+          arch -x86_64 auval -v aumu Spcp JBPr > /tmp/splogs/03b_auval_intel.txt 2>&1 || true
+          tail -5 /tmp/splogs/03b_auval_intel.txt
+          rm -rf ~/Library/Audio/Plug-Ins/Components/Spacepad.component
+      - name: Test de démarrage de l'application (Apple et Intel)
+        shell: bash {0}
+        run: |
+          B=build/Spacepad_artefacts/Release/Standalone/Spacepad.app/Contents/MacOS/Spacepad
+          for a in arm64 x86_64; do
+            arch -$a "$B" > /tmp/splogs/04_run_$a.txt 2>&1 &
+            P=$!; sleep 6
+            if kill -0 $P 2>/dev/null; then echo "$a : application en marche après 6 s : OK" | tee -a /tmp/splogs/04_app.txt; kill $P; else wait $P; echo "$a : PLANTÉ code $?" | tee -a /tmp/splogs/04_app.txt; fi
+          done
+      - name: Installateur .pkg
+        run: |
+          mkdir -p /tmp/in
+          A=build/Spacepad_artefacts/Release
+          cp -R $A/Standalone/Spacepad.app $A/VST3/Spacepad.vst3 $A/AU/Spacepad.component /tmp/in/
+          spacepad/installer/mac/build_pkg.sh /tmp/in "$SPVER" 2>&1 | tee /tmp/splogs/05_pkg.txt
+      - name: Test installation complète
+        run: |
+          {
+            sudo installer -pkg spacepad/dist/Spacepad-$SPVER.pkg -target / 2>&1 | tail -5
+            for x in "/Applications/Spacepad.app/Contents/MacOS/Spacepad" "/Applications/Désinstaller Spacepad.app/Contents/Resources/desinstaller.sh" "/Library/Audio/Plug-Ins/VST3/Spacepad.vst3/Contents/MacOS/Spacepad" "/Library/Audio/Plug-Ins/Components/Spacepad.component/Contents/MacOS/Spacepad" "/Library/Application Support/JB Praise/Spacepad"; do
+              [ -e "$x" ] && echo "présent : $x" || echo "ABSENT : $x"
+            done
+            ls -ld "/Library/Application Support/JB Praise/Spacepad"
+            pkgutil --pkgs | grep spacepad
+            sleep 3
+            auval -v aumu Spcp JBPr 2>&1 | tail -3
+            sudo /bin/bash "/Applications/Désinstaller Spacepad.app/Contents/Resources/desinstaller.sh" --silent
+            [ -e /Applications/Spacepad.app ] && echo "ERREUR : encore installé" || echo "désinstallation : OK"
+          } 2>&1 | tee /tmp/splogs/06_installation.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Spacepad_Mac
+          path: spacepad/dist/Spacepad-*.pkg
+      - name: Publier (branche ci-spacepad-mac)
+        if: always()
+        run: |
+          mkdir -p /tmp/o
+          cp -R /tmp/splogs/* /tmp/o/ 2>/dev/null || true
+          cp spacepad/dist/Spacepad-*.pkg /tmp/o/ 2>/dev/null || true
+          git config user.name ci; git config user.email ci@users.noreply.github.com
+          git checkout --orphan ci-spacepad-mac-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          rm -rf build spacepad
+          cp -R /tmp/o/* . 2>/dev/null || true
+          echo "run $GITHUB_RUN_ID" > run.txt
+          git add -A && git commit -qm "spacepad mac $GITHUB_RUN_ID"
+          git push -f origin HEAD:refs/heads/ci-spacepad-mac
