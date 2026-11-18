@@ -112,8 +112,8 @@ LoopInfo separate(const Audio& a, const std::string& filename, std::vector<Stem>
 extern const char* const kUncategorized;  // « Non classés »
 extern const char* const kIndexFile;      // .africanloops-index.json
 
-// Style d'une loop d'après son chemin relatif : le dossier décide (« I Love/x.wav » → I Love),
-// sinon les mots du nom du fichier (worship, love, amapiano…).
+// Style d'une loop d'après son chemin relatif : le nom du dossier où elle est rangée
+// décide, sinon les mots du nom du fichier (worship, amapiano, makossa…).
 std::string categoryOf(const std::string& relativePath);
 
 struct Entry {
@@ -148,6 +148,10 @@ public:
 
     std::vector<CategoryCount> categories() const;
     bool setCategory(const std::string& path, const std::string& category);
+    // Renomme un style (toutes ses loops suivent). Renvoie le nombre de loops.
+    int renameCategory(const std::string& from, const std::string& to);
+    // Supprime un style : ses loops vont dans « Non classés » (aucun fichier effacé).
+    int removeCategory(const std::string& name);
     std::vector<const Entry*> search(const std::string& category, const std::string& text) const;
 };
 

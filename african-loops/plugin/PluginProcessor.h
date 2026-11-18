@@ -77,6 +77,8 @@ public:
     int libraryCounter() const { return libs.load(); }
     juce::File libraryFolder() const;
     void setCategory(const juce::String& path, const juce::String& category);
+    void renameCategory(const juce::String& from, const juce::String& to);
+    void removeCategory(const juce::String& name);  // ses loops vont dans « Non classés »
 
     // --- glisser vers le logiciel de musique
     // Fabrique un WAV de ce qu'on entend (track = -1) ou d'une piste seule.

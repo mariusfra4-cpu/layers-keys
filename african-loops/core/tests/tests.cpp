@@ -208,7 +208,7 @@ static void testLibrary() {
     CHECK(lib.entries.size() == 5 && calls == 5, "%zu loops, %d analyses", lib.entries.size(), calls);
     std::map<std::string, std::string> want = {
         {"Worship/Praise Drums.wav", "Worship"}, {"I Love/Soft 01.wav", "I Love"},
-        {"love_groove_90bpm.wav", "Love"}, {"Djembe solo.wav", kUncategorized},
+        {"love_groove_90bpm.wav", kUncategorized}, {"Djembe solo.wav", kUncategorized},
         {"Coupé-Décalé/Abidjan été.wav", "Coupé-Décalé"}};
     for (auto& e : lib.entries) {
         CHECK(want[e.path] == e.category, "%s classé dans « %s »", e.path.c_str(), e.category.c_str());
@@ -232,12 +232,30 @@ static void testLibrary() {
     for (auto& e : lib2.entries)
         if (e.path == "Worship/Praise Drums.wav")
             CHECK(std::abs(e.info.tempo.bpm - 96) < 0.01 && !e.info.slices.empty() && !e.info.percussions.empty(), "index relu incomplet");
+
+    current = "supprimer / renommer un style";
+    CHECK(lib2.removeCategory("I Love") == 1, "suppression du style");
+    CHECK(lib2.renameCategory("Worship", "Louange") == 1, "renommage du style");
+    CHECK(lib2.removeCategory(kUncategorized) == 0, "« Non classés » ne doit pas pouvoir être supprimé");
+    CHECK(lib2.save(), "sauvegarde");
+    Library lib3;
+    calls = 0;
+    CHECK(Library::scan(dir.string(), lib3, err, [&](int, int, const std::string&) { ++calls; }), "scan 3");
+    bool gone = true, renamed = false;
+    for (auto& c : lib3.categories()) {
+        if (c.name == "I Love" || c.name == "Worship") gone = false;
+        if (c.name == "Louange") renamed = true;
+    }
+    CHECK(gone && renamed && calls == 0, "style supprimé ou renommé revenu après une nouvelle analyse");
+    CHECK(lib3.search(kUncategorized, "soft").size() == 1, "la loop du style supprimé n'est pas dans Non classés");
+    CHECK(fs::exists(dir / "I Love" / "Soft 01.wav"), "un fichier a été effacé !");
     fs::remove_all(dir);
 
     current = "styles";
     CHECK(categoryOf("loops_coupé-décalé_01.wav") == "Coupé-Décalé", "%s", categoryOf("loops_coupé-décalé_01.wav").c_str());
     CHECK(categoryOf("Adoration_Talking.wav") == "Worship", "adoration");
-    CHECK(categoryOf("I Love\\x.wav") == "I Love", "chemin Windows");
+    CHECK(categoryOf("Mes Rythmes\\x.wav") == "Mes Rythmes", "chemin Windows");
+    CHECK(categoryOf("love_groove.wav") == kUncategorized, "« Love » n'est pas un style");
 }
 
 static void testLooper() {

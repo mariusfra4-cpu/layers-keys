@@ -103,6 +103,17 @@ int main(int argc, char** argv) {
             }
         CHECK(broken == 1, "le fichier abîmé n'est pas signalé (%d)", broken);
 
+        // 1 bis. supprimer un style : ses loops vont dans « Non classés », rien n'est effacé
+        proc->removeCategory("I Love");
+        lib = proc->library();
+        int nonClasses = 0;
+        for (auto& e : lib->entries) {
+            CHECK(e.category != "I Love", "style supprimé encore présent");
+            if (e.category == kUncategorized) ++nonClasses;
+        }
+        CHECK(nonClasses >= 2, "les loops du style supprimé ne sont pas dans Non classés");
+        CHECK(dir.getChildFile("I Love/Soft Groove 96bpm.wav").existsAsFile(), "un fichier a été effacé !");
+
         // 2. charger une loop et la jouer
         proc->loadLoopAsync(dir.getChildFile("Worship/Praise Drums.wav"));
         CHECK(waitFor([&] { return !proc->isLoading() && proc->current(); }, 20000), "chargement trop long");

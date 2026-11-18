@@ -45,6 +45,7 @@ private:
         int getNumRows() override { return owner.categories.size(); }
         void paintListBoxItem(int row, juce::Graphics&, int w, int h, bool selected) override;
         void selectedRowsChanged(int) override { owner.rebuildLoops(); }
+        void listBoxItemClicked(int row, const juce::MouseEvent& e) override;
     };
     // ListBoxModel : liste des loops
     int getNumRows() override { return (int)rows.size(); }

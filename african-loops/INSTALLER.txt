@@ -26,8 +26,10 @@ UTILISATION
 -----------
 - DOSSIER : choisissez le dossier de vos loops (WAV ou MP3). Elles sont toutes
   analysées une seule fois (tempo, percussions) et classées par style :
-  le nom du dossier décide (« Worship », « I Love »...).
+  le nom du dossier décide (« Worship », « Gospel »...).
   Clic droit sur une loop : la ranger dans un autre style.
+  Clic droit sur un style : le renommer, ou le supprimer (ses loops vont
+  dans « Non classés », aucun fichier n'est effacé).
 - + FICHIER, ou glissez un WAV / MP3 sur la fenêtre : ouvre une seule loop.
 - Chaque percussion reconnue arrive sur sa piste : volume, pan, M (couper),
   S (écouter seule).

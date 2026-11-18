@@ -47,8 +47,8 @@ int main(int argc, char** argv) {
     const L loops[] = {
         {"Worship/Praise Night 72bpm.wav", 72, 4},       {"Worship/Adoration Groove.wav", 68, 4},
         {"Worship/Louange Live Drums.wav", 76, 4},       {"Worship/Holy Spirit Shaker.wav", 70, 2},
-        {"Worship/Worship Slow 64bpm.wav", 64, 4},       {"I Love/Soft Love 90bpm.wav", 90, 4},
-        {"I Love/Mon Amour Groove.wav", 84, 4},          {"I Love/Romance Kongo.wav", 88, 2},
+        {"Worship/Worship Slow 64bpm.wav", 64, 4},       {"Rumba/Kinshasa Soft 90bpm.wav", 90, 4},
+        {"Rumba/Sebene Groove.wav", 84, 4},          {"Rumba/Rumba Kongo.wav", 88, 2},
         {"Afrobeats/Lagos Street 104bpm.wav", 104, 4},   {"Afrobeats/Naija Bounce.wav", 108, 4},
         {"Afrobeats/Accra Highlife Mix.wav", 112, 4},    {"Gospel/Gospel Choir Drums.wav", 96, 4},
         {"Gospel/Sunday Service 100bpm.wav", 100, 4},    {"Coupe-Decale/Abidjan Night.wav", 124, 4},
@@ -125,19 +125,19 @@ int main(int argc, char** argv) {
     pause(1500);
     snapshot(*ed, shots.getChildFile("06_mixer_mute_volume_pan.png"));
 
-    // 7. style « I Love », une autre loop, tempo changé et effets
+    // 7. style « Rumba », une autre loop, tempo changé et effets
     setParam(proc, ids::mute(2), 0);
     setParam(proc, ids::gain(3), 1);
     setParam(proc, ids::pan(3), 0);
-    selectStyle("I Love");
-    proc.loadLoopAsync(dir.getChildFile("I Love/Soft Love 90bpm.wav"));
+    selectStyle("Rumba");
+    proc.loadLoopAsync(dir.getChildFile("Rumba/Kinshasa Soft 90bpm.wav"));
     waitFor([&] { return !proc.isLoading(); }, 20000);
     setParam(proc, ids::bpm, 96);
     setParam(proc, ids::sendFx, 1);
     setParam(proc, ids::warmth, 0.5f);
     setParam(proc, ids::metronome, 1);
     pause(2200);
-    snapshot(*ed, shots.getChildFile("07_style_i_love_tempo_96.png"));
+    snapshot(*ed, shots.getChildFile("07_style_rumba_tempo_96.png"));
 
     // 8. recherche dans toute la bibliothèque
     selectStyle(juce::String::fromUTF8("Toutes les loops"));

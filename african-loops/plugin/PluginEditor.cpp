@@ -213,6 +213,35 @@ void BrowserPanel::CategoryModel::paintListBoxItem(int row, juce::Graphics& g, i
     g.drawText(juce::String(owner.categoryCounts[(size_t)row]), w - 40, 0, 32, h, juce::Justification::centredRight);
 }
 
+void BrowserPanel::CategoryModel::listBoxItemClicked(int row, const juce::MouseEvent& e) {
+    // clic droit sur un style : le renommer ou le supprimer
+    if (!e.mods.isPopupMenu() || row <= 0 || row >= owner.categories.size()) return;
+    const juce::String name = owner.categories[row];
+    if (name == juce::String::fromUTF8(kUncategorized)) return;
+    juce::PopupMenu m;
+    m.addSectionHeader(name);
+    m.addItem(1, juce::String::fromUTF8("Renommer ce style…"));
+    m.addItem(2, juce::String::fromUTF8("Supprimer ce style (ses loops vont dans « Non classés »)"));
+    juce::Component::SafePointer<BrowserPanel> safe(&owner);
+    m.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(&owner.catList), [safe, name](int r) {
+        if (!safe || r == 0) return;
+        if (r == 2) {
+            safe->proc.removeCategory(name);
+            return;
+        }
+        auto* w = new juce::AlertWindow(juce::String::fromUTF8("Renommer le style"), juce::String::fromUTF8("Nouveau nom :"),
+                                        juce::MessageBoxIconType::NoIcon);
+        w->addTextEditor("name", name);
+        w->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
+        w->addButton("Annuler", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+        w->enterModalState(true, juce::ModalCallbackFunction::create([safe, name, w](int res) {
+                               auto to = w->getTextEditorContents("name").trim();
+                               if (safe && res == 1 && to.isNotEmpty() && to != name) safe->proc.renameCategory(name, to);
+                           }),
+                           true);
+    });
+}
+
 void BrowserPanel::paintListBoxItem(int row, juce::Graphics& g, int w, int h, bool selected) {
     if (row < 0 || row >= (int)rows.size()) return;
     const Entry& e = *rows[(size_t)row];

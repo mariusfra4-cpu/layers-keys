@@ -56,7 +56,6 @@ const std::vector<Style>& styles() {
     static const std::vector<Style> s = {
         {{"worship", "louange", "adoration", "praise"}, "Worship"},
         {{"gospel"}, "Gospel"},
-        {{"love", "amour", "romance"}, "Love"},
         {{"amapiano", "log drum", "logdrum"}, "Amapiano"},
         {{"afrohouse", "afro house"}, "Afro House"},
         {{"afrobeat", "afropop", "afro pop", "naija"}, "Afrobeats"},
@@ -359,6 +358,19 @@ std::vector<CategoryCount> Library::categories() const {
         if (name != kUncategorized) out.push_back({name, c});
     if (auto it = count.find(kUncategorized); it != count.end()) out.push_back({it->first, it->second});  // à la fin
     return out;
+}
+
+int Library::renameCategory(const std::string& from, const std::string& to) {
+    if (from.empty() || to.empty() || from == kUncategorized) return 0;
+    int n = 0;
+    for (auto& e : entries)
+        if (e.category == from) { e.category = to; ++n; }
+    return n;
+}
+
+int Library::removeCategory(const std::string& name) {
+    if (name == kUncategorized) return 0;
+    return renameCategory(name, kUncategorized);  // les loops restent, rangées dans « Non classés »
 }
 
 bool Library::setCategory(const std::string& path, const std::string& category) {

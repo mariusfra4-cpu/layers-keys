@@ -411,6 +411,28 @@ void AfricanLoopsProcessor::setCategory(const juce::String& path, const juce::St
     }
 }
 
+void AfricanLoopsProcessor::renameCategory(const juce::String& from, const juce::String& to) {
+    std::lock_guard<std::mutex> lk(stateMu);
+    if (!lib || to.trim().isEmpty()) return;
+    auto copy = std::make_shared<Library>(*lib);
+    if (copy->renameCategory(from.toStdString(), to.trim().toStdString()) > 0) {
+        copy->save();
+        lib = copy;
+        ++libs;
+    }
+}
+
+void AfricanLoopsProcessor::removeCategory(const juce::String& name) {
+    std::lock_guard<std::mutex> lk(stateMu);
+    if (!lib) return;
+    auto copy = std::make_shared<Library>(*lib);
+    if (copy->removeCategory(name.toStdString()) > 0) {
+        copy->save();
+        lib = copy;
+        ++libs;
+    }
+}
+
 float AfricanLoopsProcessor::trackPeak(int i) const {
     std::lock_guard<std::mutex> lk(stateMu);
     return looper ? looper->trackPeak(i) : 0.f;
