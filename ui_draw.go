@@ -650,27 +650,15 @@ func (u *UI) drawPanel(c *Canvas) {
 		}
 	})
 	// split du clavier : zone de cette piste (TOUT / GAUCHE / DROITE) et note de coupure
-	// molette de modulation : agit sur cette piste ou non
-	bw3 := (panW - 32 - 16) / 3
-	u.buttonC(c, "tgWheel", rect{px + 16, py + 350, bw3, 26}, T("MOLETTE"), ch.Wheel, colGold, colDark, fontSm, func() {
-		u.with(func() { ch.Wheel = !ch.Wheel })
-		u.markDirty()
-		if ch.Wheel {
-			u.Toast(T("La molette de modulation agit sur cette piste."))
-		} else {
-			u.Toast(T("La molette de modulation n'agit plus sur cette piste."))
-		}
-	})
-	bw = bw3
 	z := chanZone(ch.KeyLo, ch.KeyHi)
-	u.buttonC(c, "zone", rect{px + 24 + bw3, py + 350, bw, 26}, T("ZONE")+" : "+T(zoneLabel(z)), z != zoneAll, colBlue, colDark, fontSm, func() {
+	u.buttonC(c, "zone", rect{px + 16, py + 350, bw, 26}, T("ZONE")+" : "+T(zoneLabel(z)), z != zoneAll, colBlue, colDark, fontSm, func() {
 		u.cycleZone(sel)
 	})
 	spl := T("SPLIT") + " : " + u.noteName(u.splitNote())
 	if u.splitLearning() {
 		spl = T("JOUE LA NOTE…")
 	}
-	u.buttonC(c, "split", rect{px + 32 + 2*bw3, py + 350, bw, 26}, spl, u.splitLearning(), colBlue, colDark, fontSm, u.splitLearnStart)
+	u.buttonC(c, "split", rect{px + 24 + bw, py + 350, bw, 26}, spl, u.splitLearning(), colBlue, colDark, fontSm, u.splitLearnStart)
 	c.Rect(px+16, py+384, panW-32, 1, 0x2b3b57, 1)
 	c.Text(px+16, py+390, 110, 18, "Volume général", fontMd, colText, 0)
 	u.slider(c, "master", px+130, py+390, 160, 18, u.eng.master,

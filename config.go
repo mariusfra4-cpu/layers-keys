@@ -22,22 +22,21 @@ type SrcCfg struct {
 }
 
 type ChanCfg struct {
-	Label    string          `json:"label,omitempty"` // nom de la piste choisi par l'utilisateur
-	Src      SrcCfg          `json:"src"`
-	Vol      float64         `json:"vol"`
-	Pan      float64         `json:"pan"`
-	Oct      int             `json:"oct"`
-	Trans    int             `json:"trans"`
-	Mute     bool            `json:"mute"`
-	Solo     bool            `json:"solo"`
-	Hold     bool            `json:"hold"`
-	Pedal    bool            `json:"pedal"`
-	Filter   bool            `json:"filter"`
-	ModFX    bool            `json:"modfx,omitempty"`
-	ATOff    bool            `json:"atoff,omitempty"`    // aftertouch désactivé pour cette piste
-	WheelOff bool            `json:"wheeloff,omitempty"` // la molette de modulation n'agit pas sur cette piste
-	Zone     [2]int          `json:"zone,omitempty"`     // split : plage de notes [basse, haute] ; [0, 0] = tout le clavier
-	P        [nParam]float64 `json:"p"`
+	Label  string          `json:"label,omitempty"` // nom de la piste choisi par l'utilisateur
+	Src    SrcCfg          `json:"src"`
+	Vol    float64         `json:"vol"`
+	Pan    float64         `json:"pan"`
+	Oct    int             `json:"oct"`
+	Trans  int             `json:"trans"`
+	Mute   bool            `json:"mute"`
+	Solo   bool            `json:"solo"`
+	Hold   bool            `json:"hold"`
+	Pedal  bool            `json:"pedal"`
+	Filter bool            `json:"filter"`
+	ModFX  bool            `json:"modfx,omitempty"`
+	ATOff  bool            `json:"atoff,omitempty"` // aftertouch désactivé pour cette piste
+	Zone   [2]int          `json:"zone,omitempty"`  // split : plage de notes [basse, haute] ; [0, 0] = tout le clavier
+	P      [nParam]float64 `json:"p"`
 }
 
 type PresetCfg struct {
@@ -102,7 +101,6 @@ func defaultSetup() [nCh]ChanCfg {
 	var s [nCh]ChanCfg
 	for i := range s {
 		s[i] = newChanCfg()
-		s[i].WheelOff = i > 0 // au départ, la molette n'agit que sur la piste 1
 	}
 	return s
 }

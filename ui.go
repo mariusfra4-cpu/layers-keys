@@ -313,7 +313,7 @@ func (u *UI) snapshot() [nCh]ChanCfg {
 	var s [nCh]ChanCfg
 	for i, ch := range u.eng.ch {
 		s[i] = ChanCfg{Label: u.labels[i], Src: u.srcCfg[i], Vol: ch.Vol, Pan: ch.Pan, Oct: ch.Oct, Trans: ch.Trans,
-			Mute: ch.Mute, Solo: ch.Solo, Hold: ch.Hold, Pedal: ch.Pedal, Filter: ch.Filter, ModFX: ch.ModFX, ATOff: !ch.AT, WheelOff: !ch.Wheel, P: ch.P,
+			Mute: ch.Mute, Solo: ch.Solo, Hold: ch.Hold, Pedal: ch.Pedal, Filter: ch.Filter, ModFX: ch.ModFX, ATOff: !ch.AT, P: ch.P,
 			Zone: rangeZone(ch.KeyLo, ch.KeyHi)}
 	}
 	return s
@@ -331,7 +331,6 @@ func (u *UI) applySetup(s [nCh]ChanCfg) {
 		ch.Mute, ch.Solo = cc.Mute, cc.Solo
 		ch.Filter, ch.ModFX, ch.P = cc.Filter, cc.ModFX, cc.P
 		ch.AT = !cc.ATOff
-		ch.Wheel = !cc.WheelOff
 		ch.KeyLo, ch.KeyHi = zoneRange(cc.Zone)
 		u.eng.SetHold(i, cc.Hold)
 		u.eng.SetPedalAware(i, cc.Pedal)
@@ -1118,7 +1117,8 @@ func (u *UI) Tick() {
 	if redraw {
 		u.host.Invalidate()
 	}
-	u.updateChord() // (aussi quand rien n'est redessiné : les pads suivent les accords)
+	u.eng.SetWheelTrack(u.sel) // la molette n'agit que sur la piste sélectionnée
+	u.updateChord()            // (aussi quand rien n'est redessiné : les pads suivent les accords)
 	u.padTick()
 	u.splitTick()
 	u.pcTick()

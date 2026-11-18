@@ -94,7 +94,6 @@ type Channel struct {
 	Pedal      bool // réagit à la pédale sustain
 	Filter     bool // filtre passe-bas actif
 	AT         bool // l'aftertouch (pression sur les touches) agit sur cette piste
-	Wheel      bool // la molette de modulation agit sur cette piste (bouton MOLETTE)
 	ModFX      bool // la molette de modulation commande l'effet « planant » de cette piste
 	KeyLo      int  // split : notes jouées acceptées par cette piste (avant octave / transposition)
 	KeyHi      int
@@ -105,7 +104,7 @@ type Channel struct {
 }
 
 func newChannel(i int) *Channel {
-	c := &Channel{idx: i, Pedal: true, Filter: true, AT: true, Wheel: i == 0, P: paramDefault, curGain: 1, KeyHi: 127}
+	c := &Channel{idx: i, Pedal: true, Filter: true, AT: true, P: paramDefault, curGain: 1, KeyHi: 127}
 	return c
 }
 
@@ -155,6 +154,7 @@ type Engine struct {
 	outPeakBits uint64 // plus fort niveau sorti du moteur depuis la dernière lecture (diagnostic)
 	toneLeft    int64  // images restantes du bip de test (contourne licence, pistes et effets)
 	leslieFast  int32  // vitesse du Leslie de toutes les pistes : 1 = rapide (atomique)
+	wheelTrack  int32  // piste sélectionnée : la molette de modulation n'agit que sur elle (atomique)
 	tonePhase   float64
 	Player      *Player
 	Pads        *padPlayer // pads continus (pads.go)
@@ -286,9 +286,17 @@ func (e *Engine) Bend() int         { return e.bendRaw }
 func (e *Engine) ModWheel() float64 { return e.mod }
 func (e *Engine) SetMod(v float64)  { e.mod = clampf(v, 0, 1) }
 
+// SetWheelTrack : la piste sélectionnée, la seule sur laquelle la molette de modulation agit
+func (e *Engine) SetWheelTrack(i int) { atomic.StoreInt32(&e.wheelTrack, int32(i)) }
+
+// wheelOn : la molette agit sur cette piste (la piste sélectionnée, sauf si son Leslie l'utilise pour la vitesse)
+func (e *Engine) wheelOn(ch int) bool {
+	return int(atomic.LoadInt32(&e.wheelTrack)) == ch && !e.hasLeslie(ch)
+}
+
 // part de la molette de modulation qui sert de vibrato pour une piste
 func (e *Engine) vibWheel(ch *Channel) float64 {
-	if !ch.Wheel || e.hasLeslie(ch.idx) { // MOLETTE éteint, ou LESLIE : la molette règle sa vitesse, pas de vibrato
+	if !e.wheelOn(ch.idx) {
 		return 0
 	}
 	if ch.ModFX {
@@ -339,7 +347,7 @@ func (e *Engine) vibFor(b *vbase) float64 {
 // ouverture du son (molette ou pression) : la plus forte des deux
 func (e *Engine) openFor(b *vbase) float64 {
 	m := e.modS
-	if !b.ch.Wheel || e.hasLeslie(b.ch.idx) {
+	if !e.wheelOn(b.ch.idx) {
 		m = 0
 	}
 	if e.atMode == 0 || e.atMode == 2 {
