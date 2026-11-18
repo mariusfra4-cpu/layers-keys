@@ -298,12 +298,18 @@ static void testProcessor()
     CHECK (peak <= 1.0f, "jamais de saturation en sortie");
     CHECK (p.padSoundName() == "Warm Pad C", "C majeur -> fichier Warm Pad C (" << p.padSoundName() << ")");
 
-    // MIDI : la touche Ré (n'importe quelle octave)
+    // MIDI : une note jouée au-dessus de la zone de commande ne change pas la tonalité (le pad reste net)
     midi.addEvent (juce::MidiMessage::noteOn (1, 62, (juce::uint8) 100), 0);
+    midi.addEvent (juce::MidiMessage::noteOn (1, 67, (juce::uint8) 100), 10);
+    buf.clear(); p.processBlock (buf, midi); midi.clear();
+    juce::Thread::sleep (60);
+    CHECK (p.currentKey() == 0, "une melodie jouee hors de la zone ne change pas la tonalite");
+    // la touche Ré de la zone de commande (Ré2 = note 38) change la tonalité
+    midi.addEvent (juce::MidiMessage::noteOn (1, 38, (juce::uint8) 100), 0);
     buf.clear(); p.processBlock (buf, midi); midi.clear();
     juce::Thread::sleep (60);
     p.waitIdleForTests (3000);
-    CHECK (p.currentKey() == 2, "touche MIDI Re -> tonalite D");
+    CHECK (p.currentKey() == 2, "touche Re de la zone de commande -> tonalite D");
     CHECK (p.padSoundName() == "Warm Pad D", "fichier Warm Pad D (" << p.padSoundName() << ")");
 
     // passage en mineur : D mineur existe
@@ -351,6 +357,7 @@ static void snapshot (const juce::File& outDir, const juce::File& root)
 {
     section ("Capture de l'interface");
     outDir.createDirectory();
+    setLang (Lang::FR);
     SpacepadProcessor p;
     p.prepareToPlay (48000, 256);
     for (auto& l : p.libraries().snapshot()) if (l.name == "Warm Pad") { p.selectPadLibrary (l.id, 0); p.selectPadLibrary (l.id, 1); }
@@ -426,6 +433,50 @@ static void snapshot (const juce::File& outDir, const juce::File& root)
             if (auto os = f.createOutputStream()) png.writeImageToStream (img, *os);
             setUiSettings (UiSettings()); v.applySettings();
         }
+        auto shot = [&] (const char* name)
+        {
+            auto im = v.createComponentSnapshot (v.getLocalBounds(), true, 2.0f);
+            auto ff = outDir.getChildFile (name);
+            ff.deleteFile();
+            if (auto os = ff.createOutputStream()) png.writeImageToStream (im, *os);
+            CHECK (ff.getSize() > 10000, "capture " << name);
+        };
+        auto panel = [&]() -> LibraryPanel* { for (auto* c : v.getChildren()) if (auto* lp = dynamic_cast<LibraryPanel*> (c)) return lp; return nullptr; };
+        // setlist
+        while (! p.setlist().songs().empty()) p.setlist().remove (0);
+        const char* titles[] = { "Ouverture", "Louange 1", "Adoration", "Priere", "Final" };
+        const int keys[] = { 4, 7, 2, 9, 0 };
+        for (int i = 0; i < 5; ++i) { p.setMode (i % 2); p.pressKey (keys[i]); p.addSongFromCurrent (titles[i]); }
+        p.gotoSong (1);
+        panel()->showTabIndex (2);
+        v.animateForTests (0.5f);
+        shot ("spacepad_setlist.png");
+        // deux pads mélangés
+        for (auto& l : p.libraries().snapshot()) if (l.name == "Pad Mystere") p.selectPadLibraryB (l.id, p.currentMode());
+        panel()->showTabIndex (0);
+        shot ("spacepad_pads_ab.png");
+        // pages des Paramètres
+        v.openSettings();
+        for (auto* c : v.getChildren())
+            if (auto* so = dynamic_cast<SettingsOverlay*> (c))
+            {
+                so->showPage (1); shot ("spacepad_param_midi.png");
+                so->showPage (2); shot ("spacepad_param_sons.png");
+                so->setVisible (false);
+            }
+        // mode scène
+        v.openStage();
+        shot ("spacepad_scene.png");
+        for (auto* c : v.getChildren()) if (auto* so = dynamic_cast<StageOverlay*> (c)) so->setVisible (false);
+        // thème clair
+        {
+            auto u = uiSettings(); u.theme = 3; setUiSettings (u);
+            v.applySettings(); v.animateForTests (1.0f);
+            panel()->showTabIndex (1);
+            shot ("spacepad_clair.png");
+            setUiSettings (UiSettings()); v.applySettings();
+        }
+        while (! p.setlist().songs().empty()) p.setlist().remove (0);
         struct LC { Lang l; const char* file; const char* word; };
         for (auto lc : { LC { Lang::EN, "spacepad_en.png", "Choose a pads folder" }, LC { Lang::ES, "spacepad_es.png", "Elegir una carpeta de pads" } })
         {
@@ -743,6 +794,217 @@ static void testSeparation (const juce::File& root)
     CHECK (peak < 1e-4f, "sans librairie mineure, aucun accord du mauvais mode n'est joue");
 }
 
+static void setP (SpacepadProcessor& p, const char* id, float real)
+{
+    auto* prm = p.params.getParameter (id);
+    prm->setValueNotifyingHost (prm->convertTo0to1 (real));
+}
+
+static float runFor (SpacepadProcessor& p, double seconds, int channels = 2, float* tailRms = nullptr, float* auxRms = nullptr)
+{
+    juce::AudioBuffer<float> buf (channels, 256);
+    juce::MidiBuffer midi;
+    const int blocks = (int) (seconds * 48000 / 256);
+    double sum = 0, aux = 0; int cnt = 0;
+    for (int i = 0; i < blocks; ++i)
+    {
+        buf.clear();
+        p.processBlock (buf, midi);
+        if (i >= blocks - 40)
+        {
+            sum += buf.getRMSLevel (0, 0, 256) + buf.getRMSLevel (1, 0, 256);
+            if (channels >= 4) aux += buf.getRMSLevel (2, 0, 256) + buf.getRMSLevel (3, 0, 256);
+            ++cnt;
+        }
+    }
+    if (tailRms) *tailRms = (float) (sum / (2 * cnt));
+    if (auxRms) *auxRms = (float) (aux / (2 * cnt));
+    return (float) (sum / (2 * cnt));
+}
+
+static void sendMidi (SpacepadProcessor& p, const juce::MidiMessage& m)
+{
+    juce::AudioBuffer<float> buf (2, 256);
+    juce::MidiBuffer midi;
+    midi.addEvent (m, 0);
+    p.processBlock (buf, midi);
+    p.runControlForTests();
+}
+
+static void testNewFeatures (const juce::File& root, const juce::File& tmp)
+{
+    section ("Setlist, pedales MIDI, 2 pads, 2 crowds, combinaison, fin du chant, sorties");
+    setUiSettings (UiSettings());
+    SpacepadProcessor p;
+    p.setPlayConfigDetails (0, 2, 48000, 256);
+    p.prepareToPlay (48000, 256);
+    juce::String warm, myst, crowdId;
+    for (auto& l : p.libraries().snapshot())
+    {
+        if (l.name == "Warm Pad") warm = l.id;
+        if (l.name == "Pad Mystere") myst = l.id;
+        if (l.type == LibType::Crowd && l.name == "Mes Crowds") crowdId = l.id;
+    }
+    CHECK (warm.isNotEmpty() && myst.isNotEmpty() && crowdId.isNotEmpty(), "librairies de test presentes");
+    while (! p.setlist().songs().empty()) p.setlist().remove (0);
+
+    // --- setlist ---
+    p.selectPadLibrary (warm, 0); p.selectPadLibrary (warm, 1);
+    p.setMode (0); p.pressKey (2); setP (p, "shimmer", 0.1f);
+    p.addSongFromCurrent ("Chant A");
+    p.setMode (1); p.pressKey (9); setP (p, "shimmer", 0.9f);
+    p.addSongFromCurrent ("Chant B");
+    p.stopAll();
+    CHECK (p.setlist().songs().size() == 2, "deux chants dans la setlist");
+    p.gotoSong (0);
+    CHECK (p.currentKey() == 2 && p.currentMode() == 0, "chant A : D majeur (" << p.currentKey() << "," << p.currentMode() << ")");
+    CHECK (std::abs (p.params.getRawParameterValue ("shimmer")->load() - 0.1f) < 0.02f, "chant A : ses effets reviennent");
+    p.nextSong();
+    CHECK (p.setlist().current() == 1 && p.currentKey() == 9 && p.currentMode() == 1, "CHANT SUIVANT : Am");
+    CHECK (std::abs (p.params.getRawParameterValue ("shimmer")->load() - 0.9f) < 0.02f, "chant B : ses effets reviennent");
+    { Setlist other; other.load(); CHECK (other.songs().size() == 2 && other.songs()[1].name == "Chant B", "setlist enregistree (partagee app + plugin)"); }
+    p.prevSong();
+    CHECK (p.setlist().current() == 0, "chant precedent");
+
+    // --- apprentissage d'une pédale (CC 64) pour « chant suivant » ---
+    p.learnMidi (actNextSong);
+    sendMidi (p, juce::MidiMessage::controllerEvent (1, 64, 127));
+    sendMidi (p, juce::MidiMessage::controllerEvent (1, 64, 0));
+    CHECK (uiSettings().midiMap[(size_t) actNextSong] == 1000 + 64, "pedale apprise : CC 64 -> chant suivant (" << uiSettings().midiMap[(size_t) actNextSong] << ")");
+    CHECK (p.setlist().current() == 0, "la pression d'apprentissage ne declenche pas l'action");
+    sendMidi (p, juce::MidiMessage::controllerEvent (1, 64, 127));
+    sendMidi (p, juce::MidiMessage::controllerEvent (1, 64, 0));
+    CHECK (p.setlist().current() == 1, "appui sur la pedale : chant suivant");
+    // note assignée à « Fin du chant »
+    p.learnMidi (actFadeEnd);
+    sendMidi (p, juce::MidiMessage::noteOn (1, 96, (juce::uint8) 100));
+    CHECK (uiSettings().midiMap[(size_t) actFadeEnd] == 2000 + 96, "touche C7 apprise pour la fin du chant");
+
+    // --- quelles notes changent la tonalité ---
+    p.stopAll();
+    auto u = uiSettings(); u.midiKeyMode = 1; setUiSettings (u); p.runControlForTests();
+    const int k0 = p.currentKey();
+    sendMidi (p, juce::MidiMessage::noteOn (1, 38, (juce::uint8) 100));
+    CHECK (p.currentKey() == k0, "mode Jamais : une note ne change pas la tonalite");
+    u.midiKeyMode = 2; setUiSettings (u); p.runControlForTests();
+    sendMidi (p, juce::MidiMessage::noteOn (1, 67, (juce::uint8) 100));
+    CHECK (p.currentKey() == 7, "mode Toutes les notes : G4 -> G (" << p.currentKey() << ")");
+    u.midiKeyMode = 0; u.zoneLow = 48; setUiSettings (u); p.runControlForTests();
+    sendMidi (p, juce::MidiMessage::noteOn (1, 38, (juce::uint8) 100));
+    CHECK (p.currentKey() == 7, "zone C3-B3 : D2 ne change rien");
+    sendMidi (p, juce::MidiMessage::noteOn (1, 52, (juce::uint8) 100));
+    CHECK (p.currentKey() == 4, "zone C3-B3 : E3 -> E (" << p.currentKey() << ")");
+    p.learnZone();
+    sendMidi (p, juce::MidiMessage::noteOn (1, 60, (juce::uint8) 100));
+    CHECK (uiSettings().zoneLow == 60 && uiSettings().midiKeyMode == 0, "zone apprise a partir de C4 (" << uiSettings().zoneLow << ")");
+    setUiSettings (UiSettings()); p.runControlForTests();
+    p.stopAll();
+    runFor (p, 2.0);
+
+    // --- deux pads mélangés ---
+    p.selectPadLibrary (warm, 0);
+    p.selectPadLibraryB (myst, 0);
+    CHECK (p.padLibraryIdB (0) == myst, "pad B choisi");
+    setP (p, "blend", 1.0f);
+    p.setMode (0); p.pressKey (7);
+    p.waitIdleForTests (3000);
+    const float onlyB = runFor (p, 2.5);
+    CHECK (onlyB > 0.005f, "melange tout a B : le pad B joue (" << onlyB << ")");
+    p.selectPadLibraryB ({}, 0);
+    setP (p, "blend", 0.5f);
+    p.stopAll();
+    runFor (p, 3.0);
+
+    // --- deux crowds, suivre la tonalité, lié au pad ---
+    auto lib = p.libraries().find (crowdId);
+    int swell = -1, room = -1;
+    for (int i = 0; lib && i < 8; ++i)
+        if (auto* s = lib->sound (i)) { if (s->name.startsWith ("Swell")) swell = i; if (s->name.startsWith ("Room")) room = i; }
+    CHECK (swell >= 0 && room >= 0, "sons de crowd trouves");
+    p.setMode (1); p.pressKey (7);           // pad en Gm
+    p.playCrowd (crowdId, swell, 0);
+    p.playCrowd (crowdId, room, 1);
+    p.waitIdleForTests (3000);
+    runFor (p, 1.0);
+    CHECK (p.crowdSounding (0) && p.crowdSounding (1), "deux crowds en meme temps");
+    CHECK (p.crowdSemitones (0) == 3, "crowd en Em suit le pad en Gm : +3 demi-tons (" << p.crowdSemitones (0) << ")");
+    CHECK (p.crowdSemitones (1) == 0, "un crowd sans tonalite n'est pas transpose");
+    p.pressKey (2);                          // Dm
+    p.waitIdleForTests (3000);
+    runFor (p, 0.5);
+    CHECK (p.crowdSemitones (0) == -2, "le pad passe en Dm : le crowd suit (-2) (" << p.crowdSemitones (0) << ")");
+    setP (p, "crowdfollow", 0.0f);
+    p.stopCrowd (0); runFor (p, 1.5);
+    p.playCrowd (crowdId, swell, 0); p.waitIdleForTests (3000);
+    CHECK (p.crowdSemitones (0) == 0, "suivre la tonalite desactive : pas de transposition");
+    setP (p, "crowdfollow", 1.0f);
+
+    setP (p, "crowdlink", 1.0f);
+    p.stopPad();
+    runFor (p, 4.0);
+    CHECK (! p.crowdSounding (0) && ! p.crowdSounding (1), "lie au pad : les crowds s'arretent avec lui");
+    p.playPad();
+    p.waitIdleForTests (3000);
+    runFor (p, 0.5);
+    CHECK (p.crowdSounding (0) && p.crowdSounding (1), "lie au pad : les crowds repartent avec lui");
+    setP (p, "crowdlink", 0.0f);
+
+    // --- balance PAD / CROWD ---
+    p.stopPad();
+    runFor (p, 4.0);
+    setP (p, "mix", 0.0f);
+    const float crowdAtPad = runFor (p, 0.5);
+    setP (p, "mix", 0.5f);
+    const float crowdMid = runFor (p, 0.5);
+    CHECK (crowdAtPad < 1e-4f && crowdMid > 1e-3f, "curseur tout PAD : crowds muets (" << crowdAtPad << " / " << crowdMid << ")");
+
+    // --- fin du chant ---
+    u = uiSettings(); u.fadeSeconds = 4; setUiSettings (u);
+    p.playPad(); p.waitIdleForTests (3000);
+    const float before = runFor (p, 2.0);
+    p.fadeOutAll();
+    const float mid = runFor (p, 1.0);
+    const float after = runFor (p, 4.5);
+    CHECK (before > 0.005f && mid < before && mid > 1e-4f, "fin du chant : le son descend doucement (" << before << " -> " << mid << ")");
+    CHECK (after < 1e-4f && ! p.padActive() && ! p.crowdSounding(), "fin du chant : silence apres 4 s (" << after << ")");
+    setUiSettings (UiSettings());
+
+    // --- sortie séparée « Crowds » (plugin) ---
+    {
+        SpacepadProcessor q;
+        auto layout = q.getBusesLayout();
+        layout.outputBuses.getReference (1) = juce::AudioChannelSet::stereo();
+        CHECK (q.setBusesLayout (layout), "le plugin accepte la sortie Crowds");
+        q.setRateAndBufferSizeDetails (48000, 256);
+        q.prepareToPlay (48000, 256);
+        q.playCrowd (crowdId, room, 0);
+        q.waitIdleForTests (3000);
+        float mainR = 0, auxR = 0;
+        runFor (q, 1.0, 4, &mainR, &auxR);
+        CHECK (auxR > 1e-3f && mainR < 1e-5f, "crowds seuls sur la sortie Crowds (principale " << mainR << ", crowds " << auxR << ")");
+    }
+
+    // --- copie, export, import ---
+    {
+        auto libs = std::vector<Library> { *lib };
+        auto dest = tmp.getChildFile ("copie");
+        CHECK (copySoundsInto (libs, dest, [] (double) { return true; }), "copie des sons");
+        bool inside = true; int n = 0;
+        for (auto& c : libs[0].categories) for (auto& s : c.sounds) { inside &= juce::File (s.path).isAChildOf (dest) && juce::File (s.path).existsAsFile(); ++n; }
+        CHECK (inside && n == 4, "les sons copies sont dans Spacepad (" << n << ")");
+        auto all = p.libraries().snapshot();
+        auto exp = tmp.getChildFile ("export");
+        exp.createDirectory();
+        CHECK (exportLibraries (all, exp, [] (double) { return true; }), "export des librairies");
+        auto back = importLibraries (exp.getChildFile ("Spacepad - librairies"), [] (double) { return true; });
+        CHECK (back.size() == all.size(), "import : " << (int) back.size() << " / " << (int) all.size() << " librairies");
+        bool ok = ! back.empty();
+        for (auto& l : back) for (auto& c : l.categories) for (auto& s : c.sounds) ok &= juce::File (s.path).existsAsFile();
+        CHECK (ok, "import : chaque son est present sur l'ordinateur");
+    }
+    while (! p.setlist().songs().empty()) p.setlist().remove (0);
+}
+
 int main (int argc, char** argv)
 {
     juce::ScopedJuceInitialiser_GUI gui;
@@ -765,6 +1027,7 @@ int main (int argc, char** argv)
     testProcessor();
     testSeparation (root);
     testEffects (tmp);
+    testNewFeatures (root, tmp);
     if (argc > 1) snapshot (juce::File (juce::String (argv[1])), root);
     if (juce::SystemStats::getEnvironmentVariable ("SPACEPAD_BENCH", {}).isNotEmpty()) benchPaint (root);
 

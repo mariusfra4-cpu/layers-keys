@@ -42,16 +42,16 @@ inline void insetBox (juce::Graphics& g, juce::Rectangle<float> r, float radius,
 }
 
 // verre dépoli façon iPhone : pastille ou rond, sans cadre sombre
-inline void glassShape (juce::Graphics& g, juce::Rectangle<float> r, float radius, bool over)
+inline void glassShape (juce::Graphics& g, juce::Rectangle<float> r, float radius, bool over, juce::Colour ink = juce::Colours::white)
 {
-    g.setColour (juce::Colours::black.withAlpha (0.22f));
+    const bool lightInk = ink.getBrightness() > 0.5f;
+    g.setColour (juce::Colours::black.withAlpha (lightInk ? 0.22f : 0.06f));
     g.fillRoundedRectangle (r.translated (0, 3).expanded (1), radius + 1);
-    g.setColour (juce::Colours::white.withAlpha (over ? 0.15f : 0.10f));
+    g.setColour (lightInk ? ink.withAlpha (over ? 0.15f : 0.10f) : juce::Colours::white.withAlpha (over ? 0.95f : 0.85f));
     g.fillRoundedRectangle (r, radius);
-    g.setColour (juce::Colours::white.withAlpha (0.15f));
+    g.setColour (ink.withAlpha (lightInk ? 0.15f : 0.12f));
     g.drawRoundedRectangle (r.reduced (0.5f), radius, 1.0f);
-    g.setColour (juce::Colours::white.withAlpha (0.10f));
-    g.drawLine (r.getX() + radius, r.getY() + 1.5f, r.getRight() - radius, r.getY() + 1.5f, 1.0f);
+    if (lightInk) { g.setColour (ink.withAlpha (0.10f)); g.drawLine (r.getX() + radius, r.getY() + 1.5f, r.getRight() - radius, r.getY() + 1.5f, 1.0f); }
 }
 
 inline juce::Image makeCacheImage (int w, int h) { return juce::Image (juce::Image::ARGB, juce::jmax (1, w), juce::jmax (1, h), true); }

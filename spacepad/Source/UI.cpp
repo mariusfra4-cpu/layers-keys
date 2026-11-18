@@ -39,6 +39,11 @@ void apply (const UiSettings& s)
 {
     accent = accentChoice (s.accent);
     accentLight = accent.interpolatedWith (juce::Colours::white, 0.55f);
+    light = s.theme == 3;
+    text = light ? juce::Colour (0xff1b2233) : juce::Colour (0xffe8edf7);
+    muted = light ? juce::Colour (0xff5d6880) : juce::Colour (0xff8b97ad);
+    line = light ? juce::Colour (0x1a000000) : juce::Colour (0x18ffffff);
+    ink = light ? juce::Colours::black : juce::Colours::white;
     switch (s.theme)
     {
         case 1: // Minuit bleu
@@ -48,6 +53,10 @@ void apply (const UiSettings& s)
         case 2: // Graphite
             bg = juce::Colour (0xff0b0b0d); panel = juce::Colour (0xff141416); panel2 = juce::Colour (0xff18181b); lcd = juce::Colour (0xff08080a);
             chassisTop = juce::Colour (0xff1d1d21); chassisBottom = juce::Colour (0xff111114); headerTop = juce::Colour (0xff232327); headerBottom = juce::Colour (0xff18181b);
+            break;
+        case 3: // Clair (la zone de l'espace et l'écran restent sombres)
+            bg = juce::Colour (0xffe9edf4); panel = juce::Colour (0xfff7f8fb); panel2 = juce::Colour (0xffeef1f6); lcd = juce::Colour (0xff0d1322);
+            chassisTop = juce::Colour (0xfffbfcfe); chassisBottom = juce::Colour (0xffe8ecf3); headerTop = juce::Colour (0xffffffff); headerBottom = juce::Colour (0xfff1f4f8);
             break;
         default: // Nuit
             bg = juce::Colour (0xff070a14); panel = juce::Colour (0xff0d1220); panel2 = juce::Colour (0xff0f1524); lcd = juce::Colour (0xff050912);
@@ -114,7 +123,7 @@ void SpaceLook::drawRotarySlider (juce::Graphics& g, int x, int y, int w, int h,
 
     juce::Path bgArc, valArc;
     bgArc.addCentredArc (c.x, c.y, ringR, ringR, 0, a0, a1, true);
-    g.setColour (juce::Colours::white.withAlpha (0.08f));
+    g.setColour (theme::ink.withAlpha (0.08f));
     g.strokePath (bgArc, juce::PathStrokeType (5.0f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
     if (pos > 0.001f)
     {
@@ -144,7 +153,7 @@ void SpaceLook::drawLinearSlider (juce::Graphics& g, int x, int y, int w, int h,
 {
     auto r = juce::Rectangle<float> ((float) x, (float) y, (float) w, (float) h);
     auto track = r.withSizeKeepingCentre (r.getWidth() - 4, 6.0f);
-    g.setColour (juce::Colours::white.withAlpha (0.10f));
+    g.setColour (theme::ink.withAlpha (0.10f));
     g.fillRoundedRectangle (track, 3.0f);
     const auto col = s.findColour (juce::Slider::trackColourId);
     auto fill = track.withRight (juce::jlimit (track.getX(), track.getRight(), pos));
@@ -181,21 +190,21 @@ void SpaceLook::drawButtonBackground (juce::Graphics& g, juce::Button& b, const 
     }
     if (on)
     {
-        softGlow (g, r.getCentre(), juce::jmin (r.getWidth(), r.getHeight()) * 0.45f, juce::jmax (r.getWidth(), r.getHeight()) * 0.75f, onCol.withAlpha (0.28f));
         g.setGradientFill (juce::ColourGradient (onCol.brighter (0.35f), r.getTopLeft(), onCol.darker (0.2f), r.getBottomLeft(), false));
         g.fillRoundedRectangle (r, rad);
         g.setColour (juce::Colours::white.withAlpha (0.45f));
         g.drawLine (r.getX() + rad, r.getY() + 1.5f, r.getRight() - rad, r.getY() + 1.5f, 1.0f);
         return;
     }
-    glassShape (g, r, rad, over);
+    const bool onDark = b.getProperties()["onDark"];
+    glassShape (g, r, rad, over, onDark ? juce::Colours::white : theme::ink);
 }
 
 void SpaceLook::drawButtonText (juce::Graphics& g, juce::TextButton& b, bool, bool)
 {
     const bool on = b.getToggleState();
     auto col = on ? b.findColour (juce::TextButton::textColourOnId) : b.findColour (juce::TextButton::textColourOffId);
-    if (b.getProperties()["dashed"]) col = b.findColour (juce::TextButton::buttonOnColourId).interpolatedWith (juce::Colours::white, 0.45f);
+    if (b.getProperties()["dashed"]) col = b.findColour (juce::TextButton::buttonOnColourId).interpolatedWith (theme::light ? juce::Colours::black : juce::Colours::white, theme::light ? 0.35f : 0.45f);
     if (! b.isEnabled()) col = col.withAlpha (0.4f);
     auto f = getTextButtonFont (b, b.getHeight());
     if (b.getProperties().contains ("kerning")) f.setExtraKerningFactor ((float) b.getProperties()["kerning"]);
@@ -239,7 +248,7 @@ juce::Font SpaceLook::getTextButtonFont (juce::TextButton& b, int h)
 void SpaceLook::drawComboBox (juce::Graphics& g, int w, int h, bool, int, int, int, int, juce::ComboBox&)
 {
     auto r = juce::Rectangle<float> (0, 0, (float) w, (float) h).reduced (0.5f);
-    glassShape (g, r, r.getHeight() * 0.5f, false);
+    glassShape (g, r, r.getHeight() * 0.5f, false, theme::ink);
     juce::Path a;
     const float cx = (float) w - 18, cy = h * 0.5f;
     a.startNewSubPath (cx - 5, cy - 2); a.lineTo (cx, cy + 3); a.lineTo (cx + 5, cy - 2);
@@ -310,17 +319,17 @@ void Header::paint (juce::Graphics& g)
         logoImg = makeCacheImage (juce::roundToInt (290 * px), juce::roundToInt (56 * px));
         juce::Graphics lg (logoImg);
         lg.addTransform (juce::AffineTransform::scale (px));
-        glowText (lg, "SPACEPAD", theme::title (25.0f), { 14, 12, 260, 32 }, juce::Justification::centredLeft, juce::Colour (0xfff2f6ff), theme::accent.withAlpha (0.45f), (int) (14 * px), 0.22f);
+        glowText (lg, "SPACEPAD", theme::title (25.0f), { 14, 12, 260, 32 }, juce::Justification::centredLeft, theme::light ? theme::text : juce::Colour (0xfff2f6ff), theme::accent.withAlpha (theme::light ? 0.25f : 0.45f), (int) (14 * px), 0.22f);
     }
     g.setOpacity (1.0f);
     g.drawImage (logoImg, juce::Rectangle<float> (14, 6, 290, 56));
     auto by = theme::ui (11.5f, 1); by.setExtraKerningFactor (0.28f);
     g.setFont (by);
-    g.setColour (juce::Colour (0xff9aa6bd));
+    g.setColour (theme::muted);
     g.drawText ("BY JB PRAISE", juce::Rectangle<float> (30, 52, 240, 16), juce::Justification::centredLeft);
 
     // écran
-    auto lcd = juce::Rectangle<float> (300, 16, r.getWidth() - 300 - 210, 52);
+    auto lcd = juce::Rectangle<float> (300, 16, r.getWidth() - 300 - 270, 52);
     insetBox (g, lcd, 14.0f, theme::lcd);
     const bool sounding = proc.padSounding() || proc.crowdSounding();
     auto dot = juce::Rectangle<float> (lcd.getX() + 20, lcd.getCentreY() - 5, 10, 10);
@@ -366,9 +375,9 @@ void Header::paint (juce::Graphics& g)
     for (int i = 0; i < 14; ++i)
     {
         const float h = 12 + i * 2.2f;
-        auto br = juce::Rectangle<float> (r.getRight() - 186 + i * 7.5f, 64 - h, 5, h);
+        auto br = juce::Rectangle<float> (r.getRight() - 246 + i * 7.5f, 64 - h, 5, h);
         auto col = i < 9 ? theme::green : i < 12 ? juce::Colour (0xffffcf5c) : theme::red;
-        g.setColour (i < lit ? col : juce::Colours::white.withAlpha (0.07f));
+        g.setColour (i < lit ? col : theme::ink.withAlpha (0.08f));
         g.fillRoundedRectangle (br, 2.5f);
     }
 }
@@ -380,7 +389,7 @@ void GearButton::paintButton (juce::Graphics& g, bool over, bool down)
 {
     auto r = getLocalBounds().toFloat().reduced (2);
     if (down) r = r.reduced (1);
-    glassShape (g, r, r.getHeight() * 0.5f, over);
+    glassShape (g, r, r.getHeight() * 0.5f, over, theme::ink);
     const auto c = r.getCentre();
     const float R = r.getWidth() * 0.27f;
     juce::Path p;
@@ -393,9 +402,9 @@ void GearButton::paintButton (juce::Graphics& g, bool over, bool down)
         p.addPath (tooth);
     }
     p.addEllipse (c.x - R, c.y - R, R * 2, R * 2);
-    g.setColour (over ? theme::accentLight : juce::Colour (0xffdfe6f5));
+    g.setColour (over ? theme::accent : theme::text.withAlpha (0.9f));
     g.fillPath (p);
-    g.setColour (theme::headerBottom);
+    g.setColour (theme::light ? juce::Colours::white : theme::headerBottom);
     g.fillEllipse (c.x - R * 0.45f, c.y - R * 0.45f, R * 0.9f, R * 0.9f);
 }
 
@@ -439,6 +448,12 @@ void RowList::mouseUp (const juce::MouseEvent& e)
 {
     const int i = rowAt (e.y);
     if (i < 0 || e.mouseWasDraggedSinceMouseDown()) return;
+    if (rows[(size_t) i].chips && ! e.mods.isPopupMenu() && e.x > getWidth() - 70)
+    {
+        auto fnChip = e.x < getWidth() - 36 ? rows[(size_t) i].onA : rows[(size_t) i].onB;
+        if (fnChip) fnChip();
+        return;
+    }
     // copie : l'action peut reconstruire la liste (et donc effacer cette ligne) pendant qu'elle s'exécute
     auto fn = e.mods.isPopupMenu() ? rows[(size_t) i].onMenu : rows[(size_t) i].onClick;
     if (fn) fn();
@@ -478,30 +493,60 @@ void RowList::paint (juce::Graphics& g)
         const auto col = row.colour;
         if (row.on)
         {
-            g.setGradientFill (juce::ColourGradient (col.withAlpha (0.20f), r.getX(), 0, juce::Colours::white.withAlpha (0.02f), r.getRight(), 0, false));
+            g.setGradientFill (juce::ColourGradient (col.withAlpha (0.20f), r.getX(), 0, theme::ink.withAlpha (0.02f), r.getRight(), 0, false));
             g.fillRoundedRectangle (r, 18.0f);
             g.setColour (col.withAlpha (0.55f));
             g.drawRoundedRectangle (r.reduced (0.5f), 18.0f, 1.0f);
         }
         else
         {
-            g.setColour (juce::Colours::white.withAlpha (hover == i ? 0.06f : 0.03f));
+            g.setColour (theme::ink.withAlpha (hover == i ? 0.07f : 0.035f));
             g.fillRoundedRectangle (r, 18.0f);
         }
-        auto dot = juce::Rectangle<float> (r.getX() + 16, r.getCentreY() - 5, 10, 10);
-        if (row.on || row.playing) softGlow (g, dot.getCentre(), 4, 12, col.withAlpha (0.6f));
-        g.setColour (row.on || row.playing ? col : col.withMultipliedSaturation (0.5f).withMultipliedBrightness (0.7f));
-        g.fillEllipse (dot);
-        auto tr = r.withTrimmedLeft (38).withTrimmedRight (66);
-        g.setColour (juce::Colour (0xffeef3ff));
+        if (row.badge.isNotEmpty())
+        {
+            auto bd = juce::Rectangle<float> (r.getX() + 10, r.getCentreY() - 13, 26, 26);
+            g.setColour (row.on ? col : theme::ink.withAlpha (0.08f));
+            g.fillEllipse (bd);
+            g.setColour (row.on ? juce::Colour (0xff06210f) : theme::text.withAlpha (0.8f));
+            g.setFont (theme::ui (12.0f, 2));
+            g.drawText (row.badge, bd, juce::Justification::centred);
+        }
+        else
+        {
+            auto dot = juce::Rectangle<float> (r.getX() + 16, r.getCentreY() - 5, 10, 10);
+            if (row.on || row.playing) softGlow (g, dot.getCentre(), 4, 12, col.withAlpha (0.6f));
+            g.setColour (row.on || row.playing ? col : col.withMultipliedSaturation (0.5f).withMultipliedBrightness (0.7f));
+            g.fillEllipse (dot);
+        }
+        auto tr = r.withTrimmedLeft (row.badge.isNotEmpty() ? 46 : 38).withTrimmedRight (row.chips ? 74 : 66);
+        g.setColour (theme::text);
         g.setFont (theme::ui (14.0f, 1));
         g.drawText (row.name, tr.withTrimmedBottom (r.getHeight() * 0.44f), juce::Justification::bottomLeft, true);
         g.setColour (theme::muted);
         g.setFont (theme::ui (11.5f));
         g.drawText (row.sub, tr.withTrimmedTop (r.getHeight() * 0.58f), juce::Justification::topLeft, true);
-        g.setColour (juce::Colour (0xffffcf8a));
-        g.setFont (theme::ui (11.5f, 1));
-        g.drawText (row.tag, r.withTrimmedRight (14).removeFromRight (60), juce::Justification::centredRight);
+        if (row.chips)
+        {
+            // pastilles A / B : choisir les deux pads joués ensemble
+            for (int k = 0; k < 2; ++k)
+            {
+                const bool on = k == 0 ? row.aOn : row.bOn;
+                auto chip = juce::Rectangle<float> (r.getRight() - 64 + k * 30, r.getCentreY() - 13, 26, 26);
+                const auto cc = k == 0 ? theme::accent : theme::violet;
+                g.setColour (on ? cc : theme::ink.withAlpha (0.08f));
+                g.fillEllipse (chip);
+                g.setColour (on ? juce::Colour (0xff04121c) : theme::muted);
+                g.setFont (theme::ui (11.5f, 2));
+                g.drawText (k == 0 ? "A" : "B", chip, juce::Justification::centred);
+            }
+        }
+        else
+        {
+            g.setColour (theme::light ? juce::Colour (0xffb86a14) : juce::Colour (0xffffcf8a));
+            g.setFont (theme::ui (11.5f, 1));
+            g.drawText (row.tag, r.withTrimmedRight (14).removeFromRight (60), juce::Justification::centredRight);
+        }
         top += 60;
     }
 }

@@ -63,6 +63,7 @@ juce_add_plugin(Spacepad
 set(SPACEPAD_CORE_SOURCES
   Source/KeyDetect.cpp
   Source/Lang.cpp
+  Source/Setlist.cpp
   Source/Library.cpp
   Source/PadEngine.cpp
   Source/Effects.cpp)
@@ -74,6 +75,7 @@ target_sources(Spacepad PRIVATE
   Source/UI.cpp
   Source/UISpace.cpp
   Source/UIPanels.cpp
+  Source/UIExtra.cpp
   Source/UIMain.cpp)
 
 target_compile_definitions(Spacepad PUBLIC
@@ -108,6 +110,7 @@ target_sources(SpacepadTests PRIVATE
   Source/UI.cpp
   Source/UISpace.cpp
   Source/UIPanels.cpp
+  Source/UIExtra.cpp
   Source/UIMain.cpp
   tests/Tests.cpp)
 target_include_directories(SpacepadTests PRIVATE Source)

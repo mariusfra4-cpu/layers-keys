@@ -85,6 +85,16 @@ private:
 };
 
 // ---------------------------------------------------------------------------------------------
+// Copie des sons dans Spacepad, export et import vers / depuis un autre ordinateur
+// (progress : 0..1, renvoie faux pour annuler)
+// ---------------------------------------------------------------------------------------------
+using ProgressFn = std::function<bool (double)>;
+juce::File soundsFolder();                                                     // JB Praise/Spacepad/Sons
+bool copySoundsInto (std::vector<Library>& libs, const juce::File& destRoot, ProgressFn progress);
+bool exportLibraries (const std::vector<Library>& libs, const juce::File& dest, ProgressFn progress);   // écrit dest/Spacepad - librairies
+std::vector<Library> importLibraries (const juce::File& exportFolder, ProgressFn progress);            // copie dans Spacepad/Sons
+
+// ---------------------------------------------------------------------------------------------
 // Analyse d'un dossier (lancée dans un fil séparé par l'interface)
 // ---------------------------------------------------------------------------------------------
 class FolderAnalyzer

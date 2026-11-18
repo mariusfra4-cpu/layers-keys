@@ -533,3 +533,78 @@ void FolderAnalyzer::detectKeys (Library& lib)
     }
 }
 }
+
+namespace spacepad
+{
+juce::File soundsFolder() { return LibraryStore::storageFolder().getChildFile ("Sons"); }
+
+static juce::String safeName (const juce::String& n)
+{
+    auto s = juce::File::createLegalFileName (n).trim();
+    return s.isEmpty() ? juce::String ("Librairie") : s;
+}
+
+static int totalSounds (const std::vector<Library>& libs)
+{
+    int n = 0;
+    for (auto& l : libs) n += l.numSounds();
+    return juce::jmax (1, n);
+}
+
+// copie chaque son en gardant l'arborescence de la librairie ; met à jour les chemins
+bool copySoundsInto (std::vector<Library>& libs, const juce::File& destRoot, ProgressFn progress)
+{
+    const int total = totalSounds (libs);
+    int done = 0;
+    for (auto& l : libs)
+    {
+        const auto libDir = destRoot.getChildFile (safeName (l.name));
+        for (auto& c : l.categories)
+            for (auto& s : c.sounds)
+            {
+                const juce::File src (s.path);
+                auto rel = src.getRelativePathFrom (juce::File (l.folder));
+                if (rel.startsWith ("..") || juce::File::isAbsolutePath (rel)) rel = src.getFileName();
+                auto dst = libDir.getChildFile (rel);
+                if (dst != src)
+                {
+                    dst.getParentDirectory().createDirectory();
+                    if (! (dst.existsAsFile() && dst.getSize() == src.getSize()) && ! src.copyFileTo (dst)) return false;
+                    s.path = dst.getFullPathName();
+                }
+                if (progress && ! progress ((double) ++done / total)) return false;
+            }
+    }
+    return true;
+}
+
+bool exportLibraries (const std::vector<Library>& libsIn, const juce::File& dest, ProgressFn progress)
+{
+    auto root = dest.getChildFile ("Spacepad - librairies");
+    root.createDirectory();
+    auto libs = libsIn;
+    if (! copySoundsInto (libs, root, progress)) return false;
+    // chemins relatifs : le dossier peut être copié sur une clé USB puis sur un autre ordinateur
+    for (auto& l : libs)
+        for (auto& c : l.categories)
+            for (auto& s : c.sounds)
+                s.path = "rel:" + juce::File (s.path).getRelativePathFrom (root).replaceCharacter ('\\', '/');
+    return root.getChildFile ("libraries.json").replaceWithText (juce::JSON::toString (LibraryStore::toVar (libs)));
+}
+
+std::vector<Library> importLibraries (const juce::File& folderIn, ProgressFn progress)
+{
+    auto folder = folderIn.getChildFile ("libraries.json").existsAsFile() ? folderIn : folderIn.getChildFile ("Spacepad - librairies");
+    auto json = folder.getChildFile ("libraries.json");
+    if (! json.existsAsFile()) return {};
+    auto libs = LibraryStore::fromVar (juce::JSON::parse (json.loadFileAsString()));
+    for (auto& l : libs)
+        for (auto& c : l.categories)
+            for (auto& s : c.sounds)
+                if (s.path.startsWith ("rel:")) s.path = folder.getChildFile (s.path.substring (4)).getFullPathName();
+    for (auto& l : libs) l.folder = folder.getChildFile (safeName (l.name)).getFullPathName();
+    if (! copySoundsInto (libs, soundsFolder(), progress)) return {};
+    for (auto& l : libs) { l.folder = soundsFolder().getChildFile (safeName (l.name)).getFullPathName(); l.id = makeLibraryId (l.folder); }
+    return libs;
+}
+}

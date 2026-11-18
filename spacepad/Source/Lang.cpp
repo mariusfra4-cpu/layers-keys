@@ -45,7 +45,7 @@ static void loadSetting()
             auto gf = [&] (const char* k, float def) { return ui2->hasProperty (k) ? juce::jlimit (0.0f, 1.0f, (float) (double) ui2->getProperty (k)) : def; };
             auto gb = [&] (const char* k, bool def) { return ui2->hasProperty (k) ? (bool) ui2->getProperty (k) : def; };
             u.accent = gi ("accent", 0, 0, 6);
-            u.theme = gi ("theme", 0, 0, 2);
+            u.theme = gi ("theme", 0, 0, 3);
             u.background = gi ("background", 0, 0, 2);
             u.brightness = gf ("brightness", 0.5f);
             u.speed = gf ("speed", 0.5f);
@@ -54,6 +54,12 @@ static void loadSetting()
             u.scale = gi ("scale", 100, 90, 150);
             u.animations = gb ("animations", true);
             u.keepAwake = gb ("keepAwake", true);
+            u.midiKeyMode = gi ("midiKeyMode", 0, 0, 2);
+            u.zoneLow = gi ("zoneLow", 36, 0, 116);
+            u.fadeSeconds = ui2->hasProperty ("fadeSeconds") ? juce::jlimit (1.0f, 30.0f, (float) (double) ui2->getProperty ("fadeSeconds")) : 8.0f;
+            u.copySounds = gb ("copySounds", false);
+            if (auto* arr = ui2->getProperty ("midiMap").getArray())
+                for (int i = 0; i < (int) u.midiMap.size() && i < arr->size(); ++i) u.midiMap[(size_t) i] = (int) (*arr)[i];
         }
     }
     current = (int) l;
@@ -90,6 +96,13 @@ static void saveAll()
     o->setProperty ("scale", ui.scale);
     o->setProperty ("animations", ui.animations);
     o->setProperty ("keepAwake", ui.keepAwake);
+    o->setProperty ("midiKeyMode", ui.midiKeyMode);
+    o->setProperty ("zoneLow", ui.zoneLow);
+    o->setProperty ("fadeSeconds", ui.fadeSeconds);
+    o->setProperty ("copySounds", ui.copySounds);
+    juce::Array<juce::var> mm;
+    for (auto v : ui.midiMap) mm.add (v);
+    o->setProperty ("midiMap", mm);
     v.getDynamicObject()->setProperty ("ui", juce::var (o));
     f.replaceWithText (juce::JSON::toString (v));
     lastSeen = f.getLastModificationTime();
@@ -166,5 +179,35 @@ juce::String solfege (int k)
 juce::String modeWord (int mode)
 {
     return mode == 1 ? L ("mineur", "minor", "menor") : L ("majeur", "major", "mayor");
+}
+}
+
+namespace spacepad
+{
+juce::String midiActionName (int a)
+{
+    switch (a)
+    {
+        case actPlayStop:    return L ("Jouer / arr\xc3\xaater le pad", "Play / stop the pad", "Tocar / detener el pad");
+        case actNextSong:    return L ("Chant suivant", "Next song", "Canci\xc3\xb3n siguiente");
+        case actPrevSong:    return L ("Chant pr\xc3\xa9""c\xc3\xa9""dent", "Previous song", "Canci\xc3\xb3n anterior");
+        case actModeToggle:  return L ("Majeur \xe2\x87\x84 mineur (crochet)", "Major \xe2\x87\x84 minor (hook)", "Mayor \xe2\x87\x84 menor (gancho)");
+        case actFreeze:      return "Freeze";
+        case actSwell:       return "Swell";
+        case actFadeEnd:     return L ("Fin du chant", "End of song", "Fin de la canci\xc3\xb3n");
+        case actStopAll:     return L ("Tout arr\xc3\xaater", "Stop all", "Detener todo");
+        case actPadVolume:   return L ("Volume du pad", "Pad volume", "Volumen del pad");
+        case actCrowdVolume: return L ("Volume des crowds", "Crowds volume", "Volumen de los crowds");
+        case actMix:         return L ("Dosage pad / crowd", "Pad / crowd balance", "Balance pad / crowd");
+        default:             return {};
+    }
+}
+
+juce::String midiCodeName (int code)
+{
+    static const char* n[] = { "C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B" };
+    if (code >= 2000) { const int note = code - 2000; return L ("Note ", "Note ", "Nota ") + juce::String (n[note % 12]) + juce::String (note / 12 - 1) + " (" + juce::String (note) + ")"; }
+    if (code >= 1000) return "CC " + juce::String (code - 1000);
+    return L ("Non assign\xc3\xa9", "Not assigned", "Sin asignar");
 }
 }

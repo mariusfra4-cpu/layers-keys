@@ -4,6 +4,8 @@
 #include "Library.h"
 #include "PadEngine.h"
 #include "Effects.h"
+#include "Setlist.h"
+#include "Lang.h"
 
 namespace spacepad
 {
@@ -35,67 +37,95 @@ public:
     void getStateInformation (juce::MemoryBlock&) override;
     void setStateInformation (const void*, int) override;
 
-    // --- commandes (depuis l'interface) ---
-    void selectPadLibrary (const juce::String& id, int mode);   // librairie choisie pour le majeur (0) ou le mineur (1)
+    // --- pads ---
+    void selectPadLibrary (const juce::String& id, int mode);    // pad A, pour le majeur (0) ou le mineur (1)
+    void selectPadLibraryB (const juce::String& id, int mode);   // pad B mélangé à A (vide = aucun)
     void pressKey (int key);                 // joue la tonalité ; rappuyer sur la tonalité jouée l'arrête
     void setMode (int mode);                 // 0 majeur, 1 mineur
-    void playPad();                          // relance la tonalité courante
+    void playPad();
     void stopPad();
-    void playCrowd (const juce::String& libId, int soundIndex); // rappuyer sur le son joué l'arrête
-    void stopCrowd();
+    void fadeOutAll();                       // « Fin du chant » : tout s'efface en douceur
     void stopAll();
 
+    // --- crowds (2 à la fois, indépendants du pad ou liés à lui) ---
+    void playCrowd (const juce::String& libId, int soundIndex, int slot = 0);  // rappuyer sur le son joué l'arrête
+    void stopCrowd (int slot);
+    void stopCrowd();                        // les deux
+
+    // --- setlist ---
+    Setlist& setlist() { return songs; }
+    Song captureSong (const juce::String& name) const;   // le réglage actuel, pour l'enregistrer comme chant
+    void addSongFromCurrent (const juce::String& name);
+    void updateSongFromCurrent (int index);
+    void gotoSong (int index);               // applique le chant (en fondu si le pad joue)
+    void nextSong();
+    void prevSong();
+
+    // --- MIDI : apprendre une pédale ou un bouton, ou la zone de tonalité ---
+    void learnMidi (int action) { learnAction = action; }
+    void learnZone() { learnZoneFlag = true; }
+    int learningAction() const { return learnAction.load(); }
+    bool learningZone() const { return learnZoneFlag.load(); }
+
     // --- état (pour l'affichage) ---
-    juce::String padLibraryId() const;                    // librairie du mode en cours
+    juce::String padLibraryId() const;                    // pad A du mode en cours
     juce::String padLibraryId (int mode) const;
-    bool missingPadLibrary() const;                       // aucune librairie choisie pour le mode en cours
+    juce::String padLibraryIdB (int mode) const;
+    bool missingPadLibrary() const;
     int currentKey() const { return keyNow.load(); }
     int currentMode() const { return modeNow.load(); }
     bool padActive() const { return padOn.load(); }
-    bool padSounding() const { return pad.isPlaying(); }
-    bool crowdSounding() const { return crowd.isPlaying(); }
-    juce::String crowdLibraryId() const;
-    int crowdSoundIndex() const { return crowdIndex.load(); }
-    float crowdPosition() const { return crowd.position(); }
-    juce::String crowdSoundName() const;
-    // derniers échantillons de sortie (pour le visualiseur), du plus ancien au plus récent
+    bool padSounding() const { return pad.isPlaying() || padB.isPlaying(); }
+    bool crowdSounding (int slot) const { return crowd[slot & 1].isPlaying(); }
+    bool crowdSounding() const { return crowd[0].isPlaying() || crowd[1].isPlaying(); }
+    juce::String crowdLibraryId (int slot = 0) const;
+    int crowdSoundIndex (int slot = 0) const { return crowdIdx[slot & 1].load(); }
+    float crowdPosition (int slot = 0) const { return crowd[slot & 1].position(); }
+    juce::String crowdSoundName (int slot = 0) const;
+    int crowdSemitones (int slot = 0) const { return crowdSemis[slot & 1].load(); }
     void copyScope (float* dest, int n) const;
     float padPosition() const { return pad.position(); }
     std::shared_ptr<const SampleData> padSample() const { return pad.current(); }
     float outputLevel() const { return level.load(); }
     bool midiActivity() { return midiSeen.exchange (false); }
     bool loopOn() const;
-    juce::String padSoundName() const;       // nom du fichier joué
+    juce::String padSoundName() const;
 
     LibraryStore& libraries() { return store; }
     SampleLoader& loader() { return sampleLoader; }
     juce::AudioProcessorValueTreeState params;
 
-    // pour les tests : attendre que les chargements en cours soient faits
-    void waitIdleForTests (int ms);
+    void waitIdleForTests (int ms);          // tests : attendre que les chargements soient faits
+    void runControlForTests();               // tests : exécuter tout de suite les commandes MIDI en attente
 
 private:
     static juce::AudioProcessorValueTreeState::ParameterLayout createLayout();
-    void run() override;                     // fil de commande : chargements, MIDI, relecture des bibliothèques
+    void run() override;                     // fil de commande : chargements, MIDI, relecture des fichiers communs
+    void controlStep();
     void startPadKey (int key, int mode, bool fromSilence);
+    void startCrowdSlot (int slot, float fadeIn, float xfade);
+    void retransposeCrowds();
+    void autoSelectLibraries();
+    void refreshMidiSettings();
     FxParams readFx() const;
     float p (const char* id) const { return params.getRawParameterValue (id)->load(); }
+    void setParam (const char* id, float realValue);
 
     LibraryStore store;
+    Setlist songs;
     SampleLoader sampleLoader;
-    PadChannel pad, crowd;
+    PadChannel pad, padB, crowd[2];
     FxChain fx;
-    juce::AudioBuffer<float> mainBuf, subBuf, shimBuf, crowdBuf;
+    juce::AudioBuffer<float> mainBuf, subBuf, shimBuf, bBuf, bSub, bShim, crowdBuf, crowdBuf2;
     int maxBlock = 512;
+    float lastGA = 1, lastGB = 0;
 
     mutable juce::CriticalSection stateLock;
-    juce::String padLibs[2], crowdLib;
-    juce::String crowdSoundNow;
-    static constexpr int scopeSize = 4096;
-    std::array<float, scopeSize> scope {};
-    std::atomic<int> scopePos { 0 };
-    void autoSelectLibraries();
-    std::atomic<int> keyNow { 4 }, modeNow { 1 }, crowdIndex { -1 };
+    juce::String padLibs[2], padLibsB[2];
+    juce::String crowdLib[2], crowdName[2];
+    int crowdKey[2] { -1, -1 }, crowdMode[2] { -1, -1 };
+    std::atomic<int> crowdIdx[2] { { -1 }, { -1 } }, crowdSemis[2] { { 0 }, { 0 } };
+    std::atomic<int> keyNow { 4 }, modeNow { 1 };
     std::atomic<bool> padOn { false };
     std::atomic<int> midiKey { -1 }, midiProgram { -1 };
     std::atomic<int> generation { 0 };
@@ -104,6 +134,22 @@ private:
     std::atomic<bool> lastLoop { true };
     juce::String padSoundNow;
     std::atomic<int> pendingLoads { 0 };
+
+    // MIDI
+    std::atomic<int> keyMode { 0 }, zoneLow { 36 };
+    std::array<std::atomic<int>, actCount> midiMap;
+    std::atomic<int> learnAction { -1 }, learnedCode { -1 }, learnedZone { -1 };
+    std::atomic<bool> learnZoneFlag { false };
+    std::atomic<juce::uint32> pendingActions { 0 };
+    std::array<std::atomic<float>, 3> contValue {};
+    std::atomic<juce::uint32> contFlags { 0 };
+    std::array<int, 128> ccLast {};
+    int lastSettingsVersion = -1;
+
+    // visualiseur
+    static constexpr int scopeSize = 4096;
+    std::array<float, scopeSize> scope {};
+    std::atomic<int> scopePos { 0 };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SpacepadProcessor)
 };

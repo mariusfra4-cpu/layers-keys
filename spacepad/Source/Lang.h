@@ -2,6 +2,7 @@
 // (fichier settings.json du dossier commun) : langue, couleurs, thème, fond animé, visualiseur…
 #pragma once
 #include <juce_core/juce_core.h>
+#include <array>
 
 namespace spacepad
 {
@@ -19,7 +20,7 @@ juce::String modeWord (int mode);                 // majeur/mineur, major/minor,
 struct UiSettings
 {
     int accent = 0;          // 0 bleu, 1 violet, 2 or, 3 vert, 4 rose, 5 orange, 6 blanc
-    int theme = 0;           // 0 Nuit, 1 Minuit bleu, 2 Graphite
+    int theme = 0;           // 0 Nuit, 1 Minuit bleu, 2 Graphite, 3 Clair
     int background = 0;      // 0 Galaxie, 1 Tourbillon d'étoiles, 2 Aucun
     float brightness = 0.5f; // luminosité de l'animation (0..1)
     float speed = 0.5f;      // vitesse de rotation (0..1)
@@ -28,7 +29,19 @@ struct UiSettings
     int scale = 100;         // taille de l'interface : 90, 100, 125, 150 (%)
     bool animations = true;  // animations (désactiver pour les petits ordinateurs)
     bool keepAwake = true;   // garder l'écran allumé pendant le jeu
+    // MIDI : quelles notes changent la tonalité
+    int midiKeyMode = 0;     // 0 zone de commande (une octave), 1 jamais, 2 toutes les notes
+    int zoneLow = 36;        // première note de la zone (36 = Do le plus grave d'un clavier 61 touches)
+    // pédales et boutons MIDI assignés (une action par case ; -1 = rien ; 1000+n = CC n ; 2000+n = note n)
+    std::array<int, 11> midiMap { { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 } };
+    float fadeSeconds = 8.0f; // durée de « Fin du chant »
+    bool copySounds = false;  // copier les sons dans Spacepad à l'enregistrement
 };
+
+// actions assignables à une pédale ou un bouton MIDI
+enum MidiAction { actPlayStop = 0, actNextSong, actPrevSong, actModeToggle, actFreeze, actSwell, actFadeEnd, actStopAll, actPadVolume, actCrowdVolume, actMix, actCount };
+juce::String midiActionName (int action);
+juce::String midiCodeName (int code);            // « CC 64 », « Note C2 », « Non assigné »
 UiSettings uiSettings();
 void setUiSettings (const UiSettings&);           // change et enregistre
 int settingsVersion();                            // augmente à chaque changement (pour redessiner)

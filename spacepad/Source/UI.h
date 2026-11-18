@@ -17,7 +17,10 @@ namespace theme
     inline juce::Colour accent { 0xff6fd8ff }, accentLight { 0xffbdf1ff };
     // couleurs fixes
     const juce::Colour amber { 0xffffb86b }, violet { 0xffa78bfa }, gold { 0xffffcf7a }, lilac { 0xffc9b8ff };
-    const juce::Colour green { 0xff5cffb0 }, text { 0xffe8edf7 }, muted { 0xff8b97ad }, line { 0x18ffffff }, red { 0xffff6b6b };
+    inline juce::Colour text { 0xffe8edf7 }, muted { 0xff8b97ad }, line { 0x18ffffff };
+    inline juce::Colour ink { 0xffffffff };          // reflets et voiles : blanc sur fond sombre, noir sur le thème Clair
+    inline bool light = false;
+    const juce::Colour green { 0xff5cffb0 }, red { 0xffff6b6b };
     void apply (const UiSettings&);
     juce::Colour accentChoice (int index);
     juce::Font title (float h);                   // Michroma (logo, tonalités)
@@ -178,6 +181,9 @@ public:
         bool on = false, playing = false;
         std::function<void()> onClick;
         std::function<void()> onMenu;
+        juce::String badge;                    // numéro (setlist), à la place du point de couleur
+        bool chips = false, aOn = false, bOn = false;   // pastilles A / B (deux pads mélangés)
+        std::function<void()> onA, onB;
     };
     void setRows (std::vector<Row> r);
     void paint (juce::Graphics&) override;
@@ -192,44 +198,58 @@ private:
     int hover = -1;
 };
 
-class LibraryPanel : public juce::Component
+class LibraryPanel : public juce::Component, private juce::Timer
 {
 public:
     explicit LibraryPanel (SpacepadProcessor&);
+    ~LibraryPanel() override;
     void paint (juce::Graphics&) override;
     void resized() override;
     void refresh();                            // relit les bibliothèques
-    void showTab (bool crowdTab);
-    bool crowdTabShown() const { return crowd; }
+    void showTab (bool crowdTab) { showTabIndex (crowdTab ? 1 : 0); }
+    void showTabIndex (int tab);               // 0 pads, 1 crowds, 2 setlist
+    int tabShown() const { return tab; }
+    bool crowdTabShown() const { return tab == 1; }
     void updateState();                        // états lumineux (son joué, mode)
     void retranslate();                        // textes dans la langue choisie
     std::function<void (bool crowdTab)> onChooseFolder;
 
 private:
+    void timerCallback() override { if (tab == 1) repaint (playerArea); }
     void rebuildChips();
     void rebuildRows();
     const Library* currentCrowd() const;
     const Category* currentCategory() const;
     void libraryMenu (const Library& l);
+    void songMenu (int index, const Song& s);
 
     SpacepadProcessor& proc;
-    juce::TextButton padTab { "PAD LIBRARY" }, crowdTab { "CROWD LIBRARY" };
+    juce::TextButton padTab { "PADS" }, crowdTab { "CROWDS" }, setTab { "SETLIST" };
     juce::TextButton chooseBtn;
     juce::ComboBox crowdPicker;
     std::vector<std::unique_ptr<juce::TextButton>> chips;
     juce::Viewport viewport;
     RowList rows;
-    // lecteur de crowd (indépendant du pad)
-    juce::TextButton crowdStop;
-    juce::Slider crowdVol;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> crowdVolAtt;
+    // pads : mélange A / B
+    juce::Slider blend;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> blendAtt;
+    juce::Rectangle<int> blendArea;
+    // crowds : deux à la fois, combinaison avec le pad
+    juce::TextButton slotBtn[2], crowdStop[2], linkBtn, followBtn;
+    juce::Slider crowdVol[2];
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> crowdVolAtt[2];
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> linkAtt, followAtt;
+    int targetSlot = 0;
     juce::Rectangle<int> playerArea;
-    bool crowd = false;
+    // setlist
+    juce::TextButton addSong, prevSongBtn, nextSongBtn;
+    int tab = 0;
     std::vector<Library> libs;
     juce::String crowdLibId;
     int category = 0;
     juce::Rectangle<int> statusArea;
     juce::String lastStateSig;
+    int lastSetlistChanges = -1;
 };
 
 // --------------------------------------------------------------------------------------------
@@ -241,6 +261,7 @@ public:
     void paint (juce::Graphics&) override;
     void resized() override;
     std::function<void (bool saved)> onClose;
+    std::function<void (std::vector<Library>)> onCopyAndSave;   // réglage « copier les sons dans Spacepad »
 
 private:
     struct Job : juce::Thread
@@ -268,29 +289,37 @@ private:
 };
 
 // --------------------------------------------------------------------------------------------
-// Fenêtre « Personnaliser Spacepad »
-class SettingsOverlay : public juce::Component
+// Fenêtre « Personnaliser Spacepad » : Apparence, MIDI & pédales, Sons & sorties
+class SettingsOverlay : public juce::Component, private juce::Timer
 {
 public:
-    explicit SettingsOverlay (std::function<void()> changed);
+    SettingsOverlay (SpacepadProcessor&, std::function<void()> changed);
     void paint (juce::Graphics&) override;
     void resized() override;
     void mouseUp (const juce::MouseEvent&) override;
     std::function<void()> onClose;
+    std::function<void()> onExport, onImport;
+    void showPage (int p);
 private:
+    void timerCallback() override { if (page == 1) { refreshMidiButtons(); repaint(); } }
     struct Choice { juce::String label; juce::Rectangle<int> r; };
     struct Group { juce::String title; std::vector<Choice> choices; int* value; juce::Rectangle<int> area; };
     void load();
     void save();
+    void refreshMidiButtons();
     juce::Rectangle<int> card() const;
+    SpacepadProcessor& proc;
     std::function<void()> changed;
     UiSettings s;
+    int page = 0;
     int accent = 0, themeIdx = 0, bgIdx = 0, vizIdx = 0, namesIdx = 0, sizeIdx = 1, langIdx = 0, animIdx = 1, awakeIdx = 1;
+    int keyModeIdx = 0, fadeIdx = 1, copyIdx = 0;
     std::vector<Group> groups;
-    std::vector<juce::Rectangle<int>> swatches, tiles;
-    juce::Rectangle<int> accentArea, bgArea;
+    std::vector<juce::Rectangle<int>> swatches, tiles, pageTabs;
+    juce::Rectangle<int> accentArea, bgArea, midiListArea, zoneArea, infoArea;
     juce::Slider brightness, speed;
-    juce::TextButton resetBtn, doneBtn;
+    juce::TextButton resetBtn, doneBtn, zoneBtn, exportBtn, importBtn;
+    juce::TextButton assignBtn[actCount], clearBtn[actCount];
 };
 
 class GearButton : public juce::Button
@@ -298,6 +327,62 @@ class GearButton : public juce::Button
 public:
     GearButton() : juce::Button ("settings") {}
     void paintButton (juce::Graphics&, bool over, bool down) override;
+};
+
+// Curseur PAD ⇄ CROWD (combinaison)
+class MixBar : public juce::Component
+{
+public:
+    explicit MixBar (SpacepadProcessor&);
+    void paint (juce::Graphics&) override;
+    void resized() override;
+private:
+    SpacepadProcessor& proc;
+    juce::Slider slider;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> att;
+};
+
+// Mode scène : plein écran, très gros boutons, lisible de loin
+class StageOverlay : public juce::Component, private juce::Timer
+{
+public:
+    explicit StageOverlay (SpacepadProcessor&);
+    void paint (juce::Graphics&) override;
+    void resized() override;
+    void mouseUp (const juce::MouseEvent&) override;
+    std::function<void()> onClose;
+private:
+    void timerCallback() override { repaint(); }
+    SpacepadProcessor& proc;
+    std::vector<juce::Rectangle<int>> keys;
+    juce::Rectangle<int> orb, quit;
+    juce::TextButton next, mode, fin, stop;
+};
+
+class IconButton : public juce::Button
+{
+public:
+    explicit IconButton (juce::String kind) : juce::Button (kind), icon (std::move (kind)) {}
+    void paintButton (juce::Graphics&, bool over, bool down) override;
+private:
+    juce::String icon;
+};
+
+// Travail long (copie, export, import) avec sa barre de progression
+class TaskOverlay : public juce::Component, private juce::Timer, private juce::Thread
+{
+public:
+    TaskOverlay (juce::String title, std::function<bool (ProgressFn)> work);
+    ~TaskOverlay() override;
+    void paint (juce::Graphics&) override;
+    std::function<void (bool ok)> onDone;
+private:
+    void run() override;
+    void timerCallback() override;
+    juce::String title;
+    std::function<bool (ProgressFn)> work;
+    std::atomic<double> progress { 0 };
+    std::atomic<int> result { -1 };
 };
 
 // --------------------------------------------------------------------------------------------
@@ -313,6 +398,7 @@ public:
     void chooseFolder (bool crowdTab);
     void openScan (const juce::File& folder, LibType type = LibType::Pad);   // aussi utilisé par les tests
     void openSettings();
+    void openStage();
     void retranslate();                         // textes dans la langue choisie (FR, EN, ES)
     void applySettings();                       // couleurs, thème, taille… depuis les Paramètres
     void animateForTests (float seconds);       // fait avancer l'animation sans attendre (tests, captures)
@@ -331,7 +417,12 @@ private:
     KeyRing ring { proc, anim };
     HookButton hook { proc };
     Visualizer viz { proc, anim };
-    juce::TextButton playBtn, stopBtn, loopBtn { "LOOP" }, stopAllBtn;
+    juce::TextButton playBtn, stopBtn, loopBtn { "LOOP" }, stopAllBtn, finBtn;
+    MixBar mixBar { proc };
+    IconButton stageBtn { "stage" };
+    std::unique_ptr<StageOverlay> stage;
+    std::unique_ptr<TaskOverlay> task;
+    void runTask (const juce::String& title, std::function<bool (ProgressFn)> work, std::function<void (bool)> done);
     juce::TextButton freezeBtn { "FREEZE" }, swellBtn { "SWELL" };
     std::vector<std::unique_ptr<Knob>> knobs;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> loopAtt, freezeAtt, swellAtt;
