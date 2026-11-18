@@ -1202,6 +1202,163 @@ static void testCrowdFx (const juce::File& root)
     juce::ignoreUnused (root);
 }
 
+// ---------------------------------------------------------------------------------------------
+// Vidéo de présentation : le vrai logiciel, piloté scène par scène, filmé image par image
+// (SPACEPAD_VIDEO=fichier.mp4 ; nécessite ffmpeg)
+#if ! JUCE_WINDOWS
+#include <cstdio>
+static void makeVideo (const juce::File& out)
+{
+    section ("Video de presentation");
+    setUiSettings (UiSettings());
+    setLang (Lang::FR);
+    SpacepadProcessor p;
+    p.setPlayConfigDetails (0, 2, 48000, 256);
+    p.prepareToPlay (48000, 256);
+    juce::String warm, myst, crowdId;
+    for (auto& l : p.libraries().snapshot())
+    {
+        if (l.name == "Warm Pad") warm = l.id;
+        if (l.name == "Pad Mystere") myst = l.id;
+        if (l.type == LibType::Crowd && l.name == "Mes Crowds") crowdId = l.id;
+    }
+    p.selectPadLibrary (warm, 0); p.selectPadLibrary (warm, 1);
+    while (! p.setlist().songs().empty()) p.setlist().remove (0);
+    const char* titles[] = { "Ouverture", "Louange", "Adoration", "Priere", "Final" };
+    const int keys[] = { 4, 7, 2, 9, 0 }, modes[] = { 1, 0, 0, 1, 0 };
+    for (int i = 0; i < 5; ++i) { p.setMode (modes[i]); p.pressKey (keys[i]); p.addSongFromCurrent (titles[i]); }
+    p.stopAll();
+    p.setMode (1); p.pressKey (4); p.stopPad();
+    if (auto lib = p.libraries().find (crowdId)) if (auto* s0 = lib->sound (0)) p.crowdPrefs().setFavourite (CrowdPrefs::keyFor (crowdId, s0->path), true);
+
+    std::unique_ptr<juce::AudioProcessorEditor> ed (p.createEditor());
+    ed->setSize (MainView::W, MainView::H);
+    auto& v = dynamic_cast<SpacepadEditor&> (*ed).view();
+    auto find = [&] (auto* dummy) -> decltype (dummy) { for (auto* c : v.getChildren()) if (auto* x = dynamic_cast<decltype (dummy)> (c)) return x; return nullptr; };
+    auto* panel = find ((LibraryPanel*) nullptr);
+    auto* fx = find ((FxPanel*) nullptr);
+    auto* stage = find ((CrowdStage*) nullptr);
+    auto centre = [&] (int vw) { auto u = uiSettings(); u.centerView = vw; setUiSettings (u); v.applySettings(); };
+
+    const float scale = 1920.0f / MainView::W;
+    const int capH = 150, W = 1920, H = juce::roundToInt ((MainView::H + capH) * scale) & ~1;
+    const juce::String cmd = "ffmpeg -y -loglevel error -f rawvideo -pix_fmt bgra -s " + juce::String (W) + "x" + juce::String (H)
+                           + " -r 30 -i - -c:v libx264 -preset medium -crf 19 -pix_fmt yuv420p -movflags +faststart \"" + out.getFullPathName() + "\"";
+    FILE* pipe = popen (cmd.toRawUTF8(), "w");
+    if (pipe == nullptr) { CHECK (false, "ffmpeg introuvable"); return; }
+
+    struct Scene { float start; const char* title; const char* sub; };
+    const Scene scenes[] = {
+        { 0.0f,  "", "" },
+        { 4.0f,  "Touchez une tonalit\xc3\xa9, le pad joue", "La galaxie tourne et respire avec le son \xc2\xb7 le crochet passe du mineur au majeur" },
+        { 13.0f, "Vos dossiers, analys\xc3\xa9s tout seuls", "Le nom du dossier est gard\xc3\xa9, la tonalit\xc3\xa9 de chaque son est trouv\xc3\xa9""e \xc2\xb7 deux pads A + B m\xc3\xa9lang\xc3\xa9s" },
+        { 20.0f, "Des effets qui enrichissent le son", "Shimmer, Warm, Air, Reverb, Chorus, Delay au tempo, Sub, Freeze, Swell\xe2\x80\xa6" },
+        { 27.0f, "Mode CROWD", "Deux crowds en m\xc3\xaame temps, li\xc3\xa9s au pad et jou\xc3\xa9s dans sa tonalit\xc3\xa9" },
+        { 36.0f, "Les crowds ont leurs propres effets", "Chorus, Delay, Distance, Mouvement, Reverb\xe2\x80\xa6 m\xc3\xa9moris\xc3\xa9s pour chaque son \xc2\xb7 favoris et tri" },
+        { 43.0f, "Setlist", "Chaque chant garde sa tonalit\xc3\xa9, ses pads, ses crowds et ses effets \xc2\xb7 \xc2\xab Chant suivant \xc2\xbb en fondu" },
+        { 50.0f, "P\xc3\xa9""dales et MIDI", "Assignez une p\xc3\xa9""dale \xc3\xa0 chaque action \xc2\xb7 une zone du clavier choisit la tonalit\xc3\xa9" },
+        { 55.0f, "Mode sc\xc3\xa8ne", "Plein \xc3\xa9""cran, tr\xc3\xa8s gros boutons, lisible de loin" },
+        { 60.0f, "", "" },
+    };
+    const int nScenes = (int) (sizeof (scenes) / sizeof (scenes[0]));
+    const float total = 65.0f;
+    juce::Image frame (juce::Image::ARGB, W, H, true), prev;
+    int lastScene = -1, fadeFrames = 0;
+    juce::AudioBuffer<float> buf (2, 400); juce::MidiBuffer midi;
+    bool done[16] {};
+    auto once = [&] (int i, float t, float at) { if (! done[i] && t >= at) { done[i] = true; return true; } return false; };
+    float mix = 0;
+
+    for (int fi = 0; fi < (int) (total * 30); ++fi)
+    {
+        const float t = fi / 30.0f;
+        int sc = 0;
+        for (int i = 0; i < nScenes; ++i) if (t >= scenes[i].start) sc = i;
+        // --- ce qui se passe dans le logiciel ---
+        if (once (0, t, 1.0f)) { p.pressKey (4); }
+        if (once (1, t, 7.5f)) p.pressKey (7);
+        if (once (2, t, 10.5f)) p.setMode (0);
+        if (once (3, t, 13.0f)) { panel->showTabIndex (0); }
+        if (once (4, t, 16.0f)) p.selectPadLibraryB (myst, 0);
+        if (sc == 3) { mix = juce::jlimit (0.0f, 1.0f, (t - 20.5f) / 5.0f); setP (p, "shimmer", 0.45f + 0.4f * mix); setP (p, "chorus", 0.35f * mix); setP (p, "delay", 0.3f * mix); setP (p, "reverb", 0.55f + 0.3f * mix); }
+        if (once (5, t, 27.0f)) { p.selectPadLibraryB ({}, 0); centre (1); panel->showTabIndex (1); stage->refreshTiles(); }
+        if (once (6, t, 28.5f)) { p.setCrowdTarget (0); p.playCrowd (crowdId, 2, 0); }
+        if (once (7, t, 31.0f)) { p.setCrowdTarget (1); p.playCrowd (crowdId, 1, 1); stage->refreshTiles(); }
+        if (once (8, t, 36.0f)) { fx->showPage (1); fx->showSlot (0); }
+        if (sc == 5) { const float k = juce::jlimit (0.0f, 1.0f, (t - 37.0f) / 4.0f); setP (p, SpacepadProcessor::crowdParam (0, "chorus"), 0.5f * k); setP (p, SpacepadProcessor::crowdParam (0, "delay"), 0.35f * k); setP (p, SpacepadProcessor::crowdParam (0, "dist"), 0.3f * k); }
+        if (once (9, t, 43.0f)) { centre (0); fx->showPage (0); panel->showTabIndex (2); p.stopCrowd(); p.gotoSong (0); }
+        if (once (10, t, 46.5f)) p.nextSong();
+        if (once (11, t, 50.0f)) { v.openSettings(); for (auto* c : v.getChildren()) if (auto* so = dynamic_cast<SettingsOverlay*> (c)) so->showPage (1); }
+        if (once (12, t, 55.0f)) { for (auto* c : v.getChildren()) if (auto* so = dynamic_cast<SettingsOverlay*> (c)) so->setVisible (false); v.openStage(); }
+        if (once (13, t, 58.0f)) p.nextSong();
+        if (once (14, t, 60.0f)) { for (auto* c : v.getChildren()) if (auto* so = dynamic_cast<StageOverlay*> (c)) so->setVisible (false); centre (1); panel->showTabIndex (1); p.playCrowd (crowdId, 2, 0); }
+        // --- le son (1/30 s) et l'animation ---
+        for (int k = 0; k < 4; ++k) { buf.clear(); p.processBlock (buf, midi); }
+        v.animateForTests (1.0f / 30.0f);
+        panel->updateState();
+        fx->tick();
+        if (fi % 15 == 0) stage->refreshTiles();
+
+        // --- l'image ---
+        auto shot = v.createComponentSnapshot (v.getLocalBounds(), true, scale);
+        {
+            juce::Graphics g (frame);
+            g.fillAll (juce::Colour (0xff04060c));
+            g.drawImageAt (shot, 0, 0);
+            auto cap = juce::Rectangle<float> (0, (float) shot.getHeight(), (float) W, (float) (H - shot.getHeight()));
+            g.setGradientFill (juce::ColourGradient (juce::Colour (0xff0b1020), 0, cap.getY(), juce::Colour (0xff04060c), 0, cap.getBottom(), false));
+            g.fillRect (cap);
+            const auto& S = scenes[sc];
+            const float local = t - S.start;
+            const float a = juce::jlimit (0.0f, 1.0f, local / 0.6f);
+            if (juce::String (S.title).isNotEmpty())
+            {
+                g.setColour (theme::accent.withAlpha (a));
+                g.fillRoundedRectangle (cap.getX() + 70, cap.getY() + 44, 6, 66, 3);
+                g.setColour (juce::Colours::white.withAlpha (a));
+                g.setFont (theme::ui (44.0f, 2));
+                g.drawText (juce::String::fromUTF8 (S.title), cap.withTrimmedLeft (100).withHeight (70).translated (0, 30), juce::Justification::centredLeft);
+                g.setColour (juce::Colour (0xffaab5ca).withAlpha (a));
+                g.setFont (theme::ui (26.0f));
+                g.drawText (juce::String::fromUTF8 (S.sub), cap.withTrimmedLeft (100).withHeight (40).translated (0, 98), juce::Justification::centredLeft);
+            }
+            // titre d'ouverture et de fin
+            if (sc == 0 || sc == nScenes - 1)
+            {
+                const float fade = sc == 0 ? juce::jlimit (0.0f, 1.0f, 1.0f - (t - 2.6f) / 1.4f) : juce::jlimit (0.0f, 1.0f, (t - 60.6f) / 1.0f);
+                g.setColour (juce::Colour (0xff04060c).withAlpha (0.86f * fade));
+                g.fillRect (frame.getBounds());
+                auto f = theme::title (120.0f); f.setExtraKerningFactor (0.24f);
+                g.setFont (f);
+                g.setColour (juce::Colours::white.withAlpha (fade));
+                g.drawText ("SPACEPAD", juce::Rectangle<float> (0, H * 0.30f, (float) W, 170), juce::Justification::centred);
+                auto by = theme::ui (32.0f, 1); by.setExtraKerningFactor (0.5f);
+                g.setFont (by);
+                g.setColour (theme::accent.withAlpha (fade));
+                g.drawText ("BY JB PRAISE", juce::Rectangle<float> (0, H * 0.30f + 170, (float) W, 50), juce::Justification::centred);
+                g.setFont (theme::ui (34.0f));
+                g.setColour (juce::Colour (0xffcfd8ea).withAlpha (fade));
+                g.drawText (sc == 0 ? juce::String::fromUTF8 ("Pads et crowds pour la musique live et worship")
+                                    : juce::String::fromUTF8 ("Application Windows \xc2\xb7 Plugin VST3"),
+                            juce::Rectangle<float> (0, H * 0.30f + 250, (float) W, 60), juce::Justification::centred);
+            }
+            // fondu entre les scènes
+            if (sc != lastScene) { if (lastScene >= 0 && prev.isValid()) fadeFrames = 12; lastScene = sc; }
+            if (fadeFrames > 0 && prev.isValid()) { g.setOpacity (fadeFrames / 12.0f); g.drawImageAt (prev, 0, 0); g.setOpacity (1.0f); --fadeFrames; }
+        }
+        if (fadeFrames == 0) prev = frame.createCopy();
+        juce::Image::BitmapData bd (frame, juce::Image::BitmapData::readOnly);
+        for (int y = 0; y < H; ++y) fwrite (bd.getLinePointer (y), 4, (size_t) W, pipe);
+    }
+    const int rc = pclose (pipe);
+    std::cout << "  video : " << out.getFullPathName() << " (" << out.getSize() / 1024 << " Ko)\n";
+    CHECK (rc == 0 && out.getSize() > 100000, "video creee");
+    p.stopAll();
+    while (! p.setlist().songs().empty()) p.setlist().remove (0);
+    setUiSettings (UiSettings());
+}
+#endif
+
 int main (int argc, char** argv)
 {
     juce::ScopedJuceInitialiser_GUI gui;
@@ -1228,6 +1385,9 @@ int main (int argc, char** argv)
     testCrowdFx (root);
     if (argc > 1) snapshot (juce::File (juce::String (argv[1])), root);
     if (juce::SystemStats::getEnvironmentVariable ("SPACEPAD_BENCH", {}).isNotEmpty()) benchPaint (root);
+   #if ! JUCE_WINDOWS
+    if (juce::SystemStats::getEnvironmentVariable ("SPACEPAD_VIDEO", {}).isNotEmpty()) makeVideo (juce::File (juce::SystemStats::getEnvironmentVariable ("SPACEPAD_VIDEO", {})));
+   #endif
 
     std::cout << "\n" << (checks - failures) << " / " << checks << " verifications reussies\n";
     std::cout << (failures == 0 ? "TOUT EST BON\n" : "ECHECS\n");
