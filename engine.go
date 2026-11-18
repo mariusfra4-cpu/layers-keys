@@ -155,6 +155,8 @@ type Engine struct {
 	toneLeft    int64  // images restantes du bip de test (contourne licence, pistes et effets)
 	leslieFast  int32  // vitesse du Leslie de toutes les pistes : 1 = rapide (atomique)
 	wheelTrack  int32  // piste sélectionnée : la molette de modulation n'agit que sur elle (atomique)
+	wheelMode   int32  // 0 piste sélectionnée, 1 toutes les pistes, 2 sans effet
+	wheelNoLes  int32  // 1 = la molette ne règle pas la vitesse du Leslie
 	tonePhase   float64
 	Player      *Player
 	Pads        *padPlayer // pads continus (pads.go)
@@ -289,10 +291,34 @@ func (e *Engine) SetMod(v float64)  { e.mod = clampf(v, 0, 1) }
 // SetWheelTrack : la piste sélectionnée, la seule sur laquelle la molette de modulation agit
 func (e *Engine) SetWheelTrack(i int) { atomic.StoreInt32(&e.wheelTrack, int32(i)) }
 
-// wheelOn : la molette agit sur cette piste (la piste sélectionnée, sauf si son Leslie l'utilise pour la vitesse)
-func (e *Engine) wheelOn(ch int) bool {
-	return int(atomic.LoadInt32(&e.wheelTrack)) == ch && !e.hasLeslie(ch)
+// SetWheelMode : 0 = piste sélectionnée seulement, 1 = toutes les pistes, 2 = molette sans effet ; les = la molette règle le Leslie
+func (e *Engine) SetWheelMode(mode int, les bool) {
+	atomic.StoreInt32(&e.wheelMode, int32(mode))
+	v := int32(0)
+	if !les {
+		v = 1
+	}
+	atomic.StoreInt32(&e.wheelNoLes, v)
 }
+
+func (e *Engine) wheelLeslie() bool { return atomic.LoadInt32(&e.wheelNoLes) == 0 }
+
+// wheelOn : la molette agit sur cette piste (selon le réglage, sauf si son Leslie l'utilise pour la vitesse)
+func (e *Engine) wheelOn(ch int) bool {
+	if e.wheelLeslie() && e.hasLeslie(ch) {
+		return false
+	}
+	switch atomic.LoadInt32(&e.wheelMode) {
+	case 1:
+		return true
+	case 2:
+		return false
+	}
+	return int(atomic.LoadInt32(&e.wheelTrack)) == ch
+}
+
+// WheelTarget : texte pour l'écran de réglage (piste sur laquelle la molette agit en ce moment)
+func (e *Engine) WheelTrack() int { return int(atomic.LoadInt32(&e.wheelTrack)) }
 
 // part de la molette de modulation qui sert de vibrato pour une piste
 func (e *Engine) vibWheel(ch *Channel) float64 {
@@ -593,7 +619,7 @@ func (e *Engine) Control(cc, val int) {
 	case 1:
 		e.mod = float64(val) / 127
 		// orgue : sur les pistes avec LESLIE, la molette règle la vitesse (en haut rapide, en bas lent)
-		if e.anyLeslie() {
+		if e.wheelLeslie() && e.anyLeslie() {
 			if fast := e.LeslieFast(); !fast && val >= 80 {
 				e.SetLeslieFast(true)
 			} else if fast && val <= 47 {

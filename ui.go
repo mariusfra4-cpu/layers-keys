@@ -91,18 +91,20 @@ type overlay struct {
 	back       func()                  // bouton « Retour » : revient à l'écran précédent
 	custom     func(c *Canvas, r rect) // contenu dessiné à la place de la liste
 	wide       bool                    // grande fenêtre (bibliothèque de sons, pads)
+	live       bool                    // redessiné en continu (molette en direct)
 }
 
 type UI struct {
-	lic      *License
-	licSt    LicStatus
-	licShow  bool   // l'écran « Autoriser le logiciel » est affiché
-	licKey   string // clé en cours de saisie
-	licMsg   string
-	licMsgOK bool
-	licNext  time.Time
-	licLeft  string
-	Plugin   bool // vrai quand le logiciel tourne comme plugin VST3 dans un DAW
+	lic       *License
+	licSt     LicStatus
+	licShow   bool   // l'écran « Autoriser le logiciel » est affiché
+	licKey    string // clé en cours de saisie
+	licMsg    string
+	licMsgOK  bool
+	licNext   time.Time
+	licLeft   string
+	Plugin    bool    // vrai quand le logiciel tourne comme plugin VST3 dans un DAW
+	liveWheel float64 // dernière position de la molette affichée
 	// plugin Audio Unit : état affiché dans l'en-tête (notes reçues du logiciel hôte, son qui sort, refus)
 	PluginInfo  func() (notes int, sound bool, refused int)
 	OnShowLog   func() // ouvre le Finder sur le fichier journal (à envoyer au support)
@@ -263,6 +265,7 @@ func (u *UI) applyPlaying() {
 	}
 	u.eng.SetAftertouchMode(c.ATMode, c.ATAmt)
 	u.eng.SetVelCurve(c.VelGamma, c.VelLo, c.VelHi)
+	u.eng.SetWheelMode(c.WheelMode, !c.WheelNoLes)
 }
 
 func (u *UI) RefreshKeyLabels() {
@@ -1118,7 +1121,13 @@ func (u *UI) Tick() {
 		u.host.Invalidate()
 	}
 	u.eng.SetWheelTrack(u.sel) // la molette n'agit que sur la piste sélectionnée
-	u.updateChord()            // (aussi quand rien n'est redessiné : les pads suivent les accords)
+	if u.ov != nil && u.ov.live {
+		if m := u.eng.ModWheel(); m != u.liveWheel {
+			u.liveWheel = m
+			u.host.Invalidate()
+		}
+	}
+	u.updateChord() // (aussi quand rien n'est redessiné : les pads suivent les accords)
 	u.padTick()
 	u.splitTick()
 	u.pcTick()

@@ -162,6 +162,7 @@ func (u *UI) dragVel(x, y, bx, by, bs int) {
 func (u *UI) playingSettingsItems() []olItem {
 	items := []olItem{{text: T("Jeu au clavier MIDI"), header: true}}
 	items = append(items, olItem{text: T("Courbe de vélocité…"), sub: u.velText(), action: u.OpenVelocity})
+	items = append(items, olItem{text: T("Molette de modulation…"), sub: u.wheelText(), action: u.OpenWheel})
 	items = append(items, olItem{text: Tf("Aftertouch : %s", u.atModeText()), sub: T("touche pour changer"), action: u.cycleATMode})
 	items = append(items, olItem{text: Tf("Intensité de l'aftertouch : %d %%", int(math.Round(u.cfg.ATAmt*100))), sub: T("touche pour changer"), action: u.cycleATAmt})
 	items = append(items, olItem{text: T("MIDI Learn : potards et boutons…"), sub: Tf("%d association(s) · clic droit sur un réglage", len(u.learnMap())), action: u.openLearnList})

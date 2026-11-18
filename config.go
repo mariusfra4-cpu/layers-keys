@@ -71,12 +71,14 @@ type Config struct {
 	AudioPending bool     `json:"audioPending,omitempty"` // vrai pendant l'ouverture d'un pilote audio (détection de plantage)
 
 	// jeu au clavier MIDI (réglages du logiciel) ; 0 = valeur par défaut
-	ATMode   int        `json:"atmode,omitempty"`   // aftertouch : 0 vibrato + brillance, 1 vibrato, 2 brillance, 3 désactivé
-	ATAmt    float64    `json:"atamt,omitempty"`    // intensité de l'aftertouch (1 = normal)
-	VelGamma float64    `json:"velgamma,omitempty"` // courbe de vélocité : <1 plus douce, >1 plus dure
-	VelLo    int        `json:"vello,omitempty"`    // vélocité minimale envoyée aux sons
-	VelHi    int        `json:"velhi,omitempty"`    // vélocité maximale
-	Learn    []LearnCfg `json:"learn,omitempty"`    // MIDI Learn : associations CC → réglages
+	ATMode     int        `json:"atmode,omitempty"`     // aftertouch : 0 vibrato + brillance, 1 vibrato, 2 brillance, 3 désactivé
+	ATAmt      float64    `json:"atamt,omitempty"`      // intensité de l'aftertouch (1 = normal)
+	VelGamma   float64    `json:"velgamma,omitempty"`   // courbe de vélocité : <1 plus douce, >1 plus dure
+	VelLo      int        `json:"vello,omitempty"`      // vélocité minimale envoyée aux sons
+	VelHi      int        `json:"velhi,omitempty"`      // vélocité maximale
+	Learn      []LearnCfg `json:"learn,omitempty"`      // MIDI Learn : associations CC → réglages
+	WheelMode  int        `json:"wheelMode,omitempty"`  // molette : 0 piste sélectionnée, 1 toutes les pistes, 2 sans effet
+	WheelNoLes bool       `json:"wheelNoLes,omitempty"` // la molette ne règle pas la vitesse du Leslie
 
 	// Personnalisation (0 = réglage d'origine)
 	LookOn    int `json:"lookOn,omitempty"`    // couleur des notes jouées
@@ -146,6 +148,7 @@ func (c *ChanCfg) sanitize() {
 
 func (c *Config) sanitize() {
 	c.sanitizeLook()
+	c.WheelMode = clamp(c.WheelMode, 0, 2)
 	for i := range c.Setup {
 		c.Setup[i].sanitize()
 	}

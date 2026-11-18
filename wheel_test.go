@@ -59,3 +59,38 @@ func TestWheelLeslie(t *testing.T) {
 		shotPNG(t, dir, "leslie_rapide", u)
 	}
 }
+
+// réglage de la molette dans les Paramètres : toutes les pistes / désactivée / Leslie
+func TestWheelSettings(t *testing.T) {
+	u, _, e := newTestUI(t, "")
+	u.sel = 0
+	u.Tick()
+	e.modS = 1
+	u.setWheel(func(c *Config) { c.WheelMode = 1 })
+	if e.vibWheel(e.ch[5]) == 0 {
+		t.Fatal("toutes les pistes : la molette devrait agir partout")
+	}
+	u.setWheel(func(c *Config) { c.WheelMode = 2 })
+	if e.vibWheel(e.ch[0]) != 0 {
+		t.Fatal("désactivée : la molette ne devrait rien faire")
+	}
+	u.setWheel(func(c *Config) { c.WheelMode, c.WheelNoLes = 0, true })
+	u.fxSetAt(0, func(c *FXCfg) { c.Leslie.On = true })
+	e.Control(1, 127)
+	if e.LeslieFast() {
+		t.Fatal("Leslie à la télécommande seulement : la molette ne doit pas changer la vitesse")
+	}
+	if dir := os.Getenv("LOOKSHOTS"); dir != "" {
+		u.setWheel(func(c *Config) { c.WheelMode, c.WheelNoLes = 0, false })
+		u.fxSetAt(0, func(c *FXCfg) { c.Leslie.On = false })
+		u.loadSource(3, SrcCfg{Kind: "builtin", Builtin: iLead})
+		u.labels[3] = "Lead Worship"
+		u.sel = 3
+		e.Control(1, 90)
+		u.Tick()
+		u.OpenSettings()
+		shotPNG(t, dir, "molette_parametres", u)
+		u.OpenWheel()
+		shotPNG(t, dir, "molette_page", u)
+	}
+}
