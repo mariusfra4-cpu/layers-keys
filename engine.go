@@ -94,6 +94,7 @@ type Channel struct {
 	Pedal      bool // réagit à la pédale sustain
 	Filter     bool // filtre passe-bas actif
 	AT         bool // l'aftertouch (pression sur les touches) agit sur cette piste
+	Wheel      bool // la molette de modulation agit sur cette piste (bouton MOLETTE)
 	ModFX      bool // la molette de modulation commande l'effet « planant » de cette piste
 	KeyLo      int  // split : notes jouées acceptées par cette piste (avant octave / transposition)
 	KeyHi      int
@@ -104,7 +105,7 @@ type Channel struct {
 }
 
 func newChannel(i int) *Channel {
-	c := &Channel{idx: i, Pedal: true, Filter: true, AT: true, P: paramDefault, curGain: 1, KeyHi: 127}
+	c := &Channel{idx: i, Pedal: true, Filter: true, AT: true, Wheel: i == 0, P: paramDefault, curGain: 1, KeyHi: 127}
 	return c
 }
 
@@ -287,6 +288,9 @@ func (e *Engine) SetMod(v float64)  { e.mod = clampf(v, 0, 1) }
 
 // part de la molette de modulation qui sert de vibrato pour une piste
 func (e *Engine) vibWheel(ch *Channel) float64 {
+	if !ch.Wheel { // bouton MOLETTE éteint : la molette ne touche pas cette piste
+		return 0
+	}
 	if ch.ModFX {
 		return e.modS * 0.12 // avec l'effet planant, la molette ouvre le son : seulement un léger mouvement
 	}
@@ -335,6 +339,9 @@ func (e *Engine) vibFor(b *vbase) float64 {
 // ouverture du son (molette ou pression) : la plus forte des deux
 func (e *Engine) openFor(b *vbase) float64 {
 	m := e.modS
+	if !b.ch.Wheel {
+		m = 0
+	}
 	if e.atMode == 0 || e.atMode == 2 {
 		m = math.Max(m, e.pressureOf(b))
 	}
