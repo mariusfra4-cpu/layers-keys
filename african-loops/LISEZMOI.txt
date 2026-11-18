@@ -1,31 +1,46 @@
 AFRICAN LOOPS PRO
 =================
 
-Langage : C++17. Plugin : JUCE (VST3 / AU / logiciel autonome) ou HISE.
+Langage : C++17. Plugin : JUCE 8 (VST3, AU sur Mac, logiciel autonome).
 
-core/   le moteur audio, sans aucune dépendance : il se branche tel quel dans
-        un plugin JUCE (AudioProcessor) ou dans un projet HISE (nœud C++).
-
-  Audio.cpp       lecture des WAV (8/16/24/32 bits, flottant), tempo écrit
-                  dans le fichier (bloc acid), écriture de WAV.
-                  Dans le plugin, le MP3 est lu par JUCE et passé au moteur.
+core/     le moteur audio, sans aucune dépendance
+  Audio.cpp       lecture / écriture des WAV, tempo écrit dans le fichier (bloc acid)
   Spectrum.cpp    analyse des fréquences, détection de chaque coup
   Tempo.cpp       BPM automatique : fichier > nom du fichier > durée de la loop
                   > coups de batterie (caisse claire sur les temps 2 et 4)
   Percussion.cpp  reconnaissance des percussions (kick, snare/clap,
-                  hi-hat/shaker, djembé/conga, talking drum) et séparation en
-                  pistes ; la somme des pistes redonne exactement la loop
-  Library.cpp     analyse d'un dossier entier, classement par style (le nom du
-                  dossier décide : « I Love/... » -> I Love), résultats gardés
-                  dans .africanloops-index.json
-  Looper.cpp      lecture en boucle sur 8 pistes : volume, pan, mute, solo,
-                  Global BPM / Preset BPM sans changer la hauteur du son
+                  hi-hat/shaker, djembé/conga, talking drum) et séparation
+                  en pistes ; la somme des pistes redonne exactement la loop
+  Library.cpp     analyse d'un dossier entier, classement par style
+                  (le nom du dossier décide), index .africanloops-index.json
+  Looper.cpp      lecture en boucle sur 8 pistes, sans coupure à la jonction,
+                  Global BPM / Preset BPM / Double / Half sans changer la
+                  hauteur du son, métronome, calage sur le logiciel hôte,
+                  fabrication du fichier glissé vers le logiciel de musique
+  tests/          tests du moteur
 
-tools/analyse.cpp  outil en ligne de commande pour tester le moteur
+plugin/   le plugin JUCE
+  PluginProcessor  son, réglages (automatisables), chargement en arrière-plan,
+                   effets (filtres, chaleur, compresseur/limiteur, réverbération,
+                   chorus, fondu), sauvegarde dans le projet
+  PluginEditor     interface : bibliothèque, forme d'onde à glisser, tempo,
+                   mixer 8 pistes, vumètres, master, signature, transport
+  LookAndFeel      boutons, faders, écrans LCD
+  tests/           tests du plugin complet (fil audio + interface)
 
-Construire et tester :
-  cmake -S . -B build
-  cmake --build build
+tools/    outil d'analyse en ligne de commande, petit hôte de test du VST3
+
+Construire :
+  cmake -S . -B build                (JUCE est téléchargé automatiquement)
+  cmake --build build --config Release
+
+Tests :
+  cmake -S . -B build -DAFRICANLOOPS_PLUGIN_TESTS=ON
+  cmake --build build --config Release
   build/AfricanLoopsTests
-  build/africanloops-analyse "D:\Mes Loops"
-  build/africanloops-analyse --separer loop.wav --sortie pistes --tempo 120
+  build/AfricanLoopsPluginTests_artefacts/Release/AfricanLoopsPluginTests
+  build/AfricanLoopsHostTest_artefacts/Release/AfricanLoopsHostTest "<chemin du .vst3>"
+
+Les versions Windows et Mac sont construites et testées automatiquement sur
+GitHub (onglet Actions, « African Loops Pro ») à chaque envoi.
+Installation : voir INSTALLER.txt.

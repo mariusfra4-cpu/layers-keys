@@ -1,4 +1,4 @@
-#include "AfricanLoops/AfricanLoops.h"
+#include "Internal.h"
 
 #include <algorithm>
 #include <cctype>
@@ -113,7 +113,7 @@ bool parseWAV(const std::vector<uint8_t>& b, Audio& a, std::string& err) {
 }
 
 bool loadWAV(const std::string& path, Audio& out, std::string& err) {
-    std::ifstream f(path, std::ios::binary);
+    std::ifstream f(detail::pathFromUtf8(path), std::ios::binary);
     if (!f) { err = "impossible d'ouvrir le fichier"; return false; }
     std::vector<uint8_t> b((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
     return parseWAV(b, out, err);

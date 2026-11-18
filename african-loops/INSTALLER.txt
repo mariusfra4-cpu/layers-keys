@@ -1,0 +1,41 @@
+AFRICAN LOOPS PRO - INSTALLATION
+================================
+
+WINDOWS
+-------
+1. Copiez le dossier « African Loops Pro.vst3 » dans :
+       C:\Program Files\Common Files\VST3\
+2. Ouvrez votre logiciel de musique (FL Studio, Ableton, Cubase, Studio One,
+   Reaper...) et lancez une recherche de nouveaux plugins si besoin.
+   African Loops Pro apparaît dans les instruments.
+3. « African Loops Pro.exe » fonctionne aussi tout seul, sans logiciel de musique.
+
+MAC
+---
+1. Copiez :
+     « African Loops Pro.vst3 »      dans  Bibliothèque/Audio/Plug-Ins/VST3/
+     « African Loops Pro.component » dans  Bibliothèque/Audio/Plug-Ins/Components/
+     « African Loops Pro.app »       dans  Applications
+2. Les fichiers ne sont pas encore signés par Apple : la première fois, faites
+   clic droit > Ouvrir sur l'application, ou dans le Terminal :
+       xattr -cr ~/Library/Audio/Plug-Ins/VST3/"African Loops Pro.vst3"
+       xattr -cr ~/Library/Audio/Plug-Ins/Components/"African Loops Pro.component"
+       xattr -cr /Applications/"African Loops Pro.app"
+
+UTILISATION
+-----------
+- DOSSIER : choisissez le dossier de vos loops (WAV ou MP3). Elles sont toutes
+  analysées une seule fois (tempo, percussions) et classées par style :
+  le nom du dossier décide (« Worship », « I Love »...).
+  Clic droit sur une loop : la ranger dans un autre style.
+- + FICHIER, ou glissez un WAV / MP3 sur la fenêtre : ouvre une seule loop.
+- Chaque percussion reconnue arrive sur sa piste : volume, pan, M (couper),
+  S (écouter seule).
+- Attrapez la forme d'onde et déposez-la sur une piste de votre logiciel :
+  la boucle est copiée telle que vous l'entendez (tempo, mix).
+  Attrapez le numéro « ☰ 1 », « ☰ 2 »... sous un fader : cette piste seule.
+- GLOBAL BPM : glissez vers le haut / bas, ou double-cliquez pour taper.
+  HOST allumé : suit le tempo et la lecture de votre logiciel de musique.
+  PRESET allumé : la loop joue à son tempo d'origine.
+- DOUBLE / HALF : deux fois plus vite / deux fois plus lent.
+- Barre d'espace : lecture / arrêt.

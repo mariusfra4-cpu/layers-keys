@@ -1,0 +1,91 @@
+name: African Loops Pro
+on:
+  push:
+    paths: ['african-loops/**', '.github/workflows/african-loops.yml']
+  workflow_dispatch:
+
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Outils
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q libasound2-dev libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev \
+            libxcomposite-dev libxext-dev libfreetype-dev libfontconfig1-dev xvfb
+      - name: Construction
+        run: |
+          cmake -S african-loops -B build -DCMAKE_BUILD_TYPE=Release -DAFRICANLOOPS_PLUGIN_TESTS=ON
+          cmake --build build --parallel 4 --target AfricanLoopsTests AfricanLoopsPluginTests AfricanLoopsHostTest AfricanLoopsPro_VST3 AfricanLoopsPro_Standalone
+      - name: Tests du moteur
+        run: build/AfricanLoopsTests
+      - name: Tests du plugin (son + interface)
+        run: |
+          mkdir -p captures
+          xvfb-run -a -s "-screen 0 1600x1000x24" build/AfricanLoopsPluginTests_artefacts/Release/AfricanLoopsPluginTests captures
+      - name: Le VST3 dans un hôte
+        run: xvfb-run -a -s "-screen 0 1600x1000x24" build/AfricanLoopsHostTest_artefacts/Release/AfricanLoopsHostTest "build/AfricanLoopsPro_artefacts/Release/VST3/African Loops Pro.vst3"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: captures-ecran
+          path: captures
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Construction
+        run: |
+          cmake -S african-loops -B build -G "Visual Studio 17 2022" -A x64 -DAFRICANLOOPS_PLUGIN_TESTS=ON
+          cmake --build build --config Release --parallel 4 --target AfricanLoopsTests AfricanLoopsPluginTests AfricanLoopsHostTest AfricanLoopsPro_VST3 AfricanLoopsPro_Standalone
+      - name: Tests du moteur
+        run: build/Release/AfricanLoopsTests.exe
+      - name: Tests du plugin (son + interface)
+        run: |
+          mkdir captures
+          build/AfricanLoopsPluginTests_artefacts/Release/AfricanLoopsPluginTests.exe captures
+      - name: Le VST3 dans un hôte
+        run: build/AfricanLoopsHostTest_artefacts/Release/AfricanLoopsHostTest.exe "build/AfricanLoopsPro_artefacts/Release/VST3/African Loops Pro.vst3"
+      - name: Préparer le paquet
+        shell: bash
+        run: |
+          mkdir -p paquet
+          cp -r "build/AfricanLoopsPro_artefacts/Release/VST3/African Loops Pro.vst3" paquet/
+          cp "build/AfricanLoopsPro_artefacts/Release/Standalone/African Loops Pro.exe" paquet/
+          cp african-loops/INSTALLER.txt paquet/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: African-Loops-Pro-Windows
+          path: paquet
+
+  macos:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Construction (Mac Intel + Apple Silicon)
+        run: |
+          cmake -S african-loops -B build -DCMAKE_BUILD_TYPE=Release -DAFRICANLOOPS_PLUGIN_TESTS=ON \
+            -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15
+          cmake --build build --parallel 4 --target AfricanLoopsTests AfricanLoopsPluginTests AfricanLoopsHostTest AfricanLoopsPro_VST3 AfricanLoopsPro_AU AfricanLoopsPro_Standalone
+      - name: Tests du moteur
+        run: build/AfricanLoopsTests
+      - name: Tests du plugin (son + interface)
+        run: |
+          mkdir -p captures
+          build/AfricanLoopsPluginTests_artefacts/Release/AfricanLoopsPluginTests captures
+      - name: Le VST3 dans un hôte
+        run: build/AfricanLoopsHostTest_artefacts/Release/AfricanLoopsHostTest "build/AfricanLoopsPro_artefacts/Release/VST3/African Loops Pro.vst3"
+      - name: Préparer le paquet
+        run: |
+          mkdir -p paquet
+          cp -R "build/AfricanLoopsPro_artefacts/Release/VST3/African Loops Pro.vst3" paquet/
+          cp -R "build/AfricanLoopsPro_artefacts/Release/AU/African Loops Pro.component" paquet/
+          cp -R "build/AfricanLoopsPro_artefacts/Release/Standalone/African Loops Pro.app" paquet/
+          cp african-loops/INSTALLER.txt paquet/
+          ditto -c -k --keepParent paquet African-Loops-Pro-Mac.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: African-Loops-Pro-Mac
+          path: African-Loops-Pro-Mac.zip

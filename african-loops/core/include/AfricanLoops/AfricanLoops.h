@@ -165,6 +165,21 @@ struct Track {
     float peak = 0;  // vumètre
 };
 
+// Réglages envoyés au lecteur à chaque bloc audio par le plugin.
+struct MixSettings {
+    struct Strip { float gain = 1, pan = 0; bool mute = false, solo = false; };
+    std::array<Strip, kNumTracks> tracks{};
+    float master = 1, masterPan = 0;
+    bool masterMute = false;
+    double globalBPM = 120;
+    bool presetBPM = false;
+    double feel = 1;          // 1, 2 (Double), 0.5 (Half)
+    bool metronome = false;
+    int beatsPerBar = 4;
+    bool playing = false;
+    double hostBeats = -1;    // position du logiciel hôte en temps (≥ 0 = se caler dessus)
+};
+
 // Joue les pistes en boucle, calées sur le même tempo. Pour changer de tempo
 // sans changer la hauteur du son, la loop est découpée à chaque coup et chaque
 // morceau est rejoué à vitesse normale, placé plus tôt ou plus tard.
@@ -182,17 +197,32 @@ public:
     void play();
     void stop();
     bool isPlaying() const;
-    double position() const;  // 0..1 dans la boucle
+    double position() const;  // 0..1 dans la boucle (lecture sans verrou)
+    float trackPeak(int i) const;  // vumètre d'une piste (sans verrou)
 
     // Modifie une piste en toute sécurité pendant la lecture.
     void withTrack(int i, const std::function<void(Track&)>& f);
     Track track(int i) const;
 
     void setMaster(float gain, float pan, bool mute);
-    void peaks(float& l, float& r) const;
+    void peaks(float& l, float& r) const;  // sans verrou
+
+    // Vitesse ressentie : 1 = normal, 2 = « Double », 0.5 = « Half ».
+    void setFeel(double factor);
+    // Métronome : un clic par temps, plus fort au début de chaque mesure.
+    void setMetronome(bool on, int beatsPerBar);
+    bool hasLoop() const;
+
+    // Fabrique la boucle telle qu'on l'entend (tempo, volumes, mutes…) pour la
+    // glisser dans le logiciel de musique. track = -1 : toutes les pistes ;
+    // sinon cette piste seule. Le tempo joué est renvoyé dans bpm.
+    std::shared_ptr<Audio> bounce(int track, int passes, double& bpm) const;
 
     // Appelé par le moteur audio : remplit les deux tampons.
     void render(float* outL, float* outR, int n);
+    // Applique les réglages puis rend le bloc, sans jamais attendre : si
+    // l'interface charge une loop à cet instant, le bloc est rendu en silence.
+    void process(const MixSettings& s, float* outL, float* outR, int n);
 
 private:
     float master = 1, masterPan = 0;
@@ -204,10 +234,22 @@ private:
     double playBPM() const;
     double loopLen() const;
 
+    void renderLocked(float* outL, float* outR, int n);
+    double beatLen() const;  // durée d'un temps (échantillons de sortie)
+
     mutable std::mutex mu;
     int rate, srcRate = 44100, srcFrames = 0;
-    double origBPM = 0, global = 120;
+    double origBPM = 0, global = 120, feel = 1;
     bool preset = false, playing = false;
+    bool metronome = false;
+    int beatsPerBar = 4;
+    double clickPos = -1;  // position dans le clic en cours (-1 = aucun)
+    bool clickAccent = false;
+    long long lastBeat = -1;
+    // copies lisibles par l'interface sans bloquer le son
+    std::atomic<float> posShown{0}, peakShownL{0}, peakShownR{0};
+    std::array<std::atomic<float>, kNumTracks> trackPeakShown{};
+    void publish();
     std::vector<double> slices;
     double pos = 0;
     std::array<Track, kNumTracks> tracks;

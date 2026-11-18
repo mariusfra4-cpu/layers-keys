@@ -199,18 +199,23 @@ static void testLibrary() {
     writeFile(dir / "I Love" / "Soft 01.wav", encodeWAV(synthLoop(80, 1, 0), 0, 0));
     writeFile(dir / "love_groove_90bpm.wav", encodeWAV(synthLoop(90, 1, 0), 0, 0));
     writeFile(dir / "Djembe solo.wav", encodeWAV(synthLoop(100, 1, 0), 0, 0));
+    writeFile(dir / fs::u8path(u8"Coupé-Décalé") / fs::u8path(u8"Abidjan été.wav"), encodeWAV(synthLoop(120, 1, 0), 118, 4));
     writeFile(dir / "notes.txt", {'x'});
     Library lib;
     std::string err;
     int calls = 0;
     CHECK(Library::scan(dir.string(), lib, err, [&](int, int, const std::string&) { ++calls; }), "scan : %s", err.c_str());
-    CHECK(lib.entries.size() == 4 && calls == 4, "%zu loops, %d analyses", lib.entries.size(), calls);
+    CHECK(lib.entries.size() == 5 && calls == 5, "%zu loops, %d analyses", lib.entries.size(), calls);
     std::map<std::string, std::string> want = {
         {"Worship/Praise Drums.wav", "Worship"}, {"I Love/Soft 01.wav", "I Love"},
-        {"love_groove_90bpm.wav", "Love"}, {"Djembe solo.wav", kUncategorized}};
+        {"love_groove_90bpm.wav", "Love"}, {"Djembe solo.wav", kUncategorized},
+        {"Coupé-Décalé/Abidjan été.wav", "Coupé-Décalé"}};
     for (auto& e : lib.entries) {
         CHECK(want[e.path] == e.category, "%s classé dans « %s »", e.path.c_str(), e.category.c_str());
         if (e.path == "love_groove_90bpm.wav") CHECK(e.info.tempo.bpm == 90, "BPM du nom ignoré : %.2f", e.info.tempo.bpm);
+        if (e.path == "Coupé-Décalé/Abidjan été.wav")
+            CHECK(e.info.tempo.bpm == 118 && e.info.tempo.source == tempo_source::File, "fichier avec accents : %.2f %s",
+                  e.info.tempo.bpm, e.info.tempo.source.c_str());
         if (e.path == "Worship/Praise Drums.wav") CHECK(std::abs(e.info.tempo.bpm - 96) < 0.01, "BPM %.2f", e.info.tempo.bpm);
     }
     // correction à la main puis nouvelle analyse : rien n'est refait, la correction reste
@@ -298,6 +303,134 @@ static void testBadFiles() {
     CHECK(analyse(silence, "silence.wav").percussions.empty(), "percussions trouvées dans le silence");
 }
 
+static void testContinuousLoop() {
+    current = "boucle continue (fin replacée au début)";
+    // 2 mesures à 96 BPM + 0,4 s de résonance en trop à la fin
+    Audio a = synthLoop(96, 2, 0.4);
+    const int musical = (int)std::lround(8 * 60.0 / 96 * kRate);
+    for (int i = musical; i < a.frames(); ++i) a.L[i] = a.R[i] = 0.3f * std::sin(i * 0.05f);  // la « queue »
+    std::vector<Stem> stems;
+    auto info = separate(a, "groove_96bpm.wav", stems);
+    CHECK(info.tempo.bpm == 96 && info.tempo.beats == 8, "%.2f BPM, %d temps", info.tempo.bpm, info.tempo.beats);
+    Looper l(kRate);
+    l.load(info, stems);
+    l.setGlobalBPM(96);
+    CHECK(std::abs(l.loopLength() - musical) < 1, "boucle de %.0f au lieu de %d", l.loopLength(), musical);
+    l.play();
+    std::vector<float> L(musical * 2), R(musical * 2);
+    l.render(L.data(), R.data(), musical * 2);
+    // au 2e tour, le début contient la queue : il diffère de l'original sans queue
+    double tailE = energy(L, musical, musical + 2000);
+    CHECK(tailE > energy(a.L, 0, 2000) * 1.05, "la queue n'est pas replacée au début");
+    // aucune coupure : le niveau juste avant et juste après la jonction est continu
+    CHECK(std::abs(L[musical - 1]) < 1.5 && std::isfinite(L[musical]), "jonction anormale");
+
+    current = "son très court, tempo inconnu";
+    Audio shot;
+    shot.L.assign(kRate / 5, 0.f);  // 0,2 s : un seul coup
+    for (int i = 0; i < (int)shot.L.size(); ++i) shot.L[i] = 0.5f * std::sin(i * 0.02f) * std::exp(-i / 3000.f);
+    shot.R = shot.L;
+    auto si = separate(shot, "coup.wav", stems);
+    Looper l2(kRate);
+    l2.load(si, stems);
+    l2.setGlobalBPM(120);  // un temps = 0,5 s : le coup revient à chaque temps
+    CHECK(std::abs(l2.loopLength() - kRate / 2.0) < 1, "boucle de %.0f au lieu de %d", l2.loopLength(), kRate / 2);
+    l2.play();
+    std::vector<float> o(kRate * 2), o2(kRate * 2);
+    l2.render(o.data(), o2.data(), kRate * 2);
+    for (int beat = 0; beat < 4; ++beat) {
+        int s = beat * kRate / 2;
+        CHECK(energy(o, s, s + 2000) > 1, "coup absent au temps %d", beat + 1);
+        CHECK(energy(o, s + kRate / 4, s + kRate / 2 - 10) < 1e-6, "pas de silence après le coup %d", beat + 1);
+    }
+
+    current = "Double / Half";
+    l.setFeel(2);
+    CHECK(std::abs(l.loopLength() - musical / 2.0) < 1 && l.playingBPM() == 192, "Double : %.0f", l.loopLength());
+    l.setFeel(0.5);
+    CHECK(std::abs(l.loopLength() - musical * 2.0) < 1 && l.playingBPM() == 48, "Half : %.0f", l.loopLength());
+    l.setFeel(1);
+}
+
+static void testBounceAndMetronome() {
+    current = "glisser vers le logiciel (bounce)";
+    Audio a = synthLoop(96, 1, 0);
+    std::vector<Stem> stems;
+    auto info = separate(a, "x.wav", stems);
+    Looper l(kRate);
+    l.load(info, stems);
+    l.setGlobalBPM(110);
+    l.withTrack(2, [](Track& t) { t.mute = true; });
+    double bpm = 0;
+    auto b = l.bounce(-1, 1, bpm);
+    CHECK(bpm == 110 && std::abs(b->frames() - l.loopLength()) <= 1, "bounce : %.2f BPM, %d échantillons", bpm, b->frames());
+    l.play();
+    std::vector<float> L(b->frames()), R(b->frames());
+    l.render(L.data(), R.data(), b->frames());
+    int bad = -1;
+    for (int i = 0; i < b->frames() && bad < 0; ++i)
+        if (std::abs(L[i] - b->L[i]) > 1e-5) bad = i;
+    CHECK(bad < 0, "le fichier glissé diffère de ce qu'on entend (échantillon %d)", bad);
+    auto one = l.bounce(0, 2, bpm);
+    CHECK(std::abs(one->frames() - 2 * l.loopLength()) <= 2, "piste seule sur 2 tours : %d", one->frames());
+    double e0 = energy(one->L, 0, one->frames());
+    auto two = l.bounce(1, 2, bpm);
+    CHECK(e0 > 0 && std::abs(e0 - energy(two->L, 0, two->frames())) > 1e-6, "pistes seules identiques");
+    Track t2 = l.track(2);
+    CHECK(t2.mute, "le bounce a modifié les réglages du lecteur");
+
+    current = "métronome";
+    Audio silence;
+    silence.L.assign(kRate * 2, 0.f);
+    silence.R = silence.L;
+    LoopInfo si;
+    si.tempo.bpm = 120;
+    si.tempo.beats = 4;
+    Looper m(kRate);
+    m.load(si, {{"LOOP", std::make_shared<Audio>(silence)}});
+    m.setGlobalBPM(120);
+    m.setMetronome(true, 4);
+    m.play();
+    std::vector<float> o(kRate * 2), o2(kRate * 2);
+    m.render(o.data(), o2.data(), kRate * 2);
+    for (int beat = 0; beat < 4; ++beat) {
+        int s = beat * kRate / 2;
+        CHECK(energy(o, s, s + 600) > 0.1, "pas de clic au temps %d", beat + 1);
+        CHECK(energy(o, s + 3000, s + kRate / 2 - 100) == 0, "bruit entre les clics");
+    }
+    CHECK(energy(o, 0, 600) > energy(o, kRate / 2, kRate / 2 + 600), "le 1er temps n'est pas accentué");
+}
+
+static void testProcess() {
+    current = "réglages par bloc (plugin)";
+    Audio a = synthLoop(98, 1, 0);
+    std::vector<Stem> stems;
+    auto info = separate(a, "x.wav", stems);
+    Looper l(kRate);
+    l.load(info, stems);
+    MixSettings s;
+    s.globalBPM = 98;  // 1 temps = 27000 échantillons pile
+    s.playing = true;
+    const int n = a.frames();
+    std::vector<float> L(n), R(n);
+    for (int i = 0; i < n; i += 512) l.process(s, L.data() + i, R.data() + i, std::min(512, n - i));
+    int bad = -1;
+    for (int i = 0; i < n && bad < 0; ++i)
+        if (std::abs(L[i] - a.L[i]) > 1e-3) bad = i;
+    CHECK(bad < 0, "lecture par blocs différente (échantillon %d)", bad);
+    // calage sur l'hôte : au temps 2 de l'hôte, on doit entendre le temps 2 de la loop
+    s.hostBeats = 1.0;
+    std::vector<float> o(1100), o2(1100);
+    l.process(s, o.data(), o2.data(), 1100);
+    int s2 = 27000;
+    double diff = 0;
+    for (int i = 0; i < 1100; ++i) diff = std::max(diff, (double)std::abs(o[i] - a.L[s2 + i]));
+    CHECK(diff < 1e-3, "pas calé sur la position de l'hôte (écart %g)", diff);
+    s.playing = false;
+    l.process(s, o.data(), o2.data(), 1100);
+    CHECK(energy(o, 0, 1100) == 0 && !l.isPlaying(), "ne s'arrête pas");
+}
+
 int main() {
     testTempoFromLength();
     testTempoVarious();
@@ -309,6 +442,9 @@ int main() {
     testLibrary();
     testLooper();
     testBadFiles();
+    testContinuousLoop();
+    testBounceAndMetronome();
+    testProcess();
     if (failures) {
         std::printf("%d test(s) en échec\n", failures);
         return 1;

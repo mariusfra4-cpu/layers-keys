@@ -5,6 +5,7 @@
 #include <cctype>
 #include <chrono>
 #include <cmath>
+#include <cstdio>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
@@ -205,18 +206,8 @@ int64_t mtimeOf(const fs::directory_entry& e) {
     return (int64_t)std::chrono::duration_cast<std::chrono::seconds>(t.time_since_epoch()).count();
 }
 
-std::string toUtf8(const fs::path& p) {
-    auto u = p.generic_u8string();
-    return std::string(u.begin(), u.end());
-}
-
-fs::path fromUtf8(const std::string& s) {
-#if defined(__cpp_char8_t)
-    return fs::path(std::u8string(s.begin(), s.end()));
-#else
-    return fs::u8path(s);
-#endif
-}
+std::string toUtf8(const fs::path& p) { return detail::pathToUtf8(p); }
+fs::path fromUtf8(const std::string& s) { return detail::pathFromUtf8(s); }
 
 }  // namespace
 

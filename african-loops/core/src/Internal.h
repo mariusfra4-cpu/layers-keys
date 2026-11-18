@@ -4,6 +4,7 @@
 #include "AfricanLoops/AfricanLoops.h"
 
 #include <complex>
+#include <filesystem>
 
 namespace africanloops::detail {
 
@@ -46,5 +47,19 @@ Tempo detectTempo(const Audio& a, const Analysis& an, const std::vector<Hit>& hi
                   const std::string& filename);
 
 inline double clamp01(double x) { return x < 0 ? 0 : x > 1 ? 1 : x; }
+
+// Chemin de fichier écrit en UTF-8 (accents) → chemin du système. Indispensable
+// sous Windows, où un simple std::string serait lu dans l'ancien jeu de caractères.
+inline std::filesystem::path pathFromUtf8(const std::string& s) {
+#if defined(__cpp_char8_t)
+    return std::filesystem::path(std::u8string(s.begin(), s.end()));
+#else
+    return std::filesystem::u8path(s);
+#endif
+}
+inline std::string pathToUtf8(const std::filesystem::path& p) {
+    auto u = p.generic_u8string();
+    return std::string(u.begin(), u.end());
+}
 
 }  // namespace africanloops::detail
