@@ -115,10 +115,10 @@ body{background:#0c0c0c;font-family:Inter,DejaVu Sans,sans-serif;padding:30px}
   </div>
 
   <!-- PRESETS -->
-  <div class="box" style="left:24px;top:72px;width:560px">
-    <div class="lbl" style="margin-bottom:6px">Presets</div>
+  <div class="box" id="presetBox" style="left:24px;top:72px;width:560px">
+    <div class="lbl" id="presetLbl" style="margin-bottom:6px">Presets</div>
     <div class="recess" style="padding:7px">
-      <div class="lcd" style="height:262px">
+      <div class="lcd" id="presetLcd" style="height:262px">
         <div style="display:flex;align-items:center;gap:10px;padding:9px 12px 7px">
           <span style="color:var(--amber);font-size:16px" class="glow">☆</span>
           <div style="flex:1;height:22px;border:1px solid #6b4a1c;border-radius:3px;display:flex;align-items:center;padding-left:8px;font-size:11px;color:#8a6c44">⌕&nbsp; Search grooves, artists, instruments…</div>
@@ -250,5 +250,49 @@ ch.forEach((c,i)=>{const s=document.createElement('div');s.className='strip';s.s
  <div class="vu" style="left:52px"></div>
  <div class="chn"><span>☰</span>${i+1}</div>`;
  P.appendChild(s);fill(s.querySelector('.vu'),30,c[5])});
+
+const mode=location.hash.slice(1);
+if(mode){
+ const stems=[['KICK','#ff7a45',.9,6],['SNARE','#ffd04a',.7,3],['HI-HAT','#e8f06a',.4,1.2],['PERC (Djembe/Conga)','#ff9fd0',.6,2],['BASS','#5fb0ff',.8,9],['MELODY (Guitar/Kora)','#7cff8a',.6,4],['VOCALS','#c79bff',.5,5],['OTHER / FX','#9aa4ad',.3,7]];
+ document.getElementById('presetLbl').textContent='Audio Analyzer — Stem Extraction';
+ const L=document.getElementById('presetLcd');
+ function wf(col,amp,per,w,h,prog){let o='';for(let x=0;x<w;x+=2){const e=Math.abs(Math.sin(x/per/3))**2*amp+0.08;const a=(Math.sin(x*2.3+per)*0.5+0.5)*e*h/2+0.6;o+=`<line x1="${x}" x2="${x}" y1="${h/2-a}" y2="${h/2+a}" stroke="${prog===undefined||x<prog?col:'#3a2e22'}" stroke-width="1.1"/>`}return o}
+ let rows='';
+ stems.forEach((st,i)=>{const done=mode==='stems'||i<3;const act=mode==='analyze'&&i===3;
+  rows+=`<div style="display:grid;grid-template-columns:150px 1fr 64px;align-items:center;gap:8px;height:22px;padding:0 10px;border-bottom:1px solid #1f1810">
+   <div style="font-size:10px;font-weight:700;color:${st[1]};display:flex;align-items:center;gap:6px"><span style="width:7px;height:7px;border-radius:2px;background:${st[1]};box-shadow:0 0 5px ${st[1]}"></span>${st[0]}</div>
+   <svg viewBox="0 0 300 18" preserveAspectRatio="none" style="width:100%;height:18px">${done?wf(st[1],st[2],st[3],300,18):act?wf(st[1],st[2],st[3],300,18,190):''}</svg>
+   <div style="font-size:9.5px;text-align:right;color:${done?'#ffcf86':act?'#ffb23e':'#6b5a44'}">${done?'→ CH '+(i+1):act?'64 %':'en attente'}</div></div>`});
+ L.innerHTML=`<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-bottom:1px solid #2a2118">
+  <div style="font-size:18px">🎵</div>
+  <div style="flex:1"><div style="font-size:12px;font-weight:700;color:#fff">coupe_decale_groove.wav</div>
+  <div style="font-size:9.5px;color:#a4865a">WAV · 44.1 kHz · 24 bit · Stéréo · 0:16 · 8 mesures</div></div>
+  <div style="text-align:right;font-size:9.5px;color:#a4865a">BPM détecté<div class="glow" style="font-size:15px;font-weight:700;color:var(--amber)">118.0</div></div>
+  <div style="text-align:right;font-size:9.5px;color:#a4865a">Tonalité<div class="glow" style="font-size:15px;font-weight:700;color:var(--amber)">La min</div></div>
+  <div style="text-align:right;font-size:9.5px;color:#a4865a">Mode<div class="glow" style="font-size:13px;font-weight:700;color:#7cff8a">⟲ LOOP</div></div></div>
+  <svg viewBox="0 0 540 26" preserveAspectRatio="none" style="width:100%;height:26px;display:block;border-bottom:1px solid #2a2118">${wf('#ffb23e',.9,5,540,26)}<line x1="210" x2="210" y1="0" y2="26" stroke="#fff" stroke-width="1.5"/></svg>
+  ${rows}`;
+ const names=stems.map(s=>s[0].split(' ')[0]);
+ document.querySelectorAll('.strip').forEach((s,i)=>{const lc=s.querySelector('.sel2 .lcd');lc.innerHTML=`<span style="color:${stems[i][1]}">${mode==='stems'||i<3?names[i]:'—'}</span><span style="color:#a4865a">⇕</span>`});
+ if(mode==='analyze'){
+  const ov=document.createElement('div');
+  ov.style.cssText='position:absolute;left:66px;top:388px;width:710px;height:318px;background:rgba(10,9,8,.86);border-radius:6px;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px)';
+  const step=(ok,t,v)=>`<div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;color:${ok===1?'#ffcf86':ok===2?'#fff':'#6b5a44'}"><span>${ok===1?'✔':ok===2?'◉':'○'}&nbsp; ${t}</span><span style="color:${ok===1?'#7cff8a':'#ffb23e'}">${v}</span></div>`;
+  ov.innerHTML=`<div class="recess" style="width:520px;padding:18px 22px">
+   <div class="lbl" style="text-align:left;color:#ffcf86;font-size:11px;margin-bottom:10px">Analyse en cours…</div>
+   ${step(1,'Chargement du fichier (WAV / MP3)','OK')}
+   ${step(1,'Détection du tempo et des mesures','118 BPM · 4/4')}
+   ${step(1,'Séparation : batterie / basse / mélodie / voix','OK')}
+   ${step(2,'Décomposition batterie : kick, snare, hi-hat, percussions','64 %')}
+   ${step(0,'Découpage en boucle parfaite (calé sur la mesure)','')}
+   ${step(0,'Placement de chaque partie sur une piste du mixer','')}
+   <div style="margin-top:12px;height:10px;border-radius:5px;background:#000;box-shadow:inset 0 1px 3px #000;overflow:hidden"><div style="width:71%;height:100%;background:linear-gradient(90deg,#ff9f1c,#ffcd7a);box-shadow:0 0 10px #ffb23e"></div></div>
+   <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:9.5px;color:#a4865a"><span>Traitement sur l'ordinateur — aucune connexion internet</span><span>≈ 12 s restantes</span></div></div>`;
+  document.getElementById('P').appendChild(ov);
+ } else {
+  const b=document.createElement('div');
+  b.style.cssText='position:absolute;left:600px;top:38px;font-size:9px;font-weight:700;letter-spacing:1px;color:#7cff8a';
+ }
+}
 </script>
 </body></html>
