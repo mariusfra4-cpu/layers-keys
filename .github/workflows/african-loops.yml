@@ -50,10 +50,63 @@ jobs:
           build/AfricanLoopsPluginTests_artefacts/Release/AfricanLoopsPluginTests.exe captures
       - name: Le VST3 dans un hôte
         run: build/AfricanLoopsHostTest_artefacts/Release/AfricanLoopsHostTest.exe "build/AfricanLoopsPro_artefacts/Release/VST3/African Loops Pro.vst3"
+      - name: NSIS
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "C:\Program Files (x86)\NSIS\makensis.exe")) {
+            foreach ($u in @("https://downloads.sourceforge.net/project/nsis/NSIS%203/3.10/nsis-3.10.zip", "https://prdownloads.sourceforge.net/nsis/nsis-3.10.zip?download")) {
+              try {
+                Invoke-WebRequest -Uri $u -OutFile C:\nsis.zip -MaximumRedirection 10 -UserAgent "Mozilla/5.0" -TimeoutSec 120
+                Expand-Archive C:\nsis.zip -DestinationPath C:\nsisx -Force
+                $d = Get-ChildItem C:\nsisx -Directory | Select-Object -First 1
+                Move-Item $d.FullName "C:\Program Files (x86)\NSIS" -Force
+                break
+              } catch { "téléchargement direct : $_" }
+            }
+          }
+          for ($i = 1; $i -le 3 -and -not (Test-Path "C:\Program Files (x86)\NSIS\makensis.exe"); $i++) {
+            choco install nsis -y --no-progress --force
+            if (-not (Test-Path "C:\Program Files (x86)\NSIS\makensis.exe")) { Start-Sleep -Seconds (15 * $i) }
+          }
+          & "C:\Program Files (x86)\NSIS\makensis.exe" /VERSION
+      - name: Installateur
+        shell: bash
+        run: |
+          P=african-loops/installer/payload
+          mkdir -p $P
+          cp -r "build/AfricanLoopsPro_artefacts/Release/VST3/African Loops Pro.vst3" $P/
+          cp "build/AfricanLoopsPro_artefacts/Release/Standalone/African Loops Pro.exe" $P/
+          cp african-loops/INSTALLER.txt $P/
+          cd african-loops/installer
+          "/c/Program Files (x86)/NSIS/makensis.exe" -V3 -DPAYLOAD=payload africanloops.nsi
+          ls -la *.exe
+      - name: Test de l'installateur (installation, plugin installé, désinstallation)
+        shell: pwsh
+        run: |
+          $setup = "african-loops\installer\African-Loops-Pro-Setup-1.0.0.exe"
+          Start-Process $setup -ArgumentList "/S" -Wait
+          $app = "C:\Program Files\African Loops Pro\African Loops Pro.exe"
+          $vst = "C:\Program Files\Common Files\VST3\African Loops Pro.vst3"
+          $dll = "$vst\Contents\x86_64-win\African Loops Pro.vst3"
+          foreach ($f in @($app, $dll, "C:\Program Files\African Loops Pro\Desinstaller.exe", "C:\Users\Public\Desktop\African Loops Pro.lnk")) {
+            if (-not (Test-Path -LiteralPath $f)) { throw "absent après installation : $f" }
+          }
+          $reg = Get-ItemProperty "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\AfricanLoopsPro"
+          if ($reg.DisplayName -ne "African Loops Pro") { throw "pas dans les Applications installées" }
+          "Installé : OK"
+          & build/AfricanLoopsHostTest_artefacts/Release/AfricanLoopsHostTest.exe $vst
+          if ($LASTEXITCODE -ne 0) { throw "le plugin installé ne fonctionne pas" }
+          Start-Process "C:\Program Files\African Loops Pro\Desinstaller.exe" -ArgumentList "/S", "_?=C:\Program Files\African Loops Pro" -Wait
+          foreach ($f in @($app, $vst, "C:\Users\Public\Desktop\African Loops Pro.lnk")) {
+            if (Test-Path -LiteralPath $f) { throw "reste après désinstallation : $f" }
+          }
+          if (Test-Path "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\AfricanLoopsPro") { throw "toujours dans les Applications installées" }
+          "Désinstallé : OK"
       - name: Préparer le paquet
         shell: bash
         run: |
           mkdir -p paquet
+          cp african-loops/installer/African-Loops-Pro-Setup-1.0.0.exe paquet/
           cp -r "build/AfricanLoopsPro_artefacts/Release/VST3/African Loops Pro.vst3" paquet/
           cp "build/AfricanLoopsPro_artefacts/Release/Standalone/African Loops Pro.exe" paquet/
           cp african-loops/INSTALLER.txt paquet/
@@ -61,17 +114,22 @@ jobs:
         with:
           name: African-Loops-Pro-Windows
           path: paquet
-      - name: Publier le paquet (branche ci-african-loops)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: African-Loops-Pro-Setup
+          path: african-loops/installer/African-Loops-Pro-Setup-1.0.0.exe
+      - name: Publier (branche ci-african-loops)
         shell: bash
         run: |
           7z a -tzip /tmp/African-Loops-Pro-Windows.zip ./paquet/* > /dev/null
+          cp african-loops/installer/African-Loops-Pro-Setup-1.0.0.exe /tmp/
           git config user.name ci; git config user.email ci@users.noreply.github.com
           git checkout --orphan ci-african-loops-tmp
           git rm -rf . > /dev/null 2>&1 || true
           git clean -fdxq
-          cp /tmp/African-Loops-Pro-Windows.zip .
+          cp /tmp/African-Loops-Pro-Windows.zip /tmp/African-Loops-Pro-Setup-1.0.0.exe .
           echo "run $GITHUB_RUN_ID - $GITHUB_SHA" > run.txt
-          git add African-Loops-Pro-Windows.zip run.txt
+          git add African-Loops-Pro-Windows.zip African-Loops-Pro-Setup-1.0.0.exe run.txt
           git commit -qm "African Loops Pro Windows $GITHUB_RUN_ID"
           git push -f origin HEAD:refs/heads/ci-african-loops
 

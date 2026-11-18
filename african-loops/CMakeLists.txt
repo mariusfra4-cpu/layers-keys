@@ -63,7 +63,8 @@ if(AFRICANLOOPS_PLUGIN)
 
   juce_add_plugin(AfricanLoopsPro
     PRODUCT_NAME "African Loops Pro"
-    COMPANY_NAME "African Loops"
+    COMPANY_NAME "JB Praise"
+    ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/installer/africanloops_icon.png"
     BUNDLE_ID "com.africanloops.pro"
     PLUGIN_MANUFACTURER_CODE Aflp
     PLUGIN_CODE Alpr
