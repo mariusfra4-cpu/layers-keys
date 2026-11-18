@@ -496,17 +496,23 @@ void Visualizer::paint (juce::Graphics& g)
         g.strokePath (p, juce::PathStrokeType (2.0f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
         return;
     }
+    // toutes les barres en une seule forme, un seul dégradé (bien plus léger à dessiner, surtout sous Windows)
     const float bw = r.getWidth() / bands, ww = bw * 0.62f;
+    juce::Path bars, glints;
+    float avg = 0;
     for (int i = 0; i < bands; ++i)
     {
         const float l = level[(size_t) i];
+        avg += l / bands;
         const float h = juce::jmax (4.0f, l * mid);
         const float x = r.getX() + i * bw + (bw - ww) * 0.5f;
-        g.setGradientFill (juce::ColourGradient (theme::lilac.withAlpha (0.55f + 0.45f * l), x, mid - h, theme::accent.withAlpha (0.6f + 0.4f * l), x, mid, false));
-        g.fillRoundedRectangle (x, mid - h, ww, h, ww * 0.5f);
-        g.setColour (theme::accent.withAlpha (0.10f + 0.12f * l));                         // reflet
-        g.fillRoundedRectangle (x, mid + 3, ww, h * 0.32f, ww * 0.5f);
+        bars.addRoundedRectangle (x, mid - h, ww, h, ww * 0.5f);
+        glints.addRoundedRectangle (x, mid + 3, ww, h * 0.32f, ww * 0.5f);   // reflet
     }
+    g.setGradientFill (juce::ColourGradient (theme::lilac.withAlpha (0.85f), 0, r.getY(), theme::accent.withAlpha (0.9f), 0, mid, false));
+    g.fillPath (bars);
+    g.setColour (theme::accent.withAlpha (0.12f + 0.12f * avg));
+    g.fillPath (glints);
     for (auto& b : bubbles)
     {
         const float x = r.getX() + b.x * r.getWidth(), y = r.getY() + b.y * mid;
