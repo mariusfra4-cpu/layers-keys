@@ -1,0 +1,254 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>African Loops Pro</title>
+<style>
+@font-face{font-family:Inter;src:url(../fonts/Inter-Regular.otf)}
+@font-face{font-family:Inter;font-weight:700;src:url(../fonts/Inter-Bold.otf)}
+:root{
+  --amber:#ffb23e; --amberDim:#7a4a12; --lcd:#0b0906; --lcdTxt:#ffcf86;
+  --engr:#b9b2a6; --engrDark:#6f6a61; --green:#5fd16a; --red:#ff4a3a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0c0c0c;font-family:Inter,DejaVu Sans,sans-serif;padding:30px}
+.unit{width:1200px;height:740px;display:flex;border-radius:10px;overflow:hidden;box-shadow:0 40px 80px #000c}
+.cheek{width:34px;position:relative;
+  background:
+   repeating-linear-gradient(180deg,rgba(0,0,0,.18) 0 2px,transparent 2px 9px,rgba(255,220,180,.06) 9px 11px,transparent 11px 17px),
+   linear-gradient(90deg,#2b170d,#6b3e22 30%,#80502e 55%,#4a2a17 85%,#22120a);}
+.cheek::after{content:"";position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='400'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9 0.02' numOctaves='3'/%3E%3C/filter%3E%3Crect width='60' height='400' filter='url(%23f)' opacity='.35'/%3E%3C/svg%3E");mix-blend-mode:overlay}
+.panel{flex:1;position:relative;
+  background:
+   url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E"),
+   radial-gradient(ellipse at 50% -10%,#3b3936,transparent 60%),
+   linear-gradient(180deg,#2c2b29,#1d1c1b 55%,#171615);
+  box-shadow:inset 0 1px 0 #555, inset 0 -1px 0 #000}
+.screw{position:absolute;width:12px;height:12px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ddd,#777 60%,#333);box-shadow:0 1px 1px #000}
+.screw::after{content:"";position:absolute;left:2px;right:2px;top:5px;height:2px;background:#2a2a2a;transform:rotate(35deg)}
+.lbl{font-size:9.5px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;color:var(--engr);text-align:center;text-shadow:0 -1px 0 #000}
+.lbl.s{font-size:8px;letter-spacing:1.2px;color:var(--engrDark)}
+/* header */
+.head{position:absolute;left:0;right:0;top:0;height:58px;display:flex;align-items:center;justify-content:center;border-bottom:1px solid #0a0a0a;box-shadow:0 1px 0 #3a3936}
+.vent{position:absolute;top:18px;display:flex;gap:5px}
+.vent i{width:4px;height:22px;border-radius:2px;background:#050505;box-shadow:0 1px 0 #444, inset 0 1px 2px #000}
+.logo{display:flex;align-items:baseline;gap:8px}
+.logo .t{font-size:31px;font-weight:700;letter-spacing:3px;
+  background:linear-gradient(180deg,#fff1cf,#e0a54a 45%,#8d5a1c 55%,#f1c27a);-webkit-background-clip:text;color:transparent;
+  filter:drop-shadow(0 2px 1px #000)}
+.logo .p{font-size:16px;font-weight:700;color:var(--amber);letter-spacing:2px;border:1.5px solid var(--amber);padding:0 5px;border-radius:3px;transform:translateY(-6px)}
+.motif{position:absolute;top:21px;width:150px;height:16px;opacity:.5}
+.gear{position:absolute;right:20px;top:16px;display:flex;gap:8px}
+.gear div{width:26px;height:26px;border-radius:5px;background:linear-gradient(#3a3936,#222);box-shadow:0 1px 2px #000,inset 0 1px 0 #555;color:#bbb;font-size:14px;display:flex;align-items:center;justify-content:center}
+/* generic */
+.recess{background:#0e0d0c;border-radius:6px;box-shadow:inset 0 2px 6px #000,0 1px 0 #3d3b38}
+.lcd{background:
+  repeating-linear-gradient(0deg,rgba(255,255,255,.015) 0 1px,transparent 1px 3px),
+  radial-gradient(ellipse at 50% 0,#1b150d,var(--lcd) 70%);
+  color:var(--lcdTxt);border-radius:3px;position:relative;overflow:hidden;box-shadow:inset 0 0 20px #000}
+.lcd::after{content:"";position:absolute;inset:0;background:linear-gradient(160deg,rgba(255,255,255,.07),transparent 35%);pointer-events:none}
+.glow{text-shadow:0 0 6px rgba(255,178,62,.55)}
+.btn{border-radius:4px;background:linear-gradient(#2e2d2b,#191817);box-shadow:0 2px 3px #000,inset 0 1px 0 #4a4845;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;letter-spacing:1.2px;color:#9b958b}
+.btn.lit{background:linear-gradient(#ffcd7a,#ff9f1c);color:#2a1600;box-shadow:0 0 12px rgba(255,160,40,.6),0 2px 3px #000,inset 0 1px 0 #fff8}
+.led{width:7px;height:7px;border-radius:50%;background:#3a0c08;box-shadow:inset 0 1px 1px #000}
+.led.on{background:#ff4a3a;box-shadow:0 0 6px #ff4a3a,0 0 2px #fff inset}
+.led.ong{background:#6f6;box-shadow:0 0 6px #5f5}
+/* knob */
+.knob{--sz:54px;width:var(--sz);height:var(--sz);position:relative;border-radius:50%}
+.knob .arc{position:absolute;inset:0;border-radius:50%;
+  background:conic-gradient(from 225deg,var(--amber) 0 var(--v),#2a2825 var(--v) 270deg,transparent 270deg);
+  -webkit-mask:radial-gradient(circle,transparent 62%,#000 63% 70%,transparent 71%);filter:drop-shadow(0 0 3px rgba(255,170,50,.6))}
+.knob .body{position:absolute;inset:16%;border-radius:50%;
+  background:repeating-conic-gradient(#8e8a83 0 4deg,#5a5751 4deg 8deg);box-shadow:0 4px 6px #000a}
+.knob .cap{position:absolute;inset:23%;border-radius:50%;background:radial-gradient(circle at 40% 30%,#f2f0ec,#b8b4ac 45%,#6e6a64 100%);box-shadow:inset 0 -1px 2px #0006}
+.knob .cap::before{content:"";position:absolute;inset:12%;border-radius:50%;background:repeating-radial-gradient(circle,rgba(0,0,0,.05) 0 1px,transparent 1px 2px)}
+.knob .ind{position:absolute;left:50%;top:23%;width:2.5px;height:18%;background:#1a1a1a;transform-origin:50% 150%;transform:translateX(-50%) rotate(var(--r))}
+/* layout boxes */
+.box{position:absolute}
+.title{font-size:10px}
+/* presets */
+.plist{display:grid;grid-template-columns:1fr 1.25fr;font-size:12px;line-height:19.5px}
+.plist>div{padding:6px 12px}
+.plist>div:first-child{border-right:1px solid #2a2118}
+.plist .sel{background:linear-gradient(90deg,rgba(255,178,62,.28),rgba(255,178,62,.08));color:#fff;margin:0 -12px;padding:0 12px;box-shadow:inset 3px 0 0 var(--amber)}
+.plist .st{color:var(--amber);opacity:.9;margin-right:6px;font-size:11px}
+.dim{color:#a4865a}
+/* meters */
+.mbar{width:22px;display:flex;flex-direction:column-reverse;gap:2px;padding:3px;background:#050505;border-radius:2px;box-shadow:inset 0 1px 3px #000}
+.mbar i{height:4px;background:#1a1410;border-radius:1px}
+.mbar i.g{background:#4fcf5f;box-shadow:0 0 4px #4fcf5f}
+.mbar i.y{background:var(--amber);box-shadow:0 0 4px var(--amber)}
+.mbar i.r{background:var(--red);box-shadow:0 0 4px var(--red)}
+.mbar i.pk{background:#ffe0a0}
+/* mixer */
+.strip{position:absolute;top:388px;width:79px;height:318px;border-radius:5px;
+  background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(0,0,0,.15));box-shadow:inset 0 0 0 1px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.05)}
+.sel2{position:absolute;left:6px;right:6px;top:8px;height:22px;font-size:9.5px;font-weight:700;display:flex;align-items:center;justify-content:space-between;padding:0 5px;white-space:nowrap}
+.ms{position:absolute;top:104px;left:0;right:0;display:flex;gap:5px;justify-content:center}
+.ms div{width:24px;height:18px;font-size:10px}
+.ms .m.lit{background:linear-gradient(#ff9b8a,#e23a24);color:#fff;box-shadow:0 0 10px rgba(255,70,40,.6),0 2px 3px #000}
+.ms .s.lit{background:linear-gradient(#ffe27a,#f0b400);color:#231a00;box-shadow:0 0 10px rgba(255,200,0,.5),0 2px 3px #000}
+.slot{position:absolute;top:134px;left:20px;width:6px;height:150px;background:#000;border-radius:3px;box-shadow:0 1px 0 #3a3936}
+.scale{position:absolute;top:134px;left:4px;height:150px;display:flex;flex-direction:column;justify-content:space-between;font-size:7px;color:var(--engrDark)}
+.fcap{position:absolute;left:9px;width:28px;height:30px;border-radius:3px;
+  background:linear-gradient(180deg,#d9d5cf,#9c978f 18%,#d0ccc5 20%,#8b867f 50%,#c6c1ba 80%,#6e6a64);box-shadow:0 5px 6px #000c}
+.fcap::after{content:"";position:absolute;left:0;right:0;top:14px;height:2px;background:#ffb23e;box-shadow:0 0 4px #ffb23e}
+.vu{position:absolute;top:134px;left:50px;width:12px;height:150px;padding:2px;background:#050505;border-radius:2px;display:flex;flex-direction:column-reverse;gap:1px;box-shadow:inset 0 1px 3px #000}
+.vu i{height:3px;background:#17120e}
+.vu i.g{background:#4fcf5f}.vu i.y{background:var(--amber)}.vu i.r{background:var(--red)}
+.chn{position:absolute;bottom:8px;left:0;right:0;display:flex;justify-content:center;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--engr)}
+.chn span{font-size:12px;color:var(--engrDark)}
+.rowlbls{position:absolute;left:14px;top:388px;width:44px}
+.rowlbls div{position:absolute;font-size:8.5px;font-weight:700;letter-spacing:1.4px;color:var(--engr)}
+</style></head>
+<body>
+<div class="unit">
+<div class="cheek"></div>
+<div class="panel" id="P">
+  <div class="screw" style="left:8px;top:8px"></div><div class="screw" style="right:8px;top:8px"></div>
+  <div class="screw" style="left:8px;bottom:8px"></div><div class="screw" style="right:8px;bottom:8px"></div>
+
+  <div class="head">
+    <div class="vent" id="v1" style="left:60px"></div>
+    <svg class="motif" style="left:290px" viewBox="0 0 150 16"><path d="M0 8h150M0 2l8 6-8 6M16 2l8 6-8 6M32 2l8 6-8 6M48 2l8 6-8 6M64 2l8 6-8 6M80 2l8 6-8 6M96 2l8 6-8 6M112 2l8 6-8 6M128 2l8 6-8 6" stroke="#c89a55" stroke-width="1" fill="none"/></svg>
+    <div class="logo"><div class="t">AFRICAN LOOPS</div><div class="p">PRO</div></div>
+    <svg class="motif" style="right:290px;transform:scaleX(-1)" viewBox="0 0 150 16"><path d="M0 8h150M0 2l8 6-8 6M16 2l8 6-8 6M32 2l8 6-8 6M48 2l8 6-8 6M64 2l8 6-8 6M80 2l8 6-8 6M96 2l8 6-8 6M112 2l8 6-8 6M128 2l8 6-8 6" stroke="#c89a55" stroke-width="1" fill="none"/></svg>
+    <div class="vent" id="v2" style="right:120px"></div>
+    <div class="gear"><div>⇅</div><div>⚙</div></div>
+  </div>
+
+  <!-- PRESETS -->
+  <div class="box" style="left:24px;top:72px;width:560px">
+    <div class="lbl" style="margin-bottom:6px">Presets</div>
+    <div class="recess" style="padding:7px">
+      <div class="lcd" style="height:262px">
+        <div style="display:flex;align-items:center;gap:10px;padding:9px 12px 7px">
+          <span style="color:var(--amber);font-size:16px" class="glow">☆</span>
+          <div style="flex:1;height:22px;border:1px solid #6b4a1c;border-radius:3px;display:flex;align-items:center;padding-left:8px;font-size:11px;color:#8a6c44">⌕&nbsp; Search grooves, artists, instruments…</div>
+          <span style="font-size:10.5px;color:var(--amber)" class="glow">Save Preset</span>
+        </div>
+        <div style="text-align:center;padding:6px;font-size:15px;font-weight:700;color:#fff;background:rgba(255,178,62,.08);border-top:1px solid #2a2118;border-bottom:1px solid #2a2118" class="glow">118 – Abidjan Night Groove</div>
+        <div class="plist">
+          <div>
+            <div class="sel">01 Afrobeats</div>
+            <div>02 Amapiano</div>
+            <div>03 Coupé-Décalé</div>
+            <div>04 Ndombolo</div>
+            <div>05 Makossa</div>
+            <div>06 Highlife</div>
+            <div class="dim">07 Mbalax</div>
+          </div>
+          <div>
+            <div><span class="st">★</span>100 – Lagos Street Groove</div>
+            <div><span class="st">★</span>104 – Afrobeats Layer</div>
+            <div><span class="st">☆</span>110 – Afrobeats Layer</div>
+            <div><span class="st">☆</span>112 – Log Drum Fusion</div>
+            <div><span class="st">☆</span>118 – Abidjan Night Groove</div>
+            <div class="dim"><span class="st">☆</span>122 – Afrobeats Layer</div>
+          </div>
+        </div>
+        <svg style="position:absolute;left:0;right:0;bottom:0;width:100%;height:30px;border-top:1px solid #2a2118" viewBox="0 0 540 30" preserveAspectRatio="none" id="wav"></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- CENTER -->
+  <div class="box" style="left:600px;top:72px;width:210px;height:300px">
+    <div style="position:absolute;left:0;width:100px;text-align:center"><div class="lbl">Global BPM</div>
+      <div class="recess" style="margin:6px auto 0;width:84px;padding:4px"><div class="lcd glow" style="font-size:26px;font-weight:700;text-align:center;height:36px;line-height:36px;color:var(--amber)">118</div></div></div>
+    <div style="position:absolute;left:110px;width:100px;text-align:center"><div class="lbl">Preset BPM</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:7px;margin-top:14px"><div class="led on"></div><div class="btn" style="width:56px;height:24px">SYNC</div></div></div>
+
+    <div class="lbl" style="position:absolute;top:72px;left:-10px;width:120px;white-space:nowrap">Global Filters</div>
+    <div class="lbl" style="position:absolute;top:72px;left:110px;width:100px">Pro Rack FX</div>
+
+    <div style="position:absolute;top:90px;left:23px;text-align:center"><div class="knob" style="--v:200deg;--r:65deg"><div class="arc"></div><div class="body"></div><div class="cap"></div><div class="ind"></div></div><div class="lbl s">LP</div></div>
+    <div style="position:absolute;top:160px;left:23px;text-align:center"><div class="knob" style="--v:40deg;--r:-95deg"><div class="arc"></div><div class="body"></div><div class="cap"></div><div class="ind"></div></div><div class="lbl s">HP</div></div>
+    <div style="position:absolute;top:230px;left:23px;text-align:center"><div class="knob" style="--v:150deg;--r:15deg"><div class="arc"></div><div class="body"></div><div class="cap"></div><div class="ind"></div></div><div class="lbl s">Warmth</div></div>
+
+    <div style="position:absolute;top:94px;left:122px;display:flex;flex-direction:column;gap:13px">
+      <div class="btn lit" style="width:88px;height:28px">MASTER FX</div>
+      <div class="btn" style="width:88px;height:28px">SEND FX</div>
+      <div class="btn" style="width:88px;height:28px">MOD FX</div>
+      <div style="position:relative"><div class="led on" style="position:absolute;left:-14px;top:11px"></div><div class="btn" style="width:88px;height:28px">FADE</div></div>
+      <div class="btn" style="width:88px;height:28px">HUMANIZE</div>
+    </div>
+  </div>
+
+  <!-- METERS -->
+  <div class="box" style="left:830px;top:72px;width:300px">
+    <div class="lbl" style="margin-bottom:6px">Meters</div>
+    <div class="recess" style="height:280px;padding:16px 20px;display:flex;justify-content:center;gap:16px;position:relative">
+      <div style="display:flex;flex-direction:column;justify-content:space-between;font-size:8px;color:var(--engrDark);text-align:right;padding:3px 0">
+        <span>+6</span><span>0</span><span>-6</span><span>-12</span><span>-18</span><span>-24</span><span>-36</span><span>-48</span><span>-60</span></div>
+      <div class="mbar" id="ML"></div><div class="mbar" id="MR"></div>
+      <div style="display:flex;flex-direction:column;justify-content:space-between;font-size:8px;color:var(--engrDark);padding:3px 0">
+        <span>+6</span><span>0</span><span>-6</span><span>-12</span><span>-18</span><span>-24</span><span>-36</span><span>-48</span><span>-60</span></div>
+      <div style="position:absolute;bottom:4px;left:0;right:0;display:flex;justify-content:center;gap:30px;font-size:9px;font-weight:700;color:var(--engr)"><span>L</span><span>R</span></div>
+      <div class="lcd" style="position:absolute;right:12px;top:14px;width:62px;padding:4px 6px;font-size:9px;line-height:14px;color:var(--amber)">
+        <div>PEAK</div><div class="glow" style="font-size:13px;font-weight:700">-3.2</div><div style="margin-top:4px">RMS</div><div class="glow" style="font-size:13px;font-weight:700">-11.8</div></div>
+    </div>
+  </div>
+
+  <div style="position:absolute;left:16px;right:16px;top:378px;height:1px;background:#0a0a0a;box-shadow:0 1px 0 #3a3936"></div>
+
+  <!-- MIXER row labels -->
+  <div class="rowlbls">
+    <div style="top:14px">LOOP</div><div style="top:62px">PAN</div><div style="top:108px">M/S</div><div style="top:200px">LEVEL</div>
+  </div>
+  <div id="mix"></div>
+
+  <!-- MASTER section -->
+  <div class="box" style="left:796px;top:390px;width:322px;height:320px">
+    <div class="lbl" style="position:absolute;left:30px;width:150px">Master</div>
+    <div style="position:absolute;left:30px;top:20px;width:150px;height:150px">
+      <div class="knob" style="--sz:150px;--v:225deg;--r:90deg">
+        <div class="arc" style="-webkit-mask:radial-gradient(circle,transparent 66%,#000 67% 72%,transparent 73%)"></div>
+        <div class="body" style="inset:14%"></div>
+        <div class="cap" style="inset:20%"></div>
+        <div style="position:absolute;inset:31%;border-radius:50%" class="lcd"><div class="glow" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--amber);font-weight:700;font-size:19px">100%<span style="font-size:8px;letter-spacing:1px;color:#a4865a">0.0 dB</span></div></div>
+      </div>
+    </div>
+    <div style="position:absolute;left:210px;top:0;width:100px;display:flex;flex-direction:column;align-items:center;gap:6px">
+      <div class="lbl">Metronome</div>
+      <div style="display:flex;align-items:center;gap:6px"><div class="led"></div><div class="btn" style="width:34px;height:24px">♩</div></div>
+      <div class="knob" style="--sz:44px;--v:135deg;--r:0deg;margin-top:6px"><div class="arc"></div><div class="body"></div><div class="cap"></div><div class="ind"></div></div>
+      <div class="lbl s">Pan</div>
+      <div class="btn" style="width:34px;height:22px;margin-top:2px">M</div>
+      <div class="lbl s">Mute</div>
+    </div>
+    <div style="position:absolute;left:0;top:186px;width:318px">
+      <div style="display:flex;justify-content:space-between"><div class="lbl s" style="color:var(--engr)">◎ Stereo/Mono</div><div class="lbl s" style="color:var(--engr)">Signature</div></div>
+      <div class="recess" style="padding:4px;margin-top:5px"><div class="lcd" style="display:grid;grid-template-columns:1fr 1fr;font-size:10px;font-weight:700;line-height:21px;text-align:center">
+        <div style="background:rgba(255,178,62,.22);color:#fff;box-shadow:inset 3px 0 0 var(--amber)" class="glow">STANDARD</div><div class="glow" style="color:#fff">4/4</div>
+        <div class="dim">DOUBLE</div><div class="dim">12/8</div>
+        <div class="dim">HALF</div><div class="dim">6/8</div></div></div>
+    </div>
+    <div style="position:absolute;left:0;top:278px;width:318px;display:flex;gap:10px">
+      <div class="btn" style="flex:1;height:36px;font-size:15px;color:#ccc">■</div>
+      <div class="btn" style="flex:1;height:36px;font-size:16px;color:#7cff8a;text-shadow:0 0 8px #5f5">▶</div>
+    </div>
+  </div>
+
+  <div style="position:absolute;right:26px;bottom:6px;font-size:8.5px;color:var(--engrDark);letter-spacing:.5px">CPU: 9% · RAM: 38.2 MB · Voices: 8 · 44.1 kHz</div>
+</div>
+<div class="cheek"></div>
+</div>
+
+<script>
+for(const id of ['v1','v2']){const v=document.getElementById(id);for(let i=0;i<22;i++)v.appendChild(document.createElement('i'))}
+function fill(el,n,lv,pk){for(let i=0;i<n;i++){const b=document.createElement('i');if(i<lv)b.className=i>=n*.88?'r':i>=n*.72?'y':'g';if(i===pk)b.className='pk';el.appendChild(b)}}
+fill(document.getElementById('ML'),40,30,33);fill(document.getElementById('MR'),40,28,32);
+// waveform
+(function(){let d='';const w=document.getElementById('wav');let s='';for(let x=0;x<540;x+=2){const env=Math.abs(Math.sin(x/34))**3*0.8+0.15;const a=(Math.sin(x*1.7)*0.5+0.5)*env*12+1;s+=`<line x1="${x}" x2="${x}" y1="${15-a}" y2="${15+a}" stroke="${x<300?'#ffb23e':'#6b4a1c'}" stroke-width="1.2"/>`}s+='<line x1="300" x2="300" y1="0" y2="30" stroke="#fff" stroke-width="1.5"/>';w.innerHTML=s})();
+const ch=[['Djembe 01',50,0,0,0,18],['Talk Drum',35,-40,0,1,22],['Shekere',62,45,0,0,14],['Log Drum',28,0,0,0,24],['Kora Riff',70,-25,1,0,0],['Balafon',45,30,0,0,16],['Congas',55,60,0,0,12],['Afro Bass',30,0,0,0,23]];
+const P=document.getElementById('P');
+ch.forEach((c,i)=>{const s=document.createElement('div');s.className='strip';s.style.left=(66+i*90)+'px';
+ const pv=135+c[2]*1.2;
+ s.innerHTML=`<div class="recess sel2" style="padding:2px"><div class="lcd glow" style="width:100%;height:100%;display:flex;align-items:center;justify-content:space-between;padding:0 5px;color:var(--amber)">${c[0]}<span style="color:#a4865a">⇕</span></div></div>
+ <div style="position:absolute;top:40px;left:0;right:0;display:flex;justify-content:center"><div class="knob" style="--sz:50px;--v:${pv}deg;--r:${c[2]*1.2}deg"><div class="arc"></div><div class="body"></div><div class="cap"></div><div class="ind"></div></div></div>
+ <div class="ms"><div class="btn m ${c[3]?'lit':''}">M</div><div class="btn s ${c[4]?'lit':''}">S</div></div>
+ <div class="scale"><span>+6</span><span>0</span><span>5</span><span>10</span><span>20</span><span>30</span><span>40</span><span>∞</span></div>
+ <div class="slot" style="left:23px"></div><div class="fcap" style="left:12px;top:${134+c[1]-15}px"></div>
+ <div class="vu" style="left:52px"></div>
+ <div class="chn"><span>☰</span>${i+1}</div>`;
+ P.appendChild(s);fill(s.querySelector('.vu'),30,c[5])});
+</script>
+</body></html>
