@@ -15,7 +15,13 @@ MainView::MainView (SpacepadProcessor& p) : proc (p)
     addAndMakeVisible (space);
     addAndMakeVisible (ring);
     addAndMakeVisible (hook);
+    addChildComponent (hall);
     addAndMakeVisible (viz);
+    addChildComponent (crowdStage);
+    addAndMakeVisible (centerSwitch);
+    addAndMakeVisible (fxPanel);
+    centerSwitch.onChange = [this] (int v) { setCenterView (v); };
+    mixBar.onLabel = [this] (int pg) { fxPanel.showPage (pg); };
     addAndMakeVisible (mixBar);
     addAndMakeVisible (stageBtn);
     stageBtn.onClick = [this] { openStage(); };
@@ -39,7 +45,7 @@ MainView::MainView (SpacepadProcessor& p) : proc (p)
         b->getProperties().set ("onDark", true);
         b->setColour (juce::TextButton::textColourOffId, juce::Colours::white);
     }
-    for (auto* b : { &loopBtn, &freezeBtn, &swellBtn })
+    for (auto* b : { &loopBtn })
     {
         b->setClickingTogglesState (true);
         b->getProperties().set ("weight", 2);
@@ -47,24 +53,8 @@ MainView::MainView (SpacepadProcessor& p) : proc (p)
     }
     loopBtn.setColour (juce::TextButton::buttonOnColourId, theme::amber);
     loopBtn.setColour (juce::TextButton::textColourOnId, juce::Colour (0xff2a1300));
-    swellBtn.setColour (juce::TextButton::buttonOnColourId, theme::violet);
-    swellBtn.setColour (juce::TextButton::textColourOnId, juce::Colour (0xff12082e));
-    for (auto* b : { &playBtn, &stopBtn, &loopBtn, &stopAllBtn, &finBtn, &freezeBtn, &swellBtn }) addAndMakeVisible (*b);
+    for (auto* b : { &playBtn, &stopBtn, &loopBtn, &stopAllBtn, &finBtn }) addAndMakeVisible (*b);
     loopAtt = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.params, "loop", loopBtn);
-    freezeAtt = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.params, "freeze", freezeBtn);
-    swellAtt = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.params, "swell", swellBtn);
-
-    struct K { const char* id; const char* name; juce::uint32 col; bool accent; };
-    const K ks[] = { { "shimmer", "Shimmer", 0xffbdf1ff, false }, { "warm", "Warm", 0xffffb86b, false }, { "air", "Air", 0, true },
-                     { "reverb", "Reverb", 0xffa78bfa, false }, { "motion", "Motion", 0xff5cffb0, false }, { "width", "Width", 0, true },
-                     { "sub", "Sub oct.", 0xff3d7bff, false }, { "lowcut", "Low cut", 0xff9aa6bd, false }, { "attack", "Attack", 0xffffb3d9, false },
-                     { "xfade", "Fondu", 0xffffcf8a, false }, { "padvol", "Vol. Pad", 0, true }, { "crowdvol", "Vol. Crowd", 0xffffb86b, false } };
-    for (auto& k : ks)
-    {
-        knobs.push_back (std::make_unique<Knob> (proc, k.id, U (k.name), k.accent ? theme::accent : juce::Colour (k.col)));
-        knobs.back()->usesAccent = k.accent;
-        addAndMakeVisible (*knobs.back());
-    }
     lastScale = uiSettings().scale;
     lastSettings = settingsVersion();
     retranslate();
@@ -94,11 +84,7 @@ void MainView::retranslate()
     stageBtn.setTooltip (L ("Mode sc\xc3\xa8ne (plein \xc3\xa9""cran)", "Stage mode (full screen)", "Modo escenario (pantalla completa)"));
     gear.setTooltip (L ("Personnaliser Spacepad", "Customize Spacepad", "Personalizar Spacepad"));
     hook.setTooltip (proc.currentMode() == 1 ? L ("Passer en majeur", "Switch to major", "Pasar a mayor") : L ("Passer en mineur", "Switch to minor", "Pasar a menor"));
-    if (knobs.size() >= 12)
-    {
-        knobs[9]->setLabel (L ("Fondu", "Crossfade", "Fundido"));
-        knobs[8]->setLabel (L ("Attack", "Attack", "Ataque"));
-    }
+    fxPanel.retranslate();
     library.retranslate();
     repaint();
 }
@@ -115,7 +101,9 @@ void MainView::applySettings()
         b->getProperties().set ("onDark", ! theme::light);
         b->setColour (juce::TextButton::textColourOffId, theme::light ? theme::text : juce::Colours::white);
     }
-    for (auto& k : knobs) if (k->usesAccent) k->setColour (theme::accent);
+    fxPanel.applyColours();
+    centerSwitch.value = st.centerView;
+    setCenterView (st.centerView);
     header.invalidate();
     space.resized();
     library.showTabIndex (library.tabShown());
@@ -265,9 +253,26 @@ void MainView::step (float dt)
         anim.phi -= dt * 0.075f * spin;
         anim.orb -= dt * 0.22f * spin;
     }
-    space.tick (dt);
+    if (uiSettings().centerView == 1) hall.tick (dt);
+    else space.tick (dt);
     hook.tick (dt);
     if (st.viz != 3) viz.tick (dt);
+}
+
+void MainView::setCenterView (int v)
+{
+    v = v == 1 ? 1 : 0;
+    centerSwitch.value = v;
+    centerSwitch.repaint();
+    const bool crowdView = v == 1;
+    space.setVisible (! crowdView);
+    ring.setVisible (! crowdView);
+    hook.setVisible (! crowdView);
+    hall.setVisible (crowdView);
+    crowdStage.setVisible (crowdView);
+    if (crowdView) crowdStage.refreshTiles();
+    if (uiSettings().centerView != v) { auto u = uiSettings(); u.centerView = v; setUiSettings (u); lastSettings = settingsVersion(); }
+    repaint();
 }
 
 void MainView::animateForTests (float seconds)
@@ -291,8 +296,17 @@ void MainView::timerCallback()
     if (wantAwake != screenSaverOff) { screenSaverOff = wantAwake; juce::Desktop::setScreenSaverEnabled (! wantAwake); }
     if (scan == nullptr && settings == nullptr && stage == nullptr && task == nullptr)
     {
-        if (uiSettings().animations || anim.env > 0.01f || anim.surge > 0.01f) space.repaint();
-        ring.repaint();
+        if (uiSettings().centerView == 1)
+        {
+            hall.repaint();
+            if (tick % 15 == 0) crowdStage.refreshTiles();
+        }
+        else
+        {
+            if (uiSettings().animations || anim.env > 0.01f || anim.surge > 0.01f) space.repaint();
+            ring.repaint();
+        }
+        if (tick % 3 == 0) fxPanel.tick();
         if (tick % 2 == 0) header.repaint();
         repaint (getLocalBounds().removeFromBottom (40));
     }
@@ -307,19 +321,12 @@ void MainView::resized()
     stageBtn.setBounds (top.getRight() - 120, top.getY() + 18, 48, 48);
     r.removeFromBottom (38);
     library.setBounds (r.removeFromLeft (370));
-    auto fx = r.removeFromRight (330);
-    auto fr = fx.reduced (18, 14);
-    fr.removeFromTop (26);
-    auto toggles = fr.removeFromBottom (50);
-    freezeBtn.setBounds (toggles.removeFromLeft (toggles.getWidth() / 2).reduced (5, 0));
-    swellBtn.setBounds (toggles.reduced (5, 0));
-    fr.removeFromBottom (8);
-    const int cw = fr.getWidth() / 3, ch = fr.getHeight() / 4;
-    for (int i = 0; i < (int) knobs.size(); ++i)
-        knobs[(size_t) i]->setBounds (fr.getX() + (i % 3) * cw, fr.getY() + (i / 3) * ch, cw, ch);
+    fxPanel.setBounds (r.removeFromRight (330));
 
     // centre : l'espace couvre toute la zone, l'anneau flotte dessus
     space.setBounds (r);
+    hall.setBounds (r);
+    centerSwitch.setBounds (r.getX() + 16, r.getY() + 14, 196, 38);   // en haut à gauche : ne cache jamais la tonalité C
     auto c = r.reduced (20, 10);
     auto bottom = c.removeFromBottom (170);
     const int d = juce::jmin (c.getWidth(), c.getHeight());
@@ -330,6 +337,7 @@ void MainView::resized()
     space.coreRadius = coreR;
     const auto hp = rc + juce::Point<float> (std::cos (juce::MathConstants<float>::pi / 4), std::sin (juce::MathConstants<float>::pi / 4)) * coreR * 1.02f;
     hook.setBounds (juce::Rectangle<int> (58, 58).withCentre (hp.toInt()));
+    crowdStage.setBounds (r.withTrimmedBottom (170 + 10));
     auto row = bottom.removeFromBottom (60);
     bottom.removeFromBottom (8);
     mixBar.setBounds (bottom.removeFromBottom (32).withSizeKeepingCentre (380, 32));
@@ -357,16 +365,6 @@ void MainView::paint (juce::Graphics& g)
     g.setGradientFill (juce::ColourGradient (theme::chassisTop, ch.getX(), ch.getY(), theme::chassisBottom, ch.getX(), ch.getBottom(), false));
     g.fillRoundedRectangle (ch.reduced (2), 24.0f);
 
-    // panneau des effets
-    auto fxr = juce::Rectangle<float> ((float) getWidth() - 12 - 330, 96.0f, 330.0f, (float) getHeight() - 12 - 38 - 96);
-    g.setGradientFill (juce::ColourGradient (theme::panel2, fxr.getX(), 0, theme::panel, fxr.getRight(), 0, false));
-    g.fillRect (fxr);
-    g.setColour (theme::line);
-    g.drawLine (fxr.getX(), fxr.getY(), fxr.getX(), fxr.getBottom());
-    auto f = theme::ui (12.0f, 1); f.setExtraKerningFactor (0.25f);
-    g.setFont (f);
-    g.setColour (theme::muted);
-    g.drawText (L ("EFFETS", "EFFECTS", "EFECTOS"), fxr.reduced (18, 14).removeFromTop (20), juce::Justification::centredLeft);
     auto ft = juce::Rectangle<float> (18, (float) getHeight() - 12 - 38, (float) getWidth() - 36, 38);
     g.setColour (theme::line);
     g.drawLine (ft.getX(), ft.getY(), ft.getRight(), ft.getY());

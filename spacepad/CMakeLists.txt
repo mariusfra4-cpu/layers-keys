@@ -66,7 +66,9 @@ set(SPACEPAD_CORE_SOURCES
   Source/Setlist.cpp
   Source/Library.cpp
   Source/PadEngine.cpp
-  Source/Effects.cpp)
+  Source/Effects.cpp
+  Source/Modulation.cpp
+  Source/CrowdPrefs.cpp)
 
 target_sources(Spacepad PRIVATE
   ${SPACEPAD_CORE_SOURCES}
@@ -76,6 +78,7 @@ target_sources(Spacepad PRIVATE
   Source/UISpace.cpp
   Source/UIPanels.cpp
   Source/UIExtra.cpp
+  Source/UICrowd.cpp
   Source/UIMain.cpp)
 
 target_compile_definitions(Spacepad PUBLIC
@@ -111,6 +114,7 @@ target_sources(SpacepadTests PRIVATE
   Source/UISpace.cpp
   Source/UIPanels.cpp
   Source/UIExtra.cpp
+  Source/UICrowd.cpp
   Source/UIMain.cpp
   tests/Tests.cpp)
 target_include_directories(SpacepadTests PRIVATE Source)

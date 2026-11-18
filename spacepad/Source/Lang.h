@@ -36,6 +36,8 @@ struct UiSettings
     std::array<int, 11> midiMap { { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 } };
     float fadeSeconds = 8.0f; // durée de « Fin du chant »
     bool copySounds = false;  // copier les sons dans Spacepad à l'enregistrement
+    int centerView = 0;       // centre de l'écran : 0 PAD (galaxie et tonalités), 1 CROWD (grande salle et crowds)
+    int fxPage = 0;           // panneau des effets : 0 PAD, 1 CROWD
 };
 
 // actions assignables à une pédale ou un bouton MIDI

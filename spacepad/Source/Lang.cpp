@@ -58,6 +58,8 @@ static void loadSetting()
             u.zoneLow = gi ("zoneLow", 36, 0, 116);
             u.fadeSeconds = ui2->hasProperty ("fadeSeconds") ? juce::jlimit (1.0f, 30.0f, (float) (double) ui2->getProperty ("fadeSeconds")) : 8.0f;
             u.copySounds = gb ("copySounds", false);
+            u.centerView = juce::jlimit (0, 1, (int) ui2->getProperty ("centerView"));
+            u.fxPage = juce::jlimit (0, 1, (int) ui2->getProperty ("fxPage"));
             if (auto* arr = ui2->getProperty ("midiMap").getArray())
                 for (int i = 0; i < (int) u.midiMap.size() && i < arr->size(); ++i) u.midiMap[(size_t) i] = (int) (*arr)[i];
         }
@@ -100,6 +102,8 @@ static void saveAll()
     o->setProperty ("zoneLow", ui.zoneLow);
     o->setProperty ("fadeSeconds", ui.fadeSeconds);
     o->setProperty ("copySounds", ui.copySounds);
+    o->setProperty ("centerView", ui.centerView);
+    o->setProperty ("fxPage", ui.fxPage);
     juce::Array<juce::var> mm;
     for (auto v : ui.midiMap) mm.add (v);
     o->setProperty ("midiMap", mm);

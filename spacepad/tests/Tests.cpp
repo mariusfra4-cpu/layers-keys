@@ -476,6 +476,30 @@ static void snapshot (const juce::File& outDir, const juce::File& root)
             shot ("spacepad_clair.png");
             setUiSettings (UiSettings()); v.applySettings();
         }
+        // côté crowd : grande salle, deux crowds, effets crowd, classement
+        {
+            juce::String cid;
+            for (auto& l : p.libraries().snapshot()) if (l.type == LibType::Crowd && l.name == "Mes Crowds") cid = l.id;
+            if (auto lib = p.libraries().find (cid)) if (auto* s0 = lib->sound (0)) p.crowdPrefs().setFavourite (CrowdPrefs::keyFor (cid, s0->path), true);
+            p.playCrowd (cid, 1, 0);
+            p.playCrowd (cid, 2, 1);
+            p.waitIdleForTests (2000);
+            for (int i = 0; i < 120; ++i) { buf.clear(); p.processBlock (buf, midi); }
+            auto u = uiSettings(); u.centerView = 1; u.fxPage = 1; setUiSettings (u);
+            v.applySettings();
+            for (auto* c : v.getChildren()) if (auto* fp = dynamic_cast<FxPanel*> (c)) fp->showPage (1);
+            panel()->showTabIndex (1);
+            v.animateForTests (1.5f);
+            shot ("spacepad_mode_crowd.png");
+            CHECK (p.crowdSounding (0) && p.crowdSounding (1), "deux crowds a l'ecran");
+            u = uiSettings(); u.centerView = 0; u.fxPage = 0; setUiSettings (u);
+            v.applySettings();
+            for (auto* c : v.getChildren()) if (auto* fp = dynamic_cast<FxPanel*> (c)) fp->showPage (0);
+            v.animateForTests (0.5f);
+            shot ("spacepad_effets_pad.png");
+            p.stopCrowd();
+            if (auto lib = p.libraries().find (cid)) if (auto* s0 = lib->sound (0)) p.crowdPrefs().setFavourite (CrowdPrefs::keyFor (cid, s0->path), false);
+        }
         while (! p.setlist().songs().empty()) p.setlist().remove (0);
         struct LC { Lang l; const char* file; const char* word; };
         for (auto lc : { LC { Lang::EN, "spacepad_en.png", "Choose a pads folder" }, LC { Lang::ES, "spacepad_es.png", "Elegir una carpeta de pads" } })
@@ -544,6 +568,14 @@ static void benchPaint (const juce::File& root)
         const char* names[] = { "Galaxie", "Tourbillon", "Aucun" };
         std::cout << "  fond " << names[bgMode] << " : " << juce::String (perFrame, 2) << " ms par image  (" << detail << ")\n";
         CHECK (perFrame < 14.0, "animation legere (fond " << names[bgMode] << " : " << juce::String (perFrame, 2) << " ms par image, limite 14 ms)");
+    }
+    {
+        auto u = uiSettings(); u.centerView = 1; setUiSettings (u); v.applySettings();
+        double perFrame = 0;
+        for (auto* c : v.getChildren())
+            if (dynamic_cast<HallView*> (c) || dynamic_cast<CrowdStage*> (c) || dynamic_cast<Visualizer*> (c)) perFrame += timeIt (*c);
+        std::cout << "  mode CROWD (salle + crowds + visualiseur) : " << juce::String (perFrame, 2) << " ms par image\n";
+        CHECK (perFrame < 14.0, "mode CROWD leger (" << juce::String (perFrame, 2) << " ms par image)");
     }
     setUiSettings (UiSettings());
     juce::ignoreUnused (root);
@@ -794,7 +826,7 @@ static void testSeparation (const juce::File& root)
     CHECK (peak < 1e-4f, "sans librairie mineure, aucun accord du mauvais mode n'est joue");
 }
 
-static void setP (SpacepadProcessor& p, const char* id, float real)
+static void setP (SpacepadProcessor& p, const juce::String& id, float real)
 {
     auto* prm = p.params.getParameter (id);
     prm->setValueNotifyingHost (prm->convertTo0to1 (real));
@@ -1005,6 +1037,161 @@ static void testNewFeatures (const juce::File& root, const juce::File& tmp)
     while (! p.setlist().songs().empty()) p.setlist().remove (0);
 }
 
+static float sideRatio (const juce::AudioBuffer<float>& b, int start)
+{
+    double m = 0, sd = 0;
+    for (int i = start; i < b.getNumSamples(); ++i)
+    {
+        const float l = b.getSample (0, i), r = b.getSample (1, i);
+        m += (l + r) * (l + r); sd += (l - r) * (l - r);
+    }
+    return (float) std::sqrt (sd / juce::jmax (1e-12, m));
+}
+
+static void testCrowdFx (const juce::File& root)
+{
+    section ("Chorus, delay au tempo et effets des crowds, mesures");
+    const double sr = 48000;
+    // chorus : un son mono devient large
+    {
+        juce::AudioBuffer<float> a (2, 48000), b (2, 48000);
+        for (int i = 0; i < 48000; ++i) { const float v = 0.3f * (float) std::sin (2 * juce::MathConstants<double>::pi * 330 * i / sr); a.setSample (0, i, v); a.setSample (1, i, v); }
+        b.makeCopyOf (a);
+        StereoChorus c0, c1; c0.prepare (sr); c1.prepare (sr);
+        c0.process (a.getWritePointer (0), a.getWritePointer (1), 48000, 0.0f);
+        c1.process (b.getWritePointer (0), b.getWritePointer (1), 48000, 0.8f);
+        std::cout << "  Chorus : largeur " << sideRatio (a, 4800) << " (sans) / " << sideRatio (b, 4800) << " (avec)\n";
+        CHECK (sideRatio (a, 4800) < 0.001f && sideRatio (b, 4800) > 0.15f, "chorus : le son s'elargit");
+    }
+    // delay : une impulsion revient au bon moment, à gauche puis à droite, de plus en plus douce
+    {
+        juce::AudioBuffer<float> b (2, 60000);
+        b.clear();
+        b.setSample (0, 0, 1.0f); b.setSample (1, 0, 1.0f);
+        TempoDelay d; d.prepare (sr);
+        d.process (b.getWritePointer (0), b.getWritePointer (1), 60000, 0.25f, 0.5f, 1.0f);
+        auto peakAt = [&] (int ch, int from, int to) { int best = from; float bv = 0; for (int i = from; i < to; ++i) if (std::abs (b.getSample (ch, i)) > bv) { bv = std::abs (b.getSample (ch, i)); best = i; } return std::pair<int, float> { best, bv }; };
+        auto e1 = peakAt (0, 6000, 18000), e2 = peakAt (1, 18000, 30000), e3 = peakAt (0, 30000, 42000);
+        std::cout << "  Delay 250 ms : echo 1 a " << e1.first << " (gauche " << e1.second << "), echo 2 a " << e2.first << " (droite " << e2.second << "), echo 3 " << e3.second << "\n";
+        CHECK (std::abs (e1.first - 12000) < 40 && std::abs (e2.first - 24000) < 60, "delay : les repetitions tombent au bon moment");
+        CHECK (e2.second < e1.second && e3.second < e2.second && e1.second > 0.3f, "delay : chaque repetition est plus douce");
+    }
+    // distance : la foule s'éloigne (moins d'aigus), mouvement : elle se promène
+    {
+        juce::Random rnd (5);
+        juce::AudioBuffer<float> n0 (2, 96000), n1 (2, 96000);
+        for (int i = 0; i < 96000; ++i) { const float v = rnd.nextFloat() * 0.4f - 0.2f; n0.setSample (0, i, v); n0.setSample (1, i, v); }
+        n1.makeCopyOf (n0);
+        CrowdFx f0, f1; f0.prepare (sr, 96000); f1.prepare (sr, 96000);
+        CrowdFxParams p0; p0.reverb = 0; p0.lowCut = 0;
+        CrowdFxParams p1 = p0; p1.distance = 1.0f;
+        f0.process (n0, 96000, p0);
+        f1.process (n1, 96000, p1);
+        const double h0 = bandEnergy (n0, 24000, 48000, sr, 6000, 16000), h1 = bandEnergy (n1, 24000, 48000, sr, 6000, 16000);
+        std::cout << "  Distance : aigus x" << juce::String (h1 / juce::jmax (1e-12, h0), 3) << "\n";
+        CHECK (h1 < h0 * 0.2, "distance : la foule s'eloigne");
+
+        juce::AudioBuffer<float> m (2, 192000);
+        for (int i = 0; i < 192000; ++i) { const float v = rnd.nextFloat() * 0.4f - 0.2f; m.setSample (0, i, v); m.setSample (1, i, v); }
+        CrowdFx fm; fm.prepare (sr, 192000);
+        CrowdFxParams pm = p0; pm.movement = 1.0f;
+        fm.process (m, 192000, pm);
+        float lo = 1e9f, hi = 0;
+        for (int blk = 0; blk < 192000 / 4800; ++blk)
+        {
+            const float l = m.getRMSLevel (0, blk * 4800, 4800), r = m.getRMSLevel (1, blk * 4800, 4800);
+            const float ratio = l / juce::jmax (1e-6f, r);
+            lo = juce::jmin (lo, ratio); hi = juce::jmax (hi, ratio);
+        }
+        std::cout << "  Mouvement : gauche/droite de " << lo << " a " << hi << "\n";
+        CHECK (lo < 0.5f && hi > 2.0f, "mouvement : le son va de gauche a droite");
+    }
+    // tempo : divisions et TAP
+    {
+        SpacepadProcessor p;
+        setP (p, "tempo", 120.0f);
+        CHECK (std::abs (p.delaySeconds (1) - 0.5f) < 1e-4f && std::abs (p.delaySeconds (2) - 0.375f) < 1e-4f && std::abs (p.delaySeconds (3) - 0.25f) < 1e-4f,
+               "tempo 120 : 1/4 = 0,5 s, 1/8 pointee = 0,375 s, 1/8 = 0,25 s");
+        for (double t : { 0.0, 833.0, 1667.0, 2500.0 }) p.tapTempoAt (10000.0 + t);
+        CHECK (std::abs (p.params.getRawParameterValue ("tempo")->load() - 72.0f) < 0.6f, "TAP : 4 frappes a 72 bpm -> 72 (" << p.params.getRawParameterValue ("tempo")->load() << ")");
+        p.tapTempoAt (20000.0);
+        CHECK (std::abs (p.params.getRawParameterValue ("tempo")->load() - 72.0f) < 0.6f, "TAP : une frappe isolee ne change rien");
+    }
+    // pad : chorus et delay dans le moteur (deux pads identiques, l'un avec l'effet)
+    {
+        auto renderPad = [] (const char* fxId, float amount, bool solo, float* soloLevel)
+        {
+            SpacepadProcessor p;
+            p.setPlayConfigDetails (0, 2, 48000, 256);
+            p.prepareToPlay (48000, 256);
+            juce::String warm;
+            for (auto& l : p.libraries().snapshot()) if (l.name == "Warm Pad") warm = l.id;
+            p.selectPadLibrary (warm, 0); p.selectPadLibrary (warm, 1);
+            setP (p, "reverb", 0.0f); setP (p, "shimmer", 0.0f); setP (p, "motion", 0.0f); setP (p, "attack", 0.05f);
+            setP (p, fxId, amount);
+            p.setMode (0); p.pressKey (0); p.waitIdleForTests (3000);
+            juce::AudioBuffer<float> b (2, 256), all (2, 256 * 300); juce::MidiBuffer midi;
+            for (int i = 0; i < 300; ++i) { b.clear(); p.processBlock (b, midi); all.copyFrom (0, i * 256, b, 0, 0, 256); all.copyFrom (1, i * 256, b, 1, 0, 256); }
+            if (solo) { p.setSolo (true); *soloLevel = runFor (p, 0.5); p.setSolo (false); soloLevel[1] = runFor (p, 0.5); }
+            p.stopAll();
+            return all;
+        };
+        float lv[2] = { 0, 0 };
+        auto a0 = renderPad ("chorus", 0.0f, true, lv);
+        auto a1 = renderPad ("chorus", 0.9f, false, nullptr);
+        auto a2 = renderPad ("delay", 0.8f, false, nullptr);
+        auto diff = [&] (const juce::AudioBuffer<float>& x)
+        {
+            double d = 0, e = 0;
+            for (int ch = 0; ch < 2; ++ch) for (int i = 48000; i < x.getNumSamples(); ++i) { const float u = a0.getSample (ch, i); d += (x.getSample (ch, i) - u) * (x.getSample (ch, i) - u); e += u * u; }
+            return std::sqrt (d / juce::jmax (1e-12, e));
+        };
+        std::cout << "  Chorus du pad : difference " << diff (a1) << ", Delay du pad : difference " << diff (a2) << "\n";
+        CHECK (diff (a1) > 0.15, "chorus du pad : il agit sur le son");
+        CHECK (diff (a2) > 0.08, "delay du pad : il agit sur le son (sur un son tenu, les echos se fondent dans le pad)");
+        CHECK (lv[0] < 1e-4f && lv[1] > 0.005f, "ecouter seul : le pad se tait, puis revient (" << lv[0] << " / " << lv[1] << ")");
+    }
+    // mémoire par son, favoris, chant
+    {
+        SpacepadProcessor p;
+        p.setPlayConfigDetails (0, 2, 48000, 256);
+        p.prepareToPlay (48000, 256);
+        juce::String crowdId;
+        for (auto& l : p.libraries().snapshot()) if (l.type == LibType::Crowd && l.name == "Mes Crowds") crowdId = l.id;
+        p.playCrowd (crowdId, 0, 0);
+        p.waitIdleForTests (2000);
+        const auto keyA = p.crowdSoundKey (0);
+        setP (p, SpacepadProcessor::crowdParam (0, "delay"), 0.6f);
+        p.runControlForTests();
+        CHECK (p.crowdPrefs().hasFx (keyA), "les effets regles pour un son sont memorises");
+        p.playCrowd (crowdId, 1, 0);
+        p.waitIdleForTests (2000);
+        setP (p, SpacepadProcessor::crowdParam (0, "delay"), 0.1f);
+        p.runControlForTests();
+        p.playCrowd (crowdId, 0, 0);
+        p.waitIdleForTests (2000);
+        const float d = p.params.getRawParameterValue (SpacepadProcessor::crowdParam (0, "delay"))->load();
+        CHECK (std::abs (d - 0.6f) < 0.01f, "le son retrouve son delay (" << d << ")");
+        p.crowdPrefs().setFavourite (keyA, true);
+        p.crowdPrefs().saveIfDirty();
+        { CrowdPrefs other; other.load(); CHECK (other.isFavourite (keyA) && other.hasFx (keyA), "favoris et effets enregistres (partages app + plugin)"); }
+        while (! p.setlist().songs().empty()) p.setlist().remove (0);
+        setP (p, SpacepadProcessor::crowdParam (1, "chorus"), 0.7f);
+        p.addSongFromCurrent ("Avec chorus");
+        setP (p, SpacepadProcessor::crowdParam (1, "chorus"), 0.0f);
+        p.gotoSong (0);
+        CHECK (std::abs (p.params.getRawParameterValue (SpacepadProcessor::crowdParam (1, "chorus"))->load() - 0.7f) < 0.01f, "le chant garde les effets des crowds");
+        while (! p.setlist().songs().empty()) p.setlist().remove (0);
+        p.crowdPrefs().setFavourite (keyA, false);
+        p.crowdPrefs().clearFx (keyA);
+        p.playCrowd (crowdId, 1, 0); p.waitIdleForTests (2000);
+        p.clearCrowdSoundFx (0);
+        p.crowdPrefs().saveIfDirty();
+        p.stopAll();
+    }
+    juce::ignoreUnused (root);
+}
+
 int main (int argc, char** argv)
 {
     juce::ScopedJuceInitialiser_GUI gui;
@@ -1028,6 +1215,7 @@ int main (int argc, char** argv)
     testSeparation (root);
     testEffects (tmp);
     testNewFeatures (root, tmp);
+    testCrowdFx (root);
     if (argc > 1) snapshot (juce::File (juce::String (argv[1])), root);
     if (juce::SystemStats::getEnvironmentVariable ("SPACEPAD_BENCH", {}).isNotEmpty()) benchPaint (root);
 

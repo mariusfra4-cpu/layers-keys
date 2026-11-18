@@ -44,7 +44,7 @@ LibraryPanel::LibraryPanel (SpacepadProcessor& p) : proc (p)
     {
         int i = 0;
         for (auto& l : libs)
-            if (l.type == LibType::Crowd && i++ == crowdPicker.getSelectedItemIndex()) { crowdLibId = l.id; category = 0; }
+            if (l.type == LibType::Crowd && i++ == crowdPicker.getSelectedItemIndex()) { crowdLibId = l.id; category = 0; filter = 0; }
         rebuildChips();
         rebuildRows();
     };
@@ -67,7 +67,7 @@ LibraryPanel::LibraryPanel (SpacepadProcessor& p) : proc (p)
         slotBtn[s].setColour (juce::TextButton::buttonOnColourId, s == 0 ? theme::amber : juce::Colour (0xffff8a6b));
         slotBtn[s].setColour (juce::TextButton::textColourOnId, juce::Colour (0xff2a1300));
         slotBtn[s].getProperties().set ("fontSize", 12.0f);
-        slotBtn[s].onClick = [this, s] { targetSlot = s; slotBtn[0].setToggleState (s == 0, juce::dontSendNotification); slotBtn[1].setToggleState (s == 1, juce::dontSendNotification); };
+        slotBtn[s].onClick = [this, s] { proc.setCrowdTarget (s); slotBtn[0].setToggleState (s == 0, juce::dontSendNotification); slotBtn[1].setToggleState (s == 1, juce::dontSendNotification); };
         addChildComponent (slotBtn[s]);
         crowdStop[s].getProperties().set ("icon", "stop");
         crowdStop[s].onClick = [this, s] { proc.stopCrowd (s); rebuildRows(); };
@@ -85,6 +85,28 @@ LibraryPanel::LibraryPanel (SpacepadProcessor& p) : proc (p)
     addChildComponent (followBtn);
     linkAtt = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.params, "crowdlink", linkBtn);
     followAtt = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.params, "crowdfollow", followBtn);
+
+    // classement des crowds : recherche et tri
+    search.setTextToShowWhenEmpty (L ("Rechercher un crowd\xe2\x80\xa6", "Search a crowd\xe2\x80\xa6", "Buscar un crowd\xe2\x80\xa6"), theme::muted);
+    search.setFont (theme::ui (13.0f));
+    search.setIndents (14, 0);
+    search.setJustification (juce::Justification::centredLeft);
+    search.onTextChange = [this] { rebuildRows(); };
+    search.onEscapeKey = [this] { search.clear(); rebuildRows(); };
+    search.onFocusLost = [this] { repaint(); };
+    addChildComponent (search);
+    sortBtn.getProperties().set ("fontSize", 12.0f);
+    sortBtn.onClick = [this]
+    {
+        juce::PopupMenu m;
+        m.addSectionHeader (L ("Trier les crowds", "Sort crowds", "Ordenar los crowds"));
+        const juce::String names[] = { L ("Par cat\xc3\xa9gorie", "By category", "Por categor\xc3\xad""a"), L ("Par nom", "By name", "Por nombre"),
+                                       L ("Par tonalit\xc3\xa9", "By key", "Por tonalidad"), L ("Par dur\xc3\xa9""e", "By length", "Por duraci\xc3\xb3n"),
+                                       L ("Derniers jou\xc3\xa9s", "Recently played", "\xc3\x9altimos tocados") };
+        for (int i = 0; i < 5; ++i) m.addItem (i + 1, names[i], true, i == sortMode);
+        m.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (&sortBtn), [this] (int r) { if (r > 0) { sortMode = r - 1; retranslate(); } });
+    };
+    addChildComponent (sortBtn);
 
     // setlist
     addSong.onClick = [this]
@@ -141,6 +163,11 @@ void LibraryPanel::retranslate()
     linkBtn.setTooltip (L ("Le crowd d\xc3\xa9marre et s'arr\xc3\xaate avec le pad", "The crowd starts and stops with the pad", "El crowd empieza y se detiene con el pad"));
     followBtn.setButtonText (L ("Suit la tonalit\xc3\xa9", "Follows the key", "Sigue la tonalidad"));
     followBtn.setTooltip (L ("Un crowd qui a une tonalit\xc3\xa9 est transpos\xc3\xa9 dans celle du pad", "A crowd with a key is transposed to the pad's key", "Un crowd con tonalidad se transpone a la del pad"));
+    {
+        const juce::String sn[] = { L ("Cat\xc3\xa9gorie", "Category", "Categor\xc3\xad""a"), L ("Nom", "Name", "Nombre"), L ("Tonalit\xc3\xa9", "Key", "Tonalidad"),
+                                    L ("Dur\xc3\xa9""e", "Length", "Duraci\xc3\xb3n"), L ("R\xc3\xa9""cents", "Recent", "Recientes") };
+        sortBtn.setButtonText (L ("Trier : ", "Sort: ", "Orden: ") + sn[juce::jlimit (0, 4, sortMode)]);
+    }
     addSong.setButtonText (L ("+ Ajouter", "+ Add", "+ A\xc3\xb1""adir"));
     addSong.setTooltip (L ("Enregistre le r\xc3\xa9glage actuel comme nouveau chant", "Saves the current setup as a new song", "Guarda el ajuste actual como nueva canci\xc3\xb3n"));
     nextSongBtn.setButtonText (L ("CHANT SUIVANT \xe2\x96\xb6", "NEXT SONG \xe2\x96\xb6", "SIGUIENTE \xe2\x96\xb6"));
@@ -154,6 +181,11 @@ void LibraryPanel::retranslate()
                               : L ("Aucune Pad Library.\n\nCliquez sur \xc2\xab Choisir un dossier de pads\xe2\x80\xa6 \xc2\xbb : Spacepad garde le nom du dossier, trouve la tonalit\xc3\xa9 de chaque son et range la librairie dans PADS MAJEURS et/ou PADS MINEURS.",
                                    "No Pad Library.\n\nClick \xe2\x80\x9c""Choose a pads folder\xe2\x80\xa6\xe2\x80\x9d: Spacepad keeps the folder name, finds the key of every sound and files the library under MAJOR PADS and/or MINOR PADS.",
                                    "Ninguna Pad Library.\n\nHaz clic en \xc2\xab""Elegir una carpeta de pads\xe2\x80\xa6\xc2\xbb: Spacepad conserva el nombre de la carpeta, encuentra la tonalidad de cada sonido y guarda la librer\xc3\xad""a en PADS MAYORES y/o PADS MENORES.");
+    for (auto id : { juce::TextEditor::backgroundColourId, juce::TextEditor::outlineColourId, juce::TextEditor::focusedOutlineColourId, juce::TextEditor::shadowColourId })
+        search.setColour (id, juce::Colours::transparentBlack);
+    search.setColour (juce::TextEditor::textColourId, theme::text);
+    search.setColour (juce::CaretComponent::caretColourId, theme::amber);
+    search.setTextToShowWhenEmpty (L ("Rechercher un crowd\xe2\x80\xa6", "Search a crowd\xe2\x80\xa6", "Buscar un crowd\xe2\x80\xa6"), theme::muted);
     rebuildRows();
     repaint();
 }
@@ -184,6 +216,8 @@ void LibraryPanel::showTabIndex (int t)
     chooseBtn.setColour (juce::TextButton::buttonOnColourId, tab == 1 ? theme::amber : theme::accent);
     chooseBtn.setVisible (tab != 2);
     for (int s = 0; s < 2; ++s) { slotBtn[s].setVisible (tab == 1); crowdStop[s].setVisible (tab == 1); crowdVol[s].setVisible (tab == 1); }
+    search.setVisible (tab == 1);
+    sortBtn.setVisible (tab == 1);
     linkBtn.setVisible (tab == 1);
     followBtn.setVisible (tab == 1);
     for (auto* b : { &addSong, &prevSongBtn, &nextSongBtn }) b->setVisible (tab == 2);
@@ -206,6 +240,35 @@ void LibraryPanel::libraryMenu (const Library& lib)
     {
         if (r == 1) juce::File (folder).revealToUser();
         if (r == 2) { proc.libraries().remove (id); refresh(); }
+    });
+}
+
+void LibraryPanel::crowdSoundMenu (const juce::String& libId, int flat)
+{
+    auto lib = proc.libraries().find (libId);
+    if (lib == nullptr) return;
+    auto* snd = lib->sound (flat);
+    if (snd == nullptr) return;
+    const auto key = CrowdPrefs::keyFor (libId, snd->path);
+    const bool fav = proc.crowdPrefs().isFavourite (key);
+    juce::PopupMenu m;
+    m.addSectionHeader (snd->name);
+    m.addItem (1, L ("Jouer dans le Crowd 1", "Play in Crowd 1", "Tocar en el Crowd 1"));
+    m.addItem (2, L ("Jouer dans le Crowd 2", "Play in Crowd 2", "Tocar en el Crowd 2"));
+    m.addSeparator();
+    m.addItem (3, fav ? L ("Retirer des favoris", "Remove from favourites", "Quitar de favoritos") : L ("Ajouter aux favoris", "Add to favourites", "A\xc3\xb1""adir a favoritos"));
+    m.addItem (4, L ("Oublier les effets r\xc3\xa9gl\xc3\xa9s pour ce son", "Forget this sound's effects", "Olvidar los efectos de este sonido"), proc.crowdPrefs().hasFx (key));
+    m.addSeparator();
+    m.addItem (5, L ("Afficher le fichier", "Show file", "Mostrar el archivo"));
+    const auto path = snd->path;
+    m.showMenuAsync (juce::PopupMenu::Options(), [this, libId, flat, key, fav, path] (int r)
+    {
+        if (r == 1 || r == 2) proc.playCrowd (libId, flat, r - 1);
+        if (r == 3) proc.crowdPrefs().setFavourite (key, ! fav);
+        if (r == 4) proc.crowdPrefs().clearFx (key);
+        if (r == 5) juce::File (path).revealToUser();
+        rebuildChips();
+        rebuildRows();
     });
 }
 
@@ -246,18 +309,31 @@ void LibraryPanel::rebuildChips()
     chips.clear();
     if (tab == 1)
         if (auto* l = currentCrowd())
-            for (int i = 0; i < (int) l->categories.size() && i < 12; ++i)
+        {
+            // filtres : Tous, Favoris, puis chaque catégorie (vos sous-dossiers), avec leur nombre de sons
+            int total = 0, favs = 0;
+            for (auto& c : l->categories)
+                for (auto& snd : c.sounds) { ++total; if (proc.crowdPrefs().isFavourite (CrowdPrefs::keyFor (l->id, snd.path))) ++favs; }
+            if (filter > 1 + (int) l->categories.size()) filter = 0;
+            auto addChip = [this] (const juce::String& n, int f)
             {
-                auto n = l->categories[(size_t) i].name.isEmpty() ? l->name : l->categories[(size_t) i].name;
                 auto b = std::make_unique<juce::TextButton> (n);
-                b->setToggleState (i == category, juce::dontSendNotification);
+                b->setToggleState (f == filter, juce::dontSendNotification);
                 b->setColour (juce::TextButton::buttonOnColourId, theme::amber);
                 b->setColour (juce::TextButton::textColourOnId, juce::Colour (0xff2a1300));
-                b->getProperties().set ("fontSize", 12.5f);
-                b->onClick = [this, i] { category = i; rebuildChips(); rebuildRows(); };
+                b->getProperties().set ("fontSize", 12.0f);
+                b->onClick = [this, f] { filter = f; rebuildChips(); rebuildRows(); };
                 addAndMakeVisible (*b);
                 chips.push_back (std::move (b));
+            };
+            addChip (L ("Tous", "All", "Todos") + U (" \xc2\xb7 ") + juce::String (total), 0);
+            addChip (L ("Favoris", "Favourites", "Favoritos") + U (" \xc2\xb7 ") + juce::String (favs), 1);
+            for (int i = 0; i < (int) l->categories.size() && i < 24; ++i)
+            {
+                auto& c = l->categories[(size_t) i];
+                addChip ((c.name.isEmpty() ? l->name : c.name) + U (" \xc2\xb7 ") + juce::String ((int) c.sounds.size()), 2 + i);
             }
+        }
     int crowdCount = 0;
     for (auto& l : libs) if (l.type == LibType::Crowd) ++crowdCount;
     crowdPicker.setVisible (tab == 1 && crowdCount > 1);
@@ -329,34 +405,83 @@ void LibraryPanel::rebuildRows()
     {
         if (auto* l = currentCrowd())
         {
-            auto* c = currentCategory();
-            int flat0 = 0;
-            for (auto& cc : l->categories) { if (&cc == c) break; flat0 += (int) cc.sounds.size(); }
-            if (c != nullptr)
-                for (int i = 0; i < (int) c->sounds.size(); ++i)
+            struct E { int flat, cat; const Sound* s; juce::String key; juce::int64 played; bool fav; };
+            std::vector<E> list;
+            const auto q = search.getText().trim();
+            int flat = 0;
+            for (int ci = 0; ci < (int) l->categories.size(); ++ci)
+            {
+                auto& c = l->categories[(size_t) ci];
+                for (auto& snd : c.sounds)
                 {
-                    auto& s = c->sounds[(size_t) i];
-                    const int flat = flat0 + i;
-                    RowList::Row r;
-                    r.name = s.name;
-                    int inSlot = -1;
-                    for (int k = 0; k < 2; ++k) if (proc.crowdSounding (k) && proc.crowdSoundIndex (k) == flat && proc.crowdLibraryId (k) == l->id) inSlot = k;
-                    juce::String keyTxt = s.key >= 0 ? L ("Tonalit\xc3\xa9 : ", "Key: ", "Tonalidad: ") + keyText (s.key) + (s.mode == 1 ? "m" : "") : L ("Sans tonalit\xc3\xa9", "No key", "Sin tonalidad");
-                    if (inSlot >= 0 && proc.crowdSemitones (inSlot) != 0) keyTxt << L (" \xc2\xb7 jou\xc3\xa9 en ", " \xc2\xb7 played in ", " \xc2\xb7 en ") << keyText (proc.currentKey()) << (s.mode == 1 ? "m" : "");
-                    r.sub = keyTxt + U (" \xc2\xb7 ") + juce::String (s.seconds, 1) + " s";
-                    r.tag = inSlot >= 0 ? juce::String (inSlot + 1) : (proc.loopOn() ? juce::String ("LOOP") : L ("1 COUP", "ONE SHOT", "1 GOLPE"));
-                    r.colour = inSlot == 1 ? juce::Colour (0xffff8a6b) : theme::amber;
-                    r.on = r.playing = inSlot >= 0;
-                    const auto id = l->id;
-                    r.onClick = [this, id, flat, inSlot]
-                    {
-                        proc.playCrowd (id, flat, inSlot >= 0 ? inSlot : targetSlot);
-                        rebuildRows();
-                    };
-                    const auto copy = *l;
-                    r.onMenu = [this, copy] { libraryMenu (copy); };
-                    out.push_back (r);
+                    const int f = flat++;
+                    const auto key = CrowdPrefs::keyFor (l->id, snd.path);
+                    const bool fav = proc.crowdPrefs().isFavourite (key);
+                    if (filter == 1 && ! fav) continue;
+                    if (filter >= 2 && ci != filter - 2) continue;
+                    if (q.isNotEmpty() && ! snd.name.containsIgnoreCase (q) && ! c.name.containsIgnoreCase (q)) continue;
+                    list.push_back ({ f, ci, &snd, key, proc.crowdPrefs().lastPlayed (key), fav });
                 }
+            }
+            std::stable_sort (list.begin(), list.end(), [this] (const E& a, const E& b)
+            {
+                switch (sortMode)
+                {
+                    case 1: return a.s->name.compareNatural (b.s->name) < 0;
+                    case 2: { const int ka = a.s->key < 0 ? 99 : a.s->key * 2 + a.s->mode, kb = b.s->key < 0 ? 99 : b.s->key * 2 + b.s->mode; return ka < kb; }
+                    case 3: return a.s->seconds < b.s->seconds;
+                    case 4: return a.played > b.played;
+                    default: return a.cat < b.cat;
+                }
+            });
+            int lastCat = -1;
+            for (auto& e : list)
+            {
+                if (sortMode == 0 && filter < 2 && e.cat != lastCat)
+                {
+                    lastCat = e.cat;
+                    RowList::Row h;
+                    h.header = true;
+                    auto& c = l->categories[(size_t) e.cat];
+                    h.name = (c.name.isEmpty() ? l->name : c.name).toUpperCase();
+                    int n = 0;
+                    for (auto& x : list) if (x.cat == e.cat) ++n;
+                    h.tag = juce::String (n);
+                    h.colour = theme::light ? juce::Colour (0xffb86a14) : juce::Colour (0xffffcf8a);
+                    out.push_back (h);
+                }
+                auto& snd = *e.s;
+                RowList::Row r;
+                r.name = snd.name;
+                int inSlot = -1;
+                for (int k = 0; k < 2; ++k) if (proc.crowdSounding (k) && proc.crowdSoundIndex (k) == e.flat && proc.crowdLibraryId (k) == l->id) inSlot = k;
+                juce::String keyTxt = snd.key >= 0 ? keyText (snd.key) + (snd.mode == 1 ? "m" : "") : L ("Sans tonalit\xc3\xa9", "No key", "Sin tonalidad");
+                if (inSlot >= 0 && proc.crowdSemitones (inSlot) != 0) keyTxt << L (" \xc2\xb7 jou\xc3\xa9 en ", " \xc2\xb7 played in ", " \xc2\xb7 en ") << keyText (proc.currentKey()) << (snd.mode == 1 ? "m" : "");
+                r.sub = keyTxt + U (" \xc2\xb7 ") + juce::String (snd.seconds, 1) + " s";
+                if (sortMode != 0 || filter >= 2) r.sub << U (" \xc2\xb7 ") << l->categories[(size_t) e.cat].name;
+                r.tag = inSlot >= 0 ? juce::String (inSlot + 1) : (proc.loopOn() ? juce::String ("LOOP") : L ("1 COUP", "ONE SHOT", "1 GOLPE"));
+                r.colour = inSlot == 1 ? juce::Colour (0xffff8a6b) : theme::amber;
+                r.on = r.playing = inSlot >= 0;
+                r.star = e.fav ? 2 : 1;
+                r.fx = proc.crowdPrefs().hasFx (e.key);
+                const auto id = l->id; const int fl = e.flat; const auto key = e.key; const bool fav = e.fav;
+                r.onClick = [this, id, fl, inSlot]
+                {
+                    proc.playCrowd (id, fl, inSlot >= 0 ? inSlot : proc.crowdTarget());
+                    rebuildRows();
+                };
+                r.onStar = [this, key, fav] { proc.crowdPrefs().setFavourite (key, ! fav); rebuildChips(); rebuildRows(); };
+                r.onMenu = [this, id, fl] { crowdSoundMenu (id, fl); };
+                out.push_back (r);
+            }
+            if (list.empty())
+            {
+                RowList::Row r;
+                r.name = filter == 1 ? L ("Aucun favori", "No favourites", "Ning\xc3\xban favorito") : L ("Aucun son trouv\xc3\xa9", "No sound found", "Ning\xc3\xban sonido");
+                r.sub = filter == 1 ? L ("Touchez l'\xc3\xa9toile d'un son pour l'ajouter", "Tap a sound's star to add it", "Toca la estrella de un sonido") : L ("Changez la recherche ou le filtre", "Change the search or the filter", "Cambia la b\xc3\xbasqueda o el filtro");
+                r.colour = theme::muted;
+                out.push_back (r);
+            }
         }
     }
     else
@@ -397,8 +522,15 @@ void LibraryPanel::updateState()
                    + "|" + juce::String (proc.currentKey()) + "|" + juce::String ((int) proc.padActive())
                    + "|" + proc.crowdLibraryId (0) + juce::String (proc.crowdSoundIndex (0)) + juce::String ((int) proc.crowdSounding (0))
                    + "|" + proc.crowdLibraryId (1) + juce::String (proc.crowdSoundIndex (1)) + juce::String ((int) proc.crowdSounding (1))
-                   + "|" + juce::String ((int) proc.loopOn()) + "|" + juce::String (proc.setlist().changeCount()) + "|" + juce::String (proc.setlist().current());
-    if (sig != lastStateSig) { lastStateSig = sig; rebuildRows(); resized(); }
+                   + "|" + juce::String ((int) proc.loopOn()) + "|" + juce::String (proc.setlist().changeCount()) + "|" + juce::String (proc.setlist().current())
+                   + "|" + juce::String (proc.crowdPrefs().changeCount()) + "|" + juce::String (proc.crowdTarget());
+    if (sig != lastStateSig)
+    {
+        lastStateSig = sig;
+        for (int s = 0; s < 2; ++s) slotBtn[s].setToggleState (proc.crowdTarget() == s, juce::dontSendNotification);
+        rebuildRows();
+        resized();
+    }
 }
 
 void LibraryPanel::resized()
@@ -453,22 +585,25 @@ void LibraryPanel::resized()
             pa.removeFromTop (4);
         }
         r.removeFromBottom (10);
+        search.setBounds (statusArea.withTrimmedRight (128).reduced (0, 1));
+        sortBtn.setBounds (statusArea.removeFromRight (120));
         if (crowdPicker.isVisible()) { crowdPicker.setBounds (r.removeFromTop (36)); r.removeFromTop (8); }
         auto slots = r.removeFromTop (34);
         auto sl = slots.removeFromRight (190);
         slotBtn[0].setBounds (sl.removeFromLeft (94).reduced (2, 0));
         slotBtn[1].setBounds (sl.reduced (2, 0));
         r.removeFromTop (8);
+        // filtres sur deux lignes au plus
         int x = r.getX(), y = r.getY(), lines = 1;
         for (auto& c : chips)
         {
-            const int w = juce::jmin (r.getWidth(), (int) juce::GlyphArrangement::getStringWidth (theme::ui (12.5f, 1), c->getButtonText()) + 32);
-            if (x + w > r.getRight() && x > r.getX()) { x = r.getX(); y += 40; ++lines; }
+            const int w = juce::jmin (r.getWidth(), (int) juce::GlyphArrangement::getStringWidth (theme::ui (12.0f, 1), c->getButtonText()) + 26);
+            if (x + w > r.getRight() && x > r.getX()) { x = r.getX(); y += 36; ++lines; }
             c->setVisible (lines <= 2);
-            c->setBounds (x, y, w, 34);
+            c->setBounds (x, y, w, 30);
             x += w + 6;
         }
-        if (! chips.empty()) r.removeFromTop (juce::jmin (y, r.getY() + 40) - r.getY() + 34 + 8);
+        if (! chips.empty()) r.removeFromTop (juce::jmin (lines, 2) * 36 + 4);
     }
     viewport.setBounds (r);
     rows.setSize (viewport.getMaximumVisibleWidth(), juce::jmax (rows.contentHeight(), r.getHeight()));
@@ -486,6 +621,13 @@ void LibraryPanel::paint (juce::Graphics& g)
     g.setColour (theme::ink.withAlpha (0.06f));
     g.fillRoundedRectangle (tabs, tabs.getHeight() * 0.5f);
 
+    // champ de recherche (verre arrondi)
+    if (tab == 1 && search.isVisible())
+    {
+        auto sb = search.getBounds().toFloat();
+        glassShape (g, sb, sb.getHeight() * 0.5f, search.hasKeyboardFocus (true), theme::ink);
+        if (search.hasKeyboardFocus (true)) { g.setColour (theme::amber.withAlpha (0.7f)); g.drawRoundedRectangle (sb.reduced (0.5f), sb.getHeight() * 0.5f, 1.2f); }
+    }
     // ligne d'état
     auto st = statusArea.toFloat();
     int count = 0;
@@ -493,6 +635,7 @@ void LibraryPanel::paint (juce::Graphics& g)
     const int songsN = (int) proc.setlist().songs().size();
     if (tab == 2) count = songsN;
     const auto col = count > 0 ? (tab == 1 ? theme::amber : theme::green) : theme::muted;
+    if (tab != 1) {
     g.setColour (col.withAlpha (0.08f));
     g.fillRoundedRectangle (st, st.getHeight() * 0.5f);
     g.setColour (col.withAlpha (0.3f));
@@ -517,6 +660,7 @@ void LibraryPanel::paint (juce::Graphics& g)
                        : (L ("Pads seulement \xc2\xb7 ", "Pads only \xc2\xb7 ", "Solo pads \xc2\xb7 ") + juce::String (count) + " " + plural);
     }
     g.drawText (txt, st.withTrimmedLeft (30).withTrimmedRight (10), juce::Justification::centredLeft, true);
+    }
 
     auto smallTitle = [&] (juce::Rectangle<float> rr, const juce::String& t, juce::Colour c)
     {

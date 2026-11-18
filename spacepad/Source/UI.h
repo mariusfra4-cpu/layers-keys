@@ -59,6 +59,7 @@ public:
     void setLabel (const juce::String& l) { label = l; repaint(); }
     void setColour (juce::Colour c) { slider.setColour (juce::Slider::rotarySliderFillColourId, c); repaint(); }
     bool usesAccent = false;
+    std::function<juce::String()> valueText;     // texte de la valeur (sinon celui du paramètre)
 private:
     SpacepadProcessor& proc;
     juce::String id, label;
@@ -184,6 +185,9 @@ public:
         juce::String badge;                    // numéro (setlist), à la place du point de couleur
         bool chips = false, aOn = false, bOn = false;   // pastilles A / B (deux pads mélangés)
         std::function<void()> onA, onB;
+        int star = 0;                          // étoile des favoris : 0 aucune, 1 vide, 2 pleine
+        bool fx = false;                       // badge FX : ce son a ses propres effets
+        std::function<void()> onStar;
     };
     void setRows (std::vector<Row> r);
     void paint (juce::Graphics&) override;
@@ -241,6 +245,13 @@ private:
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> linkAtt, followAtt;
     int targetSlot = 0;
     juce::Rectangle<int> playerArea;
+    // classement des crowds
+    juce::TextEditor search;
+    juce::TextButton sortBtn;
+    int sortMode = 0;                          // 0 catégorie, 1 nom, 2 tonalité, 3 durée, 4 récents
+    int filter = 0;                            // 0 tous, 1 favoris, 2+ catégorie
+    juce::Rectangle<int> searchArea;
+    void crowdSoundMenu (const juce::String& libId, int flat);
     // setlist
     juce::TextButton addSong, prevSongBtn, nextSongBtn;
     int tab = 0;
@@ -340,6 +351,9 @@ private:
     SpacepadProcessor& proc;
     juce::Slider slider;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> att;
+public:
+    void mouseUp (const juce::MouseEvent&) override;
+    std::function<void (int page)> onLabel;      // toucher « PAD » ou « CROWD » ouvre ses effets
 };
 
 // Mode scène : plein écran, très gros boutons, lisible de loin
@@ -385,6 +399,77 @@ private:
     std::atomic<int> result { -1 };
 };
 
+// Panneau des effets : EFFETS PAD (15 boutons, Freeze, Swell) ou EFFETS CROWD (12 boutons par crowd, TAP, Écouter seul)
+class FxPanel : public juce::Component
+{
+public:
+    explicit FxPanel (SpacepadProcessor&);
+    void paint (juce::Graphics&) override;
+    void resized() override;
+    void mouseUp (const juce::MouseEvent&) override;
+    void showPage (int page);                   // 0 pad, 1 crowd
+    int page() const { return pageNow; }
+    void showSlot (int slot);
+    void retranslate();
+    void applyColours();
+    void tick();                                // nom du son, tempo
+private:
+    SpacepadProcessor& proc;
+    int pageNow = 0, slot = 0;
+    std::vector<std::unique_ptr<Knob>> padKnobs, crowdKnobs[2];
+    juce::TextButton freezeBtn { "FREEZE" }, swellBtn { "SWELL" }, tapBtn, soloBtn;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> freezeAtt, swellAtt;
+    juce::Rectangle<int> tabsArea, slotArea, nameArea;
+    juce::String lastName;
+};
+
+// Bouton PAD / CROWD au-dessus de l'orbe : change le centre de l'écran
+class CenterSwitch : public juce::Component
+{
+public:
+    void paint (juce::Graphics&) override;
+    void mouseUp (const juce::MouseEvent&) override;
+    int value = 0;
+    std::function<void (int)> onChange;
+};
+
+// La grande salle derrière les crowds : arches, vitrail, rayons de lumière, foule ; la lumière respire avec le son
+class HallView : public juce::Component
+{
+public:
+    explicit HallView (SpacepadProcessor& p) : proc (p) { setInterceptsMouseClicks (false, false); }
+    void paint (juce::Graphics&) override;
+    void resized() override { image = {}; }
+    void tick (float dt);
+private:
+    void render (float px);
+    SpacepadProcessor& proc;
+    juce::Image image;
+    float imageScale = 0, glow = 0, t = 0;
+    struct Dust { float x, y, v, a, r; };
+    std::vector<Dust> dust;
+    juce::Random rng { 29 };
+};
+
+// Les deux crowds au centre, la pastille LIÉ et les sons à toucher
+class CrowdStage : public juce::Component
+{
+public:
+    explicit CrowdStage (SpacepadProcessor& p) : proc (p) {}
+    void paint (juce::Graphics&) override;
+    void mouseUp (const juce::MouseEvent&) override;
+    bool hitTest (int x, int y) override;
+    void refreshTiles();
+private:
+    struct Tile { juce::String libId, name, sub; int index = 0; bool fav = false; juce::Rectangle<float> r; };
+    juce::Rectangle<float> orbRect (int slot) const;
+    juce::Rectangle<float> stopRect (int slot) const;
+    juce::Rectangle<float> linkRect() const;
+    float S() const { return juce::jmin (getWidth() / 676.0f, getHeight() / 734.0f); }
+    SpacepadProcessor& proc;
+    std::vector<Tile> tiles;
+};
+
 // --------------------------------------------------------------------------------------------
 class MainView : public juce::Component, private juce::Timer
 {
@@ -419,13 +504,16 @@ private:
     Visualizer viz { proc, anim };
     juce::TextButton playBtn, stopBtn, loopBtn { "LOOP" }, stopAllBtn, finBtn;
     MixBar mixBar { proc };
+    FxPanel fxPanel { proc };
+    CenterSwitch centerSwitch;
+    HallView hall { proc };
+    CrowdStage crowdStage { proc };
+    void setCenterView (int v);
     IconButton stageBtn { "stage" };
     std::unique_ptr<StageOverlay> stage;
     std::unique_ptr<TaskOverlay> task;
     void runTask (const juce::String& title, std::function<bool (ProgressFn)> work, std::function<void (bool)> done);
-    juce::TextButton freezeBtn { "FREEZE" }, swellBtn { "SWELL" };
-    std::vector<std::unique_ptr<Knob>> knobs;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> loopAtt, freezeAtt, swellAtt;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> loopAtt;
     std::unique_ptr<ScanOverlay> scan;
     std::unique_ptr<SettingsOverlay> settings;
     std::unique_ptr<juce::FileChooser> chooser;

@@ -54,5 +54,15 @@ inline void glassShape (juce::Graphics& g, juce::Rectangle<float> r, float radiu
     if (lightInk) { g.setColour (ink.withAlpha (0.10f)); g.drawLine (r.getX() + radius, r.getY() + 1.5f, r.getRight() - radius, r.getY() + 1.5f, 1.0f); }
 }
 
+// étoile des favoris (dessinée : la police n'a pas toujours ce signe)
+inline void drawStar (juce::Graphics& g, juce::Point<float> c, float r, bool filled, juce::Colour col)
+{
+    juce::Path p;
+    p.addStar (c, 5, r * 0.45f, r, 0.0f);
+    g.setColour (col);
+    if (filled) g.fillPath (p);
+    else g.strokePath (p, juce::PathStrokeType (1.3f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+}
+
 inline juce::Image makeCacheImage (int w, int h) { return juce::Image (juce::Image::ARGB, juce::jmax (1, w), juce::jmax (1, h), true); }
 }

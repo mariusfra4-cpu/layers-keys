@@ -13,6 +13,8 @@ void FxChain::prepare (double sampleRate, int maxBlock)
     juce::dsp::ProcessSpec mono { sr, spec.maximumBlockSize, 1 };
     airL.prepare (mono); airR.prepare (mono);
     reverb.prepare (spec);
+    chorus.prepare (sr);
+    delay.prepare (sr);
     wet.setSize (2, juce::jmax (1, maxBlock));
     for (auto* s : { &sWarm, &sAir, &sSub, &sShim, &sRev, &sWidth, &sMotion }) s->reset (sr, 0.08);
     swellGain.reset (sr, 0.5);
@@ -23,7 +25,7 @@ void FxChain::prepare (double sampleRate, int maxBlock)
 
 void FxChain::reset()
 {
-    lowCut.reset(); motionLp.reset(); warmLp.reset(); airL.reset(); airR.reset(); reverb.reset();
+    lowCut.reset(); motionLp.reset(); warmLp.reset(); airL.reset(); airR.reset(); reverb.reset(); chorus.reset(); delay.reset();
 }
 
 void FxChain::process (juce::AudioBuffer<float>& main, juce::AudioBuffer<float>& sub, juce::AudioBuffer<float>& shim, int num, const FxParams& p)
@@ -98,6 +100,10 @@ void FxChain::process (juce::AudioBuffer<float>& main, juce::AudioBuffer<float>&
     }
     if (airDb > 0.05f)
         for (int i = 0; i < num; ++i) { L[i] = airL.processSample (L[i]); R[i] = airR.processSample (R[i]); }
+
+    // 5b. Chorus puis delay au tempo (les répétitions passent ensuite dans la réverbération)
+    chorus.process (L, R, num, p.chorus);
+    delay.process (L, R, num, p.delaySeconds, 0.42f, p.delay * 0.8f);
 
     // 6. Réverbération + Shimmer (couche une octave plus haut envoyée dans la réverbération)
     {

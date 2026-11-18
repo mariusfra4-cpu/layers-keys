@@ -5,6 +5,8 @@
 #include "PadEngine.h"
 #include "Effects.h"
 #include "Setlist.h"
+#include "CrowdPrefs.h"
+#include "Modulation.h"
 #include "Lang.h"
 
 namespace spacepad
@@ -51,6 +53,23 @@ public:
     void playCrowd (const juce::String& libId, int soundIndex, int slot = 0);  // rappuyer sur le son joué l'arrête
     void stopCrowd (int slot);
     void stopCrowd();                        // les deux
+
+    // --- effets des crowds, tempo, écoute seule ---
+    static juce::String crowdParam (int slot, const char* name) { return "c" + juce::String ((slot & 1) + 1) + name; }
+    static const juce::StringArray& crowdFxNames();      // chorus, delay, dtime, dfb, reverb, width, dist, move, lowcut, attack, fade
+    CrowdPrefs& crowdPrefs() { return prefs; }
+    juce::String crowdSoundKey (int slot) const;            // son joué dans ce crowd (pour les favoris et ses effets)
+    void clearCrowdSoundFx (int slot);                   // oublie les effets mémorisés pour le son de ce crowd
+    void setSolo (bool on) { soloOn = on; }              // « Écouter seul » : coupe le pad pour entendre les crowds
+    bool solo() const { return soloOn.load(); }
+    double tempoBpm() const;                             // tempo du delay (celui du logiciel de musique s'il en donne un)
+    bool hostTempo() const { return hostBpm.load() > 0; }
+    void tapTempo() { tapTempoAt (juce::Time::getMillisecondCounterHiRes()); }
+    void tapTempoAt (double ms);
+    int crowdTarget() const { return target.load(); }    // crowd qui recevra le prochain son touché
+    void setCrowdTarget (int s) { target = s & 1; }
+    float crowdLevel (int slot) const { return crowdLvl[slot & 1].load(); }
+    float delaySeconds (int divisionIndex) const;
 
     // --- setlist ---
     Setlist& setlist() { return songs; }
@@ -108,14 +127,31 @@ private:
     void autoSelectLibraries();
     void refreshMidiSettings();
     FxParams readFx() const;
+    CrowdFxParams readCrowdFx (int slot) const;
+    CrowdPrefs::Fx crowdFxSnapshot (int slot) const;
+    void applyCrowdFx (int slot, const CrowdPrefs::Fx&);
+    void newCrowdSound (int slot);
+    void trackCrowdFx();
     float p (const char* id) const { return params.getRawParameterValue (id)->load(); }
+    float p (const juce::String& id) const { return params.getRawParameterValue (id)->load(); }
     void setParam (const char* id, float realValue);
+    void setParam (const juce::String& id, float realValue) { setParam (id.toRawUTF8(), realValue); }
 
     LibraryStore store;
     Setlist songs;
     SampleLoader sampleLoader;
     PadChannel pad, padB, crowd[2];
     FxChain fx;
+    CrowdFx crowdFx[2];
+    CrowdPrefs prefs;
+    std::atomic<bool> soloOn { false };
+    std::atomic<double> hostBpm { 0 };
+    std::atomic<float> crowdLvl[2] { { 0 }, { 0 } };
+    std::atomic<int> target { 0 };
+    juce::CriticalSection fxLock;
+    CrowdPrefs::Fx lastFx[2];
+    double tapTimes[8] {};
+    int taps = 0;
     juce::AudioBuffer<float> mainBuf, subBuf, shimBuf, bBuf, bSub, bShim, crowdBuf, crowdBuf2;
     int maxBlock = 512;
     float lastGA = 1, lastGB = 0;

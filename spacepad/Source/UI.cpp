@@ -298,7 +298,7 @@ void Knob::paint (juce::Graphics& g)
     g.setColour (theme::muted);
     g.setFont (theme::ui (11.5f));
     auto* prm = proc.params.getParameter (id);
-    g.drawText (prm->getText (prm->getValue(), 16), r.removeFromTop (15), juce::Justification::centred);
+    g.drawText (valueText ? valueText() : prm->getText (prm->getValue(), 16), r.removeFromTop (15), juce::Justification::centred);
 }
 
 // ============================================================================================
@@ -448,6 +448,12 @@ void RowList::mouseUp (const juce::MouseEvent& e)
 {
     const int i = rowAt (e.y);
     if (i < 0 || e.mouseWasDraggedSinceMouseDown()) return;
+    if (rows[(size_t) i].star != 0 && ! e.mods.isPopupMenu() && e.x > getWidth() - 44)
+    {
+        auto fnStar = rows[(size_t) i].onStar;
+        if (fnStar) fnStar();
+        return;
+    }
     if (rows[(size_t) i].chips && ! e.mods.isPopupMenu() && e.x > getWidth() - 70)
     {
         auto fnChip = e.x < getWidth() - 36 ? rows[(size_t) i].onA : rows[(size_t) i].onB;
@@ -519,7 +525,8 @@ void RowList::paint (juce::Graphics& g)
             g.setColour (row.on || row.playing ? col : col.withMultipliedSaturation (0.5f).withMultipliedBrightness (0.7f));
             g.fillEllipse (dot);
         }
-        auto tr = r.withTrimmedLeft (row.badge.isNotEmpty() ? 46 : 38).withTrimmedRight (row.chips ? 74 : 66);
+        const float extra = (row.star != 0 ? 30.0f : 0.0f) + (row.fx ? 34.0f : 0.0f);
+        auto tr = r.withTrimmedLeft (row.badge.isNotEmpty() ? 46 : 38).withTrimmedRight ((row.chips ? 74 : 66) + extra);
         g.setColour (theme::text);
         g.setFont (theme::ui (14.0f, 1));
         g.drawText (row.name, tr.withTrimmedBottom (r.getHeight() * 0.44f), juce::Justification::bottomLeft, true);
@@ -543,9 +550,42 @@ void RowList::paint (juce::Graphics& g)
         }
         else
         {
-            g.setColour (theme::light ? juce::Colour (0xffb86a14) : juce::Colour (0xffffcf8a));
-            g.setFont (theme::ui (11.5f, 1));
-            g.drawText (row.tag, r.withTrimmedRight (14).removeFromRight (60), juce::Justification::centredRight);
+            auto right = r.withTrimmedRight (14);
+            if (row.star != 0)
+            {
+                // étoile des favoris
+                auto sr = right.removeFromRight (24);
+                drawStar (g, sr.getCentre(), 8.0f, row.star == 2, row.star == 2 ? juce::Colour (0xffffc94a) : theme::muted.withAlpha (0.6f));
+                right.removeFromRight (6);
+            }
+            const bool tagIsSlot = row.tag.length() == 1 && row.tag.containsOnly ("12");
+            if (tagIsSlot)
+            {
+                // numéro du crowd qui joue ce son
+                auto pill = right.removeFromRight (24).withSizeKeepingCentre (22, 22);
+                g.setColour (col);
+                g.fillEllipse (pill);
+                g.setColour (juce::Colour (0xff2a1300));
+                g.setFont (theme::ui (11.5f, 2));
+                g.drawText (row.tag, pill, juce::Justification::centred);
+                right.removeFromRight (6);
+            }
+            if (row.fx)
+            {
+                auto fb = right.removeFromRight (30).withSizeKeepingCentre (30, 20);
+                g.setColour (theme::ink.withAlpha (0.08f));
+                g.fillRoundedRectangle (fb, 8.0f);
+                g.setColour (theme::light ? juce::Colour (0xffb86a14) : juce::Colour (0xffffcf8a));
+                g.setFont (theme::ui (10.0f, 2));
+                g.drawText ("FX", fb, juce::Justification::centred);
+                right.removeFromRight (6);
+            }
+            if (! tagIsSlot)
+            {
+                g.setColour (theme::light ? juce::Colour (0xffb86a14) : juce::Colour (0xffffcf8a));
+                g.setFont (theme::ui (11.5f, 1));
+                g.drawText (row.tag, right.removeFromRight (60), juce::Justification::centredRight);
+            }
         }
         top += 60;
     }

@@ -1,6 +1,7 @@
-// Spacepad by JB Praise — effets : Low cut, Warm, Motion, Air, Width, Sub, Shimmer, Reverb, Freeze, Swell.
+// Spacepad by JB Praise — effets du pad : Low cut, Warm, Motion, Air, Chorus, Delay, Width, Sub, Shimmer, Reverb, Freeze, Swell.
 #pragma once
 #include <juce_dsp/juce_dsp.h>
+#include "Modulation.h"
 
 namespace spacepad
 {
@@ -14,6 +15,9 @@ struct FxParams
     float width = 0.5f;  // 0..1 : 0 = mono, 0.5 = normal, 1 = très large
     float sub = 0;       // 0..1 : couche une octave plus bas
     float lowCut = 0;    // 0..1 : coupe-bas de 20 Hz à 500 Hz
+    float chorus = 0;    // 0..1 : épaissit et élargit
+    float delay = 0;     // 0..1 : quantité de répétitions
+    float delaySeconds = 0.83f; // temps du delay (selon le tempo)
     bool freeze = false; // réverbération figée à l'infini
     bool swell = false;  // le volume monte et redescend doucement
 };
@@ -31,6 +35,8 @@ private:
     juce::dsp::StateVariableTPTFilter<float> lowCut, motionLp, warmLp;
     juce::dsp::IIR::Filter<float> airL, airR;
     juce::dsp::Reverb reverb;
+    StereoChorus chorus;
+    TempoDelay delay;
     juce::AudioBuffer<float> wet;
     juce::SmoothedValue<float> sWarm, sAir, sSub, sShim, sRev, sWidth, sMotion;
     double lfoPhase = 0, swellPhase = 0;
