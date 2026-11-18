@@ -140,5 +140,9 @@ jobs:
           cp -r /tmp/o/* . 2>/dev/null || true
           echo "run $GITHUB_RUN_ID" > run.txt
           git add -A && git commit -qm "spacepad windows $GITHUB_RUN_ID"
-          git push -f origin HEAD:refs/heads/ci-spacepad-win
+          # sans nouvel installeur (un test a échoué) : on publie seulement les journaux ailleurs,
+          # le lien de téléchargement garde la dernière version qui a tout réussi
+          target=ci-spacepad-win
+          ls Spacepad-Setup-*.exe >/dev/null 2>&1 || target=ci-spacepad-win-echec
+          git push -f origin HEAD:refs/heads/$target
 
