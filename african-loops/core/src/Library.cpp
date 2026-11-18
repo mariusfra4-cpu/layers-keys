@@ -90,7 +90,7 @@ std::string categoryOf(const std::string& rel) {
     std::string p = rel;
     std::replace(p.begin(), p.end(), '\\', '/');
     auto slash = p.find('/');
-    if (slash != std::string::npos) return trim(p.substr(0, slash));  // le dossier décide : « I Love/… » → I Love
+    if (slash != std::string::npos) return trim(p.substr(0, slash));  // le nom du dossier décide : « Worship/… » → Worship
     auto dot = p.find_last_of('.');
     if (auto c = styleFromText(dot == std::string::npos ? p : p.substr(0, dot)); !c.empty()) return c;
     return kUncategorized;
