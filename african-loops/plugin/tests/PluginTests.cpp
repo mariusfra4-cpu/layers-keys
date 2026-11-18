@@ -1,8 +1,7 @@
 // Tests du plugin complet, comme dans un vrai logiciel de musique : un fil
 // audio qui tourne sans arrêt, l'interface ouverte, des loops chargées
 // pendant la lecture, la sauvegarde du projet, le glisser-déposer…
-#include "../PluginEditor.h"
-#include "../PluginProcessor.h"
+#include "TestLoops.h"
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
@@ -11,7 +10,6 @@
 #include <random>
 #include <thread>
 
-using namespace africanloops;
 
 static int failures = 0;
 #define CHECK(cond, ...)                                          \
@@ -24,45 +22,6 @@ static int failures = 0;
         }                                                         \
     } while (0)
 
-// petite loop de batterie (kick, caisse claire, charleston, conga)
-static Audio drums(double bpm, int bars, unsigned seed) {
-    const int rate = 44100;
-    const double six = 60 / bpm / 4;
-    const int total = (int)std::lround(bars * 16 * six * rate);
-    Audio a;
-    a.rate = rate;
-    a.L.assign((size_t)total, 0.f);
-    std::mt19937 rng(seed);
-    std::uniform_real_distribution<double> nz(-1, 1);
-    for (int s = 0; s < bars * 16; ++s) {
-        int st = (int)std::lround(s * six * rate);
-        auto add = [&](double dur, auto f) {
-            for (int i = 0; i < (int)(dur * rate) && st + i < total; ++i) a.L[(size_t)(st + i)] += (float)f(i / (double)rate);
-        };
-        if (s % 8 == 0 || s % 16 == 10) add(0.4, [](double t) { return 0.8 * std::sin(2 * 3.14159 * (50 * t + 2.1 * (1 - std::exp(-t / 0.03)))) * std::exp(-t / 0.12); });
-        if (s % 8 == 4) add(0.25, [&](double t) { return 0.45 * nz(rng) * std::exp(-t / 0.06) + 0.35 * std::sin(2 * 3.14159 * 190 * t) * std::exp(-t / 0.05); });
-        if (s % 2 == 0) { double p1 = 0, p2 = 0; add(0.1, [&](double t) { double x = nz(rng), h = x - 2 * p1 + p2; p2 = p1; p1 = x; return 0.12 * h * std::exp(-t / 0.025); }); }
-        if (s % 4 == 3) add(0.4, [](double t) { return 0.5 * std::sin(2 * 3.14159 * 330 * t) * std::exp(-t / 0.09); });
-    }
-    a.R = a.L;
-    return a;
-}
-
-static void writeLoop(const juce::File& f, double bpm, int bars, unsigned seed) {
-    f.getParentDirectory().createDirectory();
-    auto b = encodeWAV(drums(bpm, bars, seed), 0, 0);
-    f.replaceWithData(b.data(), b.size());
-}
-
-template <typename Pred>
-static bool waitFor(Pred p, int ms) {
-    for (int t = 0; t < ms; t += 20) {
-        if (p()) return true;
-        juce::MessageManager::getInstance()->runDispatchLoopUntil(20);
-    }
-    return p();
-}
-
 // Fil audio qui tourne comme celui d'un logiciel de musique.
 struct AudioThread {
     AfricanLoopsProcessor& p;
@@ -70,6 +29,7 @@ struct AudioThread {
     std::atomic<bool> run{true};
     std::atomic<double> energy{0};
     std::atomic<int> bad{0}, blocks{0};
+    std::atomic<float> maxAbs{0};
     std::thread th;
     AudioThread(AfricanLoopsProcessor& proc, int b) : p(proc), block(b) {
         th = std::thread([this] {
@@ -82,6 +42,7 @@ struct AudioThread {
                     for (int i = 0; i < block; ++i) {
                         float v = buf.getSample(c, i);
                         if (!std::isfinite(v) || std::abs(v) > 4) ++bad;
+                        if (std::abs(v) > maxAbs) maxAbs = std::abs(v);
                         e += v * v;
                     }
                 energy = energy + e;
@@ -184,6 +145,17 @@ int main(int argc, char** argv) {
             waitFor([] { return false; }, 150);
         }
         CHECK(audio->bad == 0, "%d échantillons invalides", audio->bad.load());
+        // tout à fond : volume master 150 %, pistes à +3 dB, effets, chaleur → jamais au-dessus de 0 dB
+        setParam(*proc, ids::master, 1.5f);
+        for (int i = 0; i < kNumTracks; ++i) setParam(*proc, ids::gain(i), 1.5f);
+        setParam(*proc, ids::lp, 1);
+        setParam(*proc, ids::hp, 0);
+        waitFor([] { return false; }, 300);
+        audio->maxAbs = 0;
+        waitFor([] { return false; }, 800);
+        CHECK(audio->maxAbs.load() <= 0.9661f, "le son dépasse le maximum : crête %.3f", audio->maxAbs.load());
+        setParam(*proc, ids::master, 1);
+        for (int i = 0; i < kNumTracks; ++i) setParam(*proc, ids::gain(i), 1);
         for (auto id : {ids::masterFx, ids::sendFx, ids::modFx, ids::metronome, ids::mono}) setParam(*proc, id, 0);
         setParam(*proc, ids::lp, 1);
         setParam(*proc, ids::hp, 0);

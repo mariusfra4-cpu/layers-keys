@@ -93,6 +93,9 @@ void AfricanLoopsProcessor::prepareToPlay(double sampleRate, int samplesPerBlock
     limiter.prepare(spec);
     limiter.setThreshold(-0.5f);
     limiter.setRelease(80.f);
+    safety.prepare(spec);
+    safety.setThreshold(-0.3f);
+    safety.setRelease(60.f);
     reverb.prepare(spec);
     juce::dsp::Reverb::Parameters rp;
     rp.roomSize = 0.55f; rp.damping = 0.5f; rp.wetLevel = 0.22f; rp.dryLevel = 1.f; rp.width = 1.f;
@@ -199,6 +202,21 @@ void AfricanLoopsProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
     }
     if (val(ids::mono) > 0.5f)
         for (int i = 0; i < n; ++i) L[i] = R[i] = 0.5f * (L[i] + R[i]);
+
+    // protection : le son ne dépasse jamais le maximum (pas de grésillement
+    // dans le logiciel de musique, même avec tous les effets et le volume à fond)
+    {
+        juce::dsp::AudioBlock<float> blk(view);
+        juce::dsp::ProcessContextReplacing<float> ctx(blk);
+        safety.process(ctx);
+    }
+    // plafond doux à -0,3 dB : arrondit les toutes petites crêtes au lieu de les écrêter
+    constexpr float knee = 0.8f, ceiling = 0.966f;
+    for (auto* ch : {L, R})
+        for (int i = 0; i < n; ++i) {
+            float a = std::abs(ch[i]);
+            if (a > knee) ch[i] = std::copysign(knee + (ceiling - knee) * std::tanh((a - knee) / (ceiling - knee)), ch[i]);
+        }
 
     float pl = outPeakL.load() * 0.85f, pr = outPeakR.load() * 0.85f;
     for (int i = 0; i < n; ++i) {

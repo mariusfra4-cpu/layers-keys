@@ -169,6 +169,7 @@ void BrowserPanel::refreshLibrary() {
     catList.updateContent();
     int sel = std::max(0, categories.indexOf(previous));
     catList.selectRow(sel, true, true);
+    catList.scrollToEnsureRowIsOnscreen(sel);
     rebuildLoops();
     repaint();
 }
@@ -189,7 +190,10 @@ void BrowserPanel::rebuildLoops() {
             if (juce::File(juce::String::fromUTF8(lib->root.c_str())).getChildFile(juce::String::fromUTF8(rows[i]->path.c_str())) == c->file)
                 sel = (int)i;
     keyboardLoad = false;
-    if (sel >= 0) loopList.selectRow(sel, true, true);
+    if (sel >= 0) {
+        loopList.selectRow(sel, true, true);
+        loopList.scrollToEnsureRowIsOnscreen(sel);  // la loop jouée reste visible
+    }
     else loopList.deselectAllRows();
     loopList.repaint();
 }

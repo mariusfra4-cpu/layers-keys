@@ -117,6 +117,7 @@ private:
     juce::dsp::StateVariableTPTFilter<float> lowpass, highpass;
     juce::dsp::Compressor<float> comp;
     juce::dsp::Limiter<float> limiter;
+    juce::dsp::Limiter<float> safety;  // protection finale, toujours active : jamais au-dessus de -0,3 dB
     juce::dsp::Reverb reverb;
     juce::dsp::Chorus<float> chorus;
     juce::SmoothedValue<float> fadeGain{1.f}, lpHz{20000.f}, hpHz{20.f}, warm{0.f};
