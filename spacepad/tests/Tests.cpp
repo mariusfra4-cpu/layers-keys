@@ -491,6 +491,16 @@ static void snapshot (const juce::File& outDir, const juce::File& root)
             panel()->showTabIndex (1);
             v.animateForTests (1.5f);
             shot ("spacepad_mode_crowd.png");
+            for (int bgc = 1; bgc <= 3; ++bgc)
+            {
+                auto ub = uiSettings(); ub.crowdBg = bgc; setUiSettings (ub);
+                v.repaint();
+                shot ((juce::String ("spacepad_fond_crowd_") + juce::String (bgc) + ".png").toRawUTF8());
+            }
+            { auto ub = uiSettings(); ub.crowdBg = 0; setUiSettings (ub); }
+            v.openSettings();
+            shot ("spacepad_parametres_fond.png");
+            for (auto* c : v.getChildren()) if (auto* so = dynamic_cast<SettingsOverlay*> (c)) so->setVisible (false);
             CHECK (p.crowdSounding (0) && p.crowdSounding (1), "deux crowds a l'ecran");
             u = uiSettings(); u.centerView = 0; u.fxPage = 0; setUiSettings (u);
             v.applySettings();

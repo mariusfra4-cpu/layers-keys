@@ -60,6 +60,7 @@ static void loadSetting()
             u.copySounds = gb ("copySounds", false);
             u.centerView = juce::jlimit (0, 1, (int) ui2->getProperty ("centerView"));
             u.fxPage = juce::jlimit (0, 1, (int) ui2->getProperty ("fxPage"));
+            u.crowdBg = juce::jlimit (0, 3, (int) ui2->getProperty ("crowdBg"));
             if (auto* arr = ui2->getProperty ("midiMap").getArray())
                 for (int i = 0; i < (int) u.midiMap.size() && i < arr->size(); ++i) u.midiMap[(size_t) i] = (int) (*arr)[i];
         }
@@ -104,6 +105,7 @@ static void saveAll()
     o->setProperty ("copySounds", ui.copySounds);
     o->setProperty ("centerView", ui.centerView);
     o->setProperty ("fxPage", ui.fxPage);
+    o->setProperty ("crowdBg", ui.crowdBg);
     juce::Array<juce::var> mm;
     for (auto v : ui.midiMap) mm.add (v);
     o->setProperty ("midiMap", mm);

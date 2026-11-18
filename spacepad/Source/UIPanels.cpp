@@ -1004,7 +1004,7 @@ SettingsOverlay::SettingsOverlay (SpacepadProcessor& p, std::function<void()> c)
         const auto map = s.midiMap; const int km = s.midiKeyMode, zl = s.zoneLow;    // les pédales assignées sont gardées
         s = UiSettings();
         s.midiMap = map; s.midiKeyMode = km; s.zoneLow = zl;
-        accent = themeIdx = bgIdx = vizIdx = namesIdx = 0; sizeIdx = 1; animIdx = awakeIdx = 1; fadeIdx = 1; copyIdx = 0;
+        accent = themeIdx = bgIdx = vizIdx = namesIdx = 0; sizeIdx = 1; animIdx = awakeIdx = 1; fadeIdx = 1; copyIdx = 0; crowdBgIdx = 0;
         brightness.setValue (s.brightness, juce::dontSendNotification);
         speed.setValue (s.speed, juce::dontSendNotification);
         save();
@@ -1039,6 +1039,7 @@ void SettingsOverlay::load()
     fadeIdx = 1;
     for (int i = 0; i < 4; ++i) if (std::abs (fadeChoices[i] - s.fadeSeconds) < 0.5f) fadeIdx = i;
     copyIdx = s.copySounds ? 1 : 0;
+    crowdBgIdx = s.crowdBg;
 }
 
 void SettingsOverlay::save()
@@ -1050,6 +1051,7 @@ void SettingsOverlay::save()
     s.scale = sizes[juce::jlimit (0, 3, sizeIdx)]; s.animations = animIdx == 1; s.keepAwake = awakeIdx == 1;
     s.brightness = (float) brightness.getValue(); s.speed = (float) speed.getValue();
     s.midiKeyMode = keyModeIdx; s.fadeSeconds = fadeChoices[juce::jlimit (0, 3, fadeIdx)]; s.copySounds = copyIdx == 1;
+    s.crowdBg = crowdBgIdx;
     setUiSettings (s);
     if ((int) lang() != langIdx) setLang ((Lang) langIdx);
     brightness.setColour (juce::Slider::trackColourId, theme::accentChoice (accent));
@@ -1134,6 +1136,11 @@ void SettingsOverlay::resized()
         left.removeFromTop (10); right.removeFromTop (10);
         seg ({ L ("ANIMATIONS", "ANIMATIONS", "ANIMACIONES"), { { L ("D\xc3\xa9sactiv\xc3\xa9""es", "Off", "Desactivadas"), {} }, { L ("Activ\xc3\xa9""es", "On", "Activadas"), {} } }, &animIdx, left.removeFromTop (60) });
         seg ({ L ("GARDER L'\xc3\x89""CRAN ALLUM\xc3\x89", "KEEP THE SCREEN ON", "MANTENER LA PANTALLA ENCENDIDA"), { { L ("Non", "No", "No"), {} }, { L ("Oui, pendant le jeu", "Yes, while playing", "S\xc3\xad, al tocar"), {} } }, &awakeIdx, right.removeFromTop (60) });
+        left.removeFromTop (10);
+        seg ({ L ("FOND DES CROWDS (MODE CROWD)", "CROWDS BACKGROUND (CROWD MODE)", "FONDO DE LOS CROWDS (MODO CROWD)"),
+               { { L ("Photo douce", "Soft photo", "Foto suave"), {} }, { L ("Photo naturelle", "Natural photo", "Foto natural"), {} },
+                 { L ("Photo teinte Spacepad", "Spacepad-tinted photo", "Foto tono Spacepad"), {} }, { L ("Salle dessin\xc3\xa9""e", "Drawn hall", "Sala dibujada"), {} } },
+               &crowdBgIdx, c.withY (left.getY()).withHeight (60) });
     }
     else if (page == 1)
     {

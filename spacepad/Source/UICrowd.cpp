@@ -1,6 +1,7 @@
 // Spacepad by JB Praise — côté crowd : panneau des effets (PAD / CROWD), bouton PAD / CROWD au centre,
 // la grande salle animée et les deux crowds à toucher.
 #include "UIHelpers.h"
+#include "BinaryData.h"
 
 namespace spacepad
 {
@@ -275,11 +276,59 @@ void CenterSwitch::mouseUp (const juce::MouseEvent& e)
 // ============================================================================================
 // HallView : la grande salle (dessinée une fois, puis animée par la lumière et les poussières)
 // ============================================================================================
+// la photo de la foule (mains levées, lumière de scène), traitée une fois : douce (floutée), naturelle ou teinte Spacepad
+static void drawCrowdPhoto (juce::Image& img, int style)
+{
+    auto photo = juce::ImageCache::getFromMemory (BinaryData::foule_jpg, BinaryData::foule_jpgSize).convertedToFormat (juce::Image::ARGB);
+    if (! photo.isValid()) return;
+    if (style == 0)
+    {
+        juce::ImageConvolutionKernel k (15);
+        k.createGaussianBlur (6.0f);
+        auto blurred = photo.createCopy();
+        k.applyToImage (blurred, photo, photo.getBounds());
+        photo = blurred;
+    }
+    const int W = img.getWidth(), H = img.getHeight();
+    {
+        // remplir toute la zone en gardant les proportions (recadré un peu vers le haut : la lumière de la scène)
+        juce::Graphics g (img);
+        const float sc = juce::jmax ((float) W / photo.getWidth(), (float) H / photo.getHeight());
+        const float dw = photo.getWidth() * sc, dh = photo.getHeight() * sc;
+        g.setImageResamplingQuality (juce::Graphics::highResamplingQuality);
+        g.drawImage (photo, juce::Rectangle<float> ((W - dw) * 0.5f, (H - dh) * 0.35f, dw, dh));
+    }
+    juce::Image::BitmapData bd (img, juce::Image::BitmapData::readWrite);
+    auto lerp = [] (float a, float b, float t) { return a + (b - a) * t; };
+    for (int y = 0; y < bd.height; ++y)
+    {
+        // assombri pour que les crowds restent lisibles ; le bas s'efface vers les boutons
+        const float fy = (float) y / bd.height;
+        const float m = (style == 0 ? 0.62f : 0.72f) * (1.0f - 0.55f * juce::jlimit (0.0f, 1.0f, (fy - 0.6f) / 0.4f));
+        for (int x = 0; x < bd.width; ++x)
+        {
+            auto* px = bd.getPixelPointer (x, y);
+            auto* pp = reinterpret_cast<juce::PixelARGB*> (px);
+            float r = pp->getRed() / 255.0f, g = pp->getGreen() / 255.0f, b = pp->getBlue() / 255.0f;
+            if (style == 2)
+            {
+                // teinte Spacepad : ombres bleu nuit, milieux ambre, lumières dorées
+                const float t = juce::jlimit (0.0f, 1.0f, (0.3f * r + 0.59f * g + 0.11f * b) * 1.1f);
+                if (t < 0.5f) { const float u = t / 0.5f; r = lerp (0.03f, 0.62f, u); g = lerp (0.03f, 0.30f, u); b = lerp (0.10f, 0.12f, u); }
+                else { const float u = (t - 0.5f) / 0.5f; r = lerp (0.62f, 1.0f, u); g = lerp (0.30f, 0.86f, u); b = lerp (0.12f, 0.62f, u); }
+            }
+            pp->setARGB (255, (juce::uint8) juce::jlimit (0, 255, (int) (r * m * 255)), (juce::uint8) juce::jlimit (0, 255, (int) (g * m * 255)), (juce::uint8) juce::jlimit (0, 255, (int) (b * m * 255)));
+        }
+    }
+}
+
 void HallView::render (float px)
 {
     const int w = getWidth(), h = getHeight();
     image = makeCacheImage (juce::roundToInt (w * px), juce::roundToInt (h * px));
     imageScale = px;
+    imageStyle = uiSettings().crowdBg;
+    if (imageStyle < 3) { drawCrowdPhoto (image, imageStyle); return; }
     juce::Graphics g (image);
     // dessin dans un espace de 676 × 734, étiré à la taille réelle
     const float W = 676, H = 734, vx = W / 2, vy = 300;
@@ -409,7 +458,7 @@ void HallView::tick (float dt)
 void HallView::paint (juce::Graphics& g)
 {
     const float px = juce::jlimit (1.0f, 3.0f, g.getInternalContext().getPhysicalPixelScaleFactor());
-    if (! image.isValid() || std::abs (px - imageScale) > 0.01f) render (px);
+    if (! image.isValid() || std::abs (px - imageScale) > 0.01f || imageStyle != uiSettings().crowdBg) render (px);
     g.setOpacity (1.0f);
     g.drawImage (image, getLocalBounds().toFloat());
     const float w = (float) getWidth(), h = (float) getHeight();

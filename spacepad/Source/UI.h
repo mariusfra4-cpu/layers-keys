@@ -324,7 +324,7 @@ private:
     UiSettings s;
     int page = 0;
     int accent = 0, themeIdx = 0, bgIdx = 0, vizIdx = 0, namesIdx = 0, sizeIdx = 1, langIdx = 0, animIdx = 1, awakeIdx = 1;
-    int keyModeIdx = 0, fadeIdx = 1, copyIdx = 0;
+    int keyModeIdx = 0, fadeIdx = 1, copyIdx = 0, crowdBgIdx = 0;
     std::vector<Group> groups;
     std::vector<juce::Rectangle<int>> swatches, tiles, pageTabs;
     juce::Rectangle<int> accentArea, bgArea, midiListArea, zoneArea, infoArea;
@@ -446,6 +446,7 @@ private:
     SpacepadProcessor& proc;
     juce::Image image;
     float imageScale = 0, glow = 0, t = 0;
+    int imageStyle = -1;                      // fond affiché (réglage « Fond des crowds »)
     struct Dust { float x, y, v, a, r; };
     std::vector<Dust> dust;
     juce::Random rng { 29 };

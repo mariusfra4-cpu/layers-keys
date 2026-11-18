@@ -36,7 +36,8 @@ juce_add_binary_data(SpacepadData SOURCES
   resources/fonts/Inter-Regular.ttf
   resources/fonts/Inter-SemiBold.ttf
   resources/fonts/Inter-Bold.ttf
-  resources/galaxie.jpg)
+  resources/galaxie.jpg
+  resources/foule.jpg)
 set_target_properties(SpacepadData PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 juce_add_plugin(Spacepad
