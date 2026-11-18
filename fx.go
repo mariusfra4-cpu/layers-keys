@@ -434,6 +434,21 @@ func (e *Engine) FX(ch int) FXCfg {
 }
 
 // fxOf renvoie les réglages actifs de la piste ch, ou nil si aucun effet n'est allumé (le thread audio ne fait alors aucun calcul).
+// hasLeslie : le Leslie est allumé sur cette piste (la molette y règle alors la vitesse)
+func (e *Engine) hasLeslie(ch int) bool {
+	c := e.fxOf(ch)
+	return c != nil && c.Leslie.On
+}
+
+func (e *Engine) anyLeslie() bool {
+	for i := 0; i < nCh; i++ {
+		if e.hasLeslie(i) {
+			return true
+		}
+	}
+	return false
+}
+
 func (e *Engine) fxOf(ch int) *FXCfg {
 	if p := atomic.LoadPointer(&e.fxp[ch]); p != nil {
 		if c := (*FXCfg)(p); c.anyOn() {

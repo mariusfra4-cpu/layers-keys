@@ -288,7 +288,7 @@ func (e *Engine) SetMod(v float64)  { e.mod = clampf(v, 0, 1) }
 
 // part de la molette de modulation qui sert de vibrato pour une piste
 func (e *Engine) vibWheel(ch *Channel) float64 {
-	if !ch.Wheel { // bouton MOLETTE éteint : la molette ne touche pas cette piste
+	if !ch.Wheel || e.hasLeslie(ch.idx) { // MOLETTE éteint, ou LESLIE : la molette règle sa vitesse, pas de vibrato
 		return 0
 	}
 	if ch.ModFX {
@@ -339,7 +339,7 @@ func (e *Engine) vibFor(b *vbase) float64 {
 // ouverture du son (molette ou pression) : la plus forte des deux
 func (e *Engine) openFor(b *vbase) float64 {
 	m := e.modS
-	if !b.ch.Wheel {
+	if !b.ch.Wheel || e.hasLeslie(b.ch.idx) {
 		m = 0
 	}
 	if e.atMode == 0 || e.atMode == 2 {
@@ -584,6 +584,14 @@ func (e *Engine) Control(cc, val int) {
 		e.soft = val >= 64
 	case 1:
 		e.mod = float64(val) / 127
+		// orgue : sur les pistes avec LESLIE, la molette règle la vitesse (en haut rapide, en bas lent)
+		if e.anyLeslie() {
+			if fast := e.LeslieFast(); !fast && val >= 80 {
+				e.SetLeslieFast(true)
+			} else if fast && val <= 47 {
+				e.SetLeslieFast(false)
+			}
+		}
 	case 7:
 		e.cc7 = float64(val) / 127
 	case 11:

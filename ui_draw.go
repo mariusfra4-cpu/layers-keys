@@ -630,29 +630,23 @@ func (u *UI) drawPanel(c *Canvas) {
 		}
 	})
 	fx := u.fxAt(u.sel)
-	u.button(c, "btnEQ", rect{px + 16, py + 314, tw, 30}, "EQ", fx.EQ.On, fontSm, u.OpenEQ)
+	tw3 := (panW - 32 - 16) / 3
+	u.button(c, "btnEQ", rect{px + 16, py + 314, tw3, 30}, "EQ", fx.EQ.On, fontSm, u.OpenEQ)
 	fxLbl := "EFFETS"
 	if n := u.fxActiveCount(); n > 0 {
 		fxLbl = fmt.Sprintf("EFFETS·%d", n)
 	}
-	u.button(c, "btnFX", rect{px + 24 + tw, py + 314, tw, 30}, fxLbl, u.fxActiveCount() > 0, fontSm, u.OpenFXWin)
-	// Leslie (cabine tournante de l'orgue) : allumé sur cette piste, et vitesse lente / rapide commune à toutes les pistes
-	u.button(c, "tgLeslie", rect{px + 32 + 2*tw, py + 314, tw, 30}, "LESLIE", fx.Leslie.On, fontSm, func() {
+	u.button(c, "btnFX", rect{px + 24 + tw3, py + 314, tw3, 30}, fxLbl, u.fxActiveCount() > 0, fontSm, u.OpenFXWin)
+	// Leslie (cabine tournante de l'orgue) : sur cette piste, la molette règle la vitesse (en haut rapide, en bas lent)
+	lesLbl := "LESLIE"
+	if fx.Leslie.On && u.eng.LeslieFast() {
+		lesLbl = T("LESLIE") + " · " + T("RAPIDE")
+	}
+	u.button(c, "tgLeslie", rect{px + 32 + 2*tw3, py + 314, tw3, 30}, lesLbl, fx.Leslie.On, fontSm, func() {
 		on := !u.fxAt(sel).Leslie.On
 		u.fxSetAt(sel, func(c *FXCfg) { c.Leslie.On = on })
 		if on {
-			u.Toast("Leslie activé sur cette piste : le bouton LENT / RAPIDE change la vitesse.")
-		}
-	})
-	spd := "LENT"
-	if u.eng.LeslieFast() {
-		spd = "RAPIDE"
-	}
-	u.button(c, "lesFast", rect{px + 40 + 3*tw, py + 314, tw, 30}, spd, u.eng.LeslieFast(), fontSm, func() {
-		u.eng.SetLeslieFast(!u.eng.LeslieFast())
-		u.markDirty()
-		if !u.anyLeslie() {
-			u.Toast("Allume d'abord LESLIE sur une piste (par exemple l'orgue).")
+			u.Toast(T("Leslie activé sur cette piste : la molette règle la vitesse (en haut rapide, en bas lent)."))
 		}
 	})
 	// split du clavier : zone de cette piste (TOUT / GAUCHE / DROITE) et note de coupure
