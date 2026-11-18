@@ -347,5 +347,61 @@ if(mode==='library'||mode==='percs'){
   });
  }
 }
+
+if(mode==='bpm'||mode==='ai'){
+ const P=document.getElementById('P');const L=document.getElementById('presetLcd');
+ const ok='<span style="color:#7cff8a;font-weight:700">✔</span>';
+ const line=(a,b,c)=>`<div style="display:flex;justify-content:space-between;align-items:center;height:25px;border-bottom:1px solid #1f1810;font-size:11px"><span style="color:#ffcf86">${a}</span><span style="color:${c||'#ffb23e'};font-weight:700">${b}</span></div>`;
+ const ov=document.createElement('div');
+ ov.style.cssText='position:absolute;left:66px;top:388px;width:710px;height:318px;background:rgba(10,9,8,.9);border-radius:6px;display:flex;align-items:center;justify-content:center';
+ if(mode==='bpm'){
+  document.getElementById('presetLbl').textContent='Tempo — Détection automatique du BPM';
+  L.innerHTML=`<div style="padding:8px 12px;border-bottom:1px solid #2a2118;display:flex;justify-content:space-between;align-items:center">
+   <div><div style="font-size:12px;font-weight:700;color:#fff">Worship_Praise_Drums.wav</div><div style="font-size:9.5px;color:#a4865a">Durée 0:10.000 · 4 mesures exactes en 4/4</div></div>
+   <div style="text-align:right"><div style="font-size:9px;color:#a4865a">BPM ORIGINAL DE LA LOOP</div><div class="glow" style="font-size:24px;font-weight:700;color:var(--amber)">96.00</div></div></div>
+   <div style="padding:4px 12px">
+   ${line('1. BPM écrit dans le fichier (WAV / Apple Loops / ACID)','—','#6b5a44')}
+   ${line('2. BPM écrit dans le nom du fichier','non trouvé','#6b5a44')}
+   ${line('3. Analyse des coups de batterie (IA hors ligne)','96.0 · confiance 97 %')}
+   ${line('4. Vérification par la durée : 4 mesures = 10.000 s','96.00 '+ok)}
+   ${line('Choix possibles si doute','48 · <u>96</u> · 192','#a4865a')}
+   </div>
+   <div style="margin:6px 12px;font-size:9.5px;color:#a4865a">Le BPM final est celui qui fait tomber la boucle pile sur la mesure, sans décalage.</div>`;
+  ov.innerHTML=`<div class="recess" style="width:600px;padding:16px 22px">
+   <div class="lbl" style="text-align:left;color:#ffcf86;font-size:11px;margin-bottom:10px">Mode tempo : Global BPM / Preset BPM</div>
+   <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+    <div class="recess" style="padding:10px 12px;box-shadow:inset 0 0 0 1px #ffb23e,inset 0 2px 6px #000">
+     <div style="font-size:10px;font-weight:700;color:#ffb23e;letter-spacing:1px">● GLOBAL BPM (par défaut)</div>
+     <div style="font-size:11px;color:#ffcf86;margin-top:6px;line-height:17px">Toutes les loops suivent le tempo global :<br>96 BPM → jouée à <b class="glow" style="color:var(--amber)">118 BPM</b><br>Hauteur du son conservée (time-stretch)<br>Suit aussi le tempo de ton logiciel (DAW)</div></div>
+    <div class="recess" style="padding:10px 12px">
+     <div style="font-size:10px;font-weight:700;color:#a4865a;letter-spacing:1px">○ PRESET BPM</div>
+     <div style="font-size:11px;color:#a4865a;margin-top:6px;line-height:17px">Le bouton allumé : on revient<br>au BPM d'origine de la loop<br>Global BPM passe à <b>96</b><br>Aucune modification du son</div></div>
+   </div>
+   <div style="margin-top:12px;font-size:10px;color:#a4865a">Toutes les pistes séparées (kick, snare, djembé…) restent parfaitement synchronisées entre elles.</div></div>`;
+  P.appendChild(ov);
+ } else {
+  document.getElementById('presetLbl').textContent='Moteur IA — African Loops AI';
+  L.innerHTML=`<div style="padding:8px 12px;border-bottom:1px solid #2a2118;display:flex;justify-content:space-between;align-items:center">
+   <div><div style="font-size:13px;font-weight:700;color:#fff">IA intégrée · 100 % hors ligne</div><div style="font-size:9.5px;color:#a4865a">Tout est calculé sur ton ordinateur · aucun fichier envoyé sur internet</div></div>
+   <div style="font-size:11px;font-weight:700;color:#7cff8a;border:1px solid #3fae55;border-radius:4px;padding:4px 8px">⛔ INTERNET : NON REQUIS</div></div>
+   <div style="padding:4px 12px">
+   ${line('Détection du tempo (BPM) et des mesures','installé '+ok,'#7cff8a')}
+   ${line('Reconnaissance des percussions (kick, snare, djembé…)','installé '+ok,'#7cff8a')}
+   ${line('Séparation des parties (stems)','installé '+ok,'#7cff8a')}
+   ${line('Classement par style (Worship, Love, Afrobeats…)','installé '+ok,'#7cff8a')}
+   ${line('Apprentissage sur TES loops (corrections mémorisées)','actif '+ok,'#7cff8a')}
+   </div>
+   <div style="display:flex;justify-content:space-between;margin:6px 12px;font-size:9.5px;color:#a4865a"><span>Calcul : carte graphique si dispo, sinon processeur</span><span>Modèles : ≈ 350 Mo sur le disque</span></div>`;
+  ov.innerHTML=`<div class="recess" style="width:600px;padding:16px 22px">
+   <div class="lbl" style="text-align:left;color:#ffcf86;font-size:11px;margin-bottom:10px">L'IA apprend de toi</div>
+   <div style="display:grid;grid-template-columns:1fr 26px 1fr;align-items:center;gap:10px">
+    <div class="recess" style="padding:10px 12px;font-size:11px;color:#ffcf86;line-height:18px">Loop : <b style="color:#fff">Adoration_Talking.wav</b><br>L'IA propose : <span style="color:#ff9fd0">CONGA</span> (71 %)<br>Tu corriges : <span style="color:#c79bff;font-weight:700">TALKING DRUM</span></div>
+    <div style="color:#ffb23e;font-size:20px;text-align:center">➜</div>
+    <div class="recess" style="padding:10px 12px;font-size:11px;color:#ffcf86;line-height:18px">Correction gardée sur l'ordinateur<br>Les prochaines loops avec ce son<br>sont reconnues <span style="color:#7cff8a;font-weight:700">TALKING DRUM ✔</span></div>
+   </div>
+   <div style="margin-top:12px;font-size:10px;color:#a4865a">Plus tu l'utilises avec tes rythmes africains, plus elle devient précise.</div></div>`;
+  P.appendChild(ov);
+ }
+}
 </script>
 </body></html>
