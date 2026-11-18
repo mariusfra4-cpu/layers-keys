@@ -294,5 +294,58 @@ if(mode){
   b.style.cssText='position:absolute;left:600px;top:38px;font-size:9px;font-weight:700;letter-spacing:1px;color:#7cff8a';
  }
 }
+
+if(mode==='library'||mode==='percs'){
+ const P=document.getElementById('P');
+ const L=document.getElementById('presetLcd');
+ const chip=(t,c,off)=>`<span style="display:inline-block;font-size:8.5px;font-weight:700;padding:1px 5px;border-radius:3px;margin-right:3px;border:1px solid ${c};color:${off?'#5a4a36':c};${off?'border-color:#3a2e22;text-decoration:line-through':''}">${t}</span>`;
+ const percs=[['KICK','#ff7a45'],['SNARE','#ffd04a'],['HI-HAT','#e8f06a'],['DJEMBE','#ff9fd0'],['CONGA','#ff6fa8'],['SHAKER','#7cffd0'],['TALK DRUM','#c79bff'],['CLAP','#5fb0ff']];
+ if(mode==='library'){
+  document.getElementById('presetLbl').textContent='Bibliothèque — Analyse du dossier';
+  const cats=[['Afrobeats',42],['Worship / Louange',37],['Love',29],['Coupé-Décalé',24],['Ndombolo',18],['Amapiano',21],['Makossa',12],['Gospel',33],['Non classés',4]];
+  const loops=[['Worship_Groove_01.wav','72','Ré maj',[0,1,2,5]],['Worship_Praise_Drums.wav','96','—',[0,1,3,5,7]],['Louange_Congas_Live.wav','88','—',[4,5,3]],['Worship_Soft_Kit.wav','68','Sol maj',[0,1,2]],['Adoration_Talking.wav','76','—',[6,3,5]],['Worship_Clap_Choir.wav','100','La maj',[0,7,2,5]]];
+  L.innerHTML=`<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid #2a2118;font-size:10.5px">
+    <span style="color:var(--amber)">📁</span><span style="color:#fff;font-weight:700">D:\\Mes Loops\\WAV</span>
+    <span style="color:#a4865a;margin-left:auto">220 / 220 loops analysées</span><span style="color:#7cff8a;font-weight:700">✔ Terminé</span></div>
+   <div style="display:grid;grid-template-columns:150px 1fr;height:228px">
+    <div style="border-right:1px solid #2a2118;padding:4px 0;font-size:11px;line-height:24px">
+     ${cats.map((c,i)=>`<div style="display:flex;justify-content:space-between;padding:0 10px;${i===1?'background:linear-gradient(90deg,rgba(255,178,62,.28),rgba(255,178,62,.06));box-shadow:inset 3px 0 0 var(--amber);color:#fff':''}"><span>${c[0]}</span><span style="color:#a4865a">${c[1]}</span></div>`).join('')}
+    </div>
+    <div>
+     <div style="display:grid;grid-template-columns:1fr 30px 42px 196px;gap:6px;padding:5px 10px;font-size:8.5px;font-weight:700;letter-spacing:1px;color:#a4865a;border-bottom:1px solid #2a2118"><span>LOOP</span><span>BPM</span><span>TON.</span><span>PERCUSSIONS DÉTECTÉES</span></div>
+     ${loops.map((l,i)=>`<div style="display:grid;grid-template-columns:1fr 30px 42px 196px;gap:6px;align-items:center;padding:0 10px;height:31px;border-bottom:1px solid #1f1810;font-size:10.5px;${i===0?'background:rgba(255,178,62,.1)':''}"><span style="color:${i===0?'#fff':'#ffcf86'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${i===0?'▶ ':''}${l[0]}</span><span class="glow" style="color:var(--amber)">${l[1]}</span><span style="color:#a4865a;font-size:9.5px">${l[2]}</span><span style="white-space:nowrap">${l[3].slice(0,3).map(k=>chip(percs[k][0],percs[k][1])).join('')}${l[3].length>3?'<span style="font-size:8.5px;color:#a4865a">+'+(l[3].length-3)+'</span>':''}</span></div>`).join('')}
+    </div></div>`;
+  // overlay scanning panel over mixer
+  const ov=document.createElement('div');
+  ov.style.cssText='position:absolute;left:66px;top:388px;width:710px;height:318px;background:rgba(10,9,8,.88);border-radius:6px;display:flex;align-items:center;justify-content:center';
+  const row=(t,v,c)=>`<div style="display:flex;justify-content:space-between;font-size:11.5px;padding:4px 0;color:#ffcf86"><span>${t}</span><span style="color:${c||'#7cff8a'};font-weight:700">${v}</span></div>`;
+  ov.innerHTML=`<div class="recess" style="width:560px;padding:16px 22px">
+   <div class="lbl" style="text-align:left;color:#ffcf86;font-size:11px;margin-bottom:8px">Analyse automatique du dossier</div>
+   ${row('Fichiers trouvés (WAV / MP3)','220')}
+   ${row('Classement par style (nom du dossier + analyse du son)','9 catégories')}
+   ${row('Tempo et tonalité détectés','220 / 220')}
+   ${row('Percussions reconnues et séparées à l’avance','220 / 220')}
+   ${row('À vérifier (style incertain)','4','#ffb23e')}
+   <div style="margin-top:10px;height:10px;border-radius:5px;background:#000;overflow:hidden"><div style="width:100%;height:100%;background:linear-gradient(90deg,#3fae55,#7cff8a);box-shadow:0 0 10px #5f5"></div></div>
+   <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:9.5px;color:#a4865a"><span>Les résultats sont gardés : chaque loop se charge ensuite instantanément</span><span>Fait une seule fois</span></div></div>`;
+  P.appendChild(ov);
+ } else {
+  document.getElementById('presetLbl').textContent='Loop chargée — Percussions détectées';document.querySelector('.bpm,.lcd.glow[style*="font-size:26px"]').textContent='96';
+  const used=[0,1,2,3,4,5,6,7];const muted=[4,6];const conf=[98,96,93,91,88,95,84,90];
+  L.innerHTML=`<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-bottom:1px solid #2a2118">
+   <div style="flex:1"><div style="font-size:12px;font-weight:700;color:#fff">Worship_Praise_Drums.wav</div>
+   <div style="font-size:9.5px;color:#a4865a">Catégorie : <span style="color:var(--amber)">Worship / Louange</span> · 96 BPM · 4/4 · 4 mesures</div></div>
+   <div style="font-size:9.5px;color:#a4865a;text-align:right">Chargement<div class="glow" style="color:#7cff8a;font-weight:700;font-size:13px">⚡ instantané</div></div></div>
+   <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 14px;padding:6px 10px">
+   ${percs.map((pc,i)=>{const m=muted.includes(i);return `<div style="display:grid;grid-template-columns:86px 1fr 34px;align-items:center;gap:6px;height:27px;border-bottom:1px solid #1f1810;font-size:10px;font-weight:700;color:${m?'#5a4a36':pc[1]}"><span>${m?'✕':'●'} ${pc[0]}</span><div style="height:5px;background:#1a1410;border-radius:3px;overflow:hidden"><div style="width:${conf[i]}%;height:100%;background:${m?'#3a2e22':pc[1]}"></div></div><span style="color:#a4865a;font-weight:400;text-align:right">${m?'coupé':conf[i]+'%'}</span></div>`}).join('')}
+   </div>
+   <div style="padding:4px 10px;font-size:9.5px;color:#a4865a">● = détecté et séparé sur sa piste &nbsp;·&nbsp; ✕ = coupé par toi (Mute) &nbsp;·&nbsp; % = confiance de la détection</div>`;
+  document.querySelectorAll('.strip').forEach((s,i)=>{const m=muted.includes(i);
+   s.querySelector('.sel2 .lcd').innerHTML=`<span style="color:${m?'#5a4a36':percs[i][1]}">${percs[i][0].replace('TALK DRUM','TALK DR.')}</span><span style="color:#a4865a">⇕</span>`;
+   const mb=s.querySelector('.ms .m'),sb=s.querySelector('.ms .s');mb.classList.toggle('lit',m);sb.classList.remove('lit');
+   if(m){s.style.opacity='.55';s.querySelectorAll('.vu i').forEach(x=>x.className='')}
+  });
+ }
+}
 </script>
 </body></html>
