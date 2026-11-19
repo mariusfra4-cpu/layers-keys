@@ -172,6 +172,21 @@ int main(int argc, char** argv) {
         setParam(*proc, ids::hp, 0);
         setParam(*proc, ids::warmth, 0);
 
+        // 4 bis. clic sur une loop déjà analysée avec le dossier : elle doit jouer tout de suite
+        {
+            auto t0 = juce::Time::getMillisecondCounterHiRes();
+            proc->loadLoopAsync(dir.getChildFile("Afrobeats/Lagos Street.wav"));
+            waitForFast([&] { return !proc->isLoading(); }, 5000);
+            const double ms = juce::Time::getMillisecondCounterHiRes() - t0;
+            std::printf("chargement d'une loop analysée : %.0f ms\n", ms);
+#ifdef NDEBUG
+            CHECK(ms < 250, "trop lent : %.0f ms", ms);
+#else
+            CHECK(ms < 8000, "trop lent : %.0f ms (version de mise au point, plus lente)", ms);
+#endif
+            CHECK(proc->current() && proc->current()->file.getFileName() == "Lagos Street.wav", "mauvaise loop");
+        }
+
         // 5. changer de loop pendant la lecture, très vite (comme avec les flèches)
         for (auto name : {"Worship/Adoration Groove.wav", "Afrobeats/Lagos Street.wav", "coupe-decale groove.wav", "I Love/Soft Groove 96bpm.wav"})
             proc->loadLoopAsync(dir.getChildFile(name));

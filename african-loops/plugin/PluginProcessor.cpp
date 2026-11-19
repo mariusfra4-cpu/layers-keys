@@ -60,9 +60,29 @@ AfricanLoopsProcessor::AfricanLoopsProcessor()
     : juce::AudioProcessor(BusesProperties().withOutput("Output", juce::AudioChannelSet::stereo(), true)),
       params(*this, nullptr, "AfricanLoops", layout()) {
     looper = std::make_unique<Looper>(44100);
+    auto r = [this](const juce::String& id) {
+        auto* p = params.getRawParameterValue(id);
+        jassert(p != nullptr);
+        return p;
+    };
+    raw.master = r(ids::master); raw.masterPan = r(ids::masterPan); raw.masterMute = r(ids::masterMute);
+    raw.lp = r(ids::lp); raw.hp = r(ids::hp); raw.warmth = r(ids::warmth);
+    raw.bpm = r(ids::bpm); raw.presetBpm = r(ids::presetBpm); raw.syncHost = r(ids::syncHost);
+    raw.masterFx = r(ids::masterFx); raw.sendFx = r(ids::sendFx); raw.modFx = r(ids::modFx); raw.fade = r(ids::fade);
+    raw.metronome = r(ids::metronome); raw.signature = r(ids::signature); raw.feel = r(ids::feel); raw.mono = r(ids::mono);
+    for (size_t i = 0; i < (size_t)kNumTracks; ++i) {
+        raw.gain[i] = r(ids::gain((int)i));
+        raw.pan[i] = r(ids::pan((int)i));
+        raw.mute[i] = r(ids::mute((int)i));
+        raw.solo[i] = r(ids::solo((int)i));
+    }
 }
 
-AfricanLoopsProcessor::~AfricanLoopsProcessor() { pool.removeAllJobs(true, 10000); }
+AfricanLoopsProcessor::~AfricanLoopsProcessor() {
+    ++loadTicket;  // les chargements en attente s'arrêtent tout de suite
+    loadPool.removeAllJobs(true, 10000);
+    scanPool.removeAllJobs(true, 10000);
+}
 
 bool AfricanLoopsProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const {
     const auto& out = layouts.getMainOutputChannelSet();
@@ -107,8 +127,8 @@ void AfricanLoopsProcessor::prepareToPlay(double sampleRate, int samplesPerBlock
     lpHz.reset(sampleRate, 0.05);
     hpHz.reset(sampleRate, 0.05);
     warm.reset(sampleRate, 0.05);
-    lpHz.setCurrentAndTargetValue(lpToHz(*params.getRawParameterValue(ids::lp)));
-    hpHz.setCurrentAndTargetValue(hpToHz(*params.getRawParameterValue(ids::hp)));
+    lpHz.setCurrentAndTargetValue(lpToHz(raw.lp->load()));
+    hpHz.setCurrentAndTargetValue(hpToHz(raw.hp->load()));
 }
 
 void AfricanLoopsProcessor::setPlaying(bool on) { wantPlay.store(on); }
@@ -121,7 +141,6 @@ void AfricanLoopsProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
     if (n == 0 || !looper) return;
     if (n > work.getNumSamples()) work.setSize(2, n, false, false, true);  // hôte qui dépasse la taille annoncée
 
-    auto val = [this](const juce::String& id) { return params.getRawParameterValue(id)->load(); };
 
     // --- tempo et lecture du logiciel hôte
     double hostBpm = 0, hostPpq = -1;
@@ -133,26 +152,26 @@ void AfricanLoopsProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
             if (auto q = pos->getPpqPosition()) hostPpq = *q;
         }
     const bool standalone = wrapperType == wrapperType_Standalone;
-    const bool sync = val(ids::syncHost) > 0.5f && !standalone && hostBpm >= 20;
+    const bool sync = raw.syncHost->load() > 0.5f && !standalone && hostBpm >= 20;
     hostSynced.store(sync);
 
     MixSettings s;
-    s.globalBPM = sync ? hostBpm : val(ids::bpm);
-    s.presetBPM = val(ids::presetBpm) > 0.5f;
-    const int feelIdx = (int)val(ids::feel);
+    s.globalBPM = sync ? hostBpm : raw.bpm->load();
+    s.presetBPM = raw.presetBpm->load() > 0.5f;
+    const int feelIdx = (int)raw.feel->load();
     s.feel = feelIdx == 1 ? 2.0 : feelIdx == 2 ? 0.5 : 1.0;
-    const int sig = (int)val(ids::signature);
+    const int sig = (int)raw.signature->load();
     s.beatsPerBar = sig == 1 ? 3 : sig == 2 ? 6 : 4;
-    s.metronome = val(ids::metronome) > 0.5f;
-    s.master = val(ids::master);
-    s.masterPan = val(ids::masterPan);
-    s.masterMute = val(ids::masterMute) > 0.5f;
+    s.metronome = raw.metronome->load() > 0.5f;
+    s.master = raw.master->load();
+    s.masterPan = raw.masterPan->load();
+    s.masterMute = raw.masterMute->load() > 0.5f;
     for (int i = 0; i < kNumTracks; ++i) {
         auto& t = s.tracks[(size_t)i];
-        t.gain = val(ids::gain(i));
-        t.pan = val(ids::pan(i));
-        t.mute = val(ids::mute(i)) > 0.5f;
-        t.solo = val(ids::solo(i)) > 0.5f;
+        t.gain = raw.gain[(size_t)i]->load();
+        t.pan = raw.pan[(size_t)i]->load();
+        t.mute = raw.mute[(size_t)i]->load() > 0.5f;
+        t.solo = raw.solo[(size_t)i]->load() > 0.5f;
     }
     // tempo affiché : celui qu'on entend (jamais de verrou ici, on est dans le fil audio)
     const double orig = loopBpm.load();
@@ -164,7 +183,7 @@ void AfricanLoopsProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
     if (hostDrives && !lastHostPlaying) wantPlay.store(true);
     lastHostPlaying = hostPlaying;
     const bool want = wantPlay.load() || hostDrives;
-    const bool fade = val(ids::fade) > 0.5f;
+    const bool fade = raw.fade->load() > 0.5f;
     if (want && !looperPlaying) {
         looperPlaying = true;
         stopAfterFade = false;
@@ -200,7 +219,7 @@ void AfricanLoopsProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
             R[i] *= g;
         }
     }
-    if (val(ids::mono) > 0.5f)
+    if (raw.mono->load() > 0.5f)
         for (int i = 0; i < n; ++i) L[i] = R[i] = 0.5f * (L[i] + R[i]);
 
     // protection : le son ne dépasse jamais le maximum (pas de grésillement
@@ -238,13 +257,12 @@ void AfricanLoopsProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
 }
 
 void AfricanLoopsProcessor::applyFx(juce::AudioBuffer<float>& b) {
-    auto val = [this](const juce::String& id) { return params.getRawParameterValue(id)->load(); };
     juce::dsp::AudioBlock<float> block(b);
     juce::dsp::ProcessContextReplacing<float> ctx(block);
     const int n = b.getNumSamples();
 
     // filtres globaux
-    const float lpv = val(ids::lp), hpv = val(ids::hp);
+    const float lpv = raw.lp->load(), hpv = raw.hp->load();
     lpHz.setTargetValue(lpToHz(lpv));
     hpHz.setTargetValue(hpToHz(hpv));
     lpHz.skip(n);
@@ -258,7 +276,7 @@ void AfricanLoopsProcessor::applyFx(juce::AudioBuffer<float>& b) {
         highpass.process(ctx);
     }
     // chaleur : saturation douce, comme une bande ou une console
-    warm.setTargetValue(val(ids::warmth));
+    warm.setTargetValue(raw.warmth->load());
     if (warm.getTargetValue() > 0.001f || warm.isSmoothing()) {
         for (int i = 0; i < n; ++i) {
             const float w = warm.getNextValue(), drive = 1.f + 3.f * w, norm = 1.f / std::tanh(drive);
@@ -270,9 +288,9 @@ void AfricanLoopsProcessor::applyFx(juce::AudioBuffer<float>& b) {
     } else {
         warm.skip(n);
     }
-    if (val(ids::modFx) > 0.5f) chorus.process(ctx);
-    if (val(ids::sendFx) > 0.5f) reverb.process(ctx);
-    if (val(ids::masterFx) > 0.5f) {
+    if (raw.modFx->load() > 0.5f) chorus.process(ctx);
+    if (raw.sendFx->load() > 0.5f) reverb.process(ctx);
+    if (raw.masterFx->load() > 0.5f) {
         comp.process(ctx);
         b.applyGain(juce::Decibels::decibelsToGain(3.f));  // compensation
         limiter.process(ctx);
@@ -308,7 +326,8 @@ bool AfricanLoopsProcessor::loadAudio(const juce::File& f, Audio& out, juce::Str
 void AfricanLoopsProcessor::loadLoopAsync(const juce::File& file) {
     const int ticket = ++loadTicket;
     loading.store(true);
-    pool.addJob([this, file, ticket] {
+    loadPool.addJob([this, file, ticket] {
+        if (ticket != loadTicket.load()) return;  // une autre loop a déjà été choisie : rien à faire
         auto c = std::make_shared<Current>();
         c->file = file;
         Audio a;
@@ -323,7 +342,17 @@ void AfricanLoopsProcessor::loadLoopAsync(const juce::File& file) {
             return;
         }
         if (ticket != loadTicket.load()) return;  // une autre loop a été choisie entre-temps
-        c->info = separate(a, toUtf8(file), c->stems);
+        // loop déjà analysée avec le dossier : on réutilise tout (tempo, coups), rien à recalculer
+        bool cached = false;
+        if (auto l = library()) {
+            if (const Entry* e = l->find(toUtf8(file)); e && l->upToDate(*e)) {
+                c->info = e->info;
+                c->stems = separateWith(a, c->info);
+                cached = true;
+            }
+        }
+        if (!cached) c->info = separate(a, toUtf8(file), c->stems);
+        if (ticket != loadTicket.load()) return;
         // forme d'onde réduite (affichage)
         const int points = 1200, frames = a.frames();
         c->overview.assign(points, 0.f);
@@ -360,7 +389,14 @@ juce::String AfricanLoopsProcessor::loadError() const {
 }
 
 void AfricanLoopsProcessor::scanFolderAsync(const juce::File& dir) {
-    if (!dir.isDirectory() || scanning.exchange(true)) return;
+    if (!dir.isDirectory()) return;
+    // le logiciel hôte peut rouvrir le projet plusieurs fois de suite : une
+    // vérification du même dossier toutes les 30 secondes suffit
+    const auto now = juce::Time::getMillisecondCounter();
+    if (library() && dir == lastScanDir && now - lastScanMs < 30000) return;
+    if (scanning.exchange(true)) return;
+    lastScanDir = dir;
+    lastScanMs = now;
     scanDone.store(0);
     scanTotal.store(0);
     {
@@ -368,9 +404,12 @@ void AfricanLoopsProcessor::scanFolderAsync(const juce::File& dir) {
         folder = dir;
     }
     ++libs;
-    pool.addJob([this, dir] {
+    const bool firstTime = library() == nullptr;
+    scanPool.addJob([this, dir, firstTime] {
         auto l = std::make_shared<Library>();
         std::string err;
+        // première analyse : 2 fils ; ensuite (vérification) : 1 seul, pour ne jamais gêner le son
+        const int threads = firstTime ? std::max(1, std::min(2, juce::SystemStats::getNumCpus() / 2)) : 1;
         bool ok = Library::scan(
             toUtf8(dir), *l, err,
             [this](int d, int t, const std::string&) { scanDone.store(d); scanTotal.store(t); },
@@ -379,7 +418,8 @@ void AfricanLoopsProcessor::scanFolderAsync(const juce::File& dir) {
                 bool r = loadAudio(toFile(path), out, je);
                 e = je.toStdString();
                 return r;
-            });
+            },
+            threads);
         {
             std::lock_guard<std::mutex> lk(stateMu);
             if (ok) lib = l;

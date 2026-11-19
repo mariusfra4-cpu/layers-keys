@@ -100,7 +100,21 @@ private:
     int maxBlock = 512;
     juce::AudioBuffer<float> work;
 
-    juce::ThreadPool pool{2};
+    // Accès direct aux réglages depuis le fil audio (aucun texte créé, aucune recherche).
+    struct Raw {
+        std::atomic<float>*master, *masterPan, *masterMute, *lp, *hp, *warmth, *bpm, *presetBpm, *syncHost, *masterFx,
+            *sendFx, *modFx, *fade, *metronome, *signature, *feel, *mono;
+        std::array<std::atomic<float>*, africanloops::kNumTracks> gain, pan, mute, solo;
+    } raw{};
+
+    // Un seul fil pour charger les loops (seule la dernière choisie compte) et
+    // un fil de basse priorité pour analyser le dossier : le logiciel hôte garde
+    // toujours la main.
+    juce::ThreadPool loadPool{juce::ThreadPoolOptions{}.withThreadName("AL load").withNumberOfThreads(1)};
+    juce::ThreadPool scanPool{juce::ThreadPoolOptions{}.withThreadName("AL scan").withNumberOfThreads(1)
+                                  .withDesiredThreadPriority(juce::Thread::Priority::low)};
+    juce::uint32 lastScanMs = 0;
+    juce::File lastScanDir;
     mutable std::mutex stateMu;  // protège cur, lib, error, folder
     std::shared_ptr<Current> cur;
     std::shared_ptr<africanloops::Library> lib;

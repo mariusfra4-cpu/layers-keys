@@ -146,6 +146,24 @@ int main(int argc, char** argv) {
     pause(400);
     snapshot(*ed, shots.getChildFile("08_recherche_groove.png"));
 
+    // mesure : coût d'un rafraîchissement complet de l'interface (100 fois)
+    {
+        juce::Image img(juce::Image::ARGB, ed->getWidth(), ed->getHeight(), true);
+        auto t0 = juce::Time::getMillisecondCounterHiRes();
+        for (int i = 0; i < 100; ++i) {
+            juce::Graphics g(img);
+            ed->paintEntireComponent(g, true);
+        }
+        std::printf("interface complète : %.1f ms par image\n", (juce::Time::getMillisecondCounterHiRes() - t0) / 100);
+        auto* wave = findChild<WaveformView>(*ed);
+        t0 = juce::Time::getMillisecondCounterHiRes();
+        for (int i = 0; i < 300; ++i) {
+            juce::Graphics g(img);
+            g.reduceClipRegion(wave->getScreenBounds() - ed->getScreenPosition());
+            ed->paintEntireComponent(g, true);
+        }
+        std::printf("forme d'onde (rafraîchie pendant la lecture) : %.2f ms\n", (juce::Time::getMillisecondCounterHiRes() - t0) / 300);
+    }
     run = false;
     audio.join();
     ed.reset();

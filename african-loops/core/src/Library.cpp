@@ -20,6 +20,7 @@ namespace africanloops {
 
 const char* const kUncategorized = "Non classés";
 const char* const kIndexFile = ".africanloops-index.json";
+constexpr int kIndexVersion = 2;  // 2 : les coups sont gardés (chargement instantané)
 
 // ---------------------------------------------------------------- styles
 
@@ -212,7 +213,7 @@ fs::path fromUtf8(const std::string& s) { return detail::pathFromUtf8(s); }
 
 bool Library::save() const {
     std::ostringstream o;
-    o << "{\n \"root\": " << q(root) << ",\n \"entries\": [";
+    o << "{\n \"version\": " << kIndexVersion << ",\n \"root\": " << q(root) << ",\n \"entries\": [";
     for (size_t i = 0; i < entries.size(); ++i) {
         const auto& e = entries[i];
         const auto& t = e.info.tempo;
@@ -229,6 +230,15 @@ bool Library::save() const {
         }
         o << "], \"slices\": [";
         for (size_t k = 0; k < e.info.slices.size(); ++k) o << (k ? "," : "") << n(e.info.slices[k]);
+        // chaque coup : [temps, familles en bits] (kick = 1, snare = 2, hi-hat = 4, djembé = 8, talking = 16)
+        o << "], \"hits\": [";
+        for (size_t k = 0; k < e.info.hits.size(); ++k) {
+            int mask = 0;
+            for (const auto& kind : e.info.hits[k].kinds)
+                for (size_t b = 0; b < percussionOrder().size(); ++b)
+                    if (percussionOrder()[b] == kind) mask |= 1 << b;
+            o << (k ? "," : "") << "[" << n(e.info.hits[k].time) << "," << mask << "]";
+        }
         o << "]}}";
     }
     o << "\n ]\n}\n";
@@ -273,12 +283,25 @@ bool Library::loadIndex(const std::string& root, Library& out) {
         for (const auto& jp : ji["percussions"].arr())
             e.info.percussions.push_back({jp["kind"].str(), (int)jp["hits"].num(), jp["share"].num()});
         for (const auto& s2 : ji["slices"].arr()) e.info.slices.push_back(s2.num());
+        for (const auto& jh : ji["hits"].arr()) {
+            const auto& pair = jh.arr();
+            if (pair.size() != 2) continue;
+            Hit h;
+            h.time = pair[0].num();
+            const int mask = (int)pair[1].num();
+            for (size_t b = 0; b < percussionOrder().size(); ++b)
+                if (mask & (1 << b)) h.kinds.push_back(percussionOrder()[b]);
+            if (!h.kinds.empty()) e.info.hits.push_back(std::move(h));
+        }
+        // index d'une ancienne version : la loop sera analysée à nouveau
+        if ((int)j["version"].num() < kIndexVersion) e.size = -1;
         if (!e.path.empty()) out.entries.push_back(std::move(e));
     }
     return true;
 }
 
-bool Library::scan(const std::string& rootIn, Library& lib, std::string& error, Progress progress, AudioLoader loader) {
+bool Library::scan(const std::string& rootIn, Library& lib, std::string& error, Progress progress, AudioLoader loader,
+                   int threads) {
     std::error_code ec;
     fs::path root = fs::absolute(fromUtf8(rootIn), ec);
     if (ec || !fs::is_directory(root, ec)) { error = "dossier introuvable"; return false; }
@@ -316,7 +339,7 @@ bool Library::scan(const std::string& rootIn, Library& lib, std::string& error, 
     }
 
     // analyse en parallèle sur la moitié des cœurs (le reste pour le son)
-    unsigned workers = std::max(1u, std::thread::hardware_concurrency() / 2);
+    unsigned workers = threads > 0 ? (unsigned)threads : std::max(1u, std::thread::hardware_concurrency() / 2);
     std::atomic<size_t> next{0};
     std::mutex mu;
     int done = 0;
@@ -329,7 +352,6 @@ bool Library::scan(const std::string& rootIn, Library& lib, std::string& error, 
                 e.error = err.empty() ? "fichier illisible" : err;
             } else {
                 e.info = analyse(a, e.path);
-                e.info.hits.clear();  // inutile dans l'index
             }
             std::lock_guard<std::mutex> lk(mu);
             ++done;
@@ -348,6 +370,24 @@ bool Library::scan(const std::string& rootIn, Library& lib, std::string& error, 
     });
     if (!lib.save()) { error = "impossible d'écrire l'index dans le dossier"; return false; }
     return true;
+}
+
+const Entry* Library::find(const std::string& absolutePath) const {
+    std::error_code ec;
+    fs::path p = fs::absolute(fromUtf8(absolutePath), ec), r = fs::absolute(fromUtf8(root), ec);
+    const std::string rel = toUtf8(p.lexically_relative(r));
+    if (rel.empty() || rel.rfind("..", 0) == 0) return nullptr;
+    for (const auto& e : entries)
+        if (e.path == rel) return &e;
+    return nullptr;
+}
+
+bool Library::upToDate(const Entry& e) const {
+    if (!e.error.empty() || e.size < 0 || e.info.tempo.source.empty()) return false;
+    std::error_code ec;
+    fs::directory_entry de(fromUtf8(root) / fromUtf8(e.path), ec);
+    if (ec || !de.is_regular_file(ec)) return false;
+    return (int64_t)de.file_size(ec) == e.size && mtimeOf(de) == e.mtime;
 }
 
 std::vector<CategoryCount> Library::categories() const {

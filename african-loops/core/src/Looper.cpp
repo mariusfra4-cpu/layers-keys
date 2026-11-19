@@ -53,14 +53,19 @@ void Looper::load(const LoopInfo& info, const std::vector<Stem>& stems) {
     }
 
     std::lock_guard<std::mutex> lk(mu);
+    // en pleine lecture (live) : la nouvelle loop entre au même endroit de la
+    // mesure, sans repartir du début ni casser le groove
+    const bool keep = playing && srcFrames > 0 && loopLen() > 0;
+    const double beats = keep ? pos / beatLen() : 0;
     tracks = std::move(fresh);
     srcRate = newRate;
     srcFrames = frames;
     origBPM = bpm;
     slices = std::move(sl);
-    pos = 0;
-    lastBeat = -1;
-    clickPos = -1;
+    const double len = loopLen();
+    pos = (keep && len > 0) ? std::fmod(beats * beatLen(), len) : 0;
+    lastBeat = keep ? (long long)(pos / beatLen() + 1e-9) : -1;  // pas de clic de métronome en double
+    if (!keep) clickPos = -1;
     publish();
 }
 

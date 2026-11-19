@@ -36,6 +36,7 @@ public:
     void refreshTitle() { repaint(titleArea); }
     void chooseFolder();
     void chooseFile();
+    void step(int delta);  // loop précédente / suivante (live)
 
 private:
     // liste des styles (catégories)
@@ -142,7 +143,10 @@ private:
         AfricanLoopsEditor& ed;
         explicit Face(AfricanLoopsEditor& e) : ed(e) {}
         void paint(juce::Graphics&) override;
+        void paintStatic(juce::Graphics&);
         void paintOverChildren(juce::Graphics&) override;
+        juce::Image background;
+        float backgroundScale = 0;
     };
     void timerCallback() override;
     void layout();
@@ -169,6 +173,9 @@ private:
     std::vector<std::unique_ptr<ButtonAtt>> buttonAtts;
 
     int lastLibs = -1, lastLoads = -1;
+    bool wasBusy = false, wasPlaying = false, wasSynced = false, metersIdle = false;
+    double shownBpm = -1;
+    float shownSignature = -1, shownMaster = -1;
     float peakHoldL = 0, peakHoldR = 0;
     int holdCount = 0;
     juce::ComponentBoundsConstrainer constrainer;

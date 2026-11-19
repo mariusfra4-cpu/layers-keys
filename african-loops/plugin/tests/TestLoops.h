@@ -48,3 +48,13 @@ inline bool waitFor(Pred p, int ms) {
     return p();
 }
 
+
+// attente fine (2 ms) pour mesurer les temps de réaction
+template <typename Pred>
+inline bool waitForFast(Pred p, int ms) {
+    for (int t = 0; t < ms; t += 2) {
+        if (p()) return true;
+        juce::MessageManager::getInstance()->runDispatchLoopUntil(2);
+    }
+    return p();
+}

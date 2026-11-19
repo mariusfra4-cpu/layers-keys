@@ -55,11 +55,13 @@ juce::Colour kindColour(const juce::String& k) {
 // ====================================================================== forme d'onde
 
 WaveformView::WaveformView(AfricanLoopsProcessor& p) : proc(p) {
+    setOpaque(true);
     setTooltip(juce::String::fromUTF8("Attrapez la forme d'onde et déposez-la sur une piste de votre logiciel de musique"));
 }
 
 void WaveformView::paint(juce::Graphics& g) {
     auto b = getLocalBounds().toFloat();
+    g.fillAll(col::lcd);
     g.setColour(col::line);
     g.drawLine(b.getX(), b.getY() + 0.5f, b.getRight(), b.getY() + 0.5f);
     auto c = proc.current();
@@ -287,6 +289,16 @@ void BrowserPanel::loadRow(int row) {
     proc.loadLoopAsync(f);
 }
 
+void BrowserPanel::step(int delta) {
+    if (rows.empty()) return;
+    int r = loopList.getSelectedRow();
+    r = r < 0 ? (delta > 0 ? 0 : (int)rows.size() - 1) : juce::jlimit(0, (int)rows.size() - 1, r + delta);
+    keyboardLoad = false;
+    loopList.selectRow(r);
+    loopList.scrollToEnsureRowIsOnscreen(r);
+    loadRow(r);
+}
+
 void BrowserPanel::selectedRowsChanged(int row) {
     // flèches du clavier : la loop se charge aussitôt
     if (keyboardLoad && row >= 0) loadRow(row);
@@ -372,7 +384,17 @@ void BrowserPanel::paint(juce::Graphics& g) {
     g.setColour(col::line);
     g.fillRect(catList.getRight(), catList.getY(), 1, catList.getHeight());
     // bibliothèque vide / analyse en cours
-    if (proc.isScanning()) {
+    if (proc.isScanning() && lib) {
+        // simple vérification du dossier : la liste reste utilisable
+        int d, n;
+        proc.scanProgress(d, n);
+        if (n > 0) {
+            g.setColour(col::amber);
+            g.setFont(ui::font(9.5f, true));
+            g.drawText(juce::String::fromUTF8("Nouvelles loops : ") + juce::String(d) + " / " + juce::String(n),
+                       wave.getBounds().translated(0, -14).withHeight(12).reduced(8, 0), juce::Justification::left);
+        }
+    } else if (proc.isScanning()) {
         int d, n;
         proc.scanProgress(d, n);
         auto r = loopList.getBounds().toFloat();
@@ -678,28 +700,53 @@ void AfricanLoopsEditor::timerCallback() {
         browser.rebuildLoops();
         browser.repaint();
     }
-    if (proc.isScanning() || proc.isLoading()) browser.repaint();
-    browser.wave.repaint();
+    const bool busy = proc.isScanning() || proc.isLoading();
+    if (busy || wasBusy) browser.repaint();
+    wasBusy = busy;
+    const bool playing = proc.isPlaying();
+    if (playing || playing != wasPlaying) browser.wave.repaint();
+    if (playing != wasPlaying) browser.loopList.repaint();
+    wasPlaying = playing;
     for (auto& s : strips) s->updateMeter();
     const bool synced = proc.isHostSynced();
     bpm.setEnabled(!synced);
-    bpm.repaint();
-    play.setToggleState(proc.isPlaying(), juce::dontSendNotification);
-    signature.repaint();
+    if (const double b = proc.displayedBPM(); std::abs(b - shownBpm) > 1e-6) {
+        shownBpm = b;
+        bpm.repaint();
+    }
+    play.setToggleState(playing, juce::dontSendNotification);
+    if (const float sig = paramValue(proc, ids::signature) * 10 + paramValue(proc, ids::feel); std::abs(sig - shownSignature) > 1e-3f) {
+        shownSignature = sig;
+        signature.repaint();
+    }
+    if (const float mv = paramValue(proc, ids::master); std::abs(mv - shownMaster) > 1e-5f) {
+        shownMaster = mv;
+        face.repaint(master.getBounds());
+    }
+    if (synced != wasSynced) {
+        wasSynced = synced;
+        face.repaint(X0 + 600, kH - 22, kW - 2 * X0 - 620, 18);
+    }
     float l, r;
     proc.meters(l, r);
+    if (l < 0.0005f && r < 0.0005f && peakHoldL < 0.0005f && peakHoldR < 0.0005f && metersIdle) return;  // silence : rien à redessiner
+    metersIdle = l < 0.0005f && r < 0.0005f;
     if (l >= peakHoldL || r >= peakHoldR || ++holdCount > 45) {
         peakHoldL = std::max(l, holdCount > 45 ? 0.f : peakHoldL);
         peakHoldR = std::max(r, holdCount > 45 ? 0.f : peakHoldR);
         if (holdCount > 45) holdCount = 0;
     }
     face.repaint(X0 + 830, 92, 300, 280);
-    face.repaint(X0 + 860, 440, 90, 90);
 }
 
 bool AfricanLoopsEditor::keyPressed(const juce::KeyPress& k) {
     if (k == juce::KeyPress::spaceKey) {
         proc.setPlaying(!proc.isPlaying());
+        return true;
+    }
+    if (k == juce::KeyPress::downKey || k == juce::KeyPress::upKey) {
+        if (browser.search.hasKeyboardFocus(true) || browser.loopList.hasKeyboardFocus(true)) return false;  // gérées par la liste
+        browser.step(k == juce::KeyPress::downKey ? 1 : -1);
         return true;
     }
     return false;
@@ -724,6 +771,26 @@ void AfricanLoopsEditor::filesDropped(const juce::StringArray& files, int, int) 
 // ---------------------------------------------------------------- façade
 
 void AfricanLoopsEditor::Face::paint(juce::Graphics& g) {
+    // Le fond (bois, métal, logo, étiquettes) ne change jamais : il est dessiné une
+    // seule fois, à la résolution réelle de l'écran, puis simplement recopié.
+    const float sc = std::max(0.25f, g.getInternalContext().getPhysicalPixelScaleFactor());
+    if (!background.isValid() || std::abs(sc - backgroundScale) > 0.01f) {
+        backgroundScale = sc;
+        background = juce::Image(juce::Image::RGB, std::max(1, juce::roundToInt(kW * sc)), std::max(1, juce::roundToInt(kH * sc)), false);
+        juce::Graphics bg(background);
+        bg.addTransform(juce::AffineTransform::scale(sc));
+        paintStatic(bg);
+    }
+    g.drawImageTransformed(background, juce::AffineTransform::scale(1.f / sc));
+    // texte d'état (change rarement)
+    g.setColour(col::engraveDark);
+    g.setFont(ui::font(9.f));
+    juce::String status = juce::String((int)std::lround(ed.proc.getSampleRate() > 0 ? ed.proc.getSampleRate() : 44100)) + " Hz  -  8 pistes";
+    if (ed.proc.isHostSynced()) status << juce::String::fromUTF8("  -  calé sur le logiciel hôte");
+    g.drawText(status, X0 + 600, kH - 20, kW - 2 * X0 - 626, 14, juce::Justification::centredRight);
+}
+
+void AfricanLoopsEditor::Face::paintStatic(juce::Graphics& g) {
     const auto W = (float)kW, H = (float)kH;
     // joues en bois
     juce::Random rnd(3);
@@ -847,12 +914,6 @@ void AfricanLoopsEditor::Face::paint(juce::Graphics& g) {
         g.drawText(marks[i], (int)mr.getX() + 70, (int)y - 5, 24, 10, juce::Justification::centredRight);
         g.drawText(marks[i], (int)mr.getX() + 172, (int)y - 5, 24, 10, juce::Justification::centredLeft);
     }
-    // texte d'état
-    g.setColour(col::engraveDark);
-    g.setFont(ui::font(9.f));
-    juce::String status = juce::String((int)std::lround(ed.proc.getSampleRate() > 0 ? ed.proc.getSampleRate() : 44100)) + " Hz  -  8 pistes";
-    if (ed.proc.isHostSynced()) status << juce::String::fromUTF8("  -  calé sur le logiciel hôte");
-    g.drawText(status, X0 + 600, H - 20, (int)W - 2 * X0 - 626, 14, juce::Justification::centredRight);
 }
 
 void AfricanLoopsEditor::Face::paintOverChildren(juce::Graphics& g) {

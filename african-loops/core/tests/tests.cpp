@@ -233,6 +233,28 @@ static void testLibrary() {
         if (e.path == "Worship/Praise Drums.wav")
             CHECK(std::abs(e.info.tempo.bpm - 96) < 0.01 && !e.info.slices.empty() && !e.info.percussions.empty(), "index relu incomplet");
 
+    current = "chargement instantané depuis la bibliothèque";
+    {
+        const Entry* e = lib2.find((dir / "Worship" / "Praise Drums.wav").string());
+        CHECK(e && lib2.upToDate(*e) && !e->info.hits.empty(), "loop introuvable ou analyse perdue dans l'index");
+        if (e) {
+            Audio a;
+            std::string er;
+            loadWAV((dir / "Worship" / "Praise Drums.wav").string(), a, er);
+            std::vector<Stem> ref;
+            auto full = separate(a, "x.wav", ref);
+            auto fast = separateWith(a, e->info);
+            CHECK(fast.size() == ref.size(), "pas les mêmes pistes : %zu au lieu de %zu", fast.size(), ref.size());
+            double diff = 0;
+            for (size_t i = 0; i < std::min(fast.size(), ref.size()); ++i)
+                for (int j = 0; j < a.frames(); ++j)
+                    diff = std::max(diff, (double)std::abs(fast[i].audio->L[(size_t)j] - ref[i].audio->L[(size_t)j]));
+            CHECK(diff < 1e-3, "les pistes rechargées diffèrent (%g)", diff);
+            CHECK(full.tempo.bpm == e->info.tempo.bpm, "tempo différent");
+        }
+        CHECK(lib2.find((dir / ".." / "ailleurs.wav").string()) == nullptr, "fichier hors bibliothèque trouvé");
+    }
+
     current = "supprimer / renommer un style";
     CHECK(lib2.removeCategory("I Love") == 1, "suppression du style");
     CHECK(lib2.renameCategory("Worship", "Louange") == 1, "renommage du style");
@@ -419,6 +441,28 @@ static void testBounceAndMetronome() {
     CHECK(energy(o, 0, 600) > energy(o, kRate / 2, kRate / 2 + 600), "le 1er temps n'est pas accentué");
 }
 
+static void testSwitchInTime() {
+    current = "changer de loop en pleine lecture (en mesure)";
+    Audio a = synthLoop(96, 2, 0), b = synthLoop(96, 1, 0);
+    std::vector<Stem> sa, sb;
+    auto ia = separate(a, "a.wav", sa), ib = separate(b, "b.wav", sb);
+    Looper l(kRate);
+    l.load(ia, sa);
+    l.setGlobalBPM(96);
+    l.play();
+    const double beat = 60.0 / 96 * kRate;
+    int n = (int)(beat * 5.25);  // on joue 5 temps et quart
+    std::vector<float> L(n), R(n);
+    l.render(L.data(), R.data(), n);
+    l.load(ib, sb);  // la nouvelle loop (4 temps) doit reprendre au temps 2 et quart
+    double want = std::fmod(5.25 * beat, 4 * beat);
+    CHECK(std::abs(l.position() * l.loopLength() - want) < 2, "position %.0f au lieu de %.0f",
+          l.position() * l.loopLength(), want);
+    l.stop();
+    l.load(ia, sa);
+    CHECK(l.position() == 0, "à l'arrêt, une nouvelle loop doit partir du début");
+}
+
 static void testProcess() {
     current = "réglages par bloc (plugin)";
     Audio a = synthLoop(98, 1, 0);
@@ -463,6 +507,7 @@ int main() {
     testContinuousLoop();
     testBounceAndMetronome();
     testProcess();
+    testSwitchInTime();
     if (failures) {
         std::printf("%d test(s) en échec\n", failures);
         return 1;

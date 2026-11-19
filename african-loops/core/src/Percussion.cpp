@@ -366,6 +366,12 @@ LoopInfo analyse(const Audio& a, const std::string& filename) {
     return analyseLoop(a, filename, an);
 }
 
+std::vector<Stem> separateWith(const Audio& a, const LoopInfo& info) {
+    auto stems = detail::separateStems(a, info.percussions, info.hits);
+    if (stems.empty()) stems.push_back({"LOOP", std::make_shared<Audio>(a)});
+    return stems;
+}
+
 LoopInfo separate(const Audio& a, const std::string& filename, std::vector<Stem>& stems) {
     detail::Analysis an;
     LoopInfo info = analyseLoop(a, filename, an);

@@ -106,6 +106,8 @@ struct LoopInfo {
 LoopInfo analyse(const Audio& a, const std::string& filename);
 // Analyse + une piste par percussion trouvée (ou la loop entière s'il n'y en a pas).
 LoopInfo separate(const Audio& a, const std::string& filename, std::vector<Stem>& stems);
+// Séparation seule, avec une analyse déjà faite (celle de la bibliothèque) : très rapide.
+std::vector<Stem> separateWith(const Audio& a, const LoopInfo& info);
 
 // ---------------------------------------------------------------- bibliothèque
 
@@ -141,10 +143,16 @@ public:
     std::vector<Entry> entries;
 
     // Analyse toutes les loops du dossier ; ce qui n'a pas changé n'est pas refait.
+    // threads = nombre de fils de calcul (0 = la moitié des cœurs).
     static bool scan(const std::string& root, Library& out, std::string& error,
-                     Progress progress = nullptr, AudioLoader loader = nullptr);
+                     Progress progress = nullptr, AudioLoader loader = nullptr, int threads = 0);
     static bool loadIndex(const std::string& root, Library& out);
     bool save() const;
+
+    // La loop de ce chemin complet, si elle fait partie de la bibliothèque.
+    const Entry* find(const std::string& absolutePath) const;
+    // Vrai si le fichier n'a pas changé depuis l'analyse : on peut tout réutiliser.
+    bool upToDate(const Entry& e) const;
 
     std::vector<CategoryCount> categories() const;
     bool setCategory(const std::string& path, const std::string& category);
