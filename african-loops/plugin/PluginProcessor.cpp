@@ -37,6 +37,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout AfricanLoopsProcessor::layou
     p.push_back(std::make_unique<APF>(PID{ids::bpm, 1}, "Global BPM", juce::NormalisableRange<float>(40.f, 240.f, 0.01f), 120.f));
     p.push_back(std::make_unique<APB>(PID{ids::presetBpm, 1}, "Preset BPM", true));
     p.push_back(std::make_unique<APB>(PID{ids::syncHost, 1}, "Sync Host", true));
+    p.push_back(std::make_unique<APB>(PID{ids::link, 1}, "Ableton Link", false));
     p.push_back(std::make_unique<APB>(PID{ids::masterFx, 1}, "Master FX", false));
     p.push_back(std::make_unique<APB>(PID{ids::sendFx, 1}, "Send FX", false));
     p.push_back(std::make_unique<APB>(PID{ids::modFx, 1}, "Mod FX", false));
@@ -67,7 +68,7 @@ AfricanLoopsProcessor::AfricanLoopsProcessor()
     };
     raw.master = r(ids::master); raw.masterPan = r(ids::masterPan); raw.masterMute = r(ids::masterMute);
     raw.lp = r(ids::lp); raw.hp = r(ids::hp); raw.warmth = r(ids::warmth);
-    raw.bpm = r(ids::bpm); raw.presetBpm = r(ids::presetBpm); raw.syncHost = r(ids::syncHost);
+    raw.bpm = r(ids::bpm); raw.presetBpm = r(ids::presetBpm); raw.syncHost = r(ids::syncHost); raw.link = r(ids::link);
     raw.masterFx = r(ids::masterFx); raw.sendFx = r(ids::sendFx); raw.modFx = r(ids::modFx); raw.fade = r(ids::fade);
     raw.metronome = r(ids::metronome); raw.signature = r(ids::signature); raw.feel = r(ids::feel); raw.mono = r(ids::mono);
     for (size_t i = 0; i < (size_t)kNumTracks; ++i) {
@@ -76,9 +77,28 @@ AfricanLoopsProcessor::AfricanLoopsProcessor()
         raw.mute[i] = r(ids::mute((int)i));
         raw.solo[i] = r(ids::solo((int)i));
     }
+    startTimerHz(5);
+}
+
+void AfricanLoopsProcessor::timerCallback() {
+    const bool want = raw.link->load() > 0.5f;
+    link.setEnabled(want);
+    const bool on = want && link.isEnabled();
+    if (on && !linkOn.load()) lastBpmParam = raw.bpm->load();  // on vient d'activer Link
+    linkOn.store(on);
+    peerCount.store(on ? link.peers() : 0);
+    // tempo changé à la main (glisser sur l'écran BPM) : tout le monde suit
+    if (on) {
+        const float b = raw.bpm->load();
+        if (std::abs(b - lastBpmParam) > 0.001f) {
+            lastBpmParam = b;
+            link.setTempo(b);
+        }
+    }
 }
 
 AfricanLoopsProcessor::~AfricanLoopsProcessor() {
+    stopTimer();
     ++loadTicket;  // les chargements en attente s'arrêtent tout de suite
     loadPool.removeAllJobs(true, 10000);
     scanPool.removeAllJobs(true, 10000);
@@ -161,7 +181,8 @@ void AfricanLoopsProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
     const int feelIdx = (int)raw.feel->load();
     s.feel = feelIdx == 1 ? 2.0 : feelIdx == 2 ? 0.5 : 1.0;
     const int sig = (int)raw.signature->load();
-    s.beatsPerBar = sig == 1 ? 3 : sig == 2 ? 6 : 4;
+    s.meter = sig == 1 ? Meter::M34 : sig == 2 ? Meter::M68 : Meter::M44;
+    const double bpb = sig == 0 ? 4.0 : 3.0;  // temps (noires) par mesure
     s.metronome = raw.metronome->load() > 0.5f;
     s.master = raw.master->load();
     s.masterPan = raw.masterPan->load();
@@ -173,16 +194,34 @@ void AfricanLoopsProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
         t.mute = raw.mute[(size_t)i]->load() > 0.5f;
         t.solo = raw.solo[(size_t)i]->load() > 0.5f;
     }
+    // --- Ableton Link : tempo, barres de mesure et départ/arrêt partagés
+    const bool useLink = linkOn.load();
+    LinkSync::State ls;
+    if (useLink) {
+        const auto latency = (std::int64_t)((getLatencySamples() + n) / rate * 1e6);
+        const bool asked = wantPlay.load();
+        if (asked != lastLinkWant) {  // Play / Stop appuyé ici : pour tout le monde, à la prochaine mesure
+            link.audioRequestPlay(asked, bpb, latency);
+            lastLinkWant = asked;
+        }
+        ls = link.audioState(bpb, latency);
+        if (ls.playing != asked) wantPlay.store(ls.playing);  // départ ou arrêt venu d'Ableton
+        lastLinkWant = ls.playing;
+        s.globalBPM = ls.tempo;
+        s.presetBPM = false;  // le tempo de Link a été réglé sur celui de la loop
+        hostSynced.store(false);
+    }
+
     // tempo affiché : celui qu'on entend (jamais de verrou ici, on est dans le fil audio)
     const double orig = loopBpm.load();
     shownBPM.store((s.presetBPM && orig > 0 ? orig : s.globalBPM) * s.feel);
 
-    // --- lecture : bouton Play, ou lecture du logiciel hôte quand on est calé dessus
-    const bool hostDrives = sync && hostPlaying;
-    if (sync && lastHostPlaying && !hostPlaying) wantPlay.store(false);  // l'hôte s'arrête : on s'arrête
+    // --- lecture : bouton Play, Link, ou lecture du logiciel hôte quand on est calé dessus
+    const bool hostDrives = !useLink && sync && hostPlaying;
+    if (!useLink && sync && lastHostPlaying && !hostPlaying) wantPlay.store(false);  // l'hôte s'arrête : on s'arrête
     if (hostDrives && !lastHostPlaying) wantPlay.store(true);
     lastHostPlaying = hostPlaying;
-    const bool want = wantPlay.load() || hostDrives;
+    const bool want = useLink ? ls.playing : (wantPlay.load() || hostDrives);
     const bool fade = raw.fade->load() > 0.5f;
     if (want && !looperPlaying) {
         looperPlaying = true;
@@ -204,7 +243,13 @@ void AfricanLoopsProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
     s.playing = looperPlaying;
     // calage sur la position du logiciel hôte : seulement si on joue à son tempo
     // (sinon les deux tempos diffèrent et la lecture sauterait sans cesse)
-    s.hostBeats = hostDrives && hostPpq >= 0 && !s.presetBPM && std::abs(s.feel - 1.0) < 1e-9 ? hostPpq : -1;
+    if (useLink) {
+        s.hostClock = ls.playing;
+        s.hostBeats = ls.beat;
+    } else if (hostDrives && hostPpq >= 0 && !s.presetBPM) {
+        s.hostClock = true;
+        s.hostBeats = hostPpq;
+    }
 
     float* L = work.getWritePointer(0);
     float* R = work.getWritePointer(1);
@@ -399,6 +444,7 @@ void AfricanLoopsProcessor::publishLoad(std::shared_ptr<Current> c) {
         std::lock_guard<std::mutex> lk(stateMu);
         cur = std::move(c);
         loopBpm.store(cur->info.tempo.bpm);
+        if (linkOn.load() && cur->info.tempo.bpm > 0) link.setTempo(cur->info.tempo.bpm);  // tout le monde prend le tempo de la loop
         error.clear();
         if (looper) looper->load(cur->info, cur->stems);
     }

@@ -11,6 +11,7 @@
 #pragma once
 
 #include <array>
+#include <climits>
 #include <atomic>
 #include <cstdint>
 #include <functional>
@@ -197,6 +198,12 @@ struct Track {
     float peak = 0;  // vumètre
 };
 
+// Mesure : la loop (écrite en 4/4) est transformée pour la jouer dans une autre mesure.
+//   M44 : telle quelle.
+//   M34 : chaque mesure de 4 temps est jouée sur 3 temps (temps 1, 2, 3) : valse.
+//   M68 : de chaque mesure, on garde les croches 1-2-3 et 5-6-7 : balancement ternaire.
+enum class Meter { M44 = 0, M34 = 1, M68 = 2 };
+
 // Réglages envoyés au lecteur à chaque bloc audio par le plugin.
 struct MixSettings {
     struct Strip { float gain = 1, pan = 0; bool mute = false, solo = false; };
@@ -207,24 +214,34 @@ struct MixSettings {
     bool presetBPM = false;
     double feel = 1;          // 1, 2 (Double), 0.5 (Half)
     bool metronome = false;
-    int beatsPerBar = 4;
+    Meter meter = Meter::M44;
     bool playing = false;
-    double hostBeats = -1;    // position du logiciel hôte en temps (≥ 0 = se caler dessus)
+    // Horloge externe (Ableton Link ou logiciel hôte) : position en temps au
+    // début du bloc. Négative = décompte avant le départ (silence).
+    bool hostClock = false;
+    double hostBeats = 0;
 };
 
-// Joue les pistes en boucle, calées sur le même tempo. Pour changer de tempo
-// sans changer la hauteur du son, la loop est découpée à chaque coup et chaque
-// morceau est rejoué à vitesse normale, placé plus tôt ou plus tard.
+// Joue les pistes en boucle sur une horloge musicale (en temps et en mesures) :
+//  - chaque loop est posée sur une barre de mesure ; une nouvelle loop choisie
+//    pendant la lecture entre à la mesure suivante, au premier temps ;
+//  - le tempo peut changer sans changer la hauteur du son : la loop est découpée
+//    à chaque coup et chaque morceau est rejoué à vitesse normale ;
+//  - la mesure (3/4, 6/8) réorganise les temps de la loop.
 class Looper {
 public:
     explicit Looper(int outputRate);
 
+    // À l'arrêt : la loop est prête tout de suite. En lecture : elle entre à la
+    // mesure suivante.
     void load(const LoopInfo& info, const std::vector<Stem>& stems);
+    bool hasPendingLoop() const;
     void setGlobalBPM(double bpm);
     void setPresetBPM(bool on);  // vrai = tempo d'origine de la loop
     double globalBPM() const;
     double playingBPM() const;
     double loopLength() const;  // en échantillons de sortie
+    double beatsPerBar() const;  // 4 en 4/4, 3 en 3/4 et 6/8 (en noires)
 
     void play();
     void stop();
@@ -241,13 +258,14 @@ public:
 
     // Vitesse ressentie : 1 = normal, 2 = « Double », 0.5 = « Half ».
     void setFeel(double factor);
+    void setMeter(Meter m);
     // Métronome : un clic par temps, plus fort au début de chaque mesure.
-    void setMetronome(bool on, int beatsPerBar);
+    void setMetronome(bool on);
     bool hasLoop() const;
 
-    // Fabrique la boucle telle qu'on l'entend (tempo, volumes, mutes…) pour la
-    // glisser dans le logiciel de musique. track = -1 : toutes les pistes ;
-    // sinon cette piste seule. Le tempo joué est renvoyé dans bpm.
+    // Fabrique la boucle telle qu'on l'entend (tempo, mesure, volumes, mutes…)
+    // pour la glisser dans le logiciel de musique. track = -1 : toutes les
+    // pistes ; sinon cette piste seule. Le tempo joué est renvoyé dans bpm.
     std::shared_ptr<Audio> bounce(int track, int passes, double& bpm) const;
 
     // Appelé par le moteur audio : remplit les deux tampons.
@@ -257,34 +275,48 @@ public:
     void process(const MixSettings& s, float* outL, float* outR, int n);
 
 private:
+    struct Loop {  // une loop prête à jouer
+        std::array<Track, kNumTracks> tracks{};
+        int srcRate = 44100, srcFrames = 0;
+        double origBPM = 0;
+        std::vector<double> slices{0.0};
+    };
+    static Loop prepare(const LoopInfo& info, const std::vector<Stem>& stems, int rate);
+    void commit(Loop&& l, double anchorBeat);
+
+    // tout ce qui suit : appelé verrou pris
+    double playBPM() const;
+    double speed() const;
+    double beatLen() const;       // échantillons de sortie par temps
+    double srcBeatFrames() const; // échantillons de la loop par temps (0 si tempo inconnu)
+    bool transformed() const;     // la mesure réorganise-t-elle les temps ?
+    double loopBeats() const;     // longueur de la boucle jouée, en temps
+    double loopLen() const;
+    bool gridAt(double tau, double& grid, double& gain) const;  // temps joué → position dans la loop
+    bool sourcePos(double grid, double& src, double& gain) const;
+    void renderLocked(float* outL, float* outR, int n);
+    void publish();
+
+    mutable std::mutex mu;
+    int rate;
+    Loop cur, next;
+    bool hasNext = false;
+    double nextAt = 0;  // barre de mesure où la loop suivante entre
+    bool hostClock = false;
+    double global = 120, feel = 1;
+    bool preset = false, playing = false, metronome = false;
+    Meter meter = Meter::M44;
+    double clock = 0;   // horloge musicale, en temps
+    double anchor = 0;  // temps où la loop en cours a commencé (barre de mesure)
+    double clickPos = -1;
+    bool clickAccent = false;
+    long long lastBeat = LLONG_MIN;
     float master = 1, masterPan = 0;
     bool masterMute = false;
     float peakL = 0, peakR = 0;
-
-    bool sourcePos(double outPos, double& src, double& gain) const;
-    double speed() const;
-    double playBPM() const;
-    double loopLen() const;
-
-    void renderLocked(float* outL, float* outR, int n);
-    double beatLen() const;  // durée d'un temps (échantillons de sortie)
-
-    mutable std::mutex mu;
-    int rate, srcRate = 44100, srcFrames = 0;
-    double origBPM = 0, global = 120, feel = 1;
-    bool preset = false, playing = false;
-    bool metronome = false;
-    int beatsPerBar = 4;
-    double clickPos = -1;  // position dans le clic en cours (-1 = aucun)
-    bool clickAccent = false;
-    long long lastBeat = -1;
     // copies lisibles par l'interface sans bloquer le son
     std::atomic<float> posShown{0}, peakShownL{0}, peakShownR{0};
     std::array<std::atomic<float>, kNumTracks> trackPeakShown{};
-    void publish();
-    std::vector<double> slices;
-    double pos = 0;
-    std::array<Track, kNumTracks> tracks;
 };
 
 }  // namespace africanloops

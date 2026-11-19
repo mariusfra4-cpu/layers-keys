@@ -268,6 +268,48 @@ int main(int argc, char** argv) {
         audio2.reset();
         ed2.reset();
     }
+    // Ableton Link : deux logiciels Link dans le même ordinateur
+    {
+        LinkSync other;
+        other.setEnabled(true);
+        auto proc3 = std::make_unique<AfricanLoopsProcessor>();
+        proc3->setPlayConfigDetails(0, 2, 48000, 512);
+        proc3->prepareToPlay(48000, 512);
+        setParam(*proc3, ids::link, 1);
+        CHECK(waitFor([&] { return proc3->isLinkActive(); }, 3000), "Link ne s'active pas");
+        auto audio3 = std::make_unique<AudioThread>(*proc3, 512);
+        const bool found = waitFor([&] { return proc3->linkPeers() >= 1 && other.peers() >= 1; }, 8000);
+        std::printf("Ableton Link : %s\n", found ? "les deux logiciels se voient" : "pas de réseau local ici (normal dans ce serveur)");
+        proc3->loadLoopAsync(dir.getChildFile("Afrobeats/Lagos Street.wav"));
+        waitFor([&] { return !proc3->isLoading() && proc3->current(); }, 10000);
+        waitFor([] { return false; }, 300);
+        // la loop impose son tempo à toute la session Link
+        CHECK(std::abs(proc3->displayedBPM() - 104) < 0.05, "Link : le tempo affiché n'est pas celui de la loop (%.2f)", proc3->displayedBPM());
+        if (found) {
+            CHECK(waitFor([&] { return std::abs(other.audioState(4, 0).tempo - 104) < 0.05; }, 3000),
+                  "Link : l'autre logiciel n'a pas pris le tempo de la loop (%.2f)", other.audioState(4, 0).tempo);
+            // départ demandé par l'autre logiciel → on joue, calés sur sa mesure
+            other.audioRequestPlay(true, 4, 0);
+            CHECK(waitFor([&] { return proc3->isPlaying(); }, 3000), "Link : le départ d'Ableton n'est pas suivi");
+            other.audioRequestPlay(false, 4, 0);
+            CHECK(waitFor([&] { return !proc3->isPlaying(); }, 3000), "Link : l'arrêt d'Ableton n'est pas suivi");
+        }
+        // départ demandé ici : silence jusqu'à la prochaine mesure, puis la loop
+        proc3->setPlaying(true);
+        CHECK(waitFor([&] { return proc3->isPlaying(); }, 3000), "Link : Play ne démarre pas");
+        audio3->take();
+        waitFor([] { return false; }, 2500);
+        CHECK(audio3->take() > 1 && audio3->bad == 0, "Link : pas de son après le départ");
+        // la mesure 3/4 avec Link : toujours du son valide
+        setParam(*proc3, ids::signature, 1);
+        waitFor([] { return false; }, 800);
+        CHECK(audio3->take() > 1 && audio3->bad == 0, "Link en 3/4 : pas de son");
+        proc3->setPlaying(false);
+        setParam(*proc3, ids::link, 0);
+        CHECK(waitFor([&] { return !proc3->isLinkActive(); }, 3000), "Link ne se désactive pas");
+        audio3.reset();
+    }
+
     // MP3 réels (si fournis) : nom « nom_BPM_TEMPS[_tag].mp3 » → tempo et longueur attendus
     if (auto* d = std::getenv("AL_TEST_MP3")) {
         for (const auto& f : juce::File(d).findChildFiles(juce::File::findFiles, false, "*.mp3")) {

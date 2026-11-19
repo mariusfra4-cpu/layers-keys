@@ -600,7 +600,7 @@ AfricanLoopsEditor::AfricanLoopsEditor(AfricanLoopsProcessor& p)
         for (int x = 0; x < 256; ++x)
             noise.setPixelAt(x, y, juce::Colours::white.withAlpha((float)rnd.nextInt(24) / 255.f));
 
-    for (auto* c : std::initializer_list<juce::Component*>{&browser, &bpm, &presetBpm, &hostSync, &lp, &hp, &warmth, &masterFx,
+    for (auto* c : std::initializer_list<juce::Component*>{&browser, &bpm, &presetBpm, &hostSync, &linkButton, &lp, &hp, &warmth, &masterFx,
                                                             &sendFx, &modFx, &fade, &master, &masterPan, &metronome,
                                                             &masterMute, &mono, &signature, &stop, &play})
         face.addAndMakeVisible(c);
@@ -626,7 +626,7 @@ AfricanLoopsEditor::AfricanLoopsEditor(AfricanLoopsProcessor& p)
     sliderAtts.push_back(std::make_unique<SliderAtt>(p.params, ids::master, master));
     sliderAtts.push_back(std::make_unique<SliderAtt>(p.params, ids::masterPan, masterPan));
 
-    for (auto [b, id] : {std::pair<ui::HwButton*, juce::String>{&presetBpm, ids::presetBpm}, {&hostSync, ids::syncHost},
+    for (auto [b, id] : {std::pair<ui::HwButton*, juce::String>{&presetBpm, ids::presetBpm}, {&hostSync, ids::syncHost}, {&linkButton, ids::link},
                          {&masterFx, ids::masterFx}, {&sendFx, ids::sendFx}, {&modFx, ids::modFx}, {&fade, ids::fade},
                          {&metronome, ids::metronome}, {&masterMute, ids::masterMute}, {&mono, ids::mono}}) {
         b->setClickingTogglesState(true);
@@ -636,6 +636,8 @@ AfricanLoopsEditor::AfricanLoopsEditor(AfricanLoopsProcessor& p)
     fade.setLed(true);
     presetBpm.setTooltip(juce::String::fromUTF8("Allumé : la loop joue à son tempo d'origine"));
     hostSync.setTooltip(juce::String::fromUTF8("Allumé : suit le tempo et la lecture de votre logiciel de musique"));
+    linkButton.setTooltip(juce::String::fromUTF8("Ableton Link : Ableton et les autres logiciels Link prennent le tempo de "
+                                                 "chaque loop, avec les mêmes mesures et le départ ensemble"));
     masterFx.setTooltip(juce::String::fromUTF8("Compresseur + limiteur sur le mix"));
     sendFx.setTooltip(juce::String::fromUTF8("Réverbération"));
     modFx.setTooltip(juce::String::fromUTF8("Chorus (effet d'espace)"));
@@ -643,7 +645,8 @@ AfricanLoopsEditor::AfricanLoopsEditor(AfricanLoopsProcessor& p)
     lp.setTooltip(juce::String::fromUTF8("Filtre passe-bas : enlève les aigus"));
     hp.setTooltip(juce::String::fromUTF8("Filtre passe-haut : enlève les graves"));
     warmth.setTooltip(juce::String::fromUTF8("Chaleur : saturation douce"));
-    signature.setTooltip(juce::String::fromUTF8("Gauche : vitesse ressentie. Droite : mesure du métronome"));
+    signature.setTooltip(juce::String::fromUTF8("Gauche : vitesse (Double, Half). Droite : mesure — 3/4 rejoue chaque "
+                                                "mesure en valse, 6/8 lui donne un balancement ternaire"));
 
     play.setClickingTogglesState(false);
     play.onClick = [this] { proc.setPlaying(true); };
@@ -675,7 +678,8 @@ void AfricanLoopsEditor::resized() {
 void AfricanLoopsEditor::layout() {
     browser.setBounds(X0 + 24, 92, 560, 274);
     bpm.setBounds(X0 + 608, 92, 84, 44);
-    hostSync.setBounds(X0 + 608, 140, 84, 18);
+    hostSync.setBounds(X0 + 608, 140, 41, 18);
+    linkButton.setBounds(X0 + 651, 140, 41, 18);
     presetBpm.setBounds(X0 + 710, 98, 102, 26);
     lp.setBounds(X0 + 624, 182, 50, 50);
     hp.setBounds(X0 + 624, 246, 50, 50);
@@ -736,8 +740,9 @@ void AfricanLoopsEditor::timerCallback() {
         shownMaster = mv;
         face.repaint(master.getBounds());
     }
-    if (synced != wasSynced) {
+    if (const int peers = proc.isLinkActive() ? proc.linkPeers() : -1; synced != wasSynced || peers != shownPeers) {
         wasSynced = synced;
+        shownPeers = peers;
         face.repaint(X0 + 600, kH - 22, kW - 2 * X0 - 620, 18);
     }
     float l, r;
@@ -799,7 +804,13 @@ void AfricanLoopsEditor::Face::paint(juce::Graphics& g) {
     g.setColour(col::engraveDark);
     g.setFont(ui::font(9.f));
     juce::String status = juce::String((int)std::lround(ed.proc.getSampleRate() > 0 ? ed.proc.getSampleRate() : 44100)) + " Hz  -  8 pistes";
-    if (ed.proc.isHostSynced()) status << juce::String::fromUTF8("  -  calé sur le logiciel hôte");
+    if (ed.proc.isLinkActive()) {
+        const int n = ed.proc.linkPeers();
+        status << juce::String::fromUTF8("  -  Ableton Link : ") << (n == 0 ? juce::String::fromUTF8("en attente d'un autre logiciel")
+                                                                            : juce::String(n) + (n > 1 ? " logiciels" : " logiciel"));
+    } else if (ed.proc.isHostSynced()) {
+        status << juce::String::fromUTF8("  -  calé sur le logiciel hôte");
+    }
     g.drawText(status, X0 + 600, kH - 20, kW - 2 * X0 - 626, 14, juce::Justification::centredRight);
 }
 

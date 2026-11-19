@@ -161,7 +161,8 @@ private:
 
     BrowserPanel browser;
     BpmDisplay bpm;
-    ui::HwButton presetBpm{"PRESET", ui::HwButton::Style::Amber}, hostSync{"HOST", ui::HwButton::Style::Plain};
+    ui::HwButton presetBpm{"PRESET", ui::HwButton::Style::Amber}, hostSync{"HOST", ui::HwButton::Style::Plain},
+        linkButton{"LINK", ui::HwButton::Style::Plain};
     juce::Slider lp, hp, warmth;
     ui::HwButton masterFx{"MASTER FX"}, sendFx{"SEND FX"}, modFx{"MOD FX"}, fade{"FADE"};
     juce::Slider master, masterPan;
@@ -175,6 +176,7 @@ private:
 
     int lastLibs = -1, lastLoads = -1;
     bool wasBusy = false, wasPlaying = false, wasSynced = false, metersIdle = false;
+    int shownPeers = -1;
     double shownBpm = -1;
     float shownSignature = -1, shownMaster = -1;
     float peakHoldL = 0, peakHoldR = 0;

@@ -47,6 +47,7 @@ endif()
 #   sinon JUCE 8.0.4 est téléchargé automatiquement.
 option(AFRICANLOOPS_PLUGIN "Construire le plugin (JUCE)" ON)
 if(AFRICANLOOPS_PLUGIN)
+  include(FetchContent)
   if(JUCE_DIR)
     add_subdirectory(${JUCE_DIR} juce EXCLUDE_FROM_ALL)
   else()
@@ -54,6 +55,20 @@ if(AFRICANLOOPS_PLUGIN)
     FetchContent_Declare(juce GIT_REPOSITORY https://github.com/juce-framework/JUCE.git
                               GIT_TAG 8.0.4 GIT_SHALLOW TRUE)
     FetchContent_MakeAvailable(juce)
+  endif()
+
+  # Ableton Link (synchronisation avec Ableton et les autres logiciels)
+  #   -DLINK_DIR=<dossier de Link>  utilise une copie locale, sinon Link 3.1.5 est téléchargé
+  if(LINK_DIR)
+    include(${LINK_DIR}/AbletonLinkConfig.cmake)
+  else()
+    FetchContent_Declare(link GIT_REPOSITORY https://github.com/Ableton/link.git
+                              GIT_TAG Link-3.1.5 GIT_SHALLOW TRUE GIT_SUBMODULES modules/asio-standalone)
+    FetchContent_GetProperties(link)
+    if(NOT link_POPULATED)
+      FetchContent_Populate(link)
+    endif()
+    include(${link_SOURCE_DIR}/AbletonLinkConfig.cmake)
   endif()
 
   set(AL_FORMATS VST3 Standalone)
@@ -84,7 +99,8 @@ if(AFRICANLOOPS_PLUGIN)
   target_sources(AfricanLoopsPro PRIVATE
     plugin/PluginProcessor.cpp
     plugin/PluginEditor.cpp
-    plugin/LookAndFeel.cpp)
+    plugin/LookAndFeel.cpp
+    plugin/LinkSync.cpp)
 
   target_compile_definitions(AfricanLoopsPro PUBLIC
     JUCE_WEB_BROWSER=0
@@ -98,6 +114,7 @@ if(AFRICANLOOPS_PLUGIN)
   target_link_libraries(AfricanLoopsPro
     PRIVATE
       AfricanLoopsCore
+      Ableton::Link
       juce::juce_audio_utils
       juce::juce_dsp
     PUBLIC
@@ -117,12 +134,13 @@ if(AFRICANLOOPS_PLUGIN AND AFRICANLOOPS_PLUGIN_TESTS)
     plugin/tests/PluginTests.cpp
     plugin/PluginProcessor.cpp
     plugin/PluginEditor.cpp
-    plugin/LookAndFeel.cpp)
+    plugin/LookAndFeel.cpp
+    plugin/LinkSync.cpp)
   target_compile_definitions(AfricanLoopsPluginTests PRIVATE
     JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0 JUCE_USE_MP3AUDIOFORMAT=1 JUCE_MODAL_LOOPS_PERMITTED=1
     JUCE_STANDALONE_APPLICATION=1)
   target_link_libraries(AfricanLoopsPluginTests PRIVATE
-    AfricanLoopsCore juce::juce_audio_utils juce::juce_dsp juce::juce_recommended_config_flags)
+    AfricanLoopsCore Ableton::Link juce::juce_audio_utils juce::juce_dsp juce::juce_recommended_config_flags)
 endif()
 if(AFRICANLOOPS_PLUGIN AND AFRICANLOOPS_PLUGIN_TESTS)
   # petit hôte qui ouvre le vrai fichier VST3 construit
@@ -139,9 +157,9 @@ if(AFRICANLOOPS_PLUGIN AND AFRICANLOOPS_PLUGIN_TESTS)
     target_compile_options(AfricanLoopsTour PRIVATE /utf-8)
   endif()
   target_sources(AfricanLoopsTour PRIVATE
-    plugin/tests/Tour.cpp plugin/PluginProcessor.cpp plugin/PluginEditor.cpp plugin/LookAndFeel.cpp)
+    plugin/tests/Tour.cpp plugin/PluginProcessor.cpp plugin/PluginEditor.cpp plugin/LookAndFeel.cpp plugin/LinkSync.cpp)
   target_compile_definitions(AfricanLoopsTour PRIVATE
     JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0 JUCE_USE_MP3AUDIOFORMAT=1 JUCE_MODAL_LOOPS_PERMITTED=1 JUCE_STANDALONE_APPLICATION=1)
   target_link_libraries(AfricanLoopsTour PRIVATE
-    AfricanLoopsCore juce::juce_audio_utils juce::juce_dsp juce::juce_recommended_config_flags)
+    AfricanLoopsCore Ableton::Link juce::juce_audio_utils juce::juce_dsp juce::juce_recommended_config_flags)
 endif()

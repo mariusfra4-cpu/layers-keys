@@ -1,5 +1,7 @@
 #pragma once
 
+#include "LinkSync.h"
+
 #include <AfricanLoops/AfricanLoops.h>
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_audio_formats/juce_audio_formats.h>
@@ -11,7 +13,7 @@
 namespace ids {
 inline const juce::String master{"master"}, masterPan{"masterPan"}, masterMute{"masterMute"};
 inline const juce::String lp{"lp"}, hp{"hp"}, warmth{"warmth"};
-inline const juce::String bpm{"bpm"}, presetBpm{"presetBpm"}, syncHost{"syncHost"};
+inline const juce::String bpm{"bpm"}, presetBpm{"presetBpm"}, syncHost{"syncHost"}, link{"link"};
 inline const juce::String masterFx{"masterFx"}, sendFx{"sendFx"}, modFx{"modFx"}, fade{"fade"};
 inline const juce::String metronome{"metronome"}, signature{"signature"}, feel{"feel"}, mono{"mono"};
 inline juce::String gain(int i) { return "gain" + juce::String(i + 1); }
@@ -21,7 +23,7 @@ inline juce::String solo(int i) { return "solo" + juce::String(i + 1); }
 }  // namespace ids
 
 // Le « cerveau » du plugin : lecture, réglages, analyse des loops, effets.
-class AfricanLoopsProcessor : public juce::AudioProcessor {
+class AfricanLoopsProcessor : public juce::AudioProcessor, private juce::Timer {
 public:
     AfricanLoopsProcessor();
     ~AfricanLoopsProcessor() override;
@@ -52,6 +54,8 @@ public:
     void setPlaying(bool on);
     bool isPlaying() const { return wantPlay.load(); }
     bool isHostSynced() const { return hostSynced.load(); }
+    bool isLinkActive() const { return linkOn.load(); }
+    int linkPeers() const { return peerCount.load(); }
     double displayedBPM() const { return shownBPM.load(); }
     double playheadPosition() const { return looper ? looper->position() : 0; }
 
@@ -102,7 +106,7 @@ private:
 
     // Accès direct aux réglages depuis le fil audio (aucun texte créé, aucune recherche).
     struct Raw {
-        std::atomic<float>*master, *masterPan, *masterMute, *lp, *hp, *warmth, *bpm, *presetBpm, *syncHost, *masterFx,
+        std::atomic<float>*master, *masterPan, *masterMute, *lp, *hp, *warmth, *bpm, *presetBpm, *syncHost, *link, *masterFx,
             *sendFx, *modFx, *fade, *metronome, *signature, *feel, *mono;
         std::array<std::atomic<float>*, africanloops::kNumTracks> gain, pan, mute, solo;
     } raw{};
@@ -113,6 +117,14 @@ private:
     juce::ThreadPool loadPool{juce::ThreadPoolOptions{}.withThreadName("AL load").withNumberOfThreads(1)};
     juce::ThreadPool scanPool{juce::ThreadPoolOptions{}.withThreadName("AL scan").withNumberOfThreads(1)
                                   .withDesiredThreadPriority(juce::Thread::Priority::low)};
+    // Ableton Link : activé depuis la minuterie (jamais depuis le fil audio)
+    void timerCallback() override;
+    LinkSync link;
+    std::atomic<bool> linkOn{false};
+    std::atomic<int> peerCount{0};
+    bool lastLinkWant = false;  // fil audio : dernière demande lecture/arrêt envoyée à Link
+    float lastBpmParam = -1;    // minuterie : tempo réglé à la main, à envoyer à Link
+
     juce::uint32 lastScanMs = 0;
     juce::File lastScanDir;
     mutable std::mutex stateMu;  // protège cur, lib, error, folder

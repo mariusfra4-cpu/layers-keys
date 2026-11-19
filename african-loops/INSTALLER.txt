@@ -40,4 +40,13 @@ UTILISATION
   HOST allumé : suit le tempo et la lecture de votre logiciel de musique.
   PRESET allumé : la loop joue à son tempo d'origine.
 - DOUBLE / HALF : deux fois plus vite / deux fois plus lent.
-- Barre d'espace : lecture / arrêt.
+- SIGNATURE : 4/4 joue la loop telle quelle ; 3/4 rejoue chaque mesure en valse
+  (temps 1, 2, 3) ; 6/8 lui donne un balancement ternaire.
+- En pleine lecture, la loop choisie entre à la PROCHAINE MESURE, sur le
+  temps 1 : jamais de décalage.
+- LINK (Ableton Link) : Ableton Live et les autres logiciels Link prennent le
+  tempo de chaque loop choisie, avec les mêmes barres de mesure ; Play / Stop
+  partent ensemble à la mesure suivante. Dans Ableton : activez Link en haut
+  à gauche, et dans les Préférences > Link, « Start Stop Sync ».
+- Clavier : Espace = lecture / arrêt ; flèches haut / bas = loop précédente /
+  suivante.

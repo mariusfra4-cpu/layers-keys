@@ -429,7 +429,7 @@ static void testBounceAndMetronome() {
     Looper m(kRate);
     m.load(si, {{"LOOP", std::make_shared<Audio>(silence)}});
     m.setGlobalBPM(120);
-    m.setMetronome(true, 4);
+    m.setMetronome(true);
     m.play();
     std::vector<float> o(kRate * 2), o2(kRate * 2);
     m.render(o.data(), o2.data(), kRate * 2);
@@ -441,9 +441,11 @@ static void testBounceAndMetronome() {
     CHECK(energy(o, 0, 600) > energy(o, kRate / 2, kRate / 2 + 600), "le 1er temps n'est pas accentué");
 }
 
-static void testSwitchInTime() {
-    current = "changer de loop en pleine lecture (en mesure)";
+static void testSwitchOnNextBar() {
+    current = "loop suivante : entre à la prochaine mesure";
     Audio a = synthLoop(96, 2, 0), b = synthLoop(96, 1, 0);
+    for (auto& v : b.L) v *= 0.5f;  // b plus douce : on reconnaît laquelle joue
+    for (auto& v : b.R) v *= 0.5f;
     std::vector<Stem> sa, sb;
     auto ia = separate(a, "a.wav", sa), ib = separate(b, "b.wav", sb);
     Looper l(kRate);
@@ -451,16 +453,132 @@ static void testSwitchInTime() {
     l.setGlobalBPM(96);
     l.play();
     const double beat = 60.0 / 96 * kRate;
-    int n = (int)(beat * 5.25);  // on joue 5 temps et quart
-    std::vector<float> L(n), R(n);
-    l.render(L.data(), R.data(), n);
-    l.load(ib, sb);  // la nouvelle loop (4 temps) doit reprendre au temps 2 et quart
-    double want = std::fmod(5.25 * beat, 4 * beat);
-    CHECK(std::abs(l.position() * l.loopLength() - want) < 2, "position %.0f au lieu de %.0f",
-          l.position() * l.loopLength(), want);
+    std::vector<float> L((size_t)(beat * 5.25)), R(L.size());
+    l.render(L.data(), R.data(), (int)L.size());  // 5 temps et quart : 2e mesure entamée
+    l.load(ib, sb);
+    CHECK(l.hasPendingLoop(), "la nouvelle loop doit attendre la mesure suivante");
+    std::vector<float> L2((size_t)(beat * 2.7)), R2(L2.size());  // jusqu'à 7,95 temps
+    l.render(L2.data(), R2.data(), (int)L2.size());
+    CHECK(l.hasPendingLoop(), "la loop est entrée avant la barre de mesure");
+    // de 7,95 à 8,5 temps : on doit entendre la nouvelle loop pile au temps 8 (son début)
+    const int n = (int)(beat * 0.55);
+    std::vector<float> L3((size_t)n), R3((size_t)n);
+    l.render(L3.data(), R3.data(), n);
+    CHECK(!l.hasPendingLoop(), "la loop n'est pas entrée à la mesure");
+    const int at8 = (int)std::lround(beat * 8) - (int)L.size() - (int)L2.size();
+    double diff = 0;
+    for (int i = 0; i < 2000; ++i) diff = std::max(diff, (double)std::abs(L3[(size_t)(at8 + i)] - b.L[(size_t)i]));
+    CHECK(diff < 2e-3, "la nouvelle loop ne démarre pas sur le temps 1 de la mesure (écart %g)", diff);
+    // à l'arrêt : tout de suite, depuis le début
     l.stop();
     l.load(ia, sa);
-    CHECK(l.position() == 0, "à l'arrêt, une nouvelle loop doit partir du début");
+    CHECK(!l.hasPendingLoop() && l.position() == 0, "à l'arrêt, une nouvelle loop doit être prête tout de suite");
+}
+
+static void testMeters() {
+    current = "mesure 3/4 : la loop devient une valse";
+    Audio a = synthLoop(98, 2, 0);
+    std::vector<Stem> st;
+    auto info = separate(a, "x.wav", st);
+    Looper l(kRate);
+    l.load(info, st);
+    l.setGlobalBPM(98);  // 1 temps = 27000 échantillons pile
+    l.setMeter(Meter::M34);
+    const double beat = 60.0 / 98 * kRate;
+    CHECK(std::abs(l.loopLength() - 6 * beat) < 2 && l.beatsPerBar() == 3, "3/4 : boucle de %.2f temps", l.loopLength() / beat);
+    l.play();
+    const int n = (int)(6 * beat);
+    std::vector<float> L((size_t)n), R((size_t)n);
+    l.render(L.data(), R.data(), n);
+    // temps 1-2-3 de la mesure 1, puis temps 1-2-3 de la mesure 2 (le temps 4 est sauté)
+    auto same = [&](int outBeat, int srcBeat) {
+        double d = 0;
+        const int o = (int)std::lround(outBeat * beat) + 400, sIdx = (int)std::lround(srcBeat * beat) + 400;
+        for (int i = 0; i < 3000; ++i) d = std::max(d, (double)std::abs(L[(size_t)(o + i)] - a.L[(size_t)(sIdx + i)]));
+        return d;
+    };
+    CHECK(same(1, 1) < 1e-3 && same(2, 2) < 1e-3, "3/4 : temps 2 et 3 faux");
+    CHECK(same(3, 4) < 1e-3 && same(5, 6) < 1e-3, "3/4 : la 2e mesure ne reprend pas au temps 1 de la mesure suivante (%g %g)", same(3, 4), same(5, 6));
+
+    current = "mesure 6/8 : balancement ternaire";
+    l.stop();
+    l.setMeter(Meter::M68);
+    CHECK(std::abs(l.loopLength() - 6 * beat) < 2, "6/8 : boucle de %.2f temps", l.loopLength() / beat);
+    l.play();
+    l.render(L.data(), R.data(), n);
+    auto sameEighth = [&](int outEighth, int srcEighth) {
+        double d = 0;
+        const int o = (int)std::lround(outEighth * beat / 2) + 300, sIdx = (int)std::lround(srcEighth * beat / 2) + 300;
+        for (int i = 0; i < 2000; ++i) d = std::max(d, (double)std::abs(L[(size_t)(o + i)] - a.L[(size_t)(sIdx + i)]));
+        return d;
+    };
+    CHECK(sameEighth(1, 1) < 1e-3 && sameEighth(3, 4) < 1e-3 && sameEighth(5, 6) < 1e-3, "6/8 : croches mal placées");
+    CHECK(sameEighth(6, 8) < 1e-3, "6/8 : la 2e mesure ne reprend pas au début de la mesure suivante");
+    double bpm = 0;
+    auto b = l.bounce(-1, 1, bpm);
+    CHECK(std::abs(b->frames() - 6 * beat) < 2, "fichier glissé en 6/8 : %d", b->frames());
+
+    current = "mesure : loop qui n'a pas des mesures entières";
+    const double beat96 = 60.0 / 96 * kRate;
+    Audio odd = synthLoop(96, 1, 0);
+    odd.L.resize((size_t)(6 * beat96));  // 6 temps : pas de transformation possible
+    odd.R.resize((size_t)(6 * beat96));
+    std::vector<Stem> so;
+    auto io = separate(odd, "y_96bpm.wav", so);
+    Looper l2(kRate);
+    l2.load(io, so);
+    l2.setPresetBPM(true);
+    l2.setMeter(Meter::M34);
+    CHECK(std::abs(l2.loopLength() - 6 * beat96) < 2, "loop de 6 temps : %.2f temps", l2.loopLength() / beat96);
+
+    current = "métronome en 3/4";
+    Audio silence;
+    silence.L.assign((size_t)kRate * 3, 0.f);
+    silence.R = silence.L;
+    LoopInfo si;
+    si.tempo.bpm = 120;
+    si.tempo.beats = 6;
+    Looper m(kRate);
+    m.load(si, {{"LOOP", std::make_shared<Audio>(silence)}});
+    m.setGlobalBPM(120);
+    m.setMeter(Meter::M34);
+    m.setMetronome(true);
+    m.play();
+    std::vector<float> o((size_t)kRate * 2), o2(o.size());
+    m.render(o.data(), o2.data(), (int)o.size());
+    const int b0 = 0, b1 = kRate / 2, b3 = 3 * kRate / 2;
+    CHECK(energy(o, b3, b3 + 600) > energy(o, b1, b1 + 600) * 1.5 && energy(o, b0, b0 + 600) > energy(o, b1, b1 + 600) * 1.5,
+          "en 3/4, le temps 4 doit être le 1er de la mesure suivante (accentué)");
+}
+
+static void testHostClock() {
+    current = "horloge externe (Link) : décompte puis départ sur la mesure";
+    Audio a = synthLoop(96, 1, 0);
+    std::vector<Stem> st;
+    auto info = separate(a, "x.wav", st);
+    Looper l(kRate);
+    l.load(info, st);
+    MixSettings s;
+    s.globalBPM = 96;
+    s.playing = true;
+    s.hostClock = true;
+    s.hostBeats = -1.0;  // un temps avant le départ
+    std::vector<float> o(4096), o2(4096);
+    l.process(s, o.data(), o2.data(), 4096);
+    CHECK(energy(o, 0, 4096) == 0, "du son pendant le décompte");
+    s.hostBeats = 0;
+    l.process(s, o.data(), o2.data(), 4096);
+    double d = 0;
+    for (int i = 0; i < 4096; ++i) d = std::max(d, (double)std::abs(o[(size_t)i] - a.L[(size_t)i]));
+    CHECK(d < 1e-3, "la loop ne part pas pile au temps 0 de Link (écart %g)", d);
+    // Double : nos temps vont deux fois plus vite que ceux de Link, toujours calés
+    s.feel = 2;
+    s.hostBeats = 1.0;  // temps 1 de Link = notre temps 2
+    l.process(s, o.data(), o2.data(), 1000);
+    const int at = (int)std::lround(2 * 60.0 / 96 * kRate);
+    double e1 = 0, e2 = 0;
+    for (int i = 0; i < 300; ++i) { e1 += o[(size_t)i] * o[(size_t)i]; e2 += a.L[(size_t)(at + i)] * a.L[(size_t)(at + i)]; }
+    CHECK(e1 > 0.3 * e2 && e2 > 0, "en Double, pas calé sur Link");
 }
 
 static std::vector<uint8_t> withSmpl(std::vector<uint8_t> wav, int start, int end) {
@@ -567,6 +685,7 @@ static void testProcess() {
         if (std::abs(L[i] - a.L[i]) > 1e-3) bad = i;
     CHECK(bad < 0, "lecture par blocs différente (échantillon %d)", bad);
     // calage sur l'hôte : au temps 2 de l'hôte, on doit entendre le temps 2 de la loop
+    s.hostClock = true;
     s.hostBeats = 1.0;
     std::vector<float> o(1100), o2(1100);
     l.process(s, o.data(), o2.data(), 1100);
@@ -594,7 +713,9 @@ int main() {
     testBounceAndMetronome();
     testProcess();
     testSeamlessFiles();
-    testSwitchInTime();
+    testSwitchOnNextBar();
+    testMeters();
+    testHostClock();
     if (failures) {
         std::printf("%d test(s) en échec\n", failures);
         return 1;
