@@ -256,6 +256,46 @@ static void testLoopSeam()
     CHECK (maxJump < 0.05f, "pas de clic a la jointure de la boucle");
     CHECK (ch.isPlaying(), "le son tourne toujours en boucle apres 10 s");
 
+    // un crowd qui monte puis s'éteint (comme une foule enregistrée) : la boucle ne doit jamais retomber ni « recommencer »
+    {
+        auto c = std::make_shared<SampleData>();
+        c->sampleRate = 48000;
+        const int len = 48000 * 8;
+        c->buffer.setSize (2, len);
+        juce::Random rnd (9);
+        for (int i = 0; i < len; ++i)
+        {
+            const double t = i / 48000.0;
+            const double envv = t < 0.4 ? 0.0 : t < 1.6 ? (t - 0.4) / 1.2 : t < 6.0 ? 1.0 : juce::jmax (0.0, 1.0 - (t - 6.0) / 2.0);   // silence, montée, plein, extinction
+            for (int ch2 = 0; ch2 < 2; ++ch2) c->buffer.setSample (ch2, i, (float) (envv * (rnd.nextFloat() - 0.5f) * 0.6f));
+        }
+        computeLoopPoints (*c);
+        std::cout << "  crowd : boucle de " << juce::String (c->loopStart / 48000.0, 2) << " s a " << juce::String ((c->loopEnd + c->loopXfade) / 48000.0, 2)
+                  << " s, fondu " << juce::String (c->loopXfade / 48000.0, 2) << " s\n";
+        CHECK (c->loopStart >= (int) (1.2 * 48000) && c->loopEnd + c->loopXfade <= (int) (6.7 * 48000), "la boucle evite la montee et l'extinction du son");
+        PadChannel cc;
+        cc.prepare (48000);
+        cc.start (c, 0, true, 0.01f, 0.01f);
+        std::vector<float> lv;
+        for (int blk = 0; blk < 48000 * 30 / 512; ++blk)   // 30 s : plusieurs tours
+        {
+            out.clear();
+            cc.render (out, nullptr, nullptr, 0, 512);
+            if (blk * 512 > 48000 * 9) lv.push_back (out.getRMSLevel (0, 0, 512));   // après le premier passage
+        }
+        // niveau sur 0,2 s glissant
+        float lo = 1e9f, hi = 0;
+        for (size_t i = 0; i + 19 < lv.size(); i += 19)
+        {
+            double e = 0; for (size_t k = 0; k < 19; ++k) e += lv[i + k] * lv[i + k];
+            const float r = (float) std::sqrt (e / 19);
+            lo = juce::jmin (lo, r); hi = juce::jmax (hi, r);
+        }
+        std::cout << "  crowd en boucle : niveau mini / maxi = " << juce::String (lo / juce::jmax (1e-6f, hi), 2) << "\n";
+        CHECK (lo > hi * 0.7f, "le crowd tourne en continu : pas de creux ni de reprise audible (" << lo / juce::jmax (1e-6f, hi) << ")");
+        CHECK (cc.isPlaying(), "le crowd tourne toujours apres 30 s");
+    }
+
     // sans boucle : le son s'arrête à la fin
     PadChannel once;
     once.prepare (48000);

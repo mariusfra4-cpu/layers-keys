@@ -69,6 +69,7 @@ std::shared_ptr<const SampleData> SampleLoader::getOrLoad (const juce::String& p
         rd->read (&d->buffer, 0, n, 0, true, false);
         d->buffer.copyFrom (1, 0, d->buffer, 0, 0, n);
     }
+    computeLoopPoints (*d);
     // enveloppe pour l'affichage
     const int P = 512;
     d->peaks.assign (P, 0.0f);
@@ -115,6 +116,55 @@ void SampleLoader::run()
 }
 
 // ---------------------------------------------------------------------------------------------
+// Points de boucle : on écoute l'enveloppe du son (fenêtres de 50 ms) et on garde la partie « pleine »,
+// entre la montée du début et la fin qui s'éteint. Le début n'est joué qu'au premier passage ;
+// ensuite le son tourne dans cette partie, avec un long fondu, sans qu'on entende « ça recommence ».
+// ---------------------------------------------------------------------------------------------
+void computeLoopPoints (SampleData& d)
+{
+    const int L = d.buffer.getNumSamples();
+    const double sr = d.sampleRate > 0 ? d.sampleRate : 44100;
+    // par défaut (son court) : toute la longueur, jointure fondue sur 1/4 du son (au plus 1,5 s)
+    auto fallback = [&]
+    {
+        d.loopXfade = juce::jmin (L / 4, (int) (1.5 * sr));
+        d.loopStart = 0;
+        d.loopEnd = L - d.loopXfade;
+    };
+    const int W = juce::jmax (64, (int) (0.05 * sr));
+    const int nw = L / W;
+    if (L < (int) (1.5 * sr) || nw < 12) { fallback(); return; }
+    std::vector<float> env ((size_t) nw);
+    for (int w = 0; w < nw; ++w)
+    {
+        double e = 0;
+        for (int ch = 0; ch < 2; ++ch)
+        {
+            const float* p = d.buffer.getReadPointer (ch, w * W);
+            for (int i = 0; i < W; ++i) e += (double) p[i] * p[i];
+        }
+        env[(size_t) w] = (float) std::sqrt (e / (2.0 * W));
+    }
+    auto sorted = env;
+    std::sort (sorted.begin(), sorted.end());
+    const float loud = sorted[(size_t) (nw * 3 / 4)];            // niveau « plein » du son
+    if (loud < 1e-5f) { fallback(); return; }
+    const float thr = loud * 0.7f;                             // -3 dB sous le niveau plein : on reste dans la partie vraiment pleine
+    int a = 0, b = nw - 1;
+    while (a < nw && env[(size_t) a] < thr) ++a;
+    while (b > a && env[(size_t) b] < thr) --b;
+    const int sustainStart = a * W, sustainEnd = (b + 1) * W;
+    const int sustain = sustainEnd - sustainStart;
+    if (sustain < (int) (1.0 * sr)) { fallback(); return; }
+    // fondu de la jointure : jusqu'à 3 s, au plus un tiers de la partie pleine
+    const int X = juce::jlimit ((int) (0.05 * sr), (int) (3.0 * sr), sustain / 3);
+    d.loopXfade = X;
+    d.loopStart = sustainStart;
+    d.loopEnd = sustainEnd - X;                                // le fondu prend [loopEnd, loopEnd + X), encore dans la partie pleine
+    if (d.loopEnd - d.loopStart < X) fallback();
+}
+
+// ---------------------------------------------------------------------------------------------
 // PadChannel
 // ---------------------------------------------------------------------------------------------
 void PadChannel::prepare (double rate)
@@ -131,6 +181,13 @@ std::shared_ptr<const SampleData> PadChannel::current() const
 void PadChannel::start (std::shared_ptr<const SampleData> s, int semitones, bool loop, float fadeInSec, float crossfadeSec)
 {
     if (s == nullptr || s->buffer.getNumSamples() < 16) return;
+    if (s->loopEnd <= s->loopStart)
+    {
+        // son préparé sans points de boucle : on les calcule (copie, hors du fil audio)
+        auto withLoop = std::make_shared<SampleData> (*s);
+        computeLoopPoints (*withLoop);
+        s = withLoop;
+    }
     Cmd c;
     c.type = Cmd::Start; c.sample = std::move (s); c.semis = semitones; c.loop = loop; c.fadeIn = fadeInSec; c.xfade = crossfadeSec;
     const juce::SpinLock::ScopedLockType sl (cmdLock);
@@ -189,8 +246,6 @@ void PadChannel::applyCommands()
         v.s = c.sample;
         v.main = {}; v.sub = {}; v.shim = {};
         v.loop = c.loop;
-        const int L = v.s->buffer.getNumSamples();
-        v.xfade = juce::jmin (L / 4, (int) (1.5 * v.s->sampleRate));
         v.rate = (v.s->sampleRate / hostRate) * std::pow (2.0, c.semis / 12.0);
         // monte sur le fondu entre tonalités si un son jouait déjà, sinon sur l'attaque
         const float inSec = juce::jmax (0.005f, anyAudible ? juce::jmax (c.xfade, 0.01f) : c.fadeIn);
@@ -223,20 +278,20 @@ void PadChannel::render (juce::AudioBuffer<float>& out, juce::AudioBuffer<float>
             if (v.step > 0 && v.gain >= v.target) { v.gain = v.target; v.step = 0; }
             if (v.step < 0 && v.gain <= 0) { v.gain = 0; v.active = false; break; }
             const float g = v.gain * v.gain * (3.0f - 2.0f * v.gain); // courbe douce
-            o0[i] += g * v.main.read (s, 0, v.loop, v.xfade);
-            o1[i] += g * v.main.read (s, 1, v.loop, v.xfade);
-            v.main.advance (s, v.rate, v.loop, v.xfade);
+            o0[i] += g * v.main.read (s, 0, v.loop);
+            o1[i] += g * v.main.read (s, 1, v.loop);
+            v.main.advance (s, v.rate, v.loop);
             if (s0 != nullptr)
             {
-                s0[i] += g * v.sub.read (s, 0, true, v.xfade);
-                s1[i] += g * v.sub.read (s, 1, true, v.xfade);
-                v.sub.advance (s, v.rate * 0.5, true, v.xfade);
+                s0[i] += g * v.sub.read (s, 0, true);
+                s1[i] += g * v.sub.read (s, 1, true);
+                v.sub.advance (s, v.rate * 0.5, true);
             }
             if (h0 != nullptr)
             {
-                h0[i] += g * v.shim.read (s, 0, true, v.xfade);
-                h1[i] += g * v.shim.read (s, 1, true, v.xfade);
-                v.shim.advance (s, v.rate * 2.0, true, v.xfade);
+                h0[i] += g * v.shim.read (s, 0, true);
+                h1[i] += g * v.shim.read (s, 1, true);
+                v.shim.advance (s, v.rate * 2.0, true);
             }
             if (v.main.finished) { v.active = false; break; }
         }

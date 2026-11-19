@@ -12,7 +12,11 @@ struct SampleData
     juce::AudioBuffer<float> buffer;      // stéréo
     double sampleRate = 44100;
     std::vector<float> peaks;             // enveloppe pour l'affichage (512 valeurs, 0..1)
+    // boucle : après un premier passage depuis le début, le son tourne dans [loopStart, loopEnd),
+    // la jointure est fondue sur loopXfade échantillons (pris juste après loopEnd)
+    int loopStart = 0, loopEnd = 0, loopXfade = 0;
 };
+void computeLoopPoints (SampleData&);     // trouve la partie « pleine » du son (sans la montée ni la fin qui s'éteint)
 
 // Chargement des fichiers dans un fil séparé + mémoire des derniers sons utilisés
 class SampleLoader : private juce::Thread
@@ -43,8 +47,8 @@ struct LoopReader
     double pos = 0;
     bool looped = false;
     bool finished = false;
-    inline float read (const SampleData& s, int ch, bool loop, int xfade) const;
-    inline void advance (const SampleData& s, double rate, bool loop, int xfade);
+    inline float read (const SampleData& s, int ch, bool loop) const;
+    inline void advance (const SampleData& s, double rate, bool loop);
 };
 
 class PadChannel
@@ -70,7 +74,6 @@ private:
         double rate = 1;
         float gain = 0, target = 0, step = 0;
         bool loop = true, active = false;
-        int xfade = 0;
     };
     struct Cmd
     {
@@ -93,24 +96,24 @@ private:
     mutable juce::SpinLock latestLock;
 };
 
-inline float LoopReader::read (const SampleData& s, int ch, bool loop, int xfade) const
+inline float LoopReader::read (const SampleData& s, int ch, bool loop) const
 {
     const int L = s.buffer.getNumSamples();
     const float* d = s.buffer.getReadPointer (ch);
-    const int loopLen = L - xfade;
+    const int A = s.loopStart, E = s.loopEnd, X = s.loopXfade, len = E - A;
     auto value = [&] (int i) -> float
     {
-        if (loop)
+        if (loop && len > 0)
         {
-            bool joined = looped;                       // après le premier tour, le début est mélangé avec la fin
-            if (i >= loopLen) { i -= loopLen; joined = true; }
+            bool joined = looped;                       // après le premier tour, le début de la boucle est mélangé avec ce qui suit sa fin
+            if (i >= E) { i -= len; joined = true; }
             if (i < 0 || i >= L) return 0.0f;
-            if (joined && i < xfade && xfade > 0)
+            if (joined && i >= A && i < A + X && X > 0 && i + len < L)
             {
-                const float t = (float) i / (float) xfade;
+                const float t = (float) (i - A) / (float) X;
                 const float in = std::sin (t * juce::MathConstants<float>::halfPi);
                 const float out = std::cos (t * juce::MathConstants<float>::halfPi);
-                return d[i] * in + d[i + loopLen] * out;
+                return d[i] * in + d[i + len] * out;
             }
             return d[i];
         }
@@ -121,14 +124,14 @@ inline float LoopReader::read (const SampleData& s, int ch, bool loop, int xfade
     return value (i0) + (value (i0 + 1) - value (i0)) * fr;
 }
 
-inline void LoopReader::advance (const SampleData& s, double rate, bool loop, int xfade)
+inline void LoopReader::advance (const SampleData& s, double rate, bool loop)
 {
     pos += rate;
     const int L = s.buffer.getNumSamples();
-    if (loop)
+    const int len = s.loopEnd - s.loopStart;
+    if (loop && len > 0)
     {
-        const int loopLen = L - xfade;
-        while (pos >= loopLen && loopLen > 0) { pos -= loopLen; looped = true; }
+        while (pos >= s.loopEnd) { pos -= len; looped = true; }
     }
     else if (pos >= L)
         finished = true;
