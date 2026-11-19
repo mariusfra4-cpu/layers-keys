@@ -216,7 +216,7 @@ public:
     bool crowdTabShown() const { return tab == 1; }
     void updateState();                        // états lumineux (son joué, mode)
     void retranslate();                        // textes dans la langue choisie
-    std::function<void (bool crowdTab)> onChooseFolder;
+    std::function<void (bool crowdTab)> onChooseFolder, onChooseFiles;
 
 private:
     void timerCallback() override { if (tab == 1) repaint (playerArea); }
@@ -229,7 +229,7 @@ private:
 
     SpacepadProcessor& proc;
     juce::TextButton padTab { "PADS" }, crowdTab { "CROWDS" }, setTab { "SETLIST" };
-    juce::TextButton chooseBtn;
+    juce::TextButton chooseBtn, filesBtn;
     juce::ComboBox crowdPicker;
     std::vector<std::unique_ptr<juce::TextButton>> chips;
     juce::Viewport viewport;
@@ -268,6 +268,7 @@ class ScanOverlay : public juce::Component, private juce::Timer
 {
 public:
     ScanOverlay (SpacepadProcessor&, const juce::File& folder, LibType type);
+    ScanOverlay (SpacepadProcessor&, const juce::Array<juce::File>& items, LibType type);   // dossiers et fichiers mélangés
     ~ScanOverlay() override;
     void paint (juce::Graphics&) override;
     void resized() override;
@@ -277,11 +278,12 @@ public:
 private:
     struct Job : juce::Thread
     {
-        Job (juce::File f, LibType t) : juce::Thread ("Spacepad analyse"), folder (std::move (f)), type (t) {}
+        Job (juce::Array<juce::File> f, LibType t) : juce::Thread ("Spacepad analyse"), items (std::move (f)), type (t) {}
         void run() override;
-        juce::File folder;
+        juce::Array<juce::File> items;
         LibType type;
         std::vector<Library> result;
+        juce::StringArray skipped;
         std::atomic<double> progress { 0 };
         juce::CriticalSection lock;
         juce::String status;
@@ -312,7 +314,18 @@ public:
     std::function<void()> onExport, onImport;
     void showPage (int p);
 private:
-    void timerCallback() override { if (page == 1) { refreshMidiButtons(); repaint(); } }
+    void timerCallback() override
+    {
+        if (page == 1) { refreshMidiButtons(); repaint(); }
+        if (page == 3 && proc.libraries().changeCount() != lastLibChanges) rebuildLibList();
+    }
+    void rebuildLibList();
+    juce::Viewport libView;
+    std::unique_ptr<juce::Component> libList;
+    juce::TextButton deleteAllBtn;
+    juce::Rectangle<int> libHeadArea;
+    int lastLibChanges = -1;
+    bool inPlugin = false;                      // dans un logiciel de musique : l'audio, le tempo et le MIDI passent par lui
     struct Choice { juce::String label; juce::Rectangle<int> r; };
     struct Group { juce::String title; std::vector<Choice> choices; int* value; juce::Rectangle<int> area; };
     void load();
@@ -472,7 +485,7 @@ private:
 };
 
 // --------------------------------------------------------------------------------------------
-class MainView : public juce::Component, private juce::Timer
+class MainView : public juce::Component, public juce::FileDragAndDropTarget, private juce::Timer
 {
 public:
     explicit MainView (SpacepadProcessor&);
@@ -483,6 +496,12 @@ public:
     static constexpr int W = 1400, H = 880;
     void chooseFolder (bool crowdTab);
     void openScan (const juce::File& folder, LibType type = LibType::Pad);   // aussi utilisé par les tests
+    void openScanItems (const juce::Array<juce::File>& items, LibType type);  // fichiers et dossiers, choisis ou déposés
+    void chooseFiles (bool crowdTab);
+    bool isInterestedInFileDrag (const juce::StringArray& files) override;
+    void filesDropped (const juce::StringArray& files, int x, int y) override;
+    void fileDragEnter (const juce::StringArray&, int, int) override { dragOver = true; repaint(); }
+    void fileDragExit (const juce::StringArray&) override { dragOver = false; repaint(); }
     void openSettings();
     void openStage();
     void retranslate();                         // textes dans la langue choisie (FR, EN, ES)
@@ -521,6 +540,6 @@ private:
     juce::TooltipWindow tooltips { this, 500 };
     int lastChanges = -1, tick = 0, lastKey = -1, lastMode = -1, lastSettings = -1, lastScale = 100;
     juce::uint32 midiFlashUntil = 0, lastMs = 0;
-    bool screenSaverOff = false;
+    bool screenSaverOff = false, dragOver = false;
 };
 }

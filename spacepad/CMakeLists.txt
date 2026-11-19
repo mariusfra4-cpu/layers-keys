@@ -68,6 +68,7 @@ set(SPACEPAD_CORE_SOURCES
   Source/Library.cpp
   Source/PadEngine.cpp
   Source/Effects.cpp
+  Source/AudioOpen.cpp
   Source/Modulation.cpp
   Source/CrowdPrefs.cpp)
 
@@ -88,6 +89,7 @@ target_compile_definitions(Spacepad PUBLIC
   JUCE_VST3_CAN_REPLACE_VST2=0
   JUCE_DISPLAY_SPLASH_SCREEN=0
   JUCE_USE_MP3AUDIOFORMAT=1
+  JUCE_USE_WINDOWS_MEDIA_FORMAT=1
   JUCE_USE_FLAC=1
   JUCE_USE_OGGVORBIS=1
   JUCE_STANDALONE_FILTER_WINDOW_USE_KIOSK_MODE=0
@@ -132,6 +134,7 @@ target_compile_definitions(SpacepadTests PRIVATE
   JUCE_WEB_BROWSER=0
   JUCE_USE_CURL=0
   JUCE_USE_MP3AUDIOFORMAT=1
+  JUCE_USE_WINDOWS_MEDIA_FORMAT=1
   JUCE_USE_FLAC=1
   JUCE_USE_OGGVORBIS=1)
 target_link_libraries(SpacepadTests

@@ -1,5 +1,6 @@
 #include "Library.h"
 #include "Lang.h"
+#include "AudioOpen.h"
 #include <map>
 #include <set>
 #if ! JUCE_WINDOWS
@@ -90,8 +91,7 @@ juce::String makeLibraryId (const juce::String& folder)
 bool isAudioFile (const juce::File& f)
 {
     if (f.getFileName().startsWithChar ('.')) return false; // fichiers cachés du Mac (._son.wav)
-    auto e = f.getFileExtension().toLowerCase();
-    return e == ".wav" || e == ".wave" || e == ".aif" || e == ".aiff" || e == ".flac" || e == ".mp3" || e == ".ogg";
+    return audioExtensions().contains (f.getFileExtension().toLowerCase());
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -254,7 +254,7 @@ bool LibraryStore::reloadIfChanged()
     return load();
 }
 
-void LibraryStore::addOrReplace (const std::vector<Library>& add)
+bool LibraryStore::addOrReplace (const std::vector<Library>& add)
 {
     {
         const juce::ScopedLock sl (lock);
@@ -264,11 +264,30 @@ void LibraryStore::addOrReplace (const std::vector<Library>& add)
             if (copy.id.isEmpty()) copy.id = makeLibraryId (copy.folder);
             if (copy.addedAt == 0) copy.addedAt = juce::Time::currentTimeMillis();
             auto it = std::find_if (libs.begin(), libs.end(), [&] (auto& x) { return x->id == copy.id; });
+            if (it != libs.end() && copy.partial && (*it)->type == copy.type)
+            {
+                // sons choisis un par un : ils s'ajoutent à ceux déjà enregistrés pour ce dossier
+                Library merged = **it;
+                for (auto& c : copy.categories)
+                {
+                    auto ct = std::find_if (merged.categories.begin(), merged.categories.end(), [&] (auto& x) { return x.name == c.name; });
+                    if (ct == merged.categories.end()) { merged.categories.push_back (c); continue; }
+                    for (auto& snd : c.sounds)
+                    {
+                        auto st = std::find_if (ct->sounds.begin(), ct->sounds.end(), [&] (auto& x) { return x.path == snd.path; });
+                        if (st != ct->sounds.end()) *st = snd; else ct->sounds.push_back (snd);
+                    }
+                }
+                merged.partial = false;
+                *it = std::make_shared<const Library> (std::move (merged));
+                continue;
+            }
+            copy.partial = false;
             if (it != libs.end()) *it = std::make_shared<const Library> (std::move (copy));
             else libs.push_back (std::make_shared<const Library> (std::move (copy)));
         }
     }
-    save();
+    return save();
 }
 
 void LibraryStore::remove (const juce::String& id)
@@ -310,7 +329,7 @@ std::shared_ptr<const Library> LibraryStore::find (const juce::String& id) const
 // ---------------------------------------------------------------------------------------------
 FolderAnalyzer::FolderAnalyzer (std::function<bool()> s) : stop (std::move (s))
 {
-    fm.registerBasicFormats();
+    registerAllFormats (fm);
 }
 
 static juce::String foldName (const juce::String& s)
@@ -433,7 +452,48 @@ std::vector<Library> FolderAnalyzer::analyzeDir (const juce::File& dir, int dept
     return out;
 }
 
-Library FolderAnalyzer::buildLibrary (const juce::File& dir)
+std::vector<Library> FolderAnalyzer::analyzeItems (const juce::Array<juce::File>& items, LibType type)
+{
+    forced = true;
+    forcedType = type;
+    skipped.clear();
+    // dossiers d'un côté, fichiers rangés par dossier parent de l'autre
+    juce::Array<juce::File> dirs;
+    std::map<juce::String, juce::Array<juce::File>> loose;
+    totalFiles = 0;
+    for (auto& f : items)
+    {
+        if (f.isDirectory()) { dirs.addIfNotAlreadyThere (f); totalFiles += audioIn (f, true).size(); }
+        else if (f.existsAsFile())
+        {
+            if (isAudioFile (f)) { loose[f.getParentDirectory().getFullPathName()].addIfNotAlreadyThere (f); ++totalFiles; }
+            else skipped.add (f.getFileName() + " : " + L ("ce n'est pas un fichier son", "not a sound file", "no es un archivo de sonido"));
+        }
+    }
+    doneFiles = 0;
+    if (onProgress) onProgress (0.0, items.isEmpty() ? juce::String() : items[0].getFileName());
+    std::vector<Library> out;
+    for (auto& d : dirs)
+    {
+        if (stop && stop()) break;
+        std::vector<Library> part;
+        if (type == LibType::Crowd) { auto lib = buildLibrary (d); if (lib.numSounds() > 0) part.push_back (std::move (lib)); }
+        else part = analyzeDir (d, 0);
+        for (auto& l : part) out.push_back (std::move (l));
+    }
+    for (auto& kv : loose)
+    {
+        if (stop && stop()) break;
+        auto lib = buildLibrary (juce::File (kv.first), &kv.second);
+        lib.partial = true;
+        if (lib.numSounds() > 0) out.push_back (std::move (lib));
+    }
+    if (onProgress) onProgress (1.0, L ("Analyse termin\xc3\xa9""e", "Analysis complete", "An\xc3\xa1lisis terminado"));
+    forced = false;
+    return out;
+}
+
+Library FolderAnalyzer::buildLibrary (const juce::File& dir, const juce::Array<juce::File>* only)
 {
     Library lib;
     lib.name = dir.getFileName();
@@ -441,17 +501,21 @@ Library FolderAnalyzer::buildLibrary (const juce::File& dir)
     lib.id = makeLibraryId (lib.folder);
 
     std::map<juce::String, Category> cats;
-    for (auto& f : audioIn (dir, true))
+    for (auto& f : (only != nullptr ? *only : audioIn (dir, true)))
     {
         auto rel = f.getParentDirectory().getRelativePathFrom (dir);
         juce::String catName = (rel == "." || rel.isEmpty()) ? juce::String() : rel.replaceCharacter ('\\', '/').replace ("/", " / ");
         Sound s;
         s.path = f.getFullPathName();
         s.name = f.getFileNameWithoutExtension();
-        if (std::unique_ptr<juce::AudioFormatReader> rd { fm.createReaderFor (f) })
+        juce::String why;
+        if (auto rd = openAudioReader (fm, f, &why))
             s.seconds = rd->sampleRate > 0 ? (double) rd->lengthInSamples / rd->sampleRate : 0;
         else
-            continue; // fichier illisible : ignoré
+        {
+            skipped.add (f.getFileName() + " : " + why);   // fichier illisible : signalé à l'écran
+            continue;
+        }
         cats[catName].name = catName;
         cats[catName].sounds.push_back (s);
     }

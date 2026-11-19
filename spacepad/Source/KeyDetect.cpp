@@ -1,4 +1,5 @@
 #include "KeyDetect.h"
+#include "AudioOpen.h"
 #include <juce_dsp/juce_dsp.h>
 
 namespace spacepad
@@ -250,7 +251,7 @@ AudioKeyResult keyFromAudio (const juce::AudioBuffer<float>& mono, double sr)
 
 AudioKeyResult keyFromFile (juce::AudioFormatManager& fm, const juce::File& f, double maxSeconds)
 {
-    std::unique_ptr<juce::AudioFormatReader> rd (fm.createReaderFor (f));
+    auto rd = openAudioReader (fm, f);
     if (rd == nullptr || rd->sampleRate <= 0 || rd->lengthInSamples <= 0) return {};
     const auto total = rd->lengthInSamples;
     const auto want = (juce::int64) (maxSeconds * rd->sampleRate);

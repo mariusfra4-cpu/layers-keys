@@ -1,4 +1,5 @@
 #include "PadEngine.h"
+#include "AudioOpen.h"
 
 namespace spacepad
 {
@@ -7,7 +8,7 @@ namespace spacepad
 // ---------------------------------------------------------------------------------------------
 SampleLoader::SampleLoader() : juce::Thread ("Spacepad chargement")
 {
-    fm.registerBasicFormats();
+    registerAllFormats (fm);
     startThread (juce::Thread::Priority::normal);
 }
 
@@ -53,7 +54,7 @@ std::shared_ptr<const SampleData> SampleLoader::getOrLoad (const juce::String& p
                 return s;
             }
     }
-    std::unique_ptr<juce::AudioFormatReader> rd (fm.createReaderFor (juce::File (path)));
+    auto rd = openAudioReader (fm, juce::File (path));
     if (rd == nullptr || rd->lengthInSamples <= 0 || rd->sampleRate <= 0) return {};
 
     auto d = std::make_shared<SampleData>();

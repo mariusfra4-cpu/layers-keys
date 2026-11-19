@@ -7,6 +7,7 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include "Lang.h"
+#include "AudioOpen.h"
 #include <map>
 
 using namespace spacepad;
@@ -462,6 +463,7 @@ static void snapshot (const juce::File& outDir, const juce::File& root)
             {
                 so->showPage (1); shot ("spacepad_param_midi.png");
                 so->showPage (2); shot ("spacepad_param_sons.png");
+                so->showPage (3); shot ("spacepad_param_librairies.png");
                 so->setVisible (false);
             }
         // mode scène
@@ -512,7 +514,7 @@ static void snapshot (const juce::File& outDir, const juce::File& root)
         }
         while (! p.setlist().songs().empty()) p.setlist().remove (0);
         struct LC { Lang l; const char* file; const char* word; };
-        for (auto lc : { LC { Lang::EN, "spacepad_en.png", "Choose a pads folder" }, LC { Lang::ES, "spacepad_es.png", "Elegir una carpeta de pads" } })
+        for (auto lc : { LC { Lang::EN, "spacepad_en.png", "Folder" }, LC { Lang::ES, "spacepad_es.png", "Carpeta" } })
         {
             setLang (lc.l);
             v.retranslate();
@@ -1366,6 +1368,163 @@ static void makeVideo (const juce::File& out)
 }
 #endif
 
+// ---------------------------------------------------------------------------------------------
+// WAV « difficiles » écrits à la main : ils doivent tous être acceptés
+static void putU16 (juce::MemoryOutputStream& o, int v) { o.writeShort ((short) v); }
+static void putU32 (juce::MemoryOutputStream& o, juce::uint32 v) { o.writeInt ((int) v); }
+
+static void writeRawWav (const juce::File& f, int tag, int chans, int rate, int bits, const juce::MemoryBlock& data, bool zeroSize, bool extraOddChunk, int blockAlign = 0, int extensible = 0)
+{
+    juce::MemoryOutputStream o;
+    o.write ("RIFF", 4); putU32 (o, 0); o.write ("WAVE", 4);
+    if (extraOddChunk) { o.write ("LIST", 4); putU32 (o, 5); o.write ("abcde", 5); o.writeByte (0); }   // bloc de taille impaire, avec octet de bourrage
+    o.write ("fmt ", 4);
+    const int ba = blockAlign > 0 ? blockAlign : chans * ((bits + 7) / 8);
+    putU32 (o, extensible ? 40 : (tag == 0x11 ? 20 : 16));
+    putU16 (o, extensible ? 0xFFFE : tag); putU16 (o, chans); putU32 (o, (juce::uint32) rate); putU32 (o, (juce::uint32) (rate * ba)); putU16 (o, ba); putU16 (o, bits);
+    if (extensible) { putU16 (o, 22); putU16 (o, bits); putU32 (o, 3); putU16 (o, extensible); for (int i = 0; i < 14; ++i) o.writeByte (0); }
+    else if (tag == 0x11) { putU16 (o, 2); putU16 (o, (ba - 4 * chans) * 8 / (4 * chans) + 1); }
+    o.write ("data", 4); putU32 (o, zeroSize ? 0 : (juce::uint32) data.getSize());
+    o.write (data.getData(), data.getSize());
+    f.getParentDirectory().createDirectory();
+    f.replaceWithData (o.getData(), o.getDataSize());
+}
+
+static void testWavFormats (const juce::File& tmp)
+{
+    section ("Tous les WAV acceptes (en-tetes inhabituels, formats speciaux)");
+    const int rate = 44100, n = rate * 2;
+    auto sine = [&] (int i) { return 0.5 * std::sin (2 * juce::MathConstants<double>::pi * 220 * i / rate); };
+    auto dir = tmp.getChildFile ("wav_difficiles");
+    dir.deleteRecursively();
+    struct Case { const char* file; int tag, bits, ext; bool zero, odd; };
+    const Case cases[] = { { "pcm16 taille zero.wav", 1, 16, 0, true, false }, { "pcm24 bloc impair.wav", 1, 24, 0, false, true },
+                           { "flottant32.wav", 3, 32, 0, false, false }, { "flottant64 taille zero.wav", 3, 64, 0, true, true },
+                           { "extensible24.wav", 1, 24, 1, false, false }, { "PCM8 MAJUSCULES.WAV", 1, 8, 0, false, false },
+                           { "pcm32 entier.wav", 1, 32, 0, true, false }, { "alaw.wav", 6, 8, 0, false, false }, { "ulaw.wav", 7, 8, 0, false, false } };
+    for (auto& c : cases)
+    {
+        juce::MemoryOutputStream d;
+        for (int i = 0; i < n; ++i)
+        {
+            const double v = sine (i);
+            if (c.tag == 3 && c.bits == 32) d.writeFloat ((float) v);
+            else if (c.tag == 3) d.writeDouble (v);
+            else if (c.tag == 6 || c.tag == 7)
+            {
+                // codage approché : on garde l'octet qui décode le plus près (vérifie le décodeur sans dépendre d'un encodeur)
+                static std::vector<float> table[2];
+                auto& tb = table[c.tag == 6 ? 0 : 1];
+                if (tb.empty())
+                    for (int b = 0; b < 256; ++b)
+                    {
+                        juce::MemoryOutputStream one; writeRawWav (tmp.getChildFile ("one.wav"), c.tag, 1, rate, 8, juce::MemoryBlock (&b, 1), false, false);
+                        juce::AudioFormatManager fm; auto rd = openAudioReader (fm, tmp.getChildFile ("one.wav"));
+                        float x = 0; float* px = &x; if (rd) rd->read (&px, 1, 0, 1); tb.push_back (x);
+                    }
+                int best = 0; for (int b = 1; b < 256; ++b) if (std::abs (tb[(size_t) b] - v) < std::abs (tb[(size_t) best] - v)) best = b;
+                d.writeByte ((char) best);
+            }
+            else if (c.bits == 8) d.writeByte ((char) (juce::uint8) juce::jlimit (0, 255, (int) (128 + v * 127)));
+            else if (c.bits == 16) d.writeShort ((short) (v * 32767));
+            else if (c.bits == 24) { const int x = (int) (v * 8388607); d.writeByte ((char) (x & 255)); d.writeByte ((char) ((x >> 8) & 255)); d.writeByte ((char) ((x >> 16) & 255)); }
+            else d.writeInt ((int) (v * 2147483000.0));
+        }
+        writeRawWav (dir.getChildFile (c.file), c.tag, 1, rate, c.bits, d.getMemoryBlock(), c.zero, c.odd, 0, c.ext);
+    }
+    // IMA ADPCM (compressé) : petit encodeur pour le test
+    {
+        static const int idxT[16] = { -1, -1, -1, -1, 2, 4, 6, 8, -1, -1, -1, -1, 2, 4, 6, 8 };
+        static const int stepT[89] = { 7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 19, 21, 23, 25, 28, 31, 34, 37, 41, 45, 50, 55, 60, 66, 73, 80, 88, 97, 107, 118, 130, 143, 157, 173, 190, 209, 230,
+                                       253, 279, 307, 337, 371, 408, 449, 494, 544, 598, 658, 724, 796, 876, 963, 1060, 1166, 1282, 1411, 1552, 1707, 1878, 2066, 2272, 2499, 2749, 3024, 3327,
+                                       3660, 4026, 4428, 4871, 5358, 5894, 6484, 7132, 7845, 8630, 9493, 10442, 11487, 12635, 13899, 15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767 };
+        const int ba = 256, perBlock = (ba - 4) * 2 + 1;
+        juce::MemoryOutputStream d;
+        int pred = 0, index = 0, i = 0;
+        while (i + perBlock <= n)
+        {
+            pred = (int) (sine (i) * 32767); d.writeShort ((short) pred); d.writeByte ((char) index); d.writeByte (0); ++i;
+            for (int b = 0; b < ba - 4; ++b)
+            {
+                int nib[2];
+                for (int h = 0; h < 2; ++h)
+                {
+                    const int target = (int) (sine (i++) * 32767), step = stepT[index];
+                    int diff = target - pred, code = 0;
+                    if (diff < 0) { code = 8; diff = -diff; }
+                    int delta = step >> 3;
+                    if (diff >= step) { code |= 4; diff -= step; delta += step; }
+                    if (diff >= step >> 1) { code |= 2; diff -= step >> 1; delta += step >> 1; }
+                    if (diff >= step >> 2) { code |= 1; delta += step >> 2; }
+                    pred = juce::jlimit (-32768, 32767, pred + ((code & 8) ? -delta : delta));
+                    index = juce::jlimit (0, 88, index + idxT[code]);
+                    nib[h] = code;
+                }
+                d.writeByte ((char) (nib[0] | (nib[1] << 4)));
+            }
+        }
+        writeRawWav (dir.getChildFile ("ima adpcm.wav"), 0x11, 1, rate, 4, d.getMemoryBlock(), false, false, ba);
+    }
+    dir.getChildFile ("faux.wav").replaceWithText ("ceci n'est pas un son");
+    tmp.getChildFile ("one.wav").deleteFile();
+
+    juce::AudioFormatManager fm;
+    int ok = 0, total = 0;
+    for (auto& e : juce::RangedDirectoryIterator (dir, false, "*", juce::File::findFiles))
+    {
+        const auto f = e.getFile();
+        if (f.getFileName() == "faux.wav") continue;
+        ++total;
+        juce::String why;
+        auto rd = openAudioReader (fm, f, &why);
+        bool good = rd != nullptr && std::abs ((double) rd->lengthInSamples - n) < n * 0.02 && rd->sampleRate == rate;
+        if (good)
+        {
+            juce::AudioBuffer<float> b (1, 4410);
+            rd->read (&b, 0, 4410, 22050, true, false);
+            float err = 0;
+            for (int i = 0; i < 4410; ++i) err = juce::jmax (err, std::abs (b.getSample (0, i) - (float) sine (22050 + i)));
+            good = err < (f.getFileName().containsIgnoreCase ("adpcm") || f.getFileName().containsIgnoreCase ("law") || f.getFileName().containsIgnoreCase ("pcm8") ? 0.06f : 0.002f);
+            if (! good) std::cout << "  " << f.getFileName() << " : ecart " << err << "\n";
+        }
+        else std::cout << "  " << f.getFileName() << " refuse : " << why << "\n";
+        CHECK (good, "WAV lu correctement : " << f.getFileName());
+        ok += good ? 1 : 0;
+    }
+    std::cout << "  " << ok << " / " << total << " WAV difficiles lus\n";
+    // l'analyse les accepte tous, et explique le fichier refusé
+    FolderAnalyzer a;
+    auto libs = a.analyzeItems ({ dir }, LibType::Pad);
+    int sounds = 0; for (auto& l : libs) sounds += l.numSounds();
+    CHECK (sounds == total, "analyse : tous les WAV difficiles sont acceptes (" << sounds << " / " << total << ")");
+    CHECK (a.skipped.size() == 1 && a.skipped[0].startsWith ("faux.wav"), "le faux WAV est signale avec la raison (" << a.skipped.joinIntoString (" | ") << ")");
+    // le moteur les joue
+    SampleLoader sl;
+    auto data = sl.loadNow (dir.getChildFile ("pcm16 taille zero.wav").getFullPathName());
+    CHECK (data != nullptr && data->buffer.getNumSamples() > n / 2, "le moteur charge un WAV a taille zero");
+
+    // fichiers choisis un par un, de deux dossiers, plus un dossier entier
+    auto d2 = tmp.getChildFile ("autres sons");
+    d2.deleteRecursively();
+    writeRawWav (d2.getChildFile ("Pad A.wav"), 1, 1, rate, 16, juce::MemoryBlock (8000, true), false, false);
+    writeRawWav (d2.getChildFile ("Pad B.wav"), 1, 1, rate, 16, juce::MemoryBlock (8000, true), false, false);
+    FolderAnalyzer b;
+    auto mixed = b.analyzeItems ({ dir.getChildFile ("flottant32.wav"), dir.getChildFile ("alaw.wav"), d2.getChildFile ("Pad A.wav") }, LibType::Pad);
+    CHECK (mixed.size() == 2 && mixed[0].partial && mixed[1].partial, "fichiers de deux dossiers : deux librairies au nom de leur dossier (" << (int) mixed.size() << ")");
+    LibraryStore store;
+    store.addOrReplace (mixed);
+    auto more = b.analyzeItems ({ d2.getChildFile ("Pad B.wav") }, LibType::Pad);
+    store.addOrReplace (more);
+    auto lib = store.find (makeLibraryId (d2.getFullPathName()));
+    CHECK (lib != nullptr && lib->numSounds() == 2, "un son ajoute ensuite s'ajoute a la librairie au lieu de la remplacer (" << (lib ? lib->numSounds() : 0) << ")");
+    // supprimer depuis les Paramètres
+    store.remove (makeLibraryId (d2.getFullPathName()));
+    store.remove (makeLibraryId (dir.getFullPathName()));
+    CHECK (store.find (makeLibraryId (d2.getFullPathName())) == nullptr, "librairie supprimee");
+    LibraryStore again;
+    CHECK (again.find (makeLibraryId (d2.getFullPathName())) == nullptr, "suppression enregistree (application et plugin)");
+}
+
 int main (int argc, char** argv)
 {
     juce::ScopedJuceInitialiser_GUI gui;
@@ -1390,6 +1549,7 @@ int main (int argc, char** argv)
     testEffects (tmp);
     testNewFeatures (root, tmp);
     testCrowdFx (root);
+    testWavFormats (tmp);
     if (argc > 1) snapshot (juce::File (juce::String (argv[1])), root);
     if (juce::SystemStats::getEnvironmentVariable ("SPACEPAD_BENCH", {}).isNotEmpty()) benchPaint (root);
    #if ! JUCE_WINDOWS

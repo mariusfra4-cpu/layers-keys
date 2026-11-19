@@ -33,6 +33,7 @@ struct Library
     LibType type = LibType::Pad;
     std::vector<Category> categories;
     juce::int64 addedAt = 0;
+    bool partial = false;   // choisie fichier par fichier : s'ajoute à la librairie du même dossier au lieu de la remplacer
 
     int numSounds() const;
     const Sound* sound (int index) const;          // index à plat sur toutes les catégories
@@ -64,7 +65,7 @@ public:
     bool reloadIfChanged();                         // relit si une autre fenêtre/plugin l'a modifié
 
     // ajoute (ou remplace, si le même dossier existe déjà) puis enregistre
-    void addOrReplace (const std::vector<Library>& libs);
+    bool addOrReplace (const std::vector<Library>& libs);
     void remove (const juce::String& id);
     void setType (const juce::String& id, LibType t);
 
@@ -108,12 +109,16 @@ public:
     // analyse depuis un onglet : tout est rangé en Pad (onglet Pad Library) ou en une seule Crowd Library (onglet Crowd)
     std::vector<Library> analyzeAs (const juce::File& root, LibType type);
 
+    // ce que l'utilisateur a choisi ou déposé : dossiers et fichiers, mélangés, plusieurs à la fois
+    std::vector<Library> analyzeItems (const juce::Array<juce::File>& items, LibType type);
+    juce::StringArray skipped;                   // fichiers son refusés, avec la raison (« son.wav : … »)
+
     static bool nameHintsCrowd (const juce::String& folderName);
     static bool nameHintsPad (const juce::String& folderName);
 
 private:
     std::vector<Library> analyzeDir (const juce::File& dir, int depth);
-    Library buildLibrary (const juce::File& dir);
+    Library buildLibrary (const juce::File& dir, const juce::Array<juce::File>* only = nullptr);
     void detectKeys (Library& lib);
     LibType decideType (const Library& lib, const juce::File& dir);
 

@@ -1,6 +1,7 @@
 // Spacepad by JB Praise — la fenêtre principale : assemble l'en-tête, la bibliothèque, l'espace, l'anneau, le crochet,
 // le visualiseur, la lecture, les effets et les fenêtres (analyse, Paramètres). Anime le tout 30 fois par seconde.
 #include "UIHelpers.h"
+#include "AudioOpen.h"
 
 namespace spacepad
 {
@@ -26,6 +27,7 @@ MainView::MainView (SpacepadProcessor& p) : proc (p)
     addAndMakeVisible (stageBtn);
     stageBtn.onClick = [this] { openStage(); };
     library.onChooseFolder = [this] (bool crowdTab) { chooseFolder (crowdTab); };
+    library.onChooseFiles = [this] (bool crowdTab) { chooseFiles (crowdTab); };
     gear.onClick = [this] { openSettings(); };
     hook.onClick = [this] { proc.setMode (proc.currentMode() == 1 ? 0 : 1); };
 
@@ -120,17 +122,51 @@ void MainView::chooseFolder (bool crowdTab)
     chooser = std::make_unique<juce::FileChooser> (crowdTab ? L ("Choisissez le dossier de vos crowds", "Choose your crowds folder", "Elige la carpeta de tus crowds")
                                                             : L ("Choisissez le dossier de vos pads", "Choose your pads folder", "Elige la carpeta de tus pads"),
                                                    juce::File::getSpecialLocation (juce::File::userMusicDirectory));
-    chooser->launchAsync (juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories,
+    chooser->launchAsync (juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories | juce::FileBrowserComponent::canSelectMultipleItems,
                           [this, crowdTab] (const juce::FileChooser& fc)
                           {
-                              auto f = fc.getResult();
-                              if (f.isDirectory()) openScan (f, crowdTab ? LibType::Crowd : LibType::Pad);
+                              auto items = fc.getResults();
+                              if (! items.isEmpty()) openScanItems (items, crowdTab ? LibType::Crowd : LibType::Pad);
                           });
 }
 
-void MainView::openScan (const juce::File& folder, LibType type)
+// des sons choisis un par un (plusieurs à la fois)
+void MainView::chooseFiles (bool crowdTab)
 {
-    scan = std::make_unique<ScanOverlay> (proc, folder, type);
+    chooser = std::make_unique<juce::FileChooser> (crowdTab ? L ("Choisissez vos sons de crowds", "Choose your crowd sounds", "Elige tus sonidos de crowds")
+                                                            : L ("Choisissez vos sons de pads", "Choose your pad sounds", "Elige tus sonidos de pads"),
+                                                   juce::File::getSpecialLocation (juce::File::userMusicDirectory), audioWildcard());
+    chooser->launchAsync (juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::canSelectMultipleItems,
+                          [this, crowdTab] (const juce::FileChooser& fc)
+                          {
+                              auto items = fc.getResults();
+                              if (! items.isEmpty()) openScanItems (items, crowdTab ? LibType::Crowd : LibType::Pad);
+                          });
+}
+
+// glisser-déposer : depuis l'Explorateur, le Finder ou le navigateur du logiciel de musique (Ableton…)
+bool MainView::isInterestedInFileDrag (const juce::StringArray& files)
+{
+    for (auto& f : files) { juce::File file (f); if (file.isDirectory() || isAudioFile (file)) return true; }
+    return false;
+}
+
+void MainView::filesDropped (const juce::StringArray& files, int, int)
+{
+    dragOver = false;
+    juce::Array<juce::File> items;
+    for (auto& f : files) items.add (juce::File (f));
+    if (scan == nullptr && task == nullptr) openScanItems (items, library.tabShown() == 1 ? LibType::Crowd : LibType::Pad);
+    repaint();
+}
+
+void MainView::openScan (const juce::File& folder, LibType type) { openScanItems ({ folder }, type); }
+
+void MainView::openScanItems (const juce::Array<juce::File>& items, LibType type)
+{
+    settings.reset();
+    stage.reset();
+    scan = std::make_unique<ScanOverlay> (proc, items, type);
     scan->onClose = [this, type] (bool saved)
     {
         juce::MessageManager::callAsync ([this, saved, type]
@@ -292,7 +328,7 @@ void MainView::timerCallback()
     if (proc.midiActivity()) midiFlashUntil = now + 150;
     library.updateState();
     // garder l'écran allumé pendant le jeu (réglage)
-    const bool wantAwake = uiSettings().keepAwake && proc.padActive();
+    const bool wantAwake = uiSettings().keepAwake && proc.padActive() && proc.wrapperType == juce::AudioProcessor::wrapperType_Standalone;   // dans un DAW, l'écran est géré par lui
     if (wantAwake != screenSaverOff) { screenSaverOff = wantAwake; juce::Desktop::setScreenSaverEnabled (! wantAwake); }
     if (scan == nullptr && settings == nullptr && stage == nullptr && task == nullptr)
     {
@@ -372,6 +408,30 @@ void MainView::paint (juce::Graphics& g)
 
 void MainView::paintOverChildren (juce::Graphics& g)
 {
+    if (dragOver)
+    {
+        // on dépose des sons : tout l'écran les accepte
+        auto b = getLocalBounds().toFloat().reduced (18);
+        g.setColour (juce::Colour (0xc0040812));
+        g.fillRoundedRectangle (b, 26.0f);
+        juce::Path pth; pth.addRoundedRectangle (b.reduced (6), 22.0f);
+        juce::Path dsh; const float dl[] = { 10.0f, 8.0f };
+        juce::PathStrokeType (2.5f).createDashedStroke (dsh, pth, dl, 2);
+        const bool crowdDrop = library.tabShown() == 1;
+        g.setColour (crowdDrop ? theme::amber : theme::accent);
+        g.fillPath (dsh);
+        g.setFont (theme::ui (34.0f, 2));
+        g.drawText (crowdDrop ? L ("D\xc3\xa9posez vos sons : ils iront dans CROWDS", "Drop your sounds: they go to CROWDS", "Suelta tus sonidos: ir\xc3\xa1n a CROWDS")
+                              : L ("D\xc3\xa9posez vos sons : ils iront dans PADS", "Drop your sounds: they go to PADS", "Suelta tus sonidos: ir\xc3\xa1n a PADS"),
+                    b.withSizeKeepingCentre (b.getWidth(), 60).translated (0, -20), juce::Justification::centred);
+        g.setColour (juce::Colour (0xffcfd8ea));
+        g.setFont (theme::ui (17.0f));
+        g.drawText (L ("Fichiers et dossiers, plusieurs \xc3\xa0 la fois \xc2\xb7 choisissez l'onglet PADS ou CROWDS avant de d\xc3\xa9poser",
+                       "Files and folders, several at once \xc2\xb7 pick the PADS or CROWDS tab before dropping",
+                       "Archivos y carpetas, varios a la vez \xc2\xb7 elige la pesta\xc3\xb1""a PADS o CROWDS antes de soltar"),
+                    b.withSizeKeepingCentre (b.getWidth(), 30).translated (0, 30), juce::Justification::centred);
+        return;
+    }
     if (scan || settings || stage || task) return;
     auto ft = juce::Rectangle<float> (40, (float) getHeight() - 12 - 38, (float) getWidth() - 80, 38);
     const bool midi = juce::Time::getMillisecondCounter() < midiFlashUntil;

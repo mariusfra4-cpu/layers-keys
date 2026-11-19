@@ -39,6 +39,10 @@ LibraryPanel::LibraryPanel (SpacepadProcessor& p) : proc (p)
     chooseBtn.getProperties().set ("fontSize", 14.0f);
     chooseBtn.onClick = [this] { if (onChooseFolder) onChooseFolder (tab == 1); };
     addAndMakeVisible (chooseBtn);
+    filesBtn.getProperties().set ("dashed", true);
+    filesBtn.getProperties().set ("fontSize", 14.0f);
+    filesBtn.onClick = [this] { if (onChooseFiles) onChooseFiles (tab == 1); };
+    addAndMakeVisible (filesBtn);
     addChildComponent (crowdPicker);
     crowdPicker.onChange = [this]
     {
@@ -156,8 +160,13 @@ void LibraryPanel::retranslate()
     padTab.setButtonText ("PADS");
     crowdTab.setButtonText ("CROWDS");
     setTab.setButtonText ("SETLIST");
-    chooseBtn.setButtonText (tab == 1 ? L ("Choisir un dossier de crowds\xe2\x80\xa6", "Choose a crowds folder\xe2\x80\xa6", "Elegir una carpeta de crowds\xe2\x80\xa6")
-                                      : L ("Choisir un dossier de pads\xe2\x80\xa6", "Choose a pads folder\xe2\x80\xa6", "Elegir una carpeta de pads\xe2\x80\xa6"));
+    chooseBtn.setButtonText (L ("Dossier\xe2\x80\xa6", "Folder\xe2\x80\xa6", "Carpeta\xe2\x80\xa6"));
+    filesBtn.setButtonText (U ("\xe2\x99\xaa ") + L ("Fichiers\xe2\x80\xa6", "Files\xe2\x80\xa6", "Archivos\xe2\x80\xa6"));
+    chooseBtn.setTooltip (tab == 1 ? L ("Ajouter un ou plusieurs dossiers de crowds", "Add one or more crowds folders", "A\xc3\xb1""adir una o varias carpetas de crowds")
+                                   : L ("Ajouter un ou plusieurs dossiers de pads", "Add one or more pads folders", "A\xc3\xb1""adir una o varias carpetas de pads"));
+    filesBtn.setTooltip (L ("Choisir des sons un par un (plusieurs \xc3\xa0 la fois). Vous pouvez aussi les glisser sur Spacepad.",
+                            "Pick sounds one by one (several at once). You can also drag them onto Spacepad.",
+                            "Elegir sonidos uno a uno (varios a la vez). Tambi\xc3\xa9n puedes arrastrarlos a Spacepad."));
     for (int s = 0; s < 2; ++s) { crowdStop[s].setTooltip (L ("Arr\xc3\xaater ce crowd", "Stop this crowd", "Detener este crowd")); }
     linkBtn.setButtonText (L ("Li\xc3\xa9 au pad", "Linked to the pad", "Unido al pad"));
     linkBtn.setTooltip (L ("Le crowd d\xc3\xa9marre et s'arr\xc3\xaate avec le pad", "The crowd starts and stops with the pad", "El crowd empieza y se detiene con el pad"));
@@ -175,12 +184,12 @@ void LibraryPanel::retranslate()
     rows.emptyText = tab == 2 ? L ("La setlist est vide.\n\nR\xc3\xa9glez la tonalit\xc3\xa9, les pads, les crowds et les effets du premier chant, puis touchez \xc2\xab + Ajouter \xc2\xbb. Recommencez pour chaque chant.",
                                     "The setlist is empty.\n\nSet the key, pads, crowds and effects of the first song, then tap \xe2\x80\x9c+ Add\xe2\x80\x9d. Repeat for each song.",
                                     "La setlist est\xc3\xa1 vac\xc3\xad""a.\n\nAjusta la tonalidad, los pads, los crowds y los efectos de la primera canci\xc3\xb3n y toca \xc2\xab+ A\xc3\xb1""adir\xc2\xbb. Repite para cada canci\xc3\xb3n.")
-                   : tab == 1 ? L ("Aucune Crowd Library.\n\nCliquez sur \xc2\xab Choisir un dossier de crowds\xe2\x80\xa6 \xc2\xbb : Spacepad garde le nom du dossier et range chaque sous-dossier (Worship FX, Natural\xe2\x80\xa6) en cat\xc3\xa9gorie.",
-                                   "No Crowd Library.\n\nClick \xe2\x80\x9c""Choose a crowds folder\xe2\x80\xa6\xe2\x80\x9d: Spacepad keeps the folder name and turns each subfolder (Worship FX, Natural\xe2\x80\xa6) into a category.",
-                                   "Ninguna Crowd Library.\n\nHaz clic en \xc2\xab""Elegir una carpeta de crowds\xe2\x80\xa6\xc2\xbb: Spacepad conserva el nombre de la carpeta y convierte cada subcarpeta en una categor\xc3\xad""a.")
-                              : L ("Aucune Pad Library.\n\nCliquez sur \xc2\xab Choisir un dossier de pads\xe2\x80\xa6 \xc2\xbb : Spacepad garde le nom du dossier, trouve la tonalit\xc3\xa9 de chaque son et range la librairie dans PADS MAJEURS et/ou PADS MINEURS.",
-                                   "No Pad Library.\n\nClick \xe2\x80\x9c""Choose a pads folder\xe2\x80\xa6\xe2\x80\x9d: Spacepad keeps the folder name, finds the key of every sound and files the library under MAJOR PADS and/or MINOR PADS.",
-                                   "Ninguna Pad Library.\n\nHaz clic en \xc2\xab""Elegir una carpeta de pads\xe2\x80\xa6\xc2\xbb: Spacepad conserva el nombre de la carpeta, encuentra la tonalidad de cada sonido y guarda la librer\xc3\xad""a en PADS MAYORES y/o PADS MENORES.");
+                   : tab == 1 ? L ("Aucune Crowd Library.\n\nTouchez \xc2\xab Dossier\xe2\x80\xa6 \xc2\xbb ou \xc2\xab Fichiers\xe2\x80\xa6 \xc2\xbb, ou glissez vos sons (WAV, AIFF, FLAC, MP3\xe2\x80\xa6) sur Spacepad, depuis l'Explorateur ou le navigateur de votre logiciel de musique. Le nom du dossier est gard\xc3\xa9, chaque sous-dossier devient une cat\xc3\xa9gorie.",
+                                   "No Crowd Library.\n\nTap \xe2\x80\x9c""Folder\xe2\x80\xa6\xe2\x80\x9d or \xe2\x80\x9c""Files\xe2\x80\xa6\xe2\x80\x9d, or drag your sounds (WAV, AIFF, FLAC, MP3\xe2\x80\xa6) onto Spacepad, from Explorer or your music software's browser. The folder name is kept, each subfolder becomes a category.",
+                                   "Ninguna Crowd Library.\n\nToca \xc2\xab""Carpeta\xe2\x80\xa6\xc2\xbb o \xc2\xab""Archivos\xe2\x80\xa6\xc2\xbb, o arrastra tus sonidos (WAV, AIFF, FLAC, MP3\xe2\x80\xa6) a Spacepad, desde el Explorador o el navegador de tu programa de m\xc3\xbasica.")
+                              : L ("Aucune Pad Library.\n\nTouchez \xc2\xab Dossier\xe2\x80\xa6 \xc2\xbb ou \xc2\xab Fichiers\xe2\x80\xa6 \xc2\xbb, ou glissez vos sons (WAV, AIFF, FLAC, MP3\xe2\x80\xa6) sur Spacepad, depuis l'Explorateur ou le navigateur de votre logiciel de musique. Spacepad trouve la tonalit\xc3\xa9 de chaque son et range la librairie dans PADS MAJEURS et/ou PADS MINEURS.",
+                                   "No Pad Library.\n\nTap \xe2\x80\x9c""Folder\xe2\x80\xa6\xe2\x80\x9d or \xe2\x80\x9c""Files\xe2\x80\xa6\xe2\x80\x9d, or drag your sounds (WAV, AIFF, FLAC, MP3\xe2\x80\xa6) onto Spacepad, from Explorer or your music software's browser. Spacepad finds the key of every sound and files the library under MAJOR PADS and/or MINOR PADS.",
+                                   "Ninguna Pad Library.\n\nToca \xc2\xab""Carpeta\xe2\x80\xa6\xc2\xbb o \xc2\xab""Archivos\xe2\x80\xa6\xc2\xbb, o arrastra tus sonidos (WAV, AIFF, FLAC, MP3\xe2\x80\xa6) a Spacepad. Spacepad encuentra la tonalidad de cada sonido y guarda la librer\xc3\xad""a en PADS MAYORES y/o PADS MENORES.");
     for (auto id : { juce::TextEditor::backgroundColourId, juce::TextEditor::outlineColourId, juce::TextEditor::focusedOutlineColourId, juce::TextEditor::shadowColourId })
         search.setColour (id, juce::Colours::transparentBlack);
     search.setColour (juce::TextEditor::textColourId, theme::text);
@@ -215,6 +224,8 @@ void LibraryPanel::showTabIndex (int t)
     setTab.setToggleState (tab == 2, juce::dontSendNotification);
     chooseBtn.setColour (juce::TextButton::buttonOnColourId, tab == 1 ? theme::amber : theme::accent);
     chooseBtn.setVisible (tab != 2);
+    filesBtn.setVisible (tab != 2);
+    filesBtn.setColour (juce::TextButton::buttonOnColourId, tab == 1 ? theme::amber : theme::accent);
     for (int s = 0; s < 2; ++s) { slotBtn[s].setVisible (tab == 1); crowdStop[s].setVisible (tab == 1); crowdVol[s].setVisible (tab == 1); }
     search.setVisible (tab == 1);
     sortBtn.setVisible (tab == 1);
@@ -558,7 +569,10 @@ void LibraryPanel::resized()
     }
     else
     {
-        chooseBtn.setBounds (r.removeFromBottom (48));
+        auto cb = r.removeFromBottom (48);
+        chooseBtn.setBounds (cb.removeFromLeft (cb.getWidth() / 2 - 4));
+        cb.removeFromLeft (8);
+        filesBtn.setBounds (cb);
         r.removeFromBottom (12);
     }
     if (tab == 0 && blend.isVisible())
@@ -743,11 +757,14 @@ void ScanOverlay::Job::run()
         const juce::ScopedLock sl (lock);
         status = s;
     };
-    result = a.analyzeAs (folder, type);
+    result = a.analyzeItems (items, type);
+    skipped = a.skipped;
     finished = true;
 }
 
-ScanOverlay::ScanOverlay (SpacepadProcessor& p, const juce::File& folder, LibType type) : proc (p), job (folder, type)
+ScanOverlay::ScanOverlay (SpacepadProcessor& p, const juce::File& folder, LibType type) : ScanOverlay (p, juce::Array<juce::File> { folder }, type) {}
+
+ScanOverlay::ScanOverlay (SpacepadProcessor& p, const juce::Array<juce::File>& items, LibType type) : proc (p), job (items, type)
 {
     cancelBtn.setButtonText (L ("Annuler", "Cancel", "Cancelar"));
     cancelBtn.onClick = [this]
@@ -763,7 +780,14 @@ ScanOverlay::ScanOverlay (SpacepadProcessor& p, const juce::File& folder, LibTyp
     {
         if (results.empty()) return;
         if (uiSettings().copySounds && onCopyAndSave) { onCopyAndSave (results); return; }
-        proc.libraries().addOrReplace (results);
+        if (! proc.libraries().addOrReplace (results))
+        {
+            juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::WarningIcon, "Spacepad",
+                L ("Impossible d'enregistrer les librairies dans le dossier de Spacepad :\n", "Could not save the libraries in the Spacepad folder:\n", "No se pudieron guardar las librer\xc3\xad""as en la carpeta de Spacepad:\n")
+                + LibraryStore::storageFolder().getFullPathName()
+                + L ("\n\nV\xc3\xa9rifiez que ce dossier n'est pas en lecture seule.", "\n\nCheck that this folder is not read-only.", "\n\nComprueba que esta carpeta no sea de solo lectura."));
+            return;
+        }
         for (auto& l : results)
             if (l.type == LibType::Pad)
                 for (int m = 0; m < 2; ++m)
@@ -867,7 +891,17 @@ void ScanOverlay::paint (juce::Graphics& g)
                 head, juce::Justification::centredRight);
     g.setColour (theme::muted);
     g.setFont (theme::ui (12.5f));
-    g.drawText (job.folder.getFullPathName(), r.removeFromTop (22), juce::Justification::centredLeft, true);
+    {
+        juce::String where;
+        if (job.items.size() == 1) where = job.items[0].getFullPathName();
+        else
+        {
+            juce::StringArray names;
+            for (int i = 0; i < job.items.size() && i < 4; ++i) names.add (job.items[i].getFileName());
+            where = juce::String (job.items.size()) + L (" \xc3\xa9l\xc3\xa9ments : ", " items: ", " elementos: ") + names.joinIntoString (", ") + (job.items.size() > 4 ? U ("\xe2\x80\xa6") : juce::String());
+        }
+        g.drawText (where, r.removeFromTop (22), juce::Justification::centredLeft, true);
+    }
     r.removeFromTop (10);
 
     if (! done)
@@ -899,9 +933,23 @@ void ScanOverlay::paint (juce::Graphics& g)
     {
         g.setColour (theme::amber);
         g.setFont (theme::ui (15.0f));
-        g.drawFittedText (L ("Aucun son trouv\xc3\xa9 dans ce dossier (WAV, AIFF, FLAC, MP3, OGG).", "No sounds found in this folder (WAV, AIFF, FLAC, MP3, OGG).", "No se encontraron sonidos en esta carpeta (WAV, AIFF, FLAC, MP3, OGG)."),
-                          r.removeFromTop (60).toNearestInt(), juce::Justification::centredLeft, 2);
+        g.drawFittedText (job.skipped.isEmpty() ? L ("Aucun son trouv\xc3\xa9 ici (WAV, AIFF, FLAC, MP3, OGG\xe2\x80\xa6).", "No sounds found here (WAV, AIFF, FLAC, MP3, OGG\xe2\x80\xa6).", "No se encontraron sonidos aqu\xc3\xad (WAV, AIFF, FLAC, MP3, OGG\xe2\x80\xa6).")
+                                                : L ("Ces fichiers n'ont pas pu \xc3\xaatre lus :", "These files could not be read:", "Estos archivos no se pudieron leer:"),
+                          r.removeFromTop (30).toNearestInt(), juce::Justification::centredLeft, 2);
+        g.setColour (theme::text.withAlpha (0.85f));
+        g.setFont (theme::ui (12.5f));
+        for (int i = 0; i < job.skipped.size() && i < 6; ++i) g.drawText (U ("\xe2\x80\xa2 ") + job.skipped[i], r.removeFromTop (20), juce::Justification::centredLeft, true);
+        if (job.skipped.size() > 6) g.drawText (L ("et ", "and ", "y ") + juce::String (job.skipped.size() - 6) + L (" autres", " more", " m\xc3\xa1s"), r.removeFromTop (20), juce::Justification::centredLeft);
         return;
+    }
+    if (! job.skipped.isEmpty())
+    {
+        // fichiers refusés : signalés en bas, sans bloquer l'enregistrement des autres
+        auto foot = card().reduced (30, 26).removeFromBottom (46).withTrimmedRight (430).toFloat();
+        g.setColour (theme::amber);
+        g.setFont (theme::ui (12.0f, 1));
+        g.drawFittedText (juce::String (job.skipped.size()) + L (" fichier(s) non lu(s) : ", " file(s) not read: ", " archivo(s) no le\xc3\xad""do(s): ") + job.skipped.joinIntoString (U (" \xc2\xb7 ")),
+                          foot.toNearestInt(), juce::Justification::centredLeft, 2);
     }
     g.setColour (theme::muted);
     g.setFont (theme::ui (12.5f));
@@ -975,6 +1023,141 @@ void ScanOverlay::paint (juce::Graphics& g)
     }
 }
 
+
+// ============================================================================================
+// Paramètres → Librairies : toutes les librairies enregistrées, à afficher ou supprimer
+// ============================================================================================
+namespace
+{
+class LibListComp : public juce::Component
+{
+public:
+    explicit LibListComp (SpacepadProcessor& p) : proc (p) {}
+    void rebuild()
+    {
+        rows.clear();
+        removeAllChildren();
+        auto libs = proc.libraries().snapshot();
+        std::stable_sort (libs.begin(), libs.end(), [] (const Library& a, const Library& b)
+        {
+            if (a.type != b.type) return a.type == LibType::Pad;
+            return a.name.compareNatural (b.name) < 0;
+        });
+        int lastType = -1;
+        for (auto& l : libs)
+        {
+            if ((int) l.type != lastType)
+            {
+                lastType = (int) l.type;
+                Row h; h.header = true; h.title = l.type == LibType::Pad ? "PADS" : "CROWDS";
+                rows.push_back (std::move (h));
+            }
+            Row r;
+            r.lib = l;
+            r.show = std::make_unique<juce::TextButton> (L ("Afficher", "Show", "Mostrar"));
+            r.del = std::make_unique<juce::TextButton> (L ("Supprimer", "Delete", "Eliminar"));
+            r.del->setColour (juce::TextButton::buttonOnColourId, theme::red);
+            r.show->getProperties().set ("fontSize", 12.0f);
+            r.del->getProperties().set ("fontSize", 12.0f);
+            const auto folder = l.folder;
+            r.show->onClick = [folder] { juce::File (folder).revealToUser(); };
+            const auto lib = l;
+            r.del->onClick = [this, lib] { confirmDelete (lib); };
+            addAndMakeVisible (*r.show);
+            addAndMakeVisible (*r.del);
+            rows.push_back (std::move (r));
+        }
+        setSize (getWidth(), juce::jmax (60, contentHeight()));
+        resized();
+        repaint();
+    }
+    int contentHeight() const { int h = 0; for (auto& r : rows) h += r.header ? 34 : 58; return h; }
+    void resized() override
+    {
+        int y = 0;
+        for (auto& r : rows)
+        {
+            if (r.header) { y += 34; continue; }
+            auto row = juce::Rectangle<int> (0, y, getWidth(), 58).reduced (0, 4);
+            r.del->setBounds (row.removeFromRight (110).reduced (4, 8));
+            r.show->setBounds (row.removeFromRight (100).reduced (4, 8));
+            y += 58;
+        }
+    }
+    void paint (juce::Graphics& g) override
+    {
+        if (rows.empty())
+        {
+            g.setColour (theme::muted);
+            g.setFont (theme::ui (14.0f));
+            g.drawText (L ("Aucune librairie enregistr\xc3\xa9""e.", "No saved library.", "Ninguna librer\xc3\xad""a guardada."), getLocalBounds().withHeight (40), juce::Justification::centred);
+            return;
+        }
+        int y = 0;
+        for (auto& r : rows)
+        {
+            if (r.header)
+            {
+                auto f = theme::ui (11.0f, 2); f.setExtraKerningFactor (0.16f);
+                g.setFont (f);
+                g.setColour (r.title == "PADS" ? theme::accent : theme::amber);
+                g.drawText (r.title, juce::Rectangle<int> (4, y + 10, 200, 20), juce::Justification::centredLeft);
+                y += 34;
+                continue;
+            }
+            auto row = juce::Rectangle<int> (0, y, getWidth(), 58).reduced (0, 4).toFloat();
+            g.setColour (theme::ink.withAlpha (0.045f));
+            g.fillRoundedRectangle (row, 16.0f);
+            auto tr = row.withTrimmedLeft (16).withTrimmedRight (220);
+            g.setColour (theme::text);
+            g.setFont (theme::ui (14.0f, 1));
+            g.drawText (r.lib.name, tr.withTrimmedBottom (row.getHeight() * 0.45f), juce::Justification::bottomLeft, true);
+            g.setColour (theme::muted);
+            g.setFont (theme::ui (11.5f));
+            juce::String sub = juce::String (r.lib.numSounds()) + " " + (r.lib.numSounds() > 1 ? L ("sons", "sounds", "sonidos") : L ("son", "sound", "sonido"));
+            if (r.lib.type == LibType::Pad) sub << U (" \xc2\xb7 ") << juce::String (r.lib.countMode (0)) << L (" majeur(s), ", " major, ", " mayor(es), ") << juce::String (r.lib.countMode (1)) << L (" mineur(s)", " minor", " menor(es)");
+            sub << U (" \xc2\xb7 ") << r.lib.folder;
+            if (! juce::File (r.lib.folder).isDirectory()) sub = L ("DOSSIER INTROUVABLE \xc2\xb7 ", "FOLDER NOT FOUND \xc2\xb7 ", "CARPETA NO ENCONTRADA \xc2\xb7 ") + sub;
+            g.drawText (sub, tr.withTrimmedTop (row.getHeight() * 0.56f), juce::Justification::topLeft, true);
+            y += 58;
+        }
+    }
+    void confirmDelete (const Library& lib)
+    {
+        const bool copied = juce::File (lib.folder).isAChildOf (soundsFolder());
+        juce::String msg = L ("Retirer \xc2\xab ", "Remove \xe2\x80\x9c", "\xc2\xbfQuitar \xc2\xab") + lib.name + L (" \xc2\xbb de Spacepad ?\n\n", "\xe2\x80\x9d from Spacepad?\n\n", "\xc2\xbb de Spacepad?\n\n");
+        msg << (copied ? L ("Les sons copi\xc3\xa9s dans Spacepad pour cette librairie seront aussi effac\xc3\xa9s.", "The sounds copied into Spacepad for this library will also be deleted.", "Los sonidos copiados en Spacepad para esta librer\xc3\xad""a tambi\xc3\xa9n se borrar\xc3\xa1n.")
+                       : L ("Vos fichiers ne sont pas effac\xc3\xa9s : seule la librairie dispara\xc3\xaet de Spacepad.", "Your files are not deleted: only the library disappears from Spacepad.", "Tus archivos no se borran: solo la librer\xc3\xad""a desaparece de Spacepad."));
+        const auto id = lib.id; const auto folder = lib.folder;
+        juce::Component::SafePointer<LibListComp> safe (this);
+        juce::AlertWindow::showOkCancelBox (juce::MessageBoxIconType::QuestionIcon, "Spacepad", msg, L ("Supprimer", "Delete", "Eliminar"), L ("Annuler", "Cancel", "Cancelar"), nullptr,
+            juce::ModalCallbackFunction::create ([safe, id, folder, copied] (int r)
+            {
+                if (r != 1 || safe == nullptr) return;
+                safe->proc.libraries().remove (id);
+                if (copied) juce::File (folder).deleteRecursively();
+                safe->rebuild();
+            }));
+    }
+    SpacepadProcessor& proc;
+private:
+    struct Row { bool header = false; juce::String title; Library lib; std::unique_ptr<juce::TextButton> show, del; };
+    std::vector<Row> rows;
+};
+}
+
+void SettingsOverlay::rebuildLibList()
+{
+    lastLibChanges = proc.libraries().changeCount();
+    if (auto* l = dynamic_cast<LibListComp*> (libList.get()))
+    {
+        l->setSize (libView.getMaximumVisibleWidth(), l->getHeight());
+        l->rebuild();
+    }
+    deleteAllBtn.setEnabled (! proc.libraries().snapshot().empty());
+    repaint();
+}
+
 // ============================================================================================
 // SettingsOverlay : « Personnaliser Spacepad »
 // ============================================================================================
@@ -1025,6 +1208,35 @@ SettingsOverlay::SettingsOverlay (SpacepadProcessor& p, std::function<void()> c)
     }
     for (auto* b : { &resetBtn, &doneBtn }) addAndMakeVisible (*b);
     for (auto* b : { &zoneBtn, &exportBtn, &importBtn }) addChildComponent (*b);
+    // Librairies enregistrées
+    inPlugin = proc.wrapperType != juce::AudioProcessor::wrapperType_Standalone;
+    libList = std::make_unique<LibListComp> (proc);
+    libView.setViewedComponent (libList.get(), false);
+    libView.setScrollBarsShown (true, false);
+    libView.setScrollBarThickness (8);
+    addChildComponent (libView);
+    deleteAllBtn.setButtonText (L ("Tout supprimer\xe2\x80\xa6", "Delete all\xe2\x80\xa6", "Eliminar todo\xe2\x80\xa6"));
+    deleteAllBtn.getProperties().set ("fontSize", 12.5f);
+    deleteAllBtn.onClick = [this]
+    {
+        juce::Component::SafePointer<SettingsOverlay> safe (this);
+        juce::AlertWindow::showOkCancelBox (juce::MessageBoxIconType::WarningIcon, "Spacepad",
+            L ("Retirer toutes les librairies de Spacepad ?\n\nVos fichiers ne sont pas effac\xc3\xa9s (sauf les sons copi\xc3\xa9s dans Spacepad).",
+               "Remove every library from Spacepad?\n\nYour files are not deleted (except sounds copied into Spacepad).",
+               "\xc2\xbfQuitar todas las librer\xc3\xad""as de Spacepad?\n\nTus archivos no se borran (salvo los sonidos copiados en Spacepad)."),
+            L ("Tout supprimer", "Delete all", "Eliminar todo"), L ("Annuler", "Cancel", "Cancelar"), nullptr,
+            juce::ModalCallbackFunction::create ([safe] (int r)
+            {
+                if (r != 1 || safe == nullptr) return;
+                for (auto& l : safe->proc.libraries().snapshot())
+                {
+                    safe->proc.libraries().remove (l.id);
+                    if (juce::File (l.folder).isAChildOf (soundsFolder())) juce::File (l.folder).deleteRecursively();
+                }
+                safe->rebuildLibList();
+            }));
+    };
+    addChildComponent (deleteAllBtn);
     showPage (0);
     startTimerHz (8);
 }
@@ -1063,7 +1275,10 @@ void SettingsOverlay::save()
 
 void SettingsOverlay::showPage (int p)
 {
-    page = juce::jlimit (0, 2, p);
+    page = juce::jlimit (0, 3, p);
+    libView.setVisible (page == 3);
+    deleteAllBtn.setVisible (page == 3);
+    if (page == 3) { resized(); rebuildLibList(); }
     brightness.setVisible (page == 0);
     speed.setVisible (page == 0);
     zoneBtn.setVisible (page == 1);
@@ -1106,8 +1321,8 @@ void SettingsOverlay::resized()
     c.removeFromTop (44);
     // onglets de pages
     pageTabs.clear();
-    auto pt = c.removeFromTop (40).withWidth (600);
-    for (int i = 0; i < 3; ++i) pageTabs.push_back (juce::Rectangle<int> (pt.getX() + 4 + i * 198, pt.getY() + 3, 194, 34));
+    auto pt = c.removeFromTop (40).withWidth (720);
+    for (int i = 0; i < 4; ++i) pageTabs.push_back (juce::Rectangle<int> (pt.getX() + 4 + i * 178, pt.getY() + 3, 174, 34));
     c.removeFromTop (14);
     groups.clear(); swatches.clear(); tiles.clear();
     const int colW = (c.getWidth() - 32) / 2;
@@ -1135,7 +1350,9 @@ void SettingsOverlay::resized()
         seg ({ L ("LANGUE", "LANGUAGE", "IDIOMA"), { { U ("Fran\xc3\xa7""ais"), {} }, { "English", {} }, { U ("Espa\xc3\xb1ol"), {} } }, &langIdx, right.removeFromTop (60) });
         left.removeFromTop (10); right.removeFromTop (10);
         seg ({ L ("ANIMATIONS", "ANIMATIONS", "ANIMACIONES"), { { L ("D\xc3\xa9sactiv\xc3\xa9""es", "Off", "Desactivadas"), {} }, { L ("Activ\xc3\xa9""es", "On", "Activadas"), {} } }, &animIdx, left.removeFromTop (60) });
-        seg ({ L ("GARDER L'\xc3\x89""CRAN ALLUM\xc3\x89", "KEEP THE SCREEN ON", "MANTENER LA PANTALLA ENCENDIDA"), { { L ("Non", "No", "No"), {} }, { L ("Oui, pendant le jeu", "Yes, while playing", "S\xc3\xad, al tocar"), {} } }, &awakeIdx, right.removeFromTop (60) });
+        if (! inPlugin)   // dans un logiciel de musique, c'est lui (et Windows) qui gèrent l'écran
+            seg ({ L ("GARDER L'\xc3\x89""CRAN ALLUM\xc3\x89", "KEEP THE SCREEN ON", "MANTENER LA PANTALLA ENCENDIDA"), { { L ("Non", "No", "No"), {} }, { L ("Oui, pendant le jeu", "Yes, while playing", "S\xc3\xad, al tocar"), {} } }, &awakeIdx, right.removeFromTop (60) });
+        else right.removeFromTop (60);
         left.removeFromTop (10);
         seg ({ L ("FOND DES CROWDS (MODE CROWD)", "CROWDS BACKGROUND (CROWD MODE)", "FONDO DE LOS CROWDS (MODO CROWD)"),
                { { L ("Photo douce", "Soft photo", "Foto suave"), {} }, { L ("Photo naturelle", "Natural photo", "Foto natural"), {} },
@@ -1150,7 +1367,7 @@ void SettingsOverlay::resized()
         zoneArea = top;
         zoneBtn.setBounds (top.withTrimmedTop (22).withHeight (36).withTrimmedLeft (16));
         c.removeFromTop (8);
-        infoArea = c.removeFromTop (22);
+        infoArea = c.removeFromTop (inPlugin ? 38 : 22);
         c.removeFromTop (6);
         midiListArea = c;
         const int rowH = juce::jmin (40, c.getHeight() / actCount);
@@ -1161,7 +1378,7 @@ void SettingsOverlay::resized()
             assignBtn[a].setBounds (row.removeFromRight (200).reduced (2, 3));
         }
     }
-    else
+    else if (page == 2)
     {
         seg ({ L ("DUR\xc3\x89""E DE \xc2\xab FIN DU CHANT \xc2\xbb", "\xe2\x80\x9c""END OF SONG\xe2\x80\x9d DURATION", "DURACI\xc3\x93N DEL \xc2\xab""FIN DE LA CANCI\xc3\x93N\xc2\xbb"), { { "4 s", {} }, { "8 s", {} }, { "12 s", {} }, { "16 s", {} } }, &fadeIdx, left.removeFromTop (60) });
         seg ({ L ("COPIER LES SONS DANS SPACEPAD", "COPY SOUNDS INTO SPACEPAD", "COPIAR LOS SONIDOS EN SPACEPAD"), { { L ("Non", "No", "No"), {} }, { L ("Oui, \xc3\xa0 l'enregistrement", "Yes, when saving", "S\xc3\xad, al guardar"), {} } }, &copyIdx, right.removeFromTop (60) });
@@ -1169,7 +1386,15 @@ void SettingsOverlay::resized()
         auto ex = c.withY (left.getY()).withHeight (64);
         exportBtn.setBounds (ex.withTrimmedTop (24).withWidth (260).withHeight (40));
         importBtn.setBounds (ex.withTrimmedTop (24).withTrimmedLeft (272).withWidth (150).withHeight (40));
-        infoArea = c.withY (ex.getBottom() + 20).withHeight (180);
+        infoArea = c.withY (ex.getBottom() + 20).withHeight (220);
+    }
+    if (page == 3)
+    {
+        libHeadArea = c.removeFromTop (40);
+        deleteAllBtn.setBounds (libHeadArea.removeFromRight (170).withSizeKeepingCentre (170, 36));
+        c.removeFromTop (6);
+        libView.setBounds (c);
+        if (libList != nullptr) libList->setSize (libView.getMaximumVisibleWidth(), juce::jmax (c.getHeight(), libList->getHeight()));
     }
     for (auto& gr : groups)
     {
@@ -1221,8 +1446,8 @@ void SettingsOverlay::paint (juce::Graphics& g)
         auto all = pageTabs.front().getUnion (pageTabs.back()).toFloat().expanded (4, 3);
         g.setColour (theme::ink.withAlpha (0.06f));
         g.fillRoundedRectangle (all, all.getHeight() * 0.5f);
-        const juce::String names[] = { L ("Apparence", "Appearance", "Apariencia"), L ("MIDI & p\xc3\xa9""dales", "MIDI & pedals", "MIDI y pedales"), L ("Sons & sorties", "Sounds & outputs", "Sonidos y salidas") };
-        for (int i = 0; i < 3; ++i)
+        const juce::String names[] = { L ("Apparence", "Appearance", "Apariencia"), L ("MIDI & p\xc3\xa9""dales", "MIDI & pedals", "MIDI y pedales"), L ("Sons & sorties", "Sounds & outputs", "Sonidos y salidas"), L ("Librairies", "Libraries", "Librer\xc3\xad""as") };
+        for (int i = 0; i < 4; ++i)
         {
             auto tr = pageTabs[(size_t) i].toFloat();
             if (i == page) { g.setColour (acc); g.fillRoundedRectangle (tr, tr.getHeight() * 0.5f); }
@@ -1280,7 +1505,11 @@ void SettingsOverlay::paint (juce::Graphics& g)
                                        + L (" changent la tonalit\xc3\xa9. Le reste du clavier est libre : le pad reste net.", " change the key. The rest of the keyboard is free: the pad stays put.", " cambian la tonalidad. El resto del teclado queda libre: el pad no se mueve.");
         else if (u.midiKeyMode == 1) info = L ("Le MIDI ne change jamais la tonalit\xc3\xa9 : seulement l'\xc3\xa9""cran, le crochet et les p\xc3\xa9""dales assign\xc3\xa9""es.", "MIDI never changes the key: only the screen, the hook and assigned pedals.", "El MIDI nunca cambia la tonalidad: solo la pantalla, el gancho y los pedales asignados.");
         else info = L ("Chaque note MIDI change la tonalit\xc3\xa9 (clavier r\xc3\xa9serv\xc3\xa9 \xc3\xa0 Spacepad).", "Every MIDI note changes the key (keyboard dedicated to Spacepad).", "Cada nota MIDI cambia la tonalidad (teclado reservado a Spacepad).");
-        g.drawFittedText (info, infoArea, juce::Justification::centredLeft, 1, 0.8f);
+        if (inPlugin)
+            info << "\n" << L ("Dans votre logiciel de musique : armez la piste de Spacepad (ou moniteur sur \xc2\xab In \xc2\xbb) pour qu'il re\xc3\xa7oive le clavier et les p\xc3\xa9""dales.",
+                               "In your music software: arm the Spacepad track (or set monitoring to \xe2\x80\x9cIn\xe2\x80\x9d) so it receives the keyboard and pedals.",
+                               "En tu programa de m\xc3\xbasica: arma la pista de Spacepad (o monitor en \xc2\xab""In\xc2\xbb) para que reciba el teclado y los pedales.");
+        g.drawFittedText (info, infoArea, juce::Justification::centredLeft, inPlugin ? 2 : 1, 0.8f);
         const int rowH = juce::jmin (40, midiListArea.getHeight() / actCount);
         for (int a = 0; a < actCount; ++a)
         {
@@ -1295,6 +1524,22 @@ void SettingsOverlay::paint (juce::Graphics& g)
             g.setFont (theme::ui (13.0f, 1));
             g.drawText (midiCodeName (code), row.withX (row.getX() + 300).withWidth (240), juce::Justification::centredLeft);
         }
+    }
+    else if (page == 3)
+    {
+        auto h = libHeadArea.toFloat();
+        const auto all = proc.libraries().snapshot();
+        int pads = 0; for (auto& l : all) if (l.type == LibType::Pad) ++pads;
+        g.setColour (theme::text);
+        g.setFont (theme::ui (14.0f, 1));
+        g.drawText (juce::String (pads) + L (" librairie(s) de pads \xc2\xb7 ", " pad librarie(s) \xc2\xb7 ", " librer\xc3\xad""a(s) de pads \xc2\xb7 ") + juce::String ((int) all.size() - pads) + L (" de crowds", " crowd", " de crowds"),
+                    h.withTrimmedTop (2).withHeight (20), juce::Justification::centredLeft);
+        g.setColour (theme::muted);
+        g.setFont (theme::ui (12.0f));
+        g.drawText (L ("Supprimer retire la librairie de Spacepad (application et plugin). Vos fichiers restent sur l'ordinateur.",
+                       "Delete removes the library from Spacepad (app and plugin). Your files stay on the computer.",
+                       "Eliminar quita la librer\xc3\xad""a de Spacepad (aplicaci\xc3\xb3n y plugin). Tus archivos se quedan en el ordenador."),
+                    h.withTrimmedTop (22).withHeight (18), juce::Justification::centredLeft, true);
     }
     else
     {
@@ -1313,6 +1558,13 @@ void SettingsOverlay::paint (juce::Graphics& g)
                              "\xe2\x80\xa2 Copiar los sonidos: tus librer\xc3\xad""as siguen disponibles aunque muevas o borres tus carpetas.\n"
                              "\xe2\x80\xa2 Salidas separadas: en tu programa de m\xc3\xba""sica, activa la salida \xc2\xab""Crowds\xc2\xbb del plugin Spacepad. El pad sale por la salida principal y los crowds por la suya, para el t\xc3\xa9""cnico de sonido."),
                           infoArea, juce::Justification::topLeft, 10);
+        g.setColour (inPlugin ? theme::accent : theme::muted);
+        g.setFont (theme::ui (12.5f, inPlugin ? 1 : 0));
+        g.drawFittedText (inPlugin ? L ("Vous \xc3\xaates dans le plugin : la carte son, la fr\xc3\xa9quence, la latence, le tempo et le MIDI sont r\xc3\xa9gl\xc3\xa9s par votre logiciel de musique (",
+                                        "You are in the plugin: the audio device, sample rate, latency, tempo and MIDI are set by your music software (",
+                                        "Est\xc3\xa1s en el plugin: la tarjeta de sonido, la frecuencia, la latencia, el tempo y el MIDI los ajusta tu programa de m\xc3\xbasica (") + juce::PluginHostType().getHostDescription() + L ("). Spacepad suit ses r\xc3\xa9glages.", "). Spacepad follows its settings.", "). Spacepad sigue sus ajustes.")
+                                   : L ("Application seule : la carte son et la sortie se r\xc3\xa8glent avec le bouton \xc2\xab Options \xc2\xbb en haut de la fen\xc3\xaatre.", "Standalone app: the audio device and output are set with the \xe2\x80\x9cOptions\xe2\x80\x9d button at the top of the window.", "Aplicaci\xc3\xb3n sola: la tarjeta de sonido y la salida se ajustan con el bot\xc3\xb3n \xc2\xab""Options\xc2\xbb arriba de la ventana."),
+                          infoArea.withTrimmedTop (170).withHeight (44), juce::Justification::topLeft, 2);
     }
     for (auto& gr : groups)
     {
