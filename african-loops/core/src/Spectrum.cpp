@@ -9,30 +9,41 @@ namespace {
 
 constexpr double kPi = 3.14159265358979323846;
 
-// FFT radix 2 sur place.
-void fft(std::vector<std::complex<double>>& x, bool inverse) {
-    const int n = (int)x.size();
-    for (int i = 1, j = 0; i < n; ++i) {
-        int bit = n >> 1;
-        for (; j & bit; bit >>= 1) j ^= bit;
-        j ^= bit;
-        if (i < j) std::swap(x[i], x[j]);
-    }
-    const double sign = inverse ? 1.0 : -1.0;
-    for (int size = 2; size <= n; size <<= 1) {
-        const std::complex<double> w = std::polar(1.0, sign * 2 * kPi / size);
-        for (int start = 0; start < n; start += size) {
-            std::complex<double> wk(1, 0);
-            for (int k = 0; k < size / 2; ++k) {
-                auto a = x[start + k], b = x[start + k + size / 2] * wk;
-                x[start + k] = a + b;
-                x[start + k + size / 2] = a - b;
-                wk *= w;
-            }
+// FFT radix 2 de taille kFFT, avec tables précalculées (inversion des bits et
+// facteurs de rotation) : plusieurs fois plus rapide qu'un calcul à la volée.
+struct FFTTables {
+    std::vector<int> rev;
+    std::vector<std::complex<double>> tw;  // exp(-2iπk/N), k < N/2
+    FFTTables() : rev(kFFT), tw(kFFT / 2) {
+        for (int i = 0, j = 0; i < kFFT; ++i) {
+            rev[i] = j;
+            int bit = kFFT >> 1;
+            for (; j & bit; bit >>= 1) j ^= bit;
+            j ^= bit;
         }
+        for (int k = 0; k < kFFT / 2; ++k) tw[k] = std::polar(1.0, -2 * kPi * k / kFFT);
     }
-    if (inverse)
-        for (auto& v : x) v /= (double)n;
+};
+const FFTTables& tables() {
+    static const FFTTables t;
+    return t;
+}
+
+void fft(std::vector<std::complex<double>>& x) {
+    const auto& t = tables();
+    for (int i = 0; i < kFFT; ++i)
+        if (i < t.rev[i]) std::swap(x[i], x[t.rev[i]]);
+    for (int size = 2; size <= kFFT; size <<= 1) {
+        const int half = size / 2, step = kFFT / size;
+        for (int start = 0; start < kFFT; start += size)
+            for (int k = 0; k < half; ++k) {
+                auto& a = x[start + k];
+                auto& b = x[start + k + half];
+                const auto v = b * t.tw[k * step];
+                b = a - v;
+                a += v;
+            }
+    }
 }
 
 // Racine de fenêtre de Hann, à l'analyse ET à la reconstruction : la somme
@@ -108,66 +119,36 @@ int bandOf(double hz) {
     return NumBands - 1;
 }
 
-std::vector<Spectrum> stft(const std::vector<float>& x) {
-    const int n = (int)x.size();
-    const int frames = (n - kFrameStart) / kHop + 1;
-    const auto& w = sqrtHann();
-    std::vector<Spectrum> out(frames);
-    std::vector<std::complex<double>> buf(kFFT);
-    for (int t = 0; t < frames; ++t) {
-        const int start = t * kHop + kFrameStart;
-        for (int i = 0; i < kFFT; ++i) {
-            int j = start + i;
-            double v = (j >= 0 && j < n) ? x[j] : 0.0;
-            buf[i] = {v * w[i], 0};
-        }
-        fft(buf, false);
-        out[t].assign(buf.begin(), buf.begin() + kBins);
-    }
-    return out;
-}
-
-std::vector<float> istft(const std::vector<Spectrum>& spec, int n) {
-    std::vector<double> acc(n, 0.0);
-    const auto& w = sqrtHann();
-    std::vector<std::complex<double>> buf(kFFT);
-    for (size_t t = 0; t < spec.size(); ++t) {
-        std::copy(spec[t].begin(), spec[t].end(), buf.begin());
-        for (int k = 1; k < kFFT / 2; ++k) buf[kFFT - k] = std::conj(spec[t][k]);
-        fft(buf, true);
-        const int start = (int)t * kHop + kFrameStart;
-        for (int i = 0; i < kFFT; ++i) {
-            int j = start + i;
-            if (j >= 0 && j < n) acc[j] += buf[i].real() * w[i];
-        }
-    }
-    std::vector<float> out(n);
-    for (int i = 0; i < n; ++i) out[i] = (float)(acc[i] / 2);
-    return out;
-}
-
 Analysis analyseSpectrum(const Audio& a) {
     Analysis an;
     an.rate = a.rate;
     an.n = a.frames();
-    an.specL = stft(a.L);
-    an.specR = stft(a.R);
-    const int T = (int)an.specL.size();
+    an.mono = a.mono();
+    const int n = an.n;
+    const int T = (n - kFrameStart) / kHop + 1;
     an.bandOfBin.resize(kBins);
     for (int k = 0; k < kBins; ++k) an.bandOfBin[k] = bandOf(binHz(k, a.rate));
-    an.mag.assign(T, std::vector<double>(kBins));
+    an.mag.assign(T, std::vector<float>(kBins));
     an.bands.assign(T, BandArray{});
     an.bflux.assign(T, BandArray{});
     an.flux.assign(T, 0.0);
-    std::vector<double> prev(kBins, 0.0);
+    const auto& w = sqrtHann();
+    std::vector<std::complex<double>> buf(kFFT);
+    std::vector<float> prev(kBins, 0.f);
     for (int t = 0; t < T; ++t) {
+        const int start = t * kHop + kFrameStart;
+        for (int i = 0; i < kFFT; ++i) {
+            int j = start + i;
+            buf[i] = {(j >= 0 && j < n) ? an.mono[j] * w[i] : 0.0, 0};
+        }
+        fft(buf);
         auto& m = an.mag[t];
         for (int k = 0; k < kBins; ++k) {
-            m[k] = std::abs(an.specL[t][k] + an.specR[t][k]) * 0.5;
+            m[k] = (float)std::abs(buf[k]);
             const int b = an.bandOfBin[k];
-            an.bands[t][b] += m[k] * m[k];
+            an.bands[t][b] += (double)m[k] * m[k];
             // montée d'énergie en échelle logarithmique (comme l'oreille)
-            double d = std::log1p(100 * m[k]) - std::log1p(100 * prev[k]);
+            double d = std::log1p(100.0 * m[k]) - std::log1p(100.0 * prev[k]);
             if (d > 0) an.bflux[t][b] += d;
         }
         prev = m;
@@ -180,7 +161,6 @@ Analysis analyseSpectrum(const Audio& a) {
         for (int b = 0; b < NumBands; ++b)
             if (cnt[b] > 0) an.flux[t] += an.bflux[t][b] / cnt[b];
     an.onsets = pickOnsets(an.flux, a.rate);
-    an.mono = a.mono();
     for (int t : an.onsets) an.starts.push_back(refineOnset(an.mono, frameCenter(t)));
     return an;
 }

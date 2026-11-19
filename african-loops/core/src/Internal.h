@@ -15,20 +15,16 @@ constexpr int kBins = kFFT / 2 + 1;
 
 enum Band { Sub, Body, Mid, Pres, Air, NumBands };  // <120, 120–500, 500–2500, 2500–7000, >7000 Hz
 using BandArray = std::array<double, NumBands>;
-using Spectrum = std::vector<std::complex<double>>;
 
 inline int frameCenter(int t) { return t * kHop + kFrameStart + kFFT / 2; }
 int frameAt(double sample);
 inline double binHz(int k, int rate) { return (double)k * rate / kFFT; }
 int bandOf(double hz);
 
-std::vector<Spectrum> stft(const std::vector<float>& x);
-std::vector<float> istft(const std::vector<Spectrum>& spec, int n);
 
 struct Analysis {
     int rate = 0, n = 0;
-    std::vector<Spectrum> specL, specR;
-    std::vector<std::vector<double>> mag;  // amplitude du mélange
+    std::vector<std::vector<float>> mag;   // amplitude du mélange (mono), par tranche
     std::vector<BandArray> bands;          // énergie par bande
     std::vector<BandArray> bflux;          // montée d'énergie par bande
     std::vector<double> flux;              // courbe d'attaques
@@ -41,8 +37,10 @@ struct Analysis {
 Analysis analyseSpectrum(const Audio& a);
 std::vector<Hit> detectHits(const Analysis& an);
 std::vector<Percussion> summarize(const std::vector<Hit>& hits);
-std::vector<Stem> separateStems(const Analysis& an, const std::vector<Percussion>& percs,
-                                const std::vector<Hit>& hits);
+// Séparation rapide, directement sur le son (sans analyse en fréquences) :
+// découpage en 5 bandes dont la somme redonne exactement la loop, puis chaque
+// bande est partagée entre les percussions qui jouent à cet instant.
+std::vector<Stem> separateStems(const Audio& a, const std::vector<Percussion>& percs, const std::vector<Hit>& hits);
 Tempo detectTempo(const Audio& a, const Analysis& an, const std::vector<Hit>& hits,
                   const std::string& filename);
 
