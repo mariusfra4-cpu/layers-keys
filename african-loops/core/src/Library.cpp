@@ -20,7 +20,7 @@ namespace africanloops {
 
 const char* const kUncategorized = "Non classés";
 const char* const kIndexFile = ".africanloops-index.json";
-constexpr int kIndexVersion = 2;  // 2 : les coups sont gardés (chargement instantané)
+constexpr int kIndexVersion = 3;  // 2 : coups gardés ; 3 : boucle préparée (points de boucle, silence MP3)
 
 // ---------------------------------------------------------------- styles
 

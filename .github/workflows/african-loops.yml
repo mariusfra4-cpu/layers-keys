@@ -25,7 +25,7 @@ jobs:
       - name: Tests du plugin (son + interface)
         run: |
           mkdir -p captures
-          xvfb-run -a -s "-screen 0 1600x1000x24" build/AfricanLoopsPluginTests_artefacts/Release/AfricanLoopsPluginTests captures
+          AL_TEST_MP3=african-loops/plugin/tests/mp3 xvfb-run -a -s "-screen 0 1600x1000x24" build/AfricanLoopsPluginTests_artefacts/Release/AfricanLoopsPluginTests captures
       - name: Le VST3 dans un hôte
         run: xvfb-run -a -s "-screen 0 1600x1000x24" build/AfricanLoopsHostTest_artefacts/Release/AfricanLoopsHostTest "build/AfricanLoopsPro_artefacts/Release/VST3/African Loops Pro.vst3"
       - uses: actions/upload-artifact@v4
@@ -47,6 +47,7 @@ jobs:
       - name: Tests du plugin (son + interface)
         run: |
           mkdir captures
+          $env:AL_TEST_MP3 = "african-loops/plugin/tests/mp3"
           build/AfricanLoopsPluginTests_artefacts/Release/AfricanLoopsPluginTests.exe captures
       - name: Le VST3 dans un hôte
         run: build/AfricanLoopsHostTest_artefacts/Release/AfricanLoopsHostTest.exe "build/AfricanLoopsPro_artefacts/Release/VST3/African Loops Pro.vst3"
@@ -147,7 +148,7 @@ jobs:
       - name: Tests du plugin (son + interface)
         run: |
           mkdir -p captures
-          build/AfricanLoopsPluginTests_artefacts/Release/AfricanLoopsPluginTests captures
+          AL_TEST_MP3=african-loops/plugin/tests/mp3 build/AfricanLoopsPluginTests_artefacts/Release/AfricanLoopsPluginTests captures
       - name: Le VST3 dans un hôte
         run: build/AfricanLoopsHostTest_artefacts/Release/AfricanLoopsHostTest "build/AfricanLoopsPro_artefacts/Release/VST3/African Loops Pro.vst3"
       - name: Préparer le paquet

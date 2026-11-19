@@ -82,6 +82,7 @@ public:
     explicit BpmDisplay(AfricanLoopsProcessor& p);
     void paint(juce::Graphics&) override;
     void mouseDoubleClick(const juce::MouseEvent&) override;
+    void leavePreset();
 
 private:
     AfricanLoopsProcessor& proc;

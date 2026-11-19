@@ -463,6 +463,92 @@ static void testSwitchInTime() {
     CHECK(l.position() == 0, "à l'arrêt, une nouvelle loop doit partir du début");
 }
 
+static std::vector<uint8_t> withSmpl(std::vector<uint8_t> wav, int start, int end) {
+    // ajoute un bloc « smpl » avec une boucle [start, end]
+    std::vector<uint8_t> c(60, 0);
+    auto put = [&](size_t at, uint32_t v) { for (int i = 0; i < 4; ++i) c[at + i] = (uint8_t)(v >> (8 * i)); };
+    put(28, 1);
+    put(44, (uint32_t)start);
+    put(48, (uint32_t)(end - 1));
+    std::vector<uint8_t> chunk = {'s', 'm', 'p', 'l', 60, 0, 0, 0};
+    chunk.insert(chunk.end(), c.begin(), c.end());
+    wav.insert(wav.begin() + 36, chunk.begin(), chunk.end());  // juste après « fmt »
+    uint32_t riff = (uint32_t)wav.size() - 8;
+    for (int i = 0; i < 4; ++i) wav[4 + i] = (uint8_t)(riff >> (8 * i));
+    return wav;
+}
+
+static void testSeamlessFiles() {
+    current = "points de boucle du WAV";
+    {
+        Audio a = synthLoop(96, 2, 0.6);  // 2 mesures + 0,6 s en trop, avec une boucle écrite dans le fichier
+        const int musical = (int)std::lround(8 * 60.0 / 96 * kRate);
+        auto bytes = withSmpl(encodeWAV(a, 0, 0), 0, musical);
+        fs::path p = fs::temp_directory_path() / "al_smpl.wav";
+        std::ofstream(p, std::ios::binary).write((const char*)bytes.data(), (std::streamsize)bytes.size());
+        Audio b;
+        std::string err;
+        CHECK(loadWAV(p.string(), b, err) && b.frames() == musical, "zone de boucle ignorée : %d au lieu de %d", b.frames(), musical);
+        CHECK(std::abs(analyse(b, "x.wav").tempo.bpm - 96) < 0.01, "tempo de la zone de boucle");
+        fs::remove(p);
+    }
+    current = "silence de l'encodeur MP3";
+    {
+        Audio a = synthLoop(100, 1, 0);
+        const int n = a.frames();
+        Audio m = a;
+        m.L.insert(m.L.begin(), 1105, 0.f);  // retard typique d'un encodeur MP3
+        m.R.insert(m.R.begin(), 1105, 0.f);
+        m.L.insert(m.L.end(), 700, 0.f);
+        m.R.insert(m.R.end(), 700, 0.f);
+        prepareLoop(m, true);
+        CHECK(m.frames() <= n && m.frames() > n - 50, "silence MP3 non retiré : %d au lieu de %d", m.frames(), n);
+        // un vrai soupir au début (plus de 60 ms) est gardé
+        Audio r = a;
+        r.L.insert(r.L.begin(), kRate / 5, 0.f);
+        r.R.insert(r.R.begin(), kRate / 5, 0.f);
+        const int before = r.frames();
+        prepareLoop(r, true);
+        CHECK(r.frames() == before, "un silence musical a été coupé");
+    }
+    current = "tempo écrit dans le MP3 (ID3)";
+    {
+        auto tag = [](int ver, const char* id, const std::string& text) {
+            std::vector<uint8_t> f;
+            f.insert(f.end(), id, id + 4);
+            const uint32_t fs = (uint32_t)text.size() + 1;
+            if (ver >= 4) for (int k = 3; k >= 0; --k) f.push_back((uint8_t)((fs >> (7 * k)) & 0x7f));
+            else for (int k = 3; k >= 0; --k) f.push_back((uint8_t)(fs >> (8 * k)));
+            f.push_back(0); f.push_back(0); f.push_back(0);
+            f.insert(f.end(), text.begin(), text.end());
+            std::vector<uint8_t> h = {'I', 'D', '3', (uint8_t)ver, 0, 0};
+            const uint32_t sz = (uint32_t)f.size();
+            for (int k = 3; k >= 0; --k) h.push_back((uint8_t)((sz >> (7 * k)) & 0x7f));
+            h.insert(h.end(), f.begin(), f.end());
+            return h;
+        };
+        CHECK(readMp3Bpm(tag(3, "TBPM", "96")) == 96, "ID3v2.3");
+        CHECK(readMp3Bpm(tag(4, "TBPM", "118.5")) == 118.5, "ID3v2.4");
+        CHECK(readMp3Bpm(tag(3, "TIT2", "Love song")) == 0, "titre pris pour un tempo");
+        CHECK(readMp3Bpm({'f', 'o', 'o'}) == 0, "fichier sans étiquette");
+    }
+    current = "longueur de boucle toujours calée sur la mesure";
+    for (double extra : {0.9, 1.6, -0.4}) {  // en temps : fin qui dépasse, ou fichier un peu court
+        Audio a = synthLoop(90, 4, 0);
+        const int add = (int)(extra * 60.0 / 90 * kRate);
+        if (add > 0) { a.L.insert(a.L.end(), (size_t)add, 0.f); a.R.insert(a.R.end(), (size_t)add, 0.f); }
+        else { a.L.resize(a.L.size() + add); a.R.resize(a.R.size() + add); }
+        auto info = analyse(a, "groove_90bpm.wav");
+        CHECK(info.tempo.beats == 16, "%+.1f temps : %d temps au lieu de 16", extra, info.tempo.beats);
+        std::vector<Stem> st;
+        separate(a, "groove_90bpm.wav", st);
+        Looper l(kRate);
+        l.load(info, st);
+        l.setPresetBPM(true);
+        CHECK(std::abs(l.loopLength() - 16 * 60.0 / 90 * kRate) < 2, "%+.1f temps : boucle de %.0f", extra, l.loopLength());
+    }
+}
+
 static void testProcess() {
     current = "réglages par bloc (plugin)";
     Audio a = synthLoop(98, 1, 0);
@@ -507,6 +593,7 @@ int main() {
     testContinuousLoop();
     testBounceAndMetronome();
     testProcess();
+    testSeamlessFiles();
     testSwitchInTime();
     if (failures) {
         std::printf("%d test(s) en échec\n", failures);

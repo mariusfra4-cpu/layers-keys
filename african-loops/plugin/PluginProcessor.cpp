@@ -35,7 +35,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout AfricanLoopsProcessor::layou
             return v <= 0.001f ? juce::String("Off") : juce::String(juce::roundToInt(hpToHz(v))) + " Hz"; })));
     p.push_back(std::make_unique<APF>(PID{ids::warmth, 1}, "Warmth", juce::NormalisableRange<float>(0.f, 1.f), 0.f, pct));
     p.push_back(std::make_unique<APF>(PID{ids::bpm, 1}, "Global BPM", juce::NormalisableRange<float>(40.f, 240.f, 0.01f), 120.f));
-    p.push_back(std::make_unique<APB>(PID{ids::presetBpm, 1}, "Preset BPM", false));
+    p.push_back(std::make_unique<APB>(PID{ids::presetBpm, 1}, "Preset BPM", true));
     p.push_back(std::make_unique<APB>(PID{ids::syncHost, 1}, "Sync Host", true));
     p.push_back(std::make_unique<APB>(PID{ids::masterFx, 1}, "Master FX", false));
     p.push_back(std::make_unique<APB>(PID{ids::sendFx, 1}, "Send FX", false));
@@ -202,7 +202,9 @@ void AfricanLoopsProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
         fadeGain.setCurrentAndTargetValue(1.f);
     }
     s.playing = looperPlaying;
-    s.hostBeats = hostDrives && hostPpq >= 0 ? hostPpq : -1;
+    // calage sur la position du logiciel hôte : seulement si on joue à son tempo
+    // (sinon les deux tempos diffèrent et la lecture sauterait sans cesse)
+    s.hostBeats = hostDrives && hostPpq >= 0 && !s.presetBPM && std::abs(s.feel - 1.0) < 1e-9 ? hostPpq : -1;
 
     float* L = work.getWritePointer(0);
     float* R = work.getWritePointer(1);
@@ -302,10 +304,20 @@ void AfricanLoopsProcessor::applyFx(juce::AudioBuffer<float>& b) {
 bool AfricanLoopsProcessor::loadAudio(const juce::File& f, Audio& out, juce::String& err) {
     if (!f.existsAsFile()) { err = "Fichier introuvable"; return false; }
     std::string e;
+    // WAV : lu par le moteur (tempo et points de boucle écrits dans le fichier)
     if (f.hasFileExtension("wav;wave") && loadWAV(toUtf8(f), out, e) && out.frames() > 0) return true;
-    juce::AudioFormatManager fm;
-    fm.registerBasicFormats();  // WAV, AIFF, FLAC, Ogg, MP3
-    std::unique_ptr<juce::AudioFormatReader> reader(fm.createReaderFor(f));
+    const bool mp3 = f.hasFileExtension("mp3");
+    std::unique_ptr<juce::AudioFormatReader> reader;
+    if (mp3) {
+        // toujours le décodeur MP3 de JUCE (même comportement sur Windows et Mac) : la
+        // coupe exacte du silence de l'encodeur dépend de lui
+        juce::MP3AudioFormat fmt;
+        if (auto in = f.createInputStream()) reader.reset(fmt.createReaderFor(in.release(), true));
+    } else {
+        juce::AudioFormatManager fm;
+        fm.registerBasicFormats();  // WAV, AIFF, FLAC, Ogg
+        reader.reset(fm.createReaderFor(f));
+    }
     if (!reader) { err = e.empty() ? juce::String("Format non reconnu (WAV ou MP3)") : juce::String::fromUTF8(e.c_str()); return false; }
     const auto maxLen = (juce::int64)(reader->sampleRate * kMaxSeconds);
     const int len = (int)std::min(reader->lengthInSamples, maxLen);
@@ -320,6 +332,22 @@ bool AfricanLoopsProcessor::loadAudio(const juce::File& f, Audio& out, juce::Str
     for (auto* v : {&out.L, &out.R})
         for (auto& x : *v)
             if (!std::isfinite(x)) x = 0;
+    bool exact = false;
+    if (mp3) {  // tempo écrit dans l'étiquette, et silence exact ajouté par l'encodeur
+        juce::MemoryBlock head;
+        if (juce::FileInputStream in(f); in.openedOk()) {
+            head.setSize((size_t)std::min<juce::int64>(in.getTotalLength(), 512 * 1024));
+            in.read(head.getData(), (int)head.getSize());
+            auto* p = static_cast<const uint8_t*>(head.getData());
+            const std::vector<uint8_t> bytes(p, p + head.getSize());
+            out.metaBPM = readMp3Bpm(bytes);
+            const auto gap = readMp3Gapless(bytes);
+            trimMp3(out, gap);  // coupe au échantillon près : boucle sans trou
+            exact = gap.found;
+        }
+    }
+    prepareLoop(out, mp3 && !exact);  // sinon : on retire le silence à l'oreille
+    if (out.frames() == 0) { err = juce::String::fromUTF8("Fichier vide"); return false; }
     return true;
 }
 

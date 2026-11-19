@@ -125,16 +125,20 @@ Tempo detectTempo(const Audio& a, const Analysis& an, const std::vector<Hit>& hi
                 t.beats = (t.beats % 2 == 0) ? t.beats / 2 : 0;
             }
         }
+        // Longueur musicale de la boucle (nombre entier de temps) : elle est
+        // toujours fixée quand le tempo est connu, pour que la boucle tourne sans
+        // trou ni décalage, même si le fichier dure un peu plus ou un peu moins.
         if (dur > 0 && t.bpm > 0 && t.beats == 0) {
-            double b = dur * t.bpm / 60, rb = std::round(b);
-            if (rb >= 1 && std::abs(b - rb) < 0.03 * rb) {
-                t.beats = (int)rb;
-            } else if (b >= 4) {
-                // loop + petite fin qui dépasse (réverbération) : mesures entières
-                double whole = std::floor(b / 4 + 0.03) * 4;
-                if (b - whole <= 2.5) t.beats = (int)whole;
-            } else if (b - std::floor(b) < 0.5 && b >= 1) {
-                t.beats = (int)std::floor(b);
+            const double b = dur * t.bpm / 60, rb = std::round(b);
+            if (rb >= 1 && std::abs(b - rb) < 0.08) {
+                t.beats = (int)rb;  // fichier coupé pile (à moins d'un douzième de temps près)
+            } else if (b >= 3.5) {
+                const double bars = std::round(b / 4) * 4, whole = std::floor(b / 4) * 4;
+                if (bars >= 4 && std::abs(b - bars) <= 1.0) t.beats = (int)bars;   // presque des mesures entières
+                else if (whole >= 4 && b - whole <= 2.5) t.beats = (int)whole;      // + une fin qui dépasse
+                else t.beats = (int)std::max(1.0, rb);                              // sinon : temps entiers
+            } else {
+                t.beats = (int)std::max(1.0, rb);  // loop très courte
             }
         }
         if (t.beats > 0 && t.beats % 4 == 0) t.bars = t.beats / 4;

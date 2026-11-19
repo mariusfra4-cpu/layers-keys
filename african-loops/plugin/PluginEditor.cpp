@@ -432,7 +432,17 @@ BpmDisplay::BpmDisplay(AfricanLoopsProcessor& p) : proc(p) {
     setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
     setMouseDragSensitivity(400);
     setVelocityBasedMode(false);
-    setTooltip(juce::String::fromUTF8("Tempo global : glissez vers le haut ou le bas, double-cliquez pour le taper"));
+    setTooltip(juce::String::fromUTF8("Tempo : glissez vers le haut ou le bas, double-cliquez pour le taper. "
+                                      "PRESET allumé : la loop joue à son propre tempo."));
+    // on règle le tempo alors que la loop joue à son propre tempo : on part de
+    // celui-ci et on passe en tempo global
+    onDragStart = [this] { leavePreset(); };
+}
+
+void BpmDisplay::leavePreset() {
+    if (paramValue(proc, ids::presetBpm) < 0.5f) return;
+    if (auto c = proc.current(); c && c->info.tempo.bpm > 0) setValue(c->info.tempo.bpm, juce::sendNotificationSync);
+    setParam(proc, ids::presetBpm, 0);
 }
 
 void BpmDisplay::paint(juce::Graphics& g) {
@@ -447,13 +457,16 @@ void BpmDisplay::paint(juce::Graphics& g) {
 void BpmDisplay::mouseDoubleClick(const juce::MouseEvent&) {
     if (!isEnabled()) return;
     auto* w = new juce::AlertWindow("Global BPM", juce::String::fromUTF8("Tempo (40 à 240) :"), juce::MessageBoxIconType::NoIcon);
-    w->addTextEditor("bpm", bpmText(getValue()));
+    w->addTextEditor("bpm", bpmText(proc.displayedBPM()));
     w->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
     w->addButton("Annuler", 0, juce::KeyPress(juce::KeyPress::escapeKey));
     juce::Component::SafePointer<BpmDisplay> safe(this);
     w->enterModalState(true, juce::ModalCallbackFunction::create([safe, w](int r) {
                            double v = w->getTextEditorContents("bpm").replaceCharacter(',', '.').getDoubleValue();
-                           if (safe && r == 1 && v >= 40 && v <= 240) safe->setValue(v, juce::sendNotificationSync);
+                           if (safe && r == 1 && v >= 40 && v <= 240) {
+                               safe->leavePreset();
+                               safe->setValue(v, juce::sendNotificationSync);
+                           }
                        }),
                        true);
 }

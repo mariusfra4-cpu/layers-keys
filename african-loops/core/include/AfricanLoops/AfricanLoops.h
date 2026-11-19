@@ -26,8 +26,9 @@ namespace africanloops {
 struct Audio {
     int rate = 44100;
     std::vector<float> L, R;
-    double metaBPM = 0;  // tempo écrit dans le fichier (bloc « acid »), 0 = absent
+    double metaBPM = 0;  // tempo écrit dans le fichier (bloc « acid » du WAV, étiquette BPM du MP3), 0 = absent
     int metaBeats = 0;
+    int loopStart = 0, loopEnd = 0;  // points de boucle écrits dans le WAV (bloc « smpl »), 0 = absents
 
     int frames() const { return (int)L.size(); }
     double seconds() const { return rate > 0 ? (double)L.size() / rate : 0; }
@@ -42,6 +43,25 @@ bool loadWAV(const std::string& path, Audio& out, std::string& error);
 // Fabrique un WAV stéréo 24 bits ; si bpm > 0 le tempo est écrit dans le fichier.
 std::vector<uint8_t> encodeWAV(const Audio& a, double bpm, int beats);
 bool isAudioFile(const std::string& path);  // .wav / .wave / .mp3
+
+// Prépare le son pour une boucle parfaite : garde seulement la zone de boucle
+// écrite dans le fichier, et pour un MP3 retire le petit silence que l'encodeur
+// ajoute toujours au début et à la fin (sinon on entend un trou à chaque tour).
+void prepareLoop(Audio& a, bool fromMp3);
+// Tempo écrit dans l'étiquette d'un MP3 (ID3, champ « TBPM »). 0 = absent.
+double readMp3Bpm(const std::vector<uint8_t>& fileStart);
+
+// Silence ajouté par l'encodeur MP3, écrit dans l'en-tête « Xing / Info » par
+// LAME, FFmpeg et la plupart des encodeurs. found = false si l'en-tête manque.
+struct Mp3Gapless {
+    bool found = false;
+    int delay = 0, padding = 0;  // en échantillons
+    long long frames = 0;        // nombre de blocs MP3 (0 = inconnu)
+};
+Mp3Gapless readMp3Gapless(const std::vector<uint8_t>& fileStart);
+// Coupe un MP3 décodé (décodeur de JUCE, qui ajoute 529 échantillons) exactement
+// à sa longueur d'origine, grâce aux nombres écrits par l'encodeur.
+void trimMp3(Audio& a, const Mp3Gapless& g);
 
 // ---------------------------------------------------------------- tempo
 

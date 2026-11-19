@@ -6,6 +6,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 
 #include <atomic>
+#include <cstdlib>
 #include <cstdio>
 #include <random>
 #include <thread>
@@ -119,7 +120,11 @@ int main(int argc, char** argv) {
         CHECK(waitFor([&] { return !proc->isLoading() && proc->current(); }, 20000), "chargement trop long");
         auto cur = proc->current();
         CHECK(cur && cur->stems.size() >= 3, "%d pistes", cur ? (int)cur->stems.size() : -1);
+        CHECK(proc->params.getRawParameterValue(ids::presetBpm)->load() > 0.5f, "PRESET doit être allumé par défaut");
         setParam(*proc, ids::syncHost, 0);
+        waitFor([] { return false; }, 100);
+        CHECK(std::abs(proc->displayedBPM() - 72) < 0.01, "la loop ne joue pas à son tempo : %.2f", proc->displayedBPM());
+        setParam(*proc, ids::presetBpm, 0);
         setParam(*proc, ids::bpm, 72);
         proc->setPlaying(true);
         waitFor([] { return false; }, 400);
@@ -263,6 +268,42 @@ int main(int argc, char** argv) {
         audio2.reset();
         ed2.reset();
     }
+    // MP3 réels (si fournis) : nom « nom_BPM_TEMPS[_tag].mp3 » → tempo et longueur attendus
+    if (auto* d = std::getenv("AL_TEST_MP3")) {
+        for (const auto& f : juce::File(d).findChildFiles(juce::File::findFiles, false, "*.mp3")) {
+            auto parts = juce::StringArray::fromTokens(f.getFileNameWithoutExtension(), "_", "");
+            const double bpm = parts[1].getDoubleValue();
+            const int beats = parts[2].getIntValue();
+            Audio a;
+            juce::String err;
+            CHECK(AfricanLoopsProcessor::loadAudio(f, a, err), "%s : %s", f.getFileName().toRawUTF8(), err.toRawUTF8());
+            auto info = analyse(a, "loop.mp3");  // nom neutre : le tempo doit venir du son ou de l'étiquette
+            juce::String kinds;
+            for (auto& p : info.percussions) kinds << juce::String(p.kind) << " ";
+            std::printf("%s : %.2f BPM (%s), %d temps, %.3f s, %s\n", f.getFileName().toRawUTF8(), info.tempo.bpm,
+                        info.tempo.source.c_str(), info.tempo.beats, a.seconds(), kinds.toRawUTF8());
+            CHECK(std::abs(info.tempo.bpm - bpm) < 0.05, "%s : tempo %.2f au lieu de %.2f", f.getFileName().toRawUTF8(), info.tempo.bpm, bpm);
+            CHECK(info.tempo.beats == beats, "%s : %d temps au lieu de %d", f.getFileName().toRawUTF8(), info.tempo.beats, beats);
+            CHECK(info.percussions.size() >= 3, "%s : percussions non reconnues", f.getFileName().toRawUTF8());
+            if (parts.contains("tag")) CHECK(info.tempo.source == tempo_source::File, "%s : étiquette BPM ignorée", f.getFileName().toRawUTF8());
+            // boucle : longueur exacte au tempo, pas de trou à la jonction
+            std::vector<Stem> st = separateWith(a, info);
+            Looper l(44100);
+            l.load(info, st);
+            l.setPresetBPM(true);
+            const double want = beats * 60.0 / bpm * 44100;
+            CHECK(std::abs(l.loopLength() - want) < 3, "%s : boucle %.0f au lieu de %.0f", f.getFileName().toRawUTF8(), l.loopLength(), want);
+            // énergie juste avant et juste après la jonction : pas de silence (trou)
+            l.play();
+            std::vector<float> L((size_t)want + 4410), R(L.size());
+            l.render(L.data(), R.data(), (int)L.size());
+            double endE = 0, startE = 0;
+            for (int i = (int)want - 2205; i < (int)want; ++i) endE += L[(size_t)i] * L[(size_t)i];
+            for (int i = (int)want; i < (int)want + 2205; ++i) startE += L[(size_t)i] * L[(size_t)i];
+            CHECK(startE > 1e-3, "%s : trou au début du 2e tour", f.getFileName().toRawUTF8());
+        }
+    }
+
     dir.deleteRecursively();
     if (failures) {
         std::printf("%d test(s) du plugin en échec\n", failures);
