@@ -41,6 +41,9 @@ constexpr double kMaxSeconds = 300;
 // Lit un WAV (PCM 8/16/24/32 bits, flottant 32/64 bits). Renvoie false + message d'erreur.
 bool parseWAV(const std::vector<uint8_t>& bytes, Audio& out, std::string& error);
 bool loadWAV(const std::string& path, Audio& out, std::string& error);
+// « WAV » qui contient en fait du MP3 (fréquent dans les packs téléchargés) :
+// position et taille du MP3 à l'intérieur.
+bool wavMp3Payload(const std::vector<uint8_t>& wavFile, size_t& offset, size_t& length);
 // Fabrique un WAV stéréo 24 bits ; si bpm > 0 le tempo est écrit dans le fichier.
 std::vector<uint8_t> encodeWAV(const Audio& a, double bpm, int beats);
 bool isAudioFile(const std::string& path);  // .wav / .wave / .mp3
@@ -60,6 +63,10 @@ struct Mp3Gapless {
     long long frames = 0;        // nombre de blocs MP3 (0 = inconnu)
 };
 Mp3Gapless readMp3Gapless(const std::vector<uint8_t>& fileStart);
+// Position du premier vrai bloc de son d'un MP3, après toutes les étiquettes
+// (pochette, titre… même plusieurs à la suite) et les octets parasites.
+// Renvoie SIZE_MAX si aucun son n'est trouvé.
+size_t mp3AudioStart(const std::vector<uint8_t>& file);
 // Coupe un MP3 décodé (décodeur de JUCE, qui ajoute 529 échantillons) exactement
 // à sa longueur d'origine, grâce aux nombres écrits par l'encodeur.
 void trimMp3(Audio& a, const Mp3Gapless& g);

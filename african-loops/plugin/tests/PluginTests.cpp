@@ -79,6 +79,9 @@ int main(int argc, char** argv) {
     writeLoop(dir.getChildFile("Afrobeats/Lagos Street.wav"), 104, 4, 4);
     writeLoop(dir.getChildFile("coupe-decale groove.wav"), 128, 4, 5);
     dir.getChildFile("I Love/abime.wav").replaceWithText("pas un vrai fichier audio");
+    // petits fichiers cachés créés par les Mac : ignorés, jamais « illisibles »
+    dir.getChildFile("Worship/._Praise Drums.wav").replaceWithText("Mac OS X        ATTR");
+    dir.getChildFile("__MACOSX/Worship/._Praise Drums.wav").create();
 
     {
         auto proc = std::make_unique<AfricanLoopsProcessor>();
@@ -310,16 +313,40 @@ int main(int argc, char** argv) {
         audio3.reset();
     }
 
+    // fichiers abîmés (si fournis) : jamais de plantage, juste « illisible » ou un son partiel
+    if (auto* d = std::getenv("AL_TEST_BROKEN")) {
+        int ok = 0, refused = 0;
+        for (const auto& f : juce::File(d).findChildFiles(juce::File::findFiles, false, "*")) {
+            Audio a;
+            juce::String err;
+            if (AfricanLoopsProcessor::loadAudio(f, a, err)) {
+                auto info = analyse(a, f.getFileName().toStdString());
+                auto stems = separateWith(a, info);
+                Looper l(44100);
+                l.load(info, stems);
+                l.play();
+                std::vector<float> L(8192), R(8192);
+                l.render(L.data(), R.data(), 8192);
+                for (float v : L) CHECK(std::isfinite(v), "%s : son invalide", f.getFileName().toRawUTF8());
+                ++ok;
+            } else {
+                CHECK(err.isNotEmpty(), "%s : refusé sans raison", f.getFileName().toRawUTF8());
+                ++refused;
+            }
+        }
+        std::printf("fichiers abîmés : %d lus en partie, %d refusés proprement, aucun plantage\n", ok, refused);
+    }
+
     // MP3 réels (si fournis) : nom « nom_BPM_TEMPS[_tag].mp3 » → tempo et longueur attendus
     if (auto* d = std::getenv("AL_TEST_MP3")) {
-        for (const auto& f : juce::File(d).findChildFiles(juce::File::findFiles, false, "*.mp3")) {
+        for (const auto& f : juce::File(d).findChildFiles(juce::File::findFiles, false, "*.mp3;*.wav")) {
             auto parts = juce::StringArray::fromTokens(f.getFileNameWithoutExtension(), "_", "");
             const double bpm = parts[1].getDoubleValue();
             const int beats = parts[2].getIntValue();
             Audio a;
             juce::String err;
             CHECK(AfricanLoopsProcessor::loadAudio(f, a, err), "%s : %s", f.getFileName().toRawUTF8(), err.toRawUTF8());
-            auto info = analyse(a, "loop.mp3");  // nom neutre : le tempo doit venir du son ou de l'étiquette
+            auto info = analyse(a, "loop.wav");  // nom neutre : le tempo doit venir du son ou de l'étiquette
             juce::String kinds;
             for (auto& p : info.percussions) kinds << juce::String(p.kind) << " ";
             std::printf("%s : %.2f BPM (%s), %d temps, %.3f s, %s\n", f.getFileName().toRawUTF8(), info.tempo.bpm,

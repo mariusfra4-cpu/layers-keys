@@ -53,6 +53,7 @@ private:
     void paintListBoxItem(int row, juce::Graphics&, int w, int h, bool selected) override;
     void listBoxItemClicked(int row, const juce::MouseEvent&) override;
     void returnKeyPressed(int row) override { loadRow(row); }
+    juce::String getTooltipForRow(int row) override;
     void selectedRowsChanged(int row) override;
 
     void rebuildLoops();

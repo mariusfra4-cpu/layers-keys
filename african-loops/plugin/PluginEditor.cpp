@@ -261,7 +261,7 @@ void BrowserPanel::paintListBoxItem(int row, juce::Graphics& g, int w, int h, bo
     g.drawText(name, 8, 0, w - chipsW - bpmW - 14, h, juce::Justification::centredLeft, true);
     if (bad) {
         g.setFont(ui::font(10.f));
-        g.drawText(juce::String::fromUTF8("illisible"), w - chipsW - 4, 0, chipsW, h, juce::Justification::centredRight);
+        g.drawText(juce::String::fromUTF8("illisible (survoler)"), w - chipsW - 4, 0, chipsW, h, juce::Justification::centredRight);
         return;
     }
     ui::drawGlowText(g, bpmText(e.info.tempo.bpm), juce::Rectangle<float>((float)(w - chipsW - bpmW - 6), 0, (float)bpmW, (float)h),
@@ -280,6 +280,13 @@ void BrowserPanel::paintListBoxItem(int row, juce::Graphics& g, int w, int h, bo
         g.drawText(shortName, r, juce::Justification::centred);
         x += cw + 3;
     }
+}
+
+juce::String BrowserPanel::getTooltipForRow(int row) {
+    if (row < 0 || row >= (int)rows.size()) return {};
+    const Entry& e = *rows[(size_t)row];
+    if (!e.error.empty()) return juce::String::fromUTF8("Illisible : ") + juce::String::fromUTF8(e.error.c_str());
+    return juce::String::fromUTF8(e.path.c_str());
 }
 
 void BrowserPanel::loadRow(int row) {

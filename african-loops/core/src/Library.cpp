@@ -319,10 +319,11 @@ bool Library::scan(const std::string& rootIn, Library& lib, std::string& error, 
         const auto& de = *it;
         std::string name = toUtf8(de.path().filename());
         if (de.is_directory(ec)) {
-            if (!name.empty() && name[0] == '.') it.disable_recursion_pending();
+            if (!name.empty() && (name[0] == '.' || name == "__MACOSX")) it.disable_recursion_pending();
             continue;
         }
-        if (!isAudioFile(name)) continue;
+        // « ._Groove.wav » : petit fichier caché créé par les Mac à côté de chaque loop, sans son
+        if (!isAudioFile(name) || name.rfind("._", 0) == 0) continue;
         Entry e;
         e.path = toUtf8(fs::relative(de.path(), root, ec));
         e.category = categoryOf(e.path);

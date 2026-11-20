@@ -197,8 +197,10 @@ Tempo detectTempo(const Audio& a, const Analysis& an, const std::vector<Hit>& hi
                 return finish(make(nameBPM, (int)rb, tempo_source::Name, 0.9));
         }
         if (candBPM > 0 && (bestS <= 0 || candS >= 0.7 * bestS)) {
+            // presque toutes les loops sont faites à un tempo entier : quelques
+            // millisecondes en trop dans le fichier ne doivent pas donner 87,82 au lieu de 88
             double bpm = candBPM, r = std::round(bpm);
-            bpm = std::abs(bpm - r) < 0.02 ? r : std::round(bpm * 100) / 100;
+            bpm = std::abs(bpm - r) / bpm < 0.006 ? r : std::round(bpm * 100) / 100;
             double c = 0.6 + 0.4 * conf;
             if (bestS > 0 && std::abs(candBPM - best) / best < 0.02) c = std::max(c, 0.9);  // d'accord
             return finish(make(bpm, candBeats, tempo_source::Length, clamp01(c)));
@@ -207,7 +209,7 @@ Tempo detectTempo(const Audio& a, const Analysis& an, const std::vector<Hit>& hi
     if (bestS <= 0) return Tempo{};
     // 5. coups seuls (loop mal coupée)
     double bpm = std::round(best * 10) / 10, r = std::round(bpm);
-    if (std::abs(bpm - r) <= 0.3) bpm = r;
+    if (std::abs(bpm - r) <= std::max(0.3, 0.006 * bpm)) bpm = r;
     return finish(make(bpm, 0, tempo_source::Analysis, conf * 0.8));
 }
 

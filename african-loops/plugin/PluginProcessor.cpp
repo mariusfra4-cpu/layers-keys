@@ -346,54 +346,112 @@ void AfricanLoopsProcessor::applyFx(juce::AudioBuffer<float>& b) {
 
 // ------------------------------------------------------------------ chargement
 
-bool AfricanLoopsProcessor::loadAudio(const juce::File& f, Audio& out, juce::String& err) {
-    if (!f.existsAsFile()) { err = "Fichier introuvable"; return false; }
-    std::string e;
-    // WAV : lu par le moteur (tempo et points de boucle écrits dans le fichier)
-    if (f.hasFileExtension("wav;wave") && loadWAV(toUtf8(f), out, e) && out.frames() > 0) return true;
-    const bool mp3 = f.hasFileExtension("mp3");
-    std::unique_ptr<juce::AudioFormatReader> reader;
-    if (mp3) {
-        // toujours le décodeur MP3 de JUCE (même comportement sur Windows et Mac) : la
-        // coupe exacte du silence de l'encodeur dépend de lui
-        juce::MP3AudioFormat fmt;
-        if (auto in = f.createInputStream()) reader.reset(fmt.createReaderFor(in.release(), true));
-    } else {
-        juce::AudioFormatManager fm;
-        fm.registerBasicFormats();  // WAV, AIFF, FLAC, Ogg
-        reader.reset(fm.createReaderFor(f));
+namespace {
+// MP3 en mémoire (fichier .mp3, ou MP3 caché dans un .wav) → son prêt à boucler.
+bool decodeMp3(const uint8_t* p, size_t size, Audio& out, juce::String& err) {
+    const std::vector<uint8_t> bytes(p, p + size);
+    // le son commence après les étiquettes (pochette, titre…, parfois plusieurs) : on
+    // l'y prend directement, sinon le décodeur ajoute du silence ou abandonne
+    const size_t start = mp3AudioStart(bytes);
+    if (start == SIZE_MAX) {
+        err = juce::String::fromUTF8("ce MP3 ne contient pas de son lisible (fichier abîmé ou mal nommé)");
+        return false;
     }
-    if (!reader) { err = e.empty() ? juce::String("Format non reconnu (WAV ou MP3)") : juce::String::fromUTF8(e.c_str()); return false; }
+    // toujours le décodeur MP3 de JUCE (même comportement sur Windows et Mac) : la
+    // coupe exacte du silence de l'encodeur dépend de lui
+    juce::MP3AudioFormat fmt;
+    std::unique_ptr<juce::AudioFormatReader> reader(
+        fmt.createReaderFor(new juce::MemoryInputStream(p + start, size - start, false), true));
+    if (!reader) {
+        err = juce::String::fromUTF8("le décodeur MP3 n'arrive pas à lire ce fichier");
+        return false;
+    }
     const auto maxLen = (juce::int64)(reader->sampleRate * kMaxSeconds);
     const int len = (int)std::min(reader->lengthInSamples, maxLen);
-    if (len <= 0 || reader->sampleRate < 1000) { err = juce::String::fromUTF8("Fichier vide ou abîmé"); return false; }
-    juce::AudioBuffer<float> buf((int)std::max(1u, std::min(2u, reader->numChannels)), len);
-    if (!reader->read(&buf, 0, len, 0, true, true)) { err = "Lecture impossible"; return false; }
+    if (len <= 0 || reader->sampleRate < 1000) { err = juce::String::fromUTF8("MP3 vide ou abîmé"); return false; }
+    // lecture par morceaux : pour certains MP3 (22 kHz…), la longueur annoncée est
+    // fausse ; on garde tout ce qui se lit vraiment
     out = Audio{};
     out.rate = (int)std::lround(reader->sampleRate);
-    out.L.assign(buf.getReadPointer(0), buf.getReadPointer(0) + len);
-    const float* r = buf.getReadPointer(buf.getNumChannels() > 1 ? 1 : 0);
-    out.R.assign(r, r + len);
+    out.L.reserve((size_t)len);
+    out.R.reserve((size_t)len);
+    const int chans = (int)std::max(1u, std::min(2u, reader->numChannels));
+    juce::AudioBuffer<float> buf(chans, 16384);
+    for (int pos = 0; pos < len;) {
+        const int n = std::min(16384, len - pos);
+        if (!reader->read(&buf, 0, n, pos, true, true)) break;
+        out.L.insert(out.L.end(), buf.getReadPointer(0), buf.getReadPointer(0) + n);
+        const float* r = buf.getReadPointer(chans > 1 ? 1 : 0);
+        out.R.insert(out.R.end(), r, r + n);
+        pos += n;
+    }
+    if (out.frames() == 0) { err = juce::String::fromUTF8("lecture du MP3 impossible"); return false; }
     for (auto* v : {&out.L, &out.R})
         for (auto& x : *v)
             if (!std::isfinite(x)) x = 0;
-    bool exact = false;
-    if (mp3) {  // tempo écrit dans l'étiquette, et silence exact ajouté par l'encodeur
-        juce::MemoryBlock head;
-        if (juce::FileInputStream in(f); in.openedOk()) {
-            head.setSize((size_t)std::min<juce::int64>(in.getTotalLength(), 512 * 1024));
-            in.read(head.getData(), (int)head.getSize());
-            auto* p = static_cast<const uint8_t*>(head.getData());
-            const std::vector<uint8_t> bytes(p, p + head.getSize());
-            out.metaBPM = readMp3Bpm(bytes);
-            const auto gap = readMp3Gapless(bytes);
-            trimMp3(out, gap);  // coupe au échantillon près : boucle sans trou
-            exact = gap.found;
+    out.metaBPM = readMp3Bpm(bytes);  // tempo écrit dans l'étiquette
+    auto gap = readMp3Gapless(bytes);
+    if (!gap.found) {
+        // pas de chiffres écrits par l'encodeur (MP3 dans un WAV, vieux encodeurs) : le
+        // retard habituel est de 576 échantillons ; on le retire s'il ne contient presque rien
+        float peak = 0, head = 0;
+        for (size_t i = 0; i < out.L.size(); ++i) {
+            const float v = std::max(std::abs(out.L[i]), std::abs(out.R[i]));
+            peak = std::max(peak, v);
+            if (i < 1105) head = std::max(head, v);
+        }
+        if (out.frames() > 4 * 1105 && head < 0.03f * peak) {
+            gap.found = true;
+            gap.delay = 576;
         }
     }
-    prepareLoop(out, mp3 && !exact);  // sinon : on retire le silence à l'oreille
-    if (out.frames() == 0) { err = juce::String::fromUTF8("Fichier vide"); return false; }
+    trimMp3(out, gap);  // silence de l'encodeur coupé à l'échantillon près : boucle sans trou
+    prepareLoop(out, !gap.found);  // sinon : on le retire à l'oreille
+    if (out.frames() == 0) { err = juce::String::fromUTF8("MP3 vide"); return false; }
     return true;
+}
+}  // namespace
+
+bool AfricanLoopsProcessor::loadAudio(const juce::File& f, Audio& out, juce::String& err) {
+    if (!f.existsAsFile()) { err = juce::String::fromUTF8("fichier introuvable"); return false; }
+    if (f.getSize() > 400 * 1024 * 1024) { err = juce::String::fromUTF8("fichier trop gros pour une loop"); return false; }
+    juce::MemoryBlock data;
+    if (!f.loadFileAsData(data) || data.getSize() == 0) { err = juce::String::fromUTF8("impossible d'ouvrir le fichier"); return false; }
+    auto* p = static_cast<const uint8_t*>(data.getData());
+    if (f.hasFileExtension("mp3")) return decodeMp3(p, data.getSize(), out, err);
+
+    // WAV : lu par le moteur (tempo et points de boucle écrits dans le fichier, PCM,
+    // flottant, A-law, µ-law, ADPCM)
+    std::string e;
+    const std::vector<uint8_t> bytes(p, p + data.getSize());
+    if (parseWAV(bytes, out, e) && out.frames() > 0) {
+        prepareLoop(out, false);
+        return true;
+    }
+    // « WAV » qui contient en fait du MP3
+    size_t off = 0, len = 0;
+    if (wavMp3Payload(bytes, off, len) && decodeMp3(p + off, len, out, err)) return true;
+    // dernier essai : les lecteurs de JUCE (RF64, AIFF mal nommé…)
+    juce::AudioFormatManager fm;
+    fm.registerBasicFormats();
+    std::unique_ptr<juce::AudioFormatReader> reader(fm.createReaderFor(std::make_unique<juce::MemoryInputStream>(data, false)));
+    if (!reader || reader->lengthInSamples <= 0 || reader->sampleRate < 1000) {
+        err = e.empty() ? juce::String::fromUTF8("format non reconnu (WAV ou MP3)") : juce::String::fromUTF8(e.c_str());
+        return false;
+    }
+    const int n = (int)std::min(reader->lengthInSamples, (juce::int64)(reader->sampleRate * kMaxSeconds));
+    juce::AudioBuffer<float> buf((int)std::max(1u, std::min(2u, reader->numChannels)), n);
+    if (!reader->read(&buf, 0, n, 0, true, true)) { err = juce::String::fromUTF8("lecture impossible"); return false; }
+    out = Audio{};
+    out.rate = (int)std::lround(reader->sampleRate);
+    out.L.assign(buf.getReadPointer(0), buf.getReadPointer(0) + n);
+    const float* r = buf.getReadPointer(buf.getNumChannels() > 1 ? 1 : 0);
+    out.R.assign(r, r + n);
+    for (auto* v : {&out.L, &out.R})
+        for (auto& x : *v)
+            if (!std::isfinite(x)) x = 0;
+    prepareLoop(out, false);
+    return out.frames() > 0;
 }
 
 void AfricanLoopsProcessor::loadLoopAsync(const juce::File& file) {
