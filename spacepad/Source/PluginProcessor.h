@@ -117,6 +117,16 @@ public:
     void waitIdleForTests (int ms);          // tests : attendre que les chargements soient faits
     void runControlForTests();               // tests : exécuter tout de suite les commandes MIDI en attente
 
+    // Enregistrement dans le logiciel de musique : chaque action (tonalité, mode, jouer, chant, crowds) est aussi un
+    // paramètre automatisable. Pendant l'enregistrement, Ableton garde les clics ; à la lecture, il les rejoue.
+    struct AutoScope
+    {
+        explicit AutoScope (SpacepadProcessor& pp) : p (pp), sl (pp.autoLock) { ++p.autoDepth; }
+        ~AutoScope() { if (--p.autoDepth == 0) p.pushAuto(); }
+        SpacepadProcessor& p;
+        const juce::ScopedLock sl;
+    };
+
 private:
     static juce::AudioProcessorValueTreeState::ParameterLayout createLayout();
     void run() override;                     // fil de commande : chargements, MIDI, relecture des fichiers communs
@@ -132,6 +142,11 @@ private:
     void applyCrowdFx (int slot, const CrowdPrefs::Fx&);
     void newCrowdSound (int slot);
     void trackCrowdFx();
+    void pushAuto();                         // l'état actuel → paramètres (le logiciel de musique l'enregistre)
+    void pullAuto();                         // paramètres changés par le logiciel de musique (lecture de l'automation) → actions
+    void setAuto (const char* id, float realValue);
+    juce::CriticalSection autoLock;
+    int autoDepth = 0, lastSongParam = 0;
     float p (const char* id) const { return params.getRawParameterValue (id)->load(); }
     float p (const juce::String& id) const { return params.getRawParameterValue (id)->load(); }
     void setParam (const char* id, float realValue);

@@ -1584,6 +1584,55 @@ static void testWavFormats (const juce::File& tmp)
     CHECK (again.find (makeLibraryId (d2.getFullPathName())) == nullptr, "suppression enregistree (application et plugin)");
 }
 
+static void testAutomation (const juce::File& root)
+{
+    section ("Enregistrement dans le logiciel de musique (automation)");
+    juce::ignoreUnused (root);
+    SpacepadProcessor p;
+    p.setPlayConfigDetails (0, 2, 48000, 256);
+    p.prepareToPlay (48000, 256);
+    juce::String warm, crowdId;
+    for (auto& l : p.libraries().snapshot()) { if (l.name == "Warm Pad") warm = l.id; if (l.type == LibType::Crowd && l.name == "Mes Crowds") crowdId = l.id; }
+    p.selectPadLibrary (warm, 0); p.selectPadLibrary (warm, 1);
+    auto val = [&] (const char* id) { return p.params.getRawParameterValue (id)->load(); };
+    // un clic à l'écran devient une valeur de paramètre (Ableton l'enregistre)
+    p.setMode (0);
+    p.pressKey (7);
+    CHECK (juce::roundToInt (val ("a_key")) == 7 && val ("a_play") > 0.5f && juce::roundToInt (val ("a_mode")) == 0, "un clic sur G majeur est enregistrable (tonalite, mode, jouer)");
+    p.playCrowd (crowdId, 1, 0);
+    CHECK (val ("a_c1") > 0.5f && juce::roundToInt (val ("a_c1snd")) == 2, "jouer un crowd est enregistrable (son 2 dans le Crowd 1)");
+    // à la lecture : le logiciel de musique rejoue les valeurs
+    auto host = [&] (const char* id, float real) { auto* prm = p.params.getParameter (id); prm->setValueNotifyingHost (prm->convertTo0to1 (real)); p.runControlForTests(); };
+    host ("a_key", 2);
+    CHECK (p.currentKey() == 2 && p.padActive(), "lecture : la tonalite passe en D, le pad continue");
+    host ("a_mode", 1);
+    CHECK (p.currentMode() == 1, "lecture : passage en mineur");
+    host ("a_play", 0);
+    CHECK (! p.padActive(), "lecture : le pad s'arrete");
+    host ("a_play", 1);
+    CHECK (p.padActive() && p.currentKey() == 2, "lecture : le pad repart en Dm");
+    host ("a_c1", 0);
+    CHECK (p.crowdSoundIndex (0) < 0, "lecture : le crowd 1 s'arrete");
+    host ("a_c1snd", 3); host ("a_c1", 1);
+    CHECK (p.crowdSoundIndex (0) == 2 && p.crowdLibraryId (0) == crowdId, "lecture : le crowd 1 rejoue le son 3");
+    while (! p.setlist().songs().empty()) p.setlist().remove (0);
+    p.setMode (0); p.pressKey (9); p.addSongFromCurrent ("A");
+    p.setMode (1); p.pressKey (4); p.addSongFromCurrent ("B");
+    host ("a_song", 1);
+    CHECK (p.setlist().current() == 0 && p.currentKey() == 9 && p.currentMode() == 0, "lecture : le chant 1 de la setlist revient (chant " << p.setlist().current() << ", " << p.currentKey() << "/" << p.currentMode() << ")");
+    host ("a_song", 2);
+    CHECK (p.setlist().current() == 1 && p.currentKey() == 4 && p.currentMode() == 1, "lecture : le chant 2 de la setlist revient");
+    // projet rouvert : le pad ne démarre pas tout seul
+    juce::MemoryBlock st;
+    p.getStateInformation (st);
+    SpacepadProcessor q;
+    q.setStateInformation (st.getData(), (int) st.getSize());
+    q.runControlForTests();
+    CHECK (! q.padActive() && q.currentKey() == 4, "projet rouvert : meme tonalite, le pad attend (pas de depart tout seul)");
+    while (! p.setlist().songs().empty()) p.setlist().remove (0);
+    p.stopAll();
+}
+
 int main (int argc, char** argv)
 {
     juce::ScopedJuceInitialiser_GUI gui;
@@ -1609,6 +1658,7 @@ int main (int argc, char** argv)
     testNewFeatures (root, tmp);
     testCrowdFx (root);
     testWavFormats (tmp);
+    testAutomation (root);
     if (argc > 1) snapshot (juce::File (juce::String (argv[1])), root);
     if (juce::SystemStats::getEnvironmentVariable ("SPACEPAD_BENCH", {}).isNotEmpty()) benchPaint (root);
    #if ! JUCE_WINDOWS

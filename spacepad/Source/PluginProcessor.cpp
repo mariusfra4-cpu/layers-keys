@@ -51,6 +51,17 @@ juce::AudioProcessorValueTreeState::ParameterLayout SpacepadProcessor::createLay
     l.add (std::make_unique<APB> (juce::ParameterID { "swell", 1 }, "Swell", false));
     l.add (std::make_unique<APB> (juce::ParameterID { "crowdlink", 1 }, "Crowd lie au pad", false));
     l.add (std::make_unique<APB> (juce::ParameterID { "crowdfollow", 1 }, "Crowd suit la tonalite", true));
+    // actions enregistrables par le logiciel de musique (automation)
+    l.add (std::make_unique<juce::AudioParameterChoice> (juce::ParameterID { "a_key", 1 }, "Tonalite", juce::StringArray { "C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B" }, 4));
+    l.add (std::make_unique<juce::AudioParameterChoice> (juce::ParameterID { "a_mode", 1 }, "Majeur / mineur", juce::StringArray { "Majeur", "Mineur" }, 1));
+    l.add (std::make_unique<APB> (juce::ParameterID { "a_play", 1 }, "Pad joue", false));
+    l.add (std::make_unique<juce::AudioParameterInt> (juce::ParameterID { "a_song", 1 }, "Chant de la setlist", 0, 200, 0));
+    for (int s = 0; s < 2; ++s)
+    {
+        const auto pre = "Crowd " + juce::String (s + 1);
+        l.add (std::make_unique<APB> (juce::ParameterID { "a_c" + juce::String (s + 1), 1 }, pre + " joue", false));
+        l.add (std::make_unique<juce::AudioParameterInt> (juce::ParameterID { "a_c" + juce::String (s + 1) + "snd", 1 }, pre + " son", 0, 999, 0));
+    }
     // volume général (Master), en dB : -60 dB = muet, +6 dB au plus
     l.add (std::make_unique<APF> (juce::ParameterID { "master", 1 }, "Master", juce::NormalisableRange<float> (-60.0f, 6.0f, 0.1f, 2.2f), 0.0f,
                                   juce::AudioParameterFloatAttributes().withStringFromValueFunction ([] (float v, int)
@@ -479,6 +490,7 @@ void SpacepadProcessor::selectPadLibraryB (const juce::String& id, int mode)
 
 void SpacepadProcessor::pressKey (int key)
 {
+    AutoScope automation (*this);
     key = ((key % 12) + 12) % 12;
     if (padOn && key == keyNow.load())
     {
@@ -495,6 +507,7 @@ void SpacepadProcessor::pressKey (int key)
 
 void SpacepadProcessor::setMode (int mode)
 {
+    AutoScope automation (*this);
     mode = mode == 1 ? 1 : 0;
     if (modeNow.exchange (mode) == mode) return;
     if (padOn) startPadKey (keyNow, mode, false);
@@ -503,6 +516,7 @@ void SpacepadProcessor::setMode (int mode)
 
 void SpacepadProcessor::playPad()
 {
+    AutoScope automation (*this);
     if (padOn) return;
     padOn = true;
     startPadKey (keyNow, modeNow, true);
@@ -512,6 +526,7 @@ void SpacepadProcessor::playPad()
 
 void SpacepadProcessor::stopPad()
 {
+    AutoScope automation (*this);
     padOn = false;
     ++generation;
     const float t = juce::jmax (0.3f, p ("xfade") * 0.5f);
@@ -522,6 +537,7 @@ void SpacepadProcessor::stopPad()
 
 void SpacepadProcessor::fadeOutAll()
 {
+    AutoScope automation (*this);
     const float t = juce::jlimit (1.0f, 30.0f, uiSettings().fadeSeconds);
     padOn = false;
     ++generation;
@@ -530,6 +546,7 @@ void SpacepadProcessor::fadeOutAll()
 
 void SpacepadProcessor::stopAll()
 {
+    AutoScope automation (*this);
     stopPad();
     stopCrowd();
 }
@@ -585,6 +602,7 @@ void SpacepadProcessor::retransposeCrowds()
 
 void SpacepadProcessor::playCrowd (const juce::String& libId, int index, int slot)
 {
+    AutoScope automation (*this);
     slot &= 1;
     if (crowd[slot].isPlaying() && crowdIdx[slot].load() == index && crowdLibraryId (slot) == libId)
     {
@@ -603,6 +621,7 @@ void SpacepadProcessor::playCrowd (const juce::String& libId, int index, int slo
 
 void SpacepadProcessor::stopCrowd (int slot)
 {
+    AutoScope automation (*this);
     slot &= 1;
     crowdIdx[slot] = -1;
     crowd[slot].stop (p (crowdParam (slot, "fade")));
@@ -629,11 +648,12 @@ Song SpacepadProcessor::captureSong (const juce::String& name) const
     return s;
 }
 
-void SpacepadProcessor::addSongFromCurrent (const juce::String& name) { songs.add (captureSong (name)); }
-void SpacepadProcessor::updateSongFromCurrent (int index) { songs.update (index, captureSong ({})); }
+void SpacepadProcessor::addSongFromCurrent (const juce::String& name) { AutoScope automation (*this); songs.add (captureSong (name)); }
+void SpacepadProcessor::updateSongFromCurrent (int index) { AutoScope automation (*this); songs.update (index, captureSong ({})); }
 
 void SpacepadProcessor::gotoSong (int index)
 {
+    AutoScope automation (*this);
     auto list = songs.songs();
     if (index < 0 || index >= (int) list.size()) return;
     const auto& s = list[(size_t) index];
@@ -680,6 +700,74 @@ void SpacepadProcessor::prevSong()
 // ---------------------------------------------------------------------------------------------
 // Fil de commande
 // ---------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------
+// Automation : enregistrer et rejouer les actions dans le logiciel de musique
+// ---------------------------------------------------------------------------------------------
+void SpacepadProcessor::setAuto (const char* id, float v)
+{
+    auto* prm = params.getParameter (id);
+    if (prm == nullptr) return;
+    const float n = prm->convertTo0to1 (v);
+    if (std::abs (prm->getValue() - n) < 1e-4f) return;
+    prm->beginChangeGesture();               // geste : Ableton enregistre le changement pendant l'enregistrement
+    prm->setValueNotifyingHost (n);
+    prm->endChangeGesture();
+}
+
+void SpacepadProcessor::pushAuto()
+{
+    setAuto ("a_key", (float) keyNow.load());
+    setAuto ("a_mode", (float) modeNow.load());
+    setAuto ("a_play", padOn.load() ? 1.0f : 0.0f);
+    setAuto ("a_song", (float) (songs.current() + 1));
+    lastSongParam = juce::roundToInt (p ("a_song"));
+    for (int s = 0; s < 2; ++s)
+    {
+        const auto id = "a_c" + juce::String (s + 1);
+        const int idx = crowdIdx[s].load();
+        setAuto (id.toRawUTF8(), idx >= 0 ? 1.0f : 0.0f);
+        if (idx >= 0) setAuto ((id + "snd").toRawUTF8(), (float) (idx + 1));
+    }
+}
+
+void SpacepadProcessor::pullAuto()
+{
+    // chant d'abord (il règle la tonalité, le mode, les pads et les crowds)
+    // (le chant réagit au changement de la valeur : rejouer « chant 1 » le rappelle même s'il était déjà le chant en cours)
+    const int song = juce::roundToInt (p ("a_song"));
+    if (song != lastSongParam)
+    {
+        lastSongParam = song;
+        if (song > 0 && song - 1 < (int) songs.songs().size())
+        {
+            gotoSong (song - 1);
+            pushAuto();      // la tonalité, le mode et les crowds du chant deviennent les valeurs à jour
+            return;
+        }
+    }
+    const int m = juce::roundToInt (p ("a_mode"));
+    if (m != modeNow.load()) setMode (m);
+    const int k = juce::jlimit (0, 11, juce::roundToInt (p ("a_key")));
+    if (k != keyNow.load())
+    {
+        keyNow = k;
+        if (padOn) startPadKey (k, modeNow, false);
+        else retransposeCrowds();
+    }
+    const bool play = p ("a_play") > 0.5f;
+    if (play && ! padOn.load()) playPad();
+    if (! play && padOn.load()) stopPad();
+    for (int s = 0; s < 2; ++s)
+    {
+        const auto id = "a_c" + juce::String (s + 1);
+        const bool on = p (id) > 0.5f;
+        const int snd = juce::roundToInt (p (id + "snd")) - 1;
+        const int idx = crowdIdx[s].load();
+        if (on && snd >= 0 && snd != idx) playCrowd (crowdLibraryId (s), snd, s);
+        else if (! on && idx >= 0) stopCrowd (s);
+    }
+}
+
 void SpacepadProcessor::waitIdleForTests (int ms)
 {
     auto end = juce::Time::getMillisecondCounter() + (juce::uint32) ms;
@@ -691,6 +779,8 @@ void SpacepadProcessor::runControlForTests() { controlStep(); trackCrowdFx(); }
 
 void SpacepadProcessor::controlStep()
 {
+    AutoScope automation (*this);
+    pullAuto();
     if (settingsVersion() != lastSettingsVersion) refreshMidiSettings();
     // apprentissage : la prochaine pédale / le prochain bouton touché est assigné à l'action choisie
     const int code = learnedCode.exchange (-1);
@@ -788,6 +878,7 @@ void SpacepadProcessor::setStateInformation (const void* data, int size)
     {
         auto state = juce::ValueTree::fromXml (*xml);
         if (! state.isValid() || ! state.hasType (params.state.getType())) return;
+        AutoScope automation (*this);     // après chargement : les paramètres reprennent l'état réel (le pad ne part pas tout seul)
         params.replaceState (state);
         {
             const juce::ScopedLock sl (stateLock);
