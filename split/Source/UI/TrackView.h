@@ -65,7 +65,7 @@ private:
     int lastPlayheadX = -1;
     bool dragOver = false;
 
-    static constexpr int headerWidth = 290;
+    static constexpr int headerWidth = 270;
     static constexpr int overviewH = 96;
     static constexpr int rulerH = 22;
 };

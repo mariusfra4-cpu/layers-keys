@@ -118,9 +118,17 @@ LayersSplitEditor::LayersSplitEditor (LayersSplitProcessor& p) : AudioProcessorE
     for (auto* b : { &expAll, &expAcapella, &expInst, &expKaraoke, &expMix, &expFolder })
         addAndMakeVisible (*b);
 
+    // taille adaptée à l'écran (portables 1366 x 768 compris)
+    int w = 1400, h = 840;
+    if (auto* disp = juce::Desktop::getInstance().getDisplays().getPrimaryDisplay())
+    {
+        const auto area = disp->userArea;
+        w = juce::jlimit (940, 1400, area.getWidth() - 40);
+        h = juce::jlimit (600, 840, area.getHeight() - 70);
+    }
     setResizable (true, true);
-    setResizeLimits (1080, 700, 3200, 2000);
-    setSize (1400, 840);
+    setResizeLimits (940, 600, 3200, 2000);
+    setSize (w, h);
     setWantsKeyboardFocus (true);
 
     proc.addChangeListener (this);
@@ -220,7 +228,7 @@ juce::Rectangle<int> LayersSplitEditor::cardsArea() const
 {
     auto s = sideArea().reduced (14, 12);
     s.removeFromTop (22);
-    const int cardH = getHeight() < 780 ? 52 : 62;
+    const int cardH = getHeight() < 700 ? 44 : (getHeight() < 780 ? 52 : 62);
     return s.removeFromTop (cardH * 3 + 16);
 }
 
@@ -228,22 +236,23 @@ void LayersSplitEditor::resized()
 {
     auto r = getLocalBounds();
     auto top = r.removeFromTop (topH).reduced (12, 10);
-    top.removeFromLeft (200); // logo
+    const bool narrow = getWidth() < 1250;
+    top.removeFromLeft (narrow ? 150 : 200); // logo
     openBtn.setBounds (top.removeFromLeft (92));
     top.removeFromLeft (18);
     playBtn.setBounds (top.removeFromLeft (84));
     top.removeFromLeft (6);
     stopBtn.setBounds (top.removeFromLeft (62));
     top.removeFromLeft (8);
-    timeLabel.setBounds (top.removeFromLeft (200));
+    timeLabel.setBounds (top.removeFromLeft (narrow ? 170 : 200));
     top.removeFromLeft (8);
-    abBtn.setBounds (top.removeFromLeft (124));
+    abBtn.setBounds (top.removeFromLeft (narrow ? 100 : 124));
     top.removeFromLeft (6);
-    loopBtn.setBounds (top.removeFromLeft (72));
+    loopBtn.setBounds (top.removeFromLeft (narrow ? 64 : 72));
     top.removeFromLeft (6);
     if (followBtn.isVisible())
         followBtn.setBounds (top.removeFromLeft (118));
-    master.setBounds (top.removeFromRight (150).reduced (0, 4));
+    master.setBounds (top.removeFromRight (narrow ? 100 : 150).reduced (0, 4));
 
     r.removeFromBottom (footH);
     auto side = r.removeFromRight (sideW);
@@ -262,24 +271,29 @@ void LayersSplitEditor::resized()
     qHigh.setBounds (q.removeFromLeft (qw));
     q.removeFromLeft (6);
     qUltra.setBounds (q);
+    // mode compact pour les petits écrans : tout reste visible
+    const bool compact = getHeight() < 760;
     s.removeFromTop (4);
-    qualityInfo.setBounds (s.removeFromTop (36));
-    optVocals.setBounds (s.removeFromTop (24));
-    optDrums.setBounds (s.removeFromTop (24));
-    optGpu.setBounds (s.removeFromTop (24));
-    s.removeFromTop (8);
-    separateBtn.setBounds (s.removeFromTop (40));
-    s.removeFromTop (54); // progression (dessinée)
+    qualityInfo.setVisible (! compact);
+    if (! compact)
+        qualityInfo.setBounds (s.removeFromTop (36));
+    const int rowH = compact ? 22 : 24;
+    optVocals.setBounds (s.removeFromTop (rowH));
+    optDrums.setBounds (s.removeFromTop (rowH));
+    optGpu.setBounds (s.removeFromTop (rowH));
+    s.removeFromTop (compact ? 4 : 8);
+    separateBtn.setBounds (s.removeFromTop (compact ? 34 : 40));
+    s.removeFromTop (compact ? 48 : 54); // progression (dessinée)
 
-    s.removeFromTop (6);
+    s.removeFromTop (compact ? 2 : 6);
     s.removeFromTop (22); // titre « EXPORT »
-    format.setBounds (s.removeFromTop (28));
-    s.removeFromTop (8);
-    auto grid = s.removeFromTop (3 * 30 + 12);
-    const int bw = (grid.getWidth() - 8) / 2;
+    format.setBounds (s.removeFromTop (compact ? 26 : 28));
+    s.removeFromTop (compact ? 6 : 8);
+    const int bh = compact ? 26 : 30, gap = compact ? 4 : 6;
+    const int bw = (s.getWidth() - 8) / 2;
     juce::TextButton* btns[] = { &expAll, &expAcapella, &expInst, &expKaraoke, &expMix, &expFolder };
     for (int i = 0; i < 6; ++i)
-        btns[i]->setBounds (grid.getX() + (i % 2) * (bw + 8), grid.getY() + (i / 2) * 36, bw, 30);
+        btns[i]->setBounds (s.getX() + (i % 2) * (bw + 8), s.getY() + (i / 2) * (bh + gap), bw, bh);
 }
 
 void LayersSplitEditor::paintCard (juce::Graphics& g, juce::Rectangle<int> r, const juce::String& title,
@@ -314,6 +328,7 @@ void LayersSplitEditor::paint (juce::Graphics& g)
     g.drawHorizontalLine (topH - 1, 0.0f, (float) getWidth());
     {
         auto logo = top.reduced (16, 0).withWidth (190);
+        const bool narrowLogo = getWidth() < 1250;
         g.setFont (theme::font (19.0f, true));
         g.setColour (theme::textBright);
         juce::GlyphArrangement ga;
@@ -324,7 +339,8 @@ void LayersSplitEditor::paint (juce::Graphics& g)
         g.drawText ("SPLIT", logo.withTrimmedLeft ((int) w1), juce::Justification::centredLeft);
         g.setColour (theme::dim);
         g.setFont (theme::font (10.0f));
-        g.drawText ("by JB Praise", logo.withTrimmedLeft ((int) w1 + 58).withTrimmedTop (6), juce::Justification::centredLeft);
+        if (! narrowLogo)
+            g.drawText ("by JB Praise", logo.withTrimmedLeft ((int) w1 + 58).withTrimmedTop (6), juce::Justification::centredLeft);
     }
 
     // panneau de droite
