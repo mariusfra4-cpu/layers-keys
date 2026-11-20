@@ -1,0 +1,233 @@
+# Layers Split pour Windows : compilation (MSVC), tests, plugin VST3 vérifié par pluginval,
+# installateur NSIS, installation / désinstallation testées, captures d'écran.
+# Résultats : branche « ci-split-win » (journaux, captures) et pré-version « layers-split-test » (installateur).
+name: Layers Split Windows
+on:
+  push:
+    paths: ['split/**', '.github/workflows/split-win.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  win:
+    runs-on: windows-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dépendances (JUCE, ONNX Runtime DirectML, DirectML)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          New-Item -ItemType Directory -Force C:\lslogs, C:\deps | Out-Null
+          git clone -q --depth 1 --branch 8.0.4 https://github.com/juce-framework/JUCE.git C:\deps\JUCE
+          Invoke-WebRequest https://api.nuget.org/v3-flatcontainer/microsoft.ml.onnxruntime.directml/1.20.1/microsoft.ml.onnxruntime.directml.1.20.1.nupkg -OutFile C:\deps\ort.zip
+          Expand-Archive C:\deps\ort.zip C:\deps\ort
+          Invoke-WebRequest https://api.nuget.org/v3-flatcontainer/microsoft.ai.directml/1.15.4/microsoft.ai.directml.1.15.4.nupkg -OutFile C:\deps\dml.zip
+          Expand-Archive C:\deps\dml.zip C:\deps\dml
+          Get-Item C:\deps\ort\runtimes\win-x64\native\onnxruntime.dll, C:\deps\dml\bin\x64-win\DirectML.dll | Format-Table Name,Length | Out-String | Tee-Object C:\lslogs\00_dependances.txt
+
+      - name: Cache des modèles
+        uses: actions/cache@v4
+        with:
+          path: C:\deps\models
+          key: lsplit-models-v1
+
+      - name: Modèles IA (vérifiés par empreinte SHA-256)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $b = "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models"
+          $want = @{
+            "Kim_Vocal_2"           = "ce74ef3b6a6024ce44211a07be9cf8bc6d87728cc852a68ab34eb8e58cde9c8b"
+            "UVR-MDX-NET-Inst_HQ_3" = "317554b07fe1ea5279a77f2b1520a41ea4b93432560c4ffd08792c30fddf9adc"
+            "UVR_MDXNET_KARA_2"     = "bf32e15105a09c0f7dddd2b67346146334d6f3ecb399ed7638eba2ab07cbf5f4"
+            "kuielab_a_drums"       = "40f586b7091934dd6f5563f0cba8f14bad57ce88440da1098bf388ea716c2901"
+            "kuielab_a_bass"        = "0c3e77b9963185b1ea6bb46a4b8924137d9370fc1ccdefec7b1b416ef550dcaa"
+          }
+          New-Item -ItemType Directory -Force C:\deps\models | Out-Null
+          foreach ($m in $want.Keys) {
+            $f = "C:\deps\models\$m.onnx"
+            if (-not (Test-Path $f) -or (Get-FileHash $f -Algorithm SHA256).Hash.ToLower() -ne $want[$m]) {
+              Invoke-WebRequest "$b/$m.onnx" -OutFile $f
+            }
+            $h = (Get-FileHash $f -Algorithm SHA256).Hash.ToLower()
+            if ($h -ne $want[$m]) { throw "empreinte incorrecte pour $m" }
+            "$m : OK" | Tee-Object -Append C:\lslogs\00_dependances.txt
+          }
+
+      - name: Compilation (Visual Studio 2022, x64)
+        shell: pwsh
+        run: |
+          cmake -S split -B C:\b -G "Visual Studio 17 2022" -A x64 -DJUCE_DIR=C:/deps/JUCE -DORT_INCLUDE_DIR=C:/deps/ort/build/native/include -DLAYERS_SPLIT_TESTS=ON 2>&1 | Tee-Object C:\lslogs\01_cmake.txt
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          cmake --build C:\b --config Release --target LayersSplit_Standalone LayersSplit_VST3 LayersSplitCli LayersSplitTests -- /m /v:minimal 2>&1 | Tee-Object C:\lslogs\02_compilation.txt
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          Get-ChildItem -Recurse C:\b\LayersSplit_artefacts\Release, C:\b\LayersSplitCli_artefacts\Release -File | Format-Table FullName,Length -AutoSize | Out-String -Width 300 | Tee-Object -Append C:\lslogs\02_compilation.txt
+
+      - name: Moteur et morceau de test
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          New-Item -ItemType Directory -Force C:\rt\models, C:\test | Out-Null
+          Copy-Item C:\deps\ort\runtimes\win-x64\native\onnxruntime.dll C:\rt\
+          Copy-Item C:\deps\dml\bin\x64-win\DirectML.dll C:\rt\
+          Copy-Item C:\deps\models\*.onnx C:\rt\models\
+          Invoke-WebRequest https://raw.githubusercontent.com/deezer/spleeter/master/audio_example.mp3 -OutFile C:\test\exemple.mp3
+
+      - name: Test de séparation (outil en ligne de commande, processeur)
+        shell: pwsh
+        run: |
+          & C:\b\LayersSplitCli_artefacts\Release\LayersSplitCli.exe --in C:\test\exemple.mp3 --out C:\test\stems --qualite rapide --cpu --runtime C:\rt 2>&1 | Tee-Object C:\lslogs\03_separation_cpu.txt
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          Get-ChildItem C:\test\stems | Format-Table Name,Length | Out-String | Tee-Object -Append C:\lslogs\03_separation_cpu.txt
+
+      - name: Test de séparation qualité Haute
+        shell: pwsh
+        run: |
+          & C:\b\LayersSplitCli_artefacts\Release\LayersSplitCli.exe --in C:\test\exemple.mp3 --out C:\test\stems_haute --qualite haute --cpu --runtime C:\rt 2>&1 | Tee-Object C:\lslogs\04_separation_haute.txt
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Test GPU DirectML (le serveur n'a pas de vraie carte graphique)
+        shell: pwsh
+        continue-on-error: true
+        timeout-minutes: 25
+        run: |
+          & C:\b\LayersSplitCli_artefacts\Release\LayersSplitCli.exe --in C:\test\exemple.mp3 --out C:\test\stems_gpu --qualite rapide --sans-batterie --runtime C:\rt 2>&1 | Tee-Object C:\lslogs\05_separation_gpu.txt
+          "code : $LASTEXITCODE" | Tee-Object -Append C:\lslogs\05_separation_gpu.txt
+
+      - name: Tests du processeur audio (lecture, solo, muet, projet)
+        shell: pwsh
+        run: |
+          $env:LAYERS_SPLIT_RUNTIME = "C:\rt"
+          & C:\b\Release\LayersSplitTests.exe C:\test\exemple.mp3 2>&1 | Tee-Object C:\lslogs\06_tests_processeur.txt
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Assemblage et installateur NSIS
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $p = "split\nsis\payload"
+          New-Item -ItemType Directory -Force "$p\models" | Out-Null
+          Copy-Item "C:\b\LayersSplit_artefacts\Release\Standalone\Layers Split.exe" $p
+          Copy-Item -Recurse "C:\b\LayersSplit_artefacts\Release\VST3\Layers Split.vst3" $p
+          Copy-Item C:\rt\onnxruntime.dll, C:\rt\DirectML.dll $p
+          Copy-Item C:\rt\models\*.onnx "$p\models"
+          Copy-Item split\nsis\Licences.txt $p
+          Get-ChildItem -Recurse $p -File | Format-Table FullName,Length -AutoSize | Out-String -Width 300 | Tee-Object C:\lslogs\07_installateur.txt
+          if (-not (Test-Path "C:\Program Files (x86)\NSIS\makensis.exe")) {
+            for ($i = 1; $i -le 3 -and -not (Test-Path "C:\Program Files (x86)\NSIS\makensis.exe"); $i++) {
+              choco install nsis -y --no-progress 2>&1 | Out-Null
+              if (-not (Test-Path "C:\Program Files (x86)\NSIS\makensis.exe")) { Start-Sleep -Seconds (15 * $i) }
+            }
+          }
+          $env:Path += ";C:\Program Files (x86)\NSIS"
+          Set-Location split\nsis
+          makensis /V3 layerssplit.nsi 2>&1 | Tee-Object -Append C:\lslogs\07_installateur.txt
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          Get-Item Layers-Split-Setup-1.0.0.exe | Format-Table Name,Length | Out-String | Tee-Object -Append C:\lslogs\07_installateur.txt
+
+      - name: Test installation silencieuse
+        shell: pwsh
+        run: |
+          $log = "C:\lslogs\08_installation.txt"
+          $setup = (Resolve-Path split\nsis\Layers-Split-Setup-1.0.0.exe).Path
+          $p = Start-Process $setup -ArgumentList "/S" -Wait -PassThru
+          "code installation : $($p.ExitCode)" | Tee-Object $log
+          $pf = "$env:ProgramFiles\Layers Split"
+          $vst = "$env:CommonProgramW6432\VST3\Layers Split.vst3"
+          $ok = $true
+          foreach ($x in @("$pf\Layers Split.exe","$pf\onnxruntime.dll","$pf\DirectML.dll","$pf\models\Kim_Vocal_2.onnx","$pf\models\UVR_MDXNET_KARA_2.onnx","$pf\models\kuielab_a_drums.onnx","$pf\models\kuielab_a_bass.onnx","$pf\models\UVR-MDX-NET-Inst_HQ_3.onnx","$pf\Desinstaller.exe","$vst\Contents\x86_64-win\Layers Split.vst3","$env:PUBLIC\Desktop\Layers Split.lnk")) {
+            $e = Test-Path -LiteralPath $x
+            if (-not $e) { $ok = $false }
+            "{0} : {1}" -f $x, $e | Tee-Object -Append $log
+          }
+          Get-ItemProperty "HKLM:\Software\JB Praise\Layers Split" | Format-List | Out-String | Tee-Object -Append $log
+          Get-ItemProperty "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\LayersSplit" | Select-Object DisplayName,DisplayVersion,Publisher,UninstallString,EstimatedSize | Format-List | Out-String | Tee-Object -Append $log
+          if (-not $ok) { exit 1 }
+
+      - name: Validation du plugin VST3 (pluginval)
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          Invoke-WebRequest https://github.com/Tracktion/pluginval/releases/download/v1.0.4/pluginval_Windows.zip -OutFile C:\pv.zip
+          Expand-Archive C:\pv.zip C:\pv -Force
+          $vst = "$env:CommonProgramW6432\VST3\Layers Split.vst3"
+          & C:\pv\pluginval.exe --strictness-level 7 --validate-in-process --output-dir C:\lslogs --validate "$vst" 2>&1 | Tee-Object C:\lslogs\09_pluginval.txt
+          "code pluginval : $LASTEXITCODE" | Tee-Object -Append C:\lslogs\09_pluginval.txt
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Capture de l'application installée (séparation réelle)
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          Add-Type -AssemblyName System.Windows.Forms,System.Drawing
+          function Snap($n) {
+            $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+            $bmp = New-Object System.Drawing.Bitmap $b.Width,$b.Height
+            $g = [System.Drawing.Graphics]::FromImage($bmp)
+            $g.CopyFromScreen($b.Location,[System.Drawing.Point]::Empty,$b.Size)
+            $bmp.Save("C:\lslogs\capture_$n.png")
+          }
+          $exe = "$env:ProgramFiles\Layers Split\Layers Split.exe"
+          $app = Start-Process $exe -ArgumentList '"C:\test\exemple.mp3"','--separer','--rapide','--cpu' -PassThru
+          Start-Sleep 8
+          Snap "1_ouverture"
+          Start-Sleep 25
+          Snap "2_separation"
+          for ($i = 0; $i -lt 30; $i++) {
+            if (Get-ChildItem "$env:LOCALAPPDATA\LayersSplit\Cache\*\info.xml" -ErrorAction SilentlyContinue) { break }
+            Start-Sleep 5
+          }
+          Start-Sleep 3
+          Snap "3_stems"
+          "application en marche : " + (-not $app.HasExited) | Tee-Object C:\lslogs\10_application.txt
+          Get-ChildItem -Recurse "$env:LOCALAPPDATA\LayersSplit\Cache" -File | Format-Table FullName,Length -AutoSize | Out-String -Width 300 | Tee-Object -Append C:\lslogs\10_application.txt
+          Stop-Process -Id $app.Id -Force -ErrorAction SilentlyContinue
+
+      - name: Test mise à jour puis désinstallation
+        shell: pwsh
+        run: |
+          $log = "C:\lslogs\11_desinstallation.txt"
+          $setup = (Resolve-Path split\nsis\Layers-Split-Setup-1.0.0.exe).Path
+          $p = Start-Process $setup -ArgumentList "/S" -Wait -PassThru
+          "code réinstallation (mise à jour) : $($p.ExitCode)" | Tee-Object $log
+          $pf = "$env:ProgramFiles\Layers Split"
+          $p = Start-Process "$pf\Desinstaller.exe" -ArgumentList "/S" -Wait -PassThru
+          Start-Sleep 5
+          "code désinstallation : $($p.ExitCode)" | Tee-Object -Append $log
+          $left = $false
+          foreach ($x in @("$pf\Layers Split.exe","$pf\models","$env:CommonProgramW6432\VST3\Layers Split.vst3","$env:PUBLIC\Desktop\Layers Split.lnk","HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\LayersSplit","HKLM:\Software\JB Praise\Layers Split")) {
+            $e = Test-Path -LiteralPath $x
+            if ($e) { $left = $true }
+            "{0} encore présent : {1}" -f $x, $e | Tee-Object -Append $log
+          }
+          if ($left) { exit 1 }
+
+      - name: Publier les journaux et captures
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p /tmp/o
+          cp /c/lslogs/* /tmp/o/ 2>/dev/null || true
+          git config user.name "ci"
+          git config user.email "ci@users.noreply.github.com"
+          git checkout --orphan ci-split-win-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          git clean -fdxq -e split/nsis/Layers-Split-Setup-1.0.0.exe || true
+          cp /tmp/o/* . 2>/dev/null || true
+          echo "run $GITHUB_RUN_ID $GITHUB_SHA" > run.txt
+          git add -A ':!split'
+          git commit -qm "layers split windows $GITHUB_RUN_ID"
+          git push -f origin HEAD:refs/heads/ci-split-win
+
+      - name: Publier l'installateur (pré-version de test)
+        if: success()
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $f = Get-ChildItem -Recurse -Filter Layers-Split-Setup-1.0.0.exe | Select-Object -First 1
+          gh release delete layers-split-test --yes --cleanup-tag 2>$null
+          $notes = "Layers Split 1.0.0 pour Windows 10/11 (64 bits) — version de test.`n`nApplication autonome + plugin VST3. Séparation par IA : voix lead, chœurs, batterie, basse, instruments.`n`nCompilation $env:GITHUB_SHA"
+          gh release create layers-split-test $f.FullName --target $env:GITHUB_SHA --prerelease --title "Layers Split 1.0.0 (Windows) - test" --notes $notes

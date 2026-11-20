@@ -1,0 +1,19 @@
+Layers Split - (c) JB Praise
+============================
+
+Layers Split utilise les composants suivants. Merci à leurs auteurs.
+
+- ONNX Runtime 1.20.1 (Microsoft) - licence MIT
+  https://github.com/microsoft/onnxruntime
+- DirectML 1.15.4 (Microsoft) - licence de redistribution Microsoft DirectML
+  https://www.nuget.org/packages/Microsoft.AI.DirectML
+- JUCE 8 (Raw Material Software) - https://juce.com
+- pocketfft (Max-Planck-Society) - licence BSD 3 clauses
+  https://github.com/mreineck/pocketfft
+
+Modèles de séparation (réseaux MDX-Net) :
+- kuielab_a_drums, kuielab_a_bass : KUIELab (MDX-Net, Music Demixing Challenge 2021) - licence MIT
+  https://github.com/kuielab/mdx-net
+- Kim_Vocal_2 (Kimberley Jensen), UVR-MDX-NET-Inst_HQ_3 et UVR_MDXNET_KARA_2 (Anjok07 / aufr33),
+  distribués par le projet Ultimate Vocal Remover - licence MIT
+  https://github.com/Anjok07/ultimatevocalremovergui

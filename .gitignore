@@ -2,3 +2,6 @@ installer/payload/
 android-app/build/
 android-app/build_test/
 dist/
+split/nsis/payload/
+split/nsis/*.exe
+split/build/
