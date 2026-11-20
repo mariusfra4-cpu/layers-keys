@@ -20,7 +20,6 @@ namespace
 LayersSplitEditor::LayersSplitEditor (LayersSplitProcessor& p) : AudioProcessorEditor (p), proc (p), tracks (p)
 {
     setLookAndFeel (&lnf);
-    juce::LookAndFeel::setDefaultLookAndFeel (&lnf);
 
     // barre du haut
     for (auto* b : { &openBtn, &playBtn, &stopBtn, &abBtn, &loopBtn, &followBtn })
@@ -133,7 +132,6 @@ LayersSplitEditor::~LayersSplitEditor()
 {
     proc.removeChangeListener (this);
     stopTimer();
-    juce::LookAndFeel::setDefaultLookAndFeel (nullptr);
     setLookAndFeel (nullptr);
 }
 

@@ -56,10 +56,10 @@ jobs:
             "$m : OK" | Tee-Object -Append C:\lslogs\00_dependances.txt
           }
 
-      - name: Compilation (Visual Studio 2022, x64)
+      - name: Compilation (Visual Studio, x64)
         shell: pwsh
         run: |
-          cmake -S split -B C:\b -G "Visual Studio 17 2022" -A x64 -DJUCE_DIR=C:/deps/JUCE -DORT_INCLUDE_DIR=C:/deps/ort/build/native/include -DLAYERS_SPLIT_TESTS=ON 2>&1 | Tee-Object C:\lslogs\01_cmake.txt
+          cmake -S split -B C:\b -A x64 -DJUCE_DIR=C:/deps/JUCE -DORT_INCLUDE_DIR=C:/deps/ort/build/native/include -DLAYERS_SPLIT_TESTS=ON 2>&1 | Tee-Object C:\lslogs\01_cmake.txt
           if ($LASTEXITCODE -ne 0) { exit 1 }
           cmake --build C:\b --config Release --target LayersSplit_Standalone LayersSplit_VST3 LayersSplitCli LayersSplitTests -- /m /v:minimal 2>&1 | Tee-Object C:\lslogs\02_compilation.txt
           if ($LASTEXITCODE -ne 0) { exit 1 }
