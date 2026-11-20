@@ -329,7 +329,7 @@ void Header::paint (juce::Graphics& g)
     g.drawText ("BY JB PRAISE", juce::Rectangle<float> (30, 52, 240, 16), juce::Justification::centredLeft);
 
     // écran
-    auto lcd = juce::Rectangle<float> (300, 16, r.getWidth() - 300 - 270, 52);
+    auto lcd = juce::Rectangle<float> (300, 16, r.getWidth() - 300 - 460, 52);
     insetBox (g, lcd, 14.0f, theme::lcd);
     const bool sounding = proc.padSounding() || proc.crowdSounding();
     auto dot = juce::Rectangle<float> (lcd.getX() + 20, lcd.getCentreY() - 5, 10, 10);

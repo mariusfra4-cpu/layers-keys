@@ -353,6 +353,19 @@ public:
     void paintButton (juce::Graphics&, bool over, bool down) override;
 };
 
+// Volume général (Master) dans l'en-tête
+class MasterBar : public juce::Component
+{
+public:
+    explicit MasterBar (SpacepadProcessor&);
+    void paint (juce::Graphics&) override;
+    void resized() override;
+private:
+    SpacepadProcessor& proc;
+    juce::Slider slider;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> att;
+};
+
 // Curseur PAD ⇄ CROWD (combinaison)
 class MixBar : public juce::Component
 {
@@ -524,6 +537,7 @@ private:
     Visualizer viz { proc, anim };
     juce::TextButton playBtn, stopBtn, loopBtn { "LOOP" }, stopAllBtn, finBtn;
     MixBar mixBar { proc };
+    MasterBar masterBar { proc };
     FxPanel fxPanel { proc };
     CenterSwitch centerSwitch;
     HallView hall { proc };

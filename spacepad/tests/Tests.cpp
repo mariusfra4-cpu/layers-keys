@@ -1049,6 +1049,25 @@ static void testNewFeatures (const juce::File& root, const juce::File& tmp)
     const float crowdMid = runFor (p, 0.5);
     CHECK (crowdAtPad < 1e-4f && crowdMid > 1e-3f, "curseur tout PAD : crowds muets (" << crowdAtPad << " / " << crowdMid << ")");
 
+    // --- volume Master ---
+    {
+        setP (p, "mix", 0.5f);
+        p.playPad(); p.waitIdleForTests (3000);
+        runFor (p, 3.0);
+        setP (p, "master", 0.0f);
+        const float m0 = runFor (p, 1.0);
+        setP (p, "master", -6.0f);
+        const float m6 = runFor (p, 1.0);
+        setP (p, "master", -60.0f);
+        const float mOff = runFor (p, 0.5);
+        setP (p, "master", 0.0f);
+        std::cout << "  Master : 0 dB " << m0 << " / -6 dB " << m6 << " (x" << juce::String (m6 / juce::jmax (1e-9f, m0), 2) << ") / muet " << mOff << "\n";
+        CHECK (std::abs (m6 / juce::jmax (1e-9f, m0) - 0.5f) < 0.08f, "Master -6 dB : le volume est divise par deux");
+        CHECK (mOff < 1e-5f, "Master au minimum : silence");
+        p.stopPad();
+        runFor (p, 4.0);
+    }
+
     // --- fin du chant ---
     u = uiSettings(); u.fadeSeconds = 4; setUiSettings (u);
     p.playPad(); p.waitIdleForTests (3000);

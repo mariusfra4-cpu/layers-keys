@@ -51,6 +51,10 @@ juce::AudioProcessorValueTreeState::ParameterLayout SpacepadProcessor::createLay
     l.add (std::make_unique<APB> (juce::ParameterID { "swell", 1 }, "Swell", false));
     l.add (std::make_unique<APB> (juce::ParameterID { "crowdlink", 1 }, "Crowd lie au pad", false));
     l.add (std::make_unique<APB> (juce::ParameterID { "crowdfollow", 1 }, "Crowd suit la tonalite", true));
+    // volume général (Master), en dB : -60 dB = muet, +6 dB au plus
+    l.add (std::make_unique<APF> (juce::ParameterID { "master", 1 }, "Master", juce::NormalisableRange<float> (-60.0f, 6.0f, 0.1f, 2.2f), 0.0f,
+                                  juce::AudioParameterFloatAttributes().withStringFromValueFunction ([] (float v, int)
+                                  { return v <= -59.9f ? juce::String::fromUTF8 ("\xe2\x88\x92\xe2\x88\x9e") : (v > 0.05f ? "+" : "") + juce::String (v, 1) + " dB"; })));
     // chorus et delay du pad, tempo du delay
     add ("chorus", "Chorus", 0.0f);
     add ("delay", "Delay", 0.0f);
@@ -320,6 +324,9 @@ void SpacepadProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
     const auto fxp = readFx();
     const float padVol = p ("padvol"), cv1 = p ("crowdvol"), cv2 = p ("crowdvol2");
     const float mix = p ("mix");
+    const float masterDb = p ("master");
+    const float masterGain = masterDb <= -59.9f ? 0.0f : juce::Decibels::decibelsToGain (masterDb);
+    const float m0 = lastMaster;
     const float padMix = soloOn.load() ? 0.0f : juce::jmin (1.0f, 2.0f * (1.0f - mix)), crowdMix = juce::jmin (1.0f, 2.0f * mix);
     const CrowdFxParams cfx[2] = { readCrowdFx (0), readCrowdFx (1) };
     float cpk[2] = { 0, 0 };
@@ -360,8 +367,10 @@ void SpacepadProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
             const float* c2 = crowdBuf2.getReadPointer (ch);
             for (int i = 0; i < n; ++i)
             {
-                float pv = d[i] * padVol * padMix;
-                float cr = (c[i] * cv1 + c2[i] * cv2) * crowdMix;
+                // Master : glisse en douceur d'un bloc à l'autre (pas de craquement quand on le bouge)
+                const float mg = m0 + (masterGain - m0) * (float) (start + i + 1) / (float) total;
+                float pv = d[i] * padVol * padMix * mg;
+                float cr = (c[i] * cv1 + c2[i] * cv2) * crowdMix * mg;
                 // limiteur doux : jamais de saturation dure en sortie
                 auto limit = [] (float x) { const float a = std::abs (x); return a > 0.8f ? std::copysign (0.8f + 0.2f * std::tanh ((a - 0.8f) / 0.2f), x) : x; };
                 if (auxOn) { d[i] = limit (pv); c[i] = limit (cr); }
@@ -396,6 +405,7 @@ void SpacepadProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
         }
     }
     for (int ch = mainOut.getNumChannels() + (auxOn ? 2 : 0); ch < buffer.getNumChannels(); ++ch) buffer.clear (ch, 0, total);
+    lastMaster = masterGain;
     level = juce::jmax (peak, level.load() * 0.85f);
     for (int s = 0; s < 2; ++s) crowdLvl[s] = juce::jmax (cpk[s], crowdLvl[s].load() * 0.85f);
 }

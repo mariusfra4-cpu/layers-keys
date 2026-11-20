@@ -25,6 +25,7 @@ MainView::MainView (SpacepadProcessor& p) : proc (p)
     mixBar.onLabel = [this] (int pg) { fxPanel.showPage (pg); };
     addAndMakeVisible (mixBar);
     addAndMakeVisible (stageBtn);
+    addAndMakeVisible (masterBar);
     stageBtn.onClick = [this] { openStage(); };
     library.onChooseFolder = [this] (bool crowdTab) { chooseFolder (crowdTab); };
     library.onChooseFiles = [this] (bool crowdTab) { chooseFiles (crowdTab); };
@@ -355,6 +356,7 @@ void MainView::resized()
     header.setBounds (top);
     gear.setBounds (top.getRight() - 64, top.getY() + 18, 48, 48);
     stageBtn.setBounds (top.getRight() - 120, top.getY() + 18, 48, 48);
+    masterBar.setBounds (top.getRight() - 440, top.getY() + 20, 180, 46);     // à gauche du vumètre
     r.removeFromBottom (38);
     library.setBounds (r.removeFromLeft (370));
     fxPanel.setBounds (r.removeFromRight (330));

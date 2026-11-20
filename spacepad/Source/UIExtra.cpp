@@ -39,6 +39,40 @@ void MixBar::paint (juce::Graphics& g)
 }
 
 // ============================================================================================
+// MasterBar : volume général
+// ============================================================================================
+MasterBar::MasterBar (SpacepadProcessor& p) : proc (p)
+{
+    slider.setSliderStyle (juce::Slider::LinearHorizontal);
+    slider.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
+    slider.setColour (juce::Slider::trackColourId, theme::green);
+    slider.setDoubleClickReturnValue (true, 0.0);       // double-clic : retour à 0 dB
+    slider.setTooltip (L ("Volume g\xc3\xa9n\xc3\xa9ral de Spacepad (double-clic : 0 dB)", "Spacepad master volume (double-click: 0 dB)", "Volumen general de Spacepad (doble clic: 0 dB)"));
+    addAndMakeVisible (slider);
+    att = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (proc.params, "master", slider);
+    slider.onValueChange = [this] { repaint(); };
+}
+
+void MasterBar::resized()
+{
+    slider.setBounds (getLocalBounds().withTrimmedTop (18).withTrimmedLeft (2).withTrimmedRight (2).withHeight (26));
+}
+
+void MasterBar::paint (juce::Graphics& g)
+{
+    auto b = getLocalBounds().toFloat();
+    auto f = theme::ui (10.5f, 2); f.setExtraKerningFactor (0.16f);
+    g.setFont (f);
+    g.setColour (theme::muted);
+    g.drawText ("MASTER", b.withHeight (16).withTrimmedLeft (6), juce::Justification::centredLeft);
+    auto* prm = proc.params.getParameter ("master");
+    const float db = prm->convertFrom0to1 (prm->getValue());
+    g.setColour (db > 0.05f ? theme::amber : db <= -59.9f ? theme::red : theme::text);
+    g.setFont (theme::ui (12.0f, 1));
+    g.drawText (prm->getText (prm->getValue(), 8), b.withHeight (16).withTrimmedRight (6), juce::Justification::centredRight);
+}
+
+// ============================================================================================
 // IconButton
 // ============================================================================================
 void IconButton::paintButton (juce::Graphics& g, bool over, bool down)

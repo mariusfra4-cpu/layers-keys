@@ -154,7 +154,7 @@ private:
     int taps = 0;
     juce::AudioBuffer<float> mainBuf, subBuf, shimBuf, bBuf, bSub, bShim, crowdBuf, crowdBuf2;
     int maxBlock = 512;
-    float lastGA = 1, lastGB = 0;
+    float lastGA = 1, lastGB = 0, lastMaster = 1;
 
     mutable juce::CriticalSection stateLock;
     juce::String padLibs[2], padLibsB[2];
