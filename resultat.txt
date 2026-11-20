@@ -1,0 +1,18 @@
+== APK distribué
+OK    écran en paysage (640x320)
+état (1301, 589440, 0, 0)
+OK    la sortie audio tourne (rappels audio : 1301)
+OK    AAudio ouvert : audio ouvert : 48000 Hz, rafale 960, tampon 2116
+OK    pas de plantage au démarrage
+état (2576, 1165440, 0, 3)
+OK    en mode démo, les touches jouent (notes : 3)
+== APK de test
+état (1608, 727592, 0, 3)
+OK    3 appuis sur le clavier = 3 notes (notes : 3)
+OK    du son est produit (images sonores : 727592)
+OK    l'écran change quand on ouvre le piano tactile
+état (2884, 1303112, 0, 29)
+OK    touches du piano tactile : notes jouées 3 -> 29
+état (4163, 1881700, 0, 29)
+OK    l'audio repart après la pause
+OK    aucun plantage pendant tout le test
