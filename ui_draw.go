@@ -243,7 +243,7 @@ func (u *UI) drawHeader(c *Canvas) {
 			nc = colGreen
 		}
 		c.Circle(244, 22, 5, nc, 1)
-		c.Text(254, 14, 200, 16, Tf("Notes reçues : %d", notes), fontXs, colText, 0)
+		c.Text(254, 14, 136, 16, Tf("Notes reçues : %d", notes), fontXs, colText, 0)
 		sc, st := uint32(colRed), T("Son : aucun")
 		if sound {
 			sc, st = colGreen, T("Son : OK")
@@ -252,10 +252,11 @@ func (u *UI) drawHeader(c *Canvas) {
 			sc, st = colRed, Tf("Son refusé par l'hôte (%d)", refused)
 		}
 		c.Circle(244, 42, 5, sc, 1)
-		c.Text(254, 34, 200, 16, st, fontXs, colText, 0)
-		if u.OnShowLog != nil {
-			u.button(c, "showlog", rect{460, 14, 124, 30}, "Journal", false, fontSm, func() { u.OnShowLog() })
-		}
+		c.Text(254, 34, 136, 16, st, fontXs, colText, 0)
+	}
+	if u.Plugin { // ouvrir / enregistrer un fichier .lkeys : le même qu'en standalone
+		u.button(c, "popen", rect{396, 14, 84, 30}, "Ouvrir…", false, fontSm, func() { u.OpenProjectMenu() })
+		u.button(c, "psaveas", rect{486, 14, 98, 30}, "Enregistrer…", false, fontSm, func() { u.SaveProjectAs() })
 	}
 	if !u.Plugin {
 		u.button(c, "pnew", rect{236, 14, 76, 30}, "Nouveau", false, fontSm, func() { u.NewProject() })

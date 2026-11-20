@@ -551,7 +551,19 @@ func (u *UI) openPresetList(ch int, sf *SF2, path string) {
 }
 
 // fenêtre de saisie d'un texte
+// TextPrompter : case de texte du système (plugin : le logiciel hôte ne laisse les touches qu'à elle)
+type TextPrompter interface {
+	PromptText(title, initial string) (string, bool)
+}
+
 func (u *UI) promptText(title, initial string, onOK func(string)) {
+	if tp, ok := u.host.(TextPrompter); ok && u.Plugin {
+		if s, ok := tp.PromptText(T(title), initial); ok {
+			onOK(s)
+		}
+		u.host.Invalidate()
+		return
+	}
 	u.ov = &overlay{title: title, input: true, text: initial,
 		hint: "Entrée pour valider · Échap pour annuler", onOK: onOK}
 	u.host.Invalidate()
