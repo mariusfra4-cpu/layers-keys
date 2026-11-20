@@ -1,0 +1,63 @@
+=== natif (x86_64)
+OK    Audio Unit « JB Praise: Layers Keys » trouvée
+      version annoncée : 1.1.1
+OK    son : instance créée
+OK    son : initialisation
+OK    son : silence avant toute note (crête 0.00000)
+OK    son : état du plugin lisible
+OK    son : Grand Piano chargé sur la piste 1 (état du plugin)
+OK    son : la note joue, le son sort du plugin (crête 0.2675)
+OK    son : note reçue en liste MIDI 1.0 (comme Logic récent), crête 0.3311 (code 0)
+OK    son : note reçue en liste MIDI 2.0 (comme Logic récent), crête 0.2719 (code 0)
+OK    son : stéréo entrelacée dans un seul tampon (crête 0.2683, code 0)
+OK    CocoaUI annoncée (taille 16, code 0)
+OK    CocoaUI lue (code 0)
+      paquet : /Users/runner/Library/Audio/Plug-Ins/Components/LayersKeys.component  classe : LKAUViewFactory
+OK    paquet de l'interface trouvé
+OK    classe de l'interface trouvée dans le paquet du plugin (comme Logic / FL Studio)
+OK    la classe appartient bien au paquet du plugin (/Users/runner/Library/Audio/Plug-Ins/Components/LayersKeys.component)
+OK    la classe déclare le protocole AUCocoaUIBase
+OK    la fabrique répond à uiViewForAudioUnit:withSize:
+OK    vue de l'éditeur créée (1200 x 744)
+OK    son : la note joue aussi avec la fenêtre ouverte (crête 0.2782)
+
+TEST DU SON : TOUT VA BIEN (0 échec(s))
+EXIT 0
+=== x86_64
+OK    Audio Unit « JB Praise: Layers Keys » trouvée
+      version annoncée : 1.1.1
+OK    son : instance créée
+OK    son : initialisation
+OK    son : silence avant toute note (crête 0.00000)
+OK    son : état du plugin lisible
+OK    son : Grand Piano chargé sur la piste 1 (état du plugin)
+OK    son : la note joue, le son sort du plugin (crête 0.2662)
+OK    son : note reçue en liste MIDI 1.0 (comme Logic récent), crête 0.3469 (code 0)
+OK    son : note reçue en liste MIDI 2.0 (comme Logic récent), crête 0.2698 (code 0)
+OK    son : stéréo entrelacée dans un seul tampon (crête 0.2713, code 0)
+OK    CocoaUI annoncée (taille 16, code 0)
+OK    CocoaUI lue (code 0)
+      paquet : /Users/runner/Library/Audio/Plug-Ins/Components/LayersKeys.component  classe : LKAUViewFactory
+OK    paquet de l'interface trouvé
+OK    classe de l'interface trouvée dans le paquet du plugin (comme Logic / FL Studio)
+OK    la classe appartient bien au paquet du plugin (/Users/runner/Library/Audio/Plug-Ins/Components/LayersKeys.component)
+OK    la classe déclare le protocole AUCocoaUIBase
+OK    la fabrique répond à uiViewForAudioUnit:withSize:
+OK    vue de l'éditeur créée (1200 x 744)
+OK    son : la note joue aussi avec la fenêtre ouverte (crête 0.2798)
+
+TEST DU SON : TOUT VA BIEN (0 échec(s))
+EXIT 0
+=== journal du plugin (diagnostic du son)
+2026-11-20 19:01:10  AU son : 261 blocs demandés (+81, dernier 512 images, 2 tampons), 0 refusés (code 0), messages MIDI reçus : classique 102 / liste 0, notes jouées 51 (+18), crête de sortie 0.3720
+2026-11-20 19:01:13  AU son : 353 blocs demandés (+92, dernier 512 images, 2 tampons), 0 refusés (code 0), messages MIDI reçus : classique 140 / liste 0, notes jouées 70 (+19), crête de sortie 0.4375
+2026-11-20 19:01:16  AU son : 438 blocs demandés (+85, dernier 512 images, 2 tampons), 0 refusés (code 0), messages MIDI reçus : classique 181 / liste 0, notes jouées 91 (+21), crête de sortie 0.3874
+2026-11-20 19:01:19  AU son : 520 blocs demandés (+82, dernier 512 images, 2 tampons), 0 refusés (code 0), messages MIDI reçus : classique 211 / liste 0, notes jouées 105 (+14), crête de sortie 0.3715
+2026-11-20 19:01:22  AU son : 608 blocs demandés (+88, dernier 512 images, 2 tampons), 0 refusés (code 0), messages MIDI reçus : classique 240 / liste 0, notes jouées 120 (+15), crête de sortie 0.3528
+2026-11-20 19:01:25  AU son : 101 blocs demandés (+101, dernier 512 images, 2 tampons), 0 refusés (code 0), messages MIDI reçus : classique 36 / liste 0, notes jouées 18 (+18), crête de sortie 0.3234
+2026-11-20 19:01:28  AU son : 192 blocs demandés (+91, dernier 512 images, 2 tampons), 0 refusés (code 0), messages MIDI reçus : classique 70 / liste 0, notes jouées 35 (+17), crête de sortie 0.3472
+2026-11-20 19:01:31  AU son : 278 blocs demandés (+86, dernier 512 images, 2 tampons), 0 refusés (code 0), messages MIDI reçus : classique 102 / liste 0, notes jouées 51 (+16), crête de sortie 0.4190
+2026-11-20 19:01:34  AU son : 365 blocs demandés (+87, dernier 512 images, 2 tampons), 0 refusés (code 0), messages MIDI reçus : classique 138 / liste 0, notes jouées 69 (+18), crête de sortie 0.3336
+2026-11-20 19:01:37  AU son : 452 blocs demandés (+87, dernier 512 images, 2 tampons), 0 refusés (code 0), messages MIDI reçus : classique 168 / liste 0, notes jouées 84 (+15), crête de sortie 0.3135
+2026-11-20 19:01:40  AU son : 551 blocs demandés (+99, dernier 512 images, 2 tampons), 0 refusés (code 0), messages MIDI reçus : classique 201 / liste 0, notes jouées 101 (+17), crête de sortie 0.3366
+2026-11-20 19:01:43  AU son : 632 blocs demandés (+81, dernier 512 images, 2 tampons), 0 refusés (code 0), messages MIDI reçus : classique 224 / liste 0, notes jouées 112 (+11), crête de sortie 0.3577
