@@ -1,0 +1,12 @@
+application en marche : True
+
+FullName                                                                               Length
+--------                                                                               ------
+C:\Users\runneradmin\AppData\Local\LayersSplit\Cache\ecffabbb03a050f6\Basse.wav       3852392
+C:\Users\runneradmin\AppData\Local\LayersSplit\Cache\ecffabbb03a050f6\Batterie.wav    3852392
+C:\Users\runneradmin\AppData\Local\LayersSplit\Cache\ecffabbb03a050f6\Choeurs.wav     3852392
+C:\Users\runneradmin\AppData\Local\LayersSplit\Cache\ecffabbb03a050f6\info.xml            376
+C:\Users\runneradmin\AppData\Local\LayersSplit\Cache\ecffabbb03a050f6\Instruments.wav 3852392
+C:\Users\runneradmin\AppData\Local\LayersSplit\Cache\ecffabbb03a050f6\Voix lead.wav   3852392
+
+

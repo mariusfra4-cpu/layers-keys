@@ -1,0 +1,48 @@
+
+FullName                                                                                                  Length
+--------                                                                                                  ------
+D:\a\layers-keys\layers-keys\split\nsis\payload\DirectML.dll                                            18527776
+D:\a\layers-keys\layers-keys\split\nsis\payload\Layers Split.exe                                         7368192
+D:\a\layers-keys\layers-keys\split\nsis\payload\Licences.txt                                                 918
+D:\a\layers-keys\layers-keys\split\nsis\payload\onnxruntime.dll                                         14682160
+D:\a\layers-keys\layers-keys\split\nsis\payload\Layers Split.vst3\desktop.ini                                 80
+D:\a\layers-keys\layers-keys\split\nsis\payload\Layers Split.vst3\Plugin.ico                               23501
+D:\a\layers-keys\layers-keys\split\nsis\payload\Layers Split.vst3\Contents\Resources\moduleinfo.json        1430
+D:\a\layers-keys\layers-keys\split\nsis\payload\Layers Split.vst3\Contents\x86_64-win\Layers Split.vst3  7459328
+D:\a\layers-keys\layers-keys\split\nsis\payload\models\Kim_Vocal_2.onnx                                 66759214
+D:\a\layers-keys\layers-keys\split\nsis\payload\models\kuielab_a_bass.onnx                              29703204
+D:\a\layers-keys\layers-keys\split\nsis\payload\models\kuielab_a_drums.onnx                             29703204
+D:\a\layers-keys\layers-keys\split\nsis\payload\models\UVR_MDXNET_KARA_2.onnx                           52786726
+D:\a\layers-keys\layers-keys\split\nsis\payload\models\UVR-MDX-NET-Inst_HQ_3.onnx                       66759214
+
+
+MakeNSIS v3.13 - Copyright 1999-2026 Contributors
+See the file COPYING for license details.
+Credits can be found in the Users Manual.
+
+Processing config: C:\Program Files (x86)\NSIS\nsisconf.nsh
+Processing script file: "layerssplit.nsi" (UTF8)
+
+Processed 1 file, writing output (x86-unicode):
+
+Output: "D:\a\layers-keys\layers-keys\split\nsis\Layers-Split-Setup-1.0.0.exe"
+Install: 5 pages (320 bytes), 2 sections (1 required) (4144 bytes), 736 instructions (20608 bytes), 297 strings (11538 bytes), 1 language table (330 bytes).
+Uninstall: 3 pages (256 bytes), 1 section (2072 bytes), 373 instructions (10444 bytes), 182 strings (7016 bytes), 1 language table (274 bytes).
+Datablock optimizer saved 154546 bytes (~0.0%).
+
+Using lzma (compress whole) compression.
+
+EXE header size:               70144 / 38912 bytes
+Install code:                          (37404 bytes)
+Install data:                          (294013933 bytes)
+Uninstall code+data:                   (259454 bytes)
+Compressed data:           245042234 / 294310791 bytes
+CRC (0xD25F6D4B):                  4 / 4 bytes
+
+Total size:                245112382 / 294349707 bytes (83.2%)
+
+Name                            Length
+----                            ------
+Layers-Split-Setup-1.0.0.exe 245112382
+
+

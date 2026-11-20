@@ -1,0 +1,8 @@
+code réinstallation (mise à jour) : 0
+code désinstallation : 0
+C:\Program Files\Layers Split\Layers Split.exe encore présent : False
+C:\Program Files\Layers Split\models encore présent : False
+C:\Program Files\Common Files\VST3\Layers Split.vst3 encore présent : False
+C:\Users\Public\Desktop\Layers Split.lnk encore présent : False
+HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\LayersSplit encore présent : False
+HKLM:\Software\JB Praise\Layers Split encore présent : False

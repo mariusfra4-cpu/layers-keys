@@ -1,0 +1,19 @@
+moteur : C:\rt
+onnxruntime 1.20.1 (DirectML disponible)
+fichier : exemple.mp3 0:10 44100 Hz
+  0 % Séparation des voix
+  21 % Séparation des voix
+  42 % Séparation des voix
+  57 % Voix lead / chœurs
+  72 % Voix lead / chœurs
+  85 % Batterie
+  97 % Basse
+separation : 34.7612 s sur Processeur
+stem Voix lead : -19.0 dB
+stem Choeurs : -41.3 dB
+stem Batterie : -18.4 dB
+stem Basse : -19.8 dB
+stem Instruments : -18.5 dB
+residu (somme des stems - original) : -145.5 dB
+analyse : 146.5 BPM, Fa majeur (7B), -9.4 LUFS, crete 0.4 dBFS
+OK
