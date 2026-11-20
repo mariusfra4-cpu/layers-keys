@@ -1621,14 +1621,14 @@ static void testAutomation (const juce::File& root)
     host ("a_song", 1);
     CHECK (p.setlist().current() == 0 && p.currentKey() == 9 && p.currentMode() == 0, "lecture : le chant 1 de la setlist revient (chant " << p.setlist().current() << ", " << p.currentKey() << "/" << p.currentMode() << ")");
     host ("a_song", 2);
-    CHECK (p.setlist().current() == 1 && p.currentKey() == 4 && p.currentMode() == 1, "lecture : le chant 2 de la setlist revient");
+    CHECK (p.setlist().current() == 1 && p.currentKey() == 4 && p.currentMode() == 1, "lecture : le chant 2 de la setlist revient (chant " << p.setlist().current() << ", " << p.currentKey() << "/" << p.currentMode() << ", a_song " << val ("a_song") << ", a_key " << val ("a_key") << ")");
     // projet rouvert : le pad ne démarre pas tout seul
     juce::MemoryBlock st;
     p.getStateInformation (st);
     SpacepadProcessor q;
     q.setStateInformation (st.getData(), (int) st.getSize());
     q.runControlForTests();
-    CHECK (! q.padActive() && q.currentKey() == 4, "projet rouvert : meme tonalite, le pad attend (pas de depart tout seul)");
+    CHECK (! q.padActive() && q.currentKey() == 4, "projet rouvert : meme tonalite, le pad attend (pas de depart tout seul) (joue " << (int) q.padActive() << ", ton " << q.currentKey() << ")");
     while (! p.setlist().songs().empty()) p.setlist().remove (0);
     p.stopAll();
 }
