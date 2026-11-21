@@ -32,6 +32,8 @@ LayersSplitProcessor::LayersSplitProcessor() : AudioProcessor (makeBuses())
                 else if (a == "--rapide") settings.quality = Quality::fast;
                 else if (a == "--ultra") settings.quality = Quality::ultra;
                 else if (a == "--cpu") settings.useGpu = false;
+                else if (a == "--solo") settings.splitGuitarSolo = true;
+                else if (a == "--simple") settings.detailInstruments = false;
             }
             for (const auto& a : args)
             {
@@ -445,6 +447,8 @@ void LayersSplitProcessor::getStateInformation (juce::MemoryBlock& destData)
     x.setAttribute ("gpu", settings.useGpu);
     x.setAttribute ("splitVocals", settings.splitVocals);
     x.setAttribute ("splitDrumsBass", settings.splitDrumsBass);
+    x.setAttribute ("detailInstruments", settings.detailInstruments);
+    x.setAttribute ("splitGuitarSolo", settings.splitGuitarSolo);
     x.setAttribute ("followHost", followHost.load());
     x.setAttribute ("loop", loop.load());
     x.setAttribute ("master", masterDb.load());
@@ -470,6 +474,8 @@ void LayersSplitProcessor::setStateInformation (const void* data, int sizeInByte
     const bool gpu = x->getBoolAttribute ("gpu", true);
     const bool sv = x->getBoolAttribute ("splitVocals", true);
     const bool sdb = x->getBoolAttribute ("splitDrumsBass", true);
+    const bool di = x->getBoolAttribute ("detailInstruments", true);
+    const bool gs = x->getBoolAttribute ("splitGuitarSolo", false);
     followHost = x->getBoolAttribute ("followHost", true);
     loop = x->getBoolAttribute ("loop", false);
     masterDb = (float) x->getDoubleAttribute ("master", 0.0);
@@ -483,13 +489,15 @@ void LayersSplitProcessor::setStateInformation (const void* data, int sizeInByte
     }
 
     pendingStateFile = file;
-    juce::MessageManager::callAsync ([this, safe = juce::WeakReference<LayersSplitProcessor> (this), file, quality, gpu, sv, sdb]
+    juce::MessageManager::callAsync ([this, safe = juce::WeakReference<LayersSplitProcessor> (this), file, quality, gpu, sv, sdb, di, gs]
     {
         if (safe == nullptr) return;
         settings.quality = (Quality) quality;
         settings.useGpu = gpu;
         settings.splitVocals = sv;
         settings.splitDrumsBass = sdb;
+        settings.detailInstruments = di;
+        settings.splitGuitarSolo = gs;
         if (file.isNotEmpty())
         {
             const juce::File f (file);

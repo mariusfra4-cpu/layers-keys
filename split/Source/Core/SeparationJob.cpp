@@ -165,7 +165,7 @@ SeparationJob::Result SeparationJob::doWork()
 
     Separator sep (modelsDirFor (runtime).getFullPathName().toStdString());
     std::string missing;
-    if (! sep.checkModels (missing))
+    if (! sep.checkModels (missing, req.settings))
     {
         res.error = lsplit::U ("Modèles IA manquants : ") + juce::String::fromUTF8 (missing.c_str()) + lsplit::U (". Réinstallez Layers Split.");
         return res;

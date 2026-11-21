@@ -54,7 +54,8 @@ public:
 private:
     juce::Rectangle<int> overviewArea() const;
     juce::Rectangle<int> rulerArea() const;
-    juce::Rectangle<int> laneArea (int stem) const;
+    juce::Rectangle<int> laneArea (int stem) const;   // stem : identifiant ; zone vide si la piste est cachée
+    void updateVisibleLanes();
     juce::Rectangle<int> waveColumn() const; // zone horizontale des formes d'onde
     void drawWave (juce::Graphics&, const Peaks&, juce::Rectangle<int>, juce::Colour, float gain) const;
     void seekFromX (int x);
@@ -62,6 +63,7 @@ private:
     LayersSplitProcessor& proc;
     juce::OwnedArray<StemLaneHeader> headers;
     PlayDataPtr data;
+    std::vector<int> visible;   // stems affichés, dans l'ordre
     int lastPlayheadX = -1;
     bool dragOver = false;
 

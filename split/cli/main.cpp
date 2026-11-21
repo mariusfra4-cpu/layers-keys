@@ -56,6 +56,8 @@ int main (int argc, char* argv[])
     s.useGpu = ! flags.contains ("--cpu");
     s.splitVocals = ! flags.contains ("--sans-choeurs");
     s.splitDrumsBass = ! flags.contains ("--sans-batterie");
+    s.detailInstruments = ! flags.contains ("--simple");
+    s.splitGuitarSolo = flags.contains ("--solo");
 
     juce::File runtime = opt["--runtime"].isNotEmpty() ? absFile (opt["--runtime"]) : findRuntimeDir();
     if (runtime == juce::File() || ! runtime.isDirectory())

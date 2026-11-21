@@ -75,14 +75,19 @@ LayersSplitEditor::LayersSplitEditor (LayersSplitProcessor& p) : AudioProcessorE
     qualityInfo.setMinimumHorizontalScale (1.0f);
     addAndMakeVisible (qualityInfo);
 
-    for (auto* t : { &optVocals, &optDrums, &optGpu })
+    for (auto* t : { &optVocals, &optDrums, &optGpu, &optDetail, &optSolo })
         addAndMakeVisible (*t);
     optVocals.setTooltip (lsplit::U ("Sépare la voix principale des chœurs"));
     optDrums.setTooltip (lsplit::U ("Sépare la batterie et la basse du reste des instruments"));
     optGpu.setTooltip (lsplit::U ("Utilise la carte graphique (DirectML) : beaucoup plus rapide. Sinon le processeur est utilisé."));
     optVocals.onClick = [this] { proc.settings.splitVocals = optVocals.getToggleState(); };
-    optDrums.onClick  = [this] { proc.settings.splitDrumsBass = optDrums.getToggleState(); };
+    optDrums.onClick  = [this] { proc.settings.splitDrumsBass = optDrums.getToggleState(); tracks.refresh(); };
     optGpu.onClick    = [this] { proc.settings.useGpu = optGpu.getToggleState(); };
+    optDetail.setTooltip (lsplit::U ("Sépare aussi les guitares et le piano / claviers (modèle Demucs 6 sources, un peu plus long)"));
+    optSolo.setTooltip (lsplit::U ("Expérimental : sépare la guitare solo (la mélodie) de la guitare rythmique"));
+    optDetail.onClick = [this] { proc.settings.detailInstruments = optDetail.getToggleState(); syncFromProcessor(); tracks.refresh(); };
+    optSolo.onClick   = [this] { proc.settings.splitGuitarSolo = optSolo.getToggleState(); tracks.refresh(); };
+    optVocals.onClick = [this] { proc.settings.splitVocals = optVocals.getToggleState(); tracks.refresh(); };
 
     separateBtn.getProperties().set ("primary", true);
     separateBtn.onClick = [this]
@@ -163,6 +168,8 @@ void LayersSplitEditor::syncFromProcessor()
     optVocals.setToggleState (proc.settings.splitVocals, juce::dontSendNotification);
     optDrums.setToggleState (proc.settings.splitDrumsBass, juce::dontSendNotification);
     optGpu.setToggleState (proc.settings.useGpu, juce::dontSendNotification);
+    optDetail.setToggleState (proc.settings.detailInstruments, juce::dontSendNotification);
+    optSolo.setToggleState (proc.settings.splitGuitarSolo, juce::dontSendNotification);
     followBtn.setToggleState (proc.followHost.load(), juce::dontSendNotification);
     loopBtn.setToggleState (proc.loop.load(), juce::dontSendNotification);
     abBtn.setToggleState (proc.listenOriginal.load(), juce::dontSendNotification);
@@ -174,8 +181,10 @@ void LayersSplitEditor::syncFromProcessor()
     separateBtn.setButtonText (busy ? "ANNULER" : (d == nullptr ? "OUVRIR UN MORCEAU" : (hasStems ? lsplit::U ("SÉPARER À NOUVEAU") : lsplit::U ("SÉPARER"))));
     for (juce::Component* c : { (juce::Component*) &qFast, (juce::Component*) &qHigh, (juce::Component*) &qUltra,
                                 (juce::Component*) &optVocals, (juce::Component*) &optDrums, (juce::Component*) &optGpu,
+                                (juce::Component*) &optDetail,
                                 (juce::Component*) &openBtn })
         c->setEnabled (! busy);
+    optSolo.setEnabled (! busy && proc.settings.detailInstruments);
     for (auto* b : { &expAll, &expAcapella, &expInst, &expKaraoke, &expMix })
         b->setEnabled (hasStems && ! busy && ! exporting.load());
     expAcapella.setEnabled (expAcapella.isEnabled() && d->stems.present[stemBacking]);
@@ -278,9 +287,17 @@ void LayersSplitEditor::resized()
     if (! compact)
         qualityInfo.setBounds (s.removeFromTop (36));
     const int rowH = compact ? 22 : 24;
-    optVocals.setBounds (s.removeFromTop (rowH));
-    optDrums.setBounds (s.removeFromTop (rowH));
-    optGpu.setBounds (s.removeFromTop (rowH));
+    // options sur deux colonnes
+    auto twoCols = [&] (juce::Component& a, juce::Component* b)
+    {
+        auto row = s.removeFromTop (rowH);
+        const int half = row.getWidth() / 2;
+        a.setBounds (row.removeFromLeft (b != nullptr ? half : row.getWidth()));
+        if (b != nullptr) b->setBounds (row);
+    };
+    twoCols (optVocals, &optDrums);
+    twoCols (optDetail, &optSolo);
+    twoCols (optGpu, nullptr);
     s.removeFromTop (compact ? 4 : 8);
     separateBtn.setBounds (s.removeFromTop (compact ? 34 : 40));
     s.removeFromTop (compact ? 48 : 54); // progression (dessinée)
@@ -543,9 +560,9 @@ void LayersSplitEditor::exportStems (int preset)
                             write (stemFileName (k), d->stems.stems[k]);
                     break;
                 case 1: write ("Acapella", sumOf ({ stemLead, stemBacking }, nullptr)); break;
-                case 2: write ("Instrumental", sumOf ({ stemDrums, stemBass, stemOther }, nullptr)); break;
-                case 3: write ("Sans voix lead", sumOf ({ stemBacking, stemDrums, stemBass, stemOther }, nullptr)); break;
-                case 4: write ("Mixage", sumOf ({ stemLead, stemBacking, stemDrums, stemBass, stemOther }, g.data())); break;
+                case 2: write ("Instrumental", sumOf ({ stemDrums, stemBass, stemGuitar, stemGuitarSolo, stemPiano, stemOther }, nullptr)); break;
+                case 3: write ("Sans voix lead", sumOf ({ stemBacking, stemDrums, stemBass, stemGuitar, stemGuitarSolo, stemPiano, stemOther }, nullptr)); break;
+                case 4: write ("Mixage", sumOf ({ stemLead, stemBacking, stemDrums, stemBass, stemGuitar, stemGuitarSolo, stemPiano, stemOther }, g.data())); break;
                 default: break;
             }
 

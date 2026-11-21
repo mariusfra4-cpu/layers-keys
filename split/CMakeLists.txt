@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.22)
 
-project (LayersSplit VERSION 1.0.0 LANGUAGES C CXX)
+project (LayersSplit VERSION 1.1.0 LANGUAGES C CXX)
 
 set (CMAKE_CXX_STANDARD 17)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -27,6 +27,8 @@ set (ENGINE_SOURCES
     Source/Engine/OrtRuntime.cpp
     Source/Engine/Dsp.cpp
     Source/Engine/MdxModel.cpp
+    Source/Engine/DemucsModel.cpp
+    Source/Engine/LeadSplit.cpp
     Source/Engine/Separator.cpp
     Source/Engine/Analysis.cpp
     Source/Core/AudioIO.cpp)

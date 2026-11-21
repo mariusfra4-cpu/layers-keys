@@ -52,7 +52,8 @@ private:
     // panneau de droite
     juce::TextButton qFast { "Rapide" }, qHigh { "Haute" }, qUltra { "Ultra" };
     juce::Label qualityInfo;
-    juce::ToggleButton optVocals { lsplit::U ("Voix lead / chœurs") }, optDrums { "Batterie et basse" }, optGpu { "Carte graphique (GPU)" };
+    juce::ToggleButton optVocals { lsplit::U ("Voix lead / chœurs") }, optDrums { "Batterie et basse" }, optGpu { "Carte graphique (GPU)" },
+                       optDetail { "Guitares et piano" }, optSolo { "Guitare solo" };
     juce::TextButton separateBtn { lsplit::U ("SÉPARER") };
     juce::ComboBox format;
     juce::TextButton expAll { "Tous les stems" }, expAcapella { "Acapella" }, expInst { "Instrumental" },

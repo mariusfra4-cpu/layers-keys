@@ -33,7 +33,10 @@ inline juce::Colour stemColour (int id)
         case stemBacking: return juce::Colour (0xffff9cc0);
         case stemDrums:   return juce::Colour (0xffffaa3b);
         case stemBass:    return juce::Colour (0xff3ee0c8);
-        case stemOther:   return juce::Colour (0xff6f9dff);
+        case stemGuitar:  return juce::Colour (0xff6fdc84);
+        case stemGuitarSolo: return juce::Colour (0xffc6f06a);
+        case stemPiano:   return juce::Colour (0xff55a3ff);
+        case stemOther:   return juce::Colour (0xff9887ff);
         default:          return dim;
     }
 }
@@ -46,7 +49,10 @@ inline const char* stemSubtitle (int id)
         case stemBacking: return "Harmonies, doublages";
         case stemDrums:   return "Kick, caisse, cymbales";
         case stemBass:    return "Basse, sub";
-        case stemOther:   return "Claviers, guitares, etc.";
+        case stemGuitar:  return "Électriques, acoustiques";
+        case stemGuitarSolo: return "Mélodie (expérimental)";
+        case stemPiano:   return "Piano, Rhodes, claviers";
+        case stemOther:   return "Orgue, synthés, cordes…";
         default:          return "";
     }
 }

@@ -9,7 +9,44 @@ on:
 permissions:
   contents: write
 jobs:
+  # Conversion du modèle Demucs 6 sources en ONNX, puis vérification : le moteur C++ de Layers Split
+  # doit donner le même résultat que Demucs (PyTorch) avec les vrais poids.
+  demucs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Outils
+        run: |
+          sudo apt-get install -y -qq ffmpeg > /dev/null
+          pip install -q torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -q demucs onnx onnxruntime soundfile
+          mkdir -p ~/hd /tmp/test /tmp/ort
+          curl -sL -o /tmp/test/exemple.mp3 https://raw.githubusercontent.com/deezer/spleeter/master/audio_example.mp3
+          ffmpeg -loglevel error -y -i /tmp/test/exemple.mp3 -ar 44100 -ac 2 -c:a pcm_f32le /tmp/test/exemple.wav
+          curl -sL -o /tmp/ort.zip https://api.nuget.org/v3-flatcontainer/microsoft.ml.onnxruntime/1.20.1/microsoft.ml.onnxruntime.1.20.1.nupkg
+          unzip -q /tmp/ort.zip -d /tmp/ort
+      - name: Conversion (htdemucs_6s vers ONNX) et séparation de référence PyTorch
+        run: |
+          set -o pipefail
+          python split/tools/export_htdemucs.py --out ~/hd/htdemucs_6s.onnx --check /tmp/test/exemple.wav --ref-out /tmp/test/ref 2>&1 | grep -v Warning
+          ls -la ~/hd; sha256sum ~/hd/*
+      - name: Vérification du moteur C++ (Demucs)
+        run: |
+          set -o pipefail
+          g++ -std=c++17 -O2 -I/tmp/ort/build/native/include split/tests/demucs_test.cpp split/Source/Engine/DemucsModel.cpp split/Source/Engine/Dsp.cpp split/Source/Engine/OrtRuntime.cpp -ldl -lpthread -o /tmp/demucs_test
+          /tmp/demucs_test /tmp/ort/runtimes/linux-x64/native ~/hd/htdemucs_6s.onnx /tmp/test/exemple.wav /tmp/test/ref
+      - uses: actions/upload-artifact@v4
+        with:
+          name: htdemucs
+          path: ~/hd/
+          retention-days: 5
+
   win:
+    needs: demucs
     runs-on: windows-latest
     timeout-minutes: 120
     steps:
@@ -56,6 +93,11 @@ jobs:
             "$m : OK" | Tee-Object -Append C:\lslogs\00_dependances.txt
           }
 
+      - uses: actions/download-artifact@v4
+        with:
+          name: htdemucs
+          path: C:\deps\hd
+
       - name: Compilation (Visual Studio, x64)
         shell: pwsh
         run: |
@@ -73,20 +115,22 @@ jobs:
           Copy-Item C:\deps\ort\runtimes\win-x64\native\onnxruntime.dll C:\rt\
           Copy-Item C:\deps\dml\bin\x64-win\DirectML.dll C:\rt\
           Copy-Item C:\deps\models\*.onnx C:\rt\models\
+          Copy-Item C:\deps\hd\htdemucs_6s.onnx, C:\deps\hd\htdemucs_6s.onnx.json C:\rt\models\
           Invoke-WebRequest https://raw.githubusercontent.com/deezer/spleeter/master/audio_example.mp3 -OutFile C:\test\exemple.mp3
 
       - name: Test de séparation (outil en ligne de commande, processeur)
         shell: pwsh
         run: |
-          & C:\b\LayersSplitCli_artefacts\Release\LayersSplitCli.exe --in C:\test\exemple.mp3 --out C:\test\stems --qualite rapide --cpu --runtime C:\rt 2>&1 | Tee-Object C:\lslogs\03_separation_cpu.txt
+          & C:\b\LayersSplitCli_artefacts\Release\LayersSplitCli.exe --in C:\test\exemple.mp3 --out C:\test\stems --qualite rapide --cpu --simple --runtime C:\rt 2>&1 | Tee-Object C:\lslogs\03_separation_cpu.txt
           if ($LASTEXITCODE -ne 0) { exit 1 }
           Get-ChildItem C:\test\stems | Format-Table Name,Length | Out-String | Tee-Object -Append C:\lslogs\03_separation_cpu.txt
 
-      - name: Test de séparation qualité Haute
+      - name: Test de séparation qualité Haute, instruments détaillés et guitare solo
         shell: pwsh
         run: |
-          & C:\b\LayersSplitCli_artefacts\Release\LayersSplitCli.exe --in C:\test\exemple.mp3 --out C:\test\stems_haute --qualite haute --cpu --runtime C:\rt 2>&1 | Tee-Object C:\lslogs\04_separation_haute.txt
+          & C:\b\LayersSplitCli_artefacts\Release\LayersSplitCli.exe --in C:\test\exemple.mp3 --out C:\test\stems_haute --qualite haute --cpu --solo --runtime C:\rt 2>&1 | Tee-Object C:\lslogs\04_separation_haute.txt
           if ($LASTEXITCODE -ne 0) { exit 1 }
+          Get-ChildItem C:\test\stems_haute | Format-Table Name,Length | Out-String | Tee-Object -Append C:\lslogs\04_separation_haute.txt
 
       - name: Test GPU DirectML (le serveur n'a pas de vraie carte graphique)
         shell: pwsh
@@ -112,7 +156,7 @@ jobs:
           Copy-Item "C:\b\LayersSplit_artefacts\Release\Standalone\Layers Split.exe" $p
           Copy-Item -Recurse "C:\b\LayersSplit_artefacts\Release\VST3\Layers Split.vst3" $p
           Copy-Item C:\rt\onnxruntime.dll, C:\rt\DirectML.dll $p
-          Copy-Item C:\rt\models\*.onnx "$p\models"
+          Copy-Item C:\rt\models\*.onnx, C:\rt\models\*.json "$p\models"
           Copy-Item split\nsis\Licences.txt $p
           Get-ChildItem -Recurse $p -File | Format-Table FullName,Length -AutoSize | Out-String -Width 300 | Tee-Object C:\lslogs\07_installateur.txt
           if (-not (Test-Path "C:\Program Files (x86)\NSIS\makensis.exe")) {
@@ -125,19 +169,19 @@ jobs:
           Set-Location split\nsis
           makensis /V3 layerssplit.nsi 2>&1 | Tee-Object -Append C:\lslogs\07_installateur.txt
           if ($LASTEXITCODE -ne 0) { exit 1 }
-          Get-Item Layers-Split-Setup-1.0.0.exe | Format-Table Name,Length | Out-String | Tee-Object -Append C:\lslogs\07_installateur.txt
+          Get-Item Layers-Split-Setup-1.1.0.exe | Format-Table Name,Length | Out-String | Tee-Object -Append C:\lslogs\07_installateur.txt
 
       - name: Test installation silencieuse
         shell: pwsh
         run: |
           $log = "C:\lslogs\08_installation.txt"
-          $setup = (Resolve-Path split\nsis\Layers-Split-Setup-1.0.0.exe).Path
+          $setup = (Resolve-Path split\nsis\Layers-Split-Setup-1.1.0.exe).Path
           $p = Start-Process $setup -ArgumentList "/S" -Wait -PassThru
           "code installation : $($p.ExitCode)" | Tee-Object $log
           $pf = "$env:ProgramFiles\Layers Split"
           $vst = "$env:CommonProgramW6432\VST3\Layers Split.vst3"
           $ok = $true
-          foreach ($x in @("$pf\Layers Split.exe","$pf\onnxruntime.dll","$pf\DirectML.dll","$pf\models\Kim_Vocal_2.onnx","$pf\models\UVR_MDXNET_KARA_2.onnx","$pf\models\kuielab_a_drums.onnx","$pf\models\kuielab_a_bass.onnx","$pf\models\UVR-MDX-NET-Inst_HQ_3.onnx","$pf\Desinstaller.exe","$vst\Contents\x86_64-win\Layers Split.vst3","$env:PUBLIC\Desktop\Layers Split.lnk")) {
+          foreach ($x in @("$pf\Layers Split.exe","$pf\onnxruntime.dll","$pf\DirectML.dll","$pf\models\Kim_Vocal_2.onnx","$pf\models\UVR_MDXNET_KARA_2.onnx","$pf\models\kuielab_a_drums.onnx","$pf\models\kuielab_a_bass.onnx","$pf\models\UVR-MDX-NET-Inst_HQ_3.onnx","$pf\models\htdemucs_6s.onnx","$pf\models\htdemucs_6s.onnx.json","$pf\Desinstaller.exe","$vst\Contents\x86_64-win\Layers Split.vst3","$env:PUBLIC\Desktop\Layers Split.lnk")) {
             $e = Test-Path -LiteralPath $x
             if (-not $e) { $ok = $false }
             "{0} : {1}" -f $x, $e | Tee-Object -Append $log
@@ -170,7 +214,7 @@ jobs:
             $bmp.Save("C:\lslogs\capture_$n.png")
           }
           $exe = "$env:ProgramFiles\Layers Split\Layers Split.exe"
-          $app = Start-Process $exe -ArgumentList '"C:\test\exemple.mp3"','--separer','--rapide','--cpu' -PassThru
+          $app = Start-Process $exe -ArgumentList '"C:\test\exemple.mp3"','--separer','--rapide','--cpu','--solo' -PassThru
           Start-Sleep 8
           Snap "1_ouverture"
           Start-Sleep 25
@@ -189,7 +233,7 @@ jobs:
         shell: pwsh
         run: |
           $log = "C:\lslogs\11_desinstallation.txt"
-          $setup = (Resolve-Path split\nsis\Layers-Split-Setup-1.0.0.exe).Path
+          $setup = (Resolve-Path split\nsis\Layers-Split-Setup-1.1.0.exe).Path
           $p = Start-Process $setup -ArgumentList "/S" -Wait -PassThru
           "code réinstallation (mise à jour) : $($p.ExitCode)" | Tee-Object $log
           $pf = "$env:ProgramFiles\Layers Split"
@@ -214,7 +258,7 @@ jobs:
           git config user.email "ci@users.noreply.github.com"
           git checkout --orphan ci-split-win-tmp
           git rm -rf . >/dev/null 2>&1 || true
-          git clean -fdxq -e split/nsis/Layers-Split-Setup-1.0.0.exe || true
+          git clean -fdxq -e split/nsis/Layers-Split-Setup-1.1.0.exe || true
           cp /tmp/o/* . 2>/dev/null || true
           echo "run $GITHUB_RUN_ID $GITHUB_SHA" > run.txt
           git add -A ':!split'
@@ -227,7 +271,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $f = Get-ChildItem -Recurse -Filter Layers-Split-Setup-1.0.0.exe | Select-Object -First 1
+          $f = Get-ChildItem -Recurse -Filter Layers-Split-Setup-1.1.0.exe | Select-Object -First 1
           gh release delete layers-split-test --yes --cleanup-tag 2>$null
-          $notes = "Layers Split 1.0.0 pour Windows 10/11 (64 bits) — version de test.`n`nApplication autonome + plugin VST3. Séparation par IA : voix lead, chœurs, batterie, basse, instruments.`n`nCompilation $env:GITHUB_SHA"
-          gh release create layers-split-test $f.FullName --target $env:GITHUB_SHA --prerelease --title "Layers Split 1.0.0 (Windows) - test" --notes $notes
+          $notes = "Layers Split 1.1.0 pour Windows 10/11 (64 bits) — version de test.`n`nApplication autonome + plugin VST3. Séparation par IA : voix lead, chœurs, batterie, basse, guitares, guitare solo, piano / claviers, autres instruments.`n`nCompilation $env:GITHUB_SHA"
+          gh release create layers-split-test $f.FullName --target $env:GITHUB_SHA --prerelease --title "Layers Split 1.1.0 (Windows) - test" --notes $notes

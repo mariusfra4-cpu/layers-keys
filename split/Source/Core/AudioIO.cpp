@@ -20,7 +20,7 @@ namespace
             && d.getChildFile ("models").isDirectory();
     }
 
-    const int kCacheVersion = 1;
+    const int kCacheVersion = 2;
 }
 
 juce::File findRuntimeDir()
@@ -210,7 +210,8 @@ juce::String cacheKeyFor (const juce::File& source, const SeparationSettings& s)
 {
     juce::String k;
     k << source.getFullPathName() << "|" << source.getSize() << "|" << source.getLastModificationTime().toMilliseconds()
-      << "|q" << (int) s.quality << "|v" << (int) s.splitVocals << "|d" << (int) s.splitDrumsBass << "|c" << kCacheVersion;
+      << "|q" << (int) s.quality << "|v" << (int) s.splitVocals << "|d" << (int) s.splitDrumsBass
+      << "|i" << (int) s.detailInstruments << "|g" << (int) (s.detailInstruments && s.splitGuitarSolo) << "|c" << kCacheVersion;
     return juce::String::toHexString (k.hashCode64()).paddedLeft ('0', 16);
 }
 

@@ -1,5 +1,7 @@
 #include "Separator.h"
+#include "DemucsModel.h"
 #include "Dsp.h"
+#include "LeadSplit.h"
 
 #include <cmath>
 #include <cstdio>
@@ -24,6 +26,7 @@ namespace
     const ModelDef kKaraoke  { "UVR_MDXNET_KARA_2.onnx",     { 5120,  2048, 256, 1.065f } };
     const ModelDef kDrums    { "kuielab_a_drums.onnx",       { 4096,  2048, 512, 1.035f } };
     const ModelDef kBass     { "kuielab_a_bass.onnx",        { 16384, 2048, 512, 1.035f } };
+    const char* kDemucs = "htdemucs_6s.onnx";
 
     bool fileExists (const std::string& path)
     {
@@ -58,7 +61,10 @@ const char* stemName (int id)
         case stemBacking: return "Chœurs";
         case stemDrums:   return "Batterie";
         case stemBass:    return "Basse";
-        case stemOther:   return "Instruments";
+        case stemGuitar:  return "Guitares";
+        case stemGuitarSolo: return "Guitare solo";
+        case stemPiano:   return "Piano / claviers";
+        case stemOther:   return "Autres";
         default:          return "?";
     }
 }
@@ -71,6 +77,9 @@ const char* stemFileName (int id)
         case stemBacking: return "Choeurs";
         case stemDrums:   return "Batterie";
         case stemBass:    return "Basse";
+        case stemGuitar:  return "Guitares";
+        case stemGuitarSolo: return "Guitare solo";
+        case stemPiano:   return "Piano";
         case stemOther:   return "Instruments";
         default:          return "Stem";
     }
@@ -89,13 +98,55 @@ Separator::Separator (std::string dir) : modelsDir (std::move (dir))
         modelsDir += '/';
 }
 
-bool Separator::checkModels (std::string& missing) const
+bool Separator::checkModels (std::string& missing, const SeparationSettings& s) const
 {
     missing.clear();
-    for (const auto* m : { &kVocals, &kInstHQ3, &kKaraoke, &kDrums, &kBass })
-        if (! fileExists (modelsDir + m->file))
-            missing += (missing.empty() ? "" : ", ") + std::string (m->file);
+    std::vector<std::string> files { kVocals.file, kInstHQ3.file, kKaraoke.file, kDrums.file, kBass.file };
+    if (s.detailInstruments)
+    {
+        files.push_back (kDemucs);
+        files.push_back (std::string (kDemucs) + ".json");
+    }
+    for (const auto& f : files)
+        if (! fileExists (modelsDir + f))
+            missing += (missing.empty() ? "" : ", ") + f;
     return missing.empty();
+}
+
+bool Separator::runDemucs (const StereoBuffer& in, std::vector<StereoBuffer>& out, std::vector<std::string>& names,
+                           bool gpu, double from, double to, const Progress& progress, std::string& deviceUsed)
+{
+    const std::string path = modelsDir + kDemucs;
+    const std::string label = "Guitares, piano, batterie, basse";
+    auto report = [&] (double f) { return ! progress || progress (label, from + (to - from) * f); };
+    if (! report (0.0)) return false;
+
+    DemucsModel model;
+    std::string err;
+    bool onGpu = false;
+    if (gpu && OrtRuntime::directMLAvailable())
+        onGpu = model.load (path, Device::gpu, err);
+    if (! onGpu && ! model.load (path, Device::cpu, err))
+        throw std::runtime_error ("Chargement du modèle " + std::string (kDemucs) + " impossible : " + err);
+
+    try
+    {
+        if (! model.process (in, out, report)) return false;
+    }
+    catch (const std::exception&)
+    {
+        if (! onGpu) throw;
+        onGpu = false;
+        if (! model.load (path, Device::cpu, err))
+            throw std::runtime_error ("Chargement du modèle " + std::string (kDemucs) + " impossible : " + err);
+        if (! model.process (in, out, report)) return false;
+    }
+    names = model.sources();
+
+    const std::string dev = onGpu ? "GPU (DirectML)" : "Processeur";
+    if (deviceUsed.empty()) deviceUsed = dev;
+    else if (deviceUsed.find (dev) == std::string::npos) deviceUsed += " + " + dev;
+    return true;
 }
 
 bool Separator::runModel (const char* file, const MdxParams& params, const StereoBuffer& in, StereoBuffer& out,
@@ -152,7 +203,7 @@ bool Separator::run (const StereoBuffer& mixIn, double sr, const SeparationSetti
         throw std::runtime_error ("Le fichier audio est vide.");
 
     std::string missing;
-    if (! checkModels (missing))
+    if (! checkModels (missing, s))
         throw std::runtime_error ("Modèles introuvables : " + missing);
 
     result = StemSet();
@@ -168,8 +219,10 @@ bool Separator::run (const StereoBuffer& mixIn, double sr, const SeparationSetti
     // répartition de la barre de progression selon le coût estimé de chaque étape
     double wVoc = ultra ? 4.0 : (fast ? 1.0 : 2.0);
     double wKar = s.splitVocals ? (fast ? 0.7 : 1.4) : 0.0;
-    double wDB  = s.splitDrumsBass ? (ultra ? 2.4 : 1.2) : 0.0;
-    const double wTotal = wVoc + wKar + wDB + 0.1;
+    const bool detail = s.detailInstruments;
+    double wDB  = detail ? 3.0 : (s.splitDrumsBass ? (ultra ? 2.4 : 1.2) : 0.0);
+    double wSolo = detail && s.splitGuitarSolo ? 0.2 : 0.0;
+    const double wTotal = wVoc + wKar + wDB + wSolo + 0.1;
     double pos = 0.0;
     auto span = [&] (double w) { const double a = pos / wTotal; pos += w; return std::make_pair (a, pos / wTotal); };
 
@@ -233,9 +286,40 @@ bool Separator::run (const StereoBuffer& mixIn, double sr, const SeparationSetti
         lead = vocals;
     }
 
-    // 3. batterie et basse, extraites de l'instrumental
-    StereoBuffer drums, bass;
-    if (s.splitDrumsBass)
+    // 3. batterie et basse (et en mode détaillé : guitares, piano), extraites de l'instrumental
+    StereoBuffer drums, bass, guitar, guitarSolo, piano;
+    if (detail)
+    {
+        auto [a, b] = span (wDB);
+        std::vector<StereoBuffer> src;
+        std::vector<std::string> names;
+        if (! runDemucs (inst, src, names, s.useGpu, a, b, progress, result.deviceUsed))
+            return false;
+        auto take = [&] (const char* name, StereoBuffer& dst)
+        {
+            for (size_t i = 0; i < names.size(); ++i)
+                if (names[i] == name) { dst = std::move (src[i]); fitLength (dst, m); return true; }
+            return false;
+        };
+        if (! take ("guitar", guitar) || ! take ("piano", piano))
+            throw std::runtime_error ("Le modèle Demucs ne contient pas les sources guitare / piano.");
+        if (s.splitDrumsBass && (! take ("drums", drums) || ! take ("bass", bass)))
+            throw std::runtime_error ("Le modèle Demucs ne contient pas les sources batterie / basse.");
+
+        if (s.splitGuitarSolo)
+        {
+            auto [c, d] = span (wSolo);
+            if (! splitLead (guitar, modelRate, guitarSolo,
+                             [&] (double f) { return ! progress || progress ("Guitare solo", c + (d - c) * f); }))
+                return false;
+            for (size_t i = 0; i < m; ++i)
+            {
+                guitar.l[i] -= guitarSolo.l[i];
+                guitar.r[i] -= guitarSolo.r[i];
+            }
+        }
+    }
+    else if (s.splitDrumsBass)
     {
         auto [a, b] = span (wDB * 0.5);
         if (! runModel (kDrums.file, kDrums.params, inst, drums, ultra, s.useGpu,
@@ -274,6 +358,20 @@ bool Separator::run (const StereoBuffer& mixIn, double sr, const SeparationSetti
         result.stems[stemDrums] = std::move (drums);
         result.stems[stemBass] = std::move (bass);
         result.present[stemDrums] = result.present[stemBass] = true;
+    }
+    if (detail)
+    {
+        back (guitar);
+        back (piano);
+        result.stems[stemGuitar] = std::move (guitar);
+        result.stems[stemPiano] = std::move (piano);
+        result.present[stemGuitar] = result.present[stemPiano] = true;
+        if (s.splitGuitarSolo)
+        {
+            back (guitarSolo);
+            result.stems[stemGuitarSolo] = std::move (guitarSolo);
+            result.present[stemGuitarSolo] = true;
+        }
     }
 
     StereoBuffer other;

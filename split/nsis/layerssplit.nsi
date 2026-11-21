@@ -6,7 +6,7 @@ Unicode true
 
 !define APPNAME "Layers Split"
 !ifndef APPVER
-  !define APPVER "1.0.0"
+  !define APPVER "1.1.0"
 !endif
 !define PUBLISHER "JB Praise"
 !define UNKEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\LayersSplit"
@@ -46,7 +46,7 @@ VIAddVersionKey /LANG=1036 "OriginalFilename" "Layers-Split-Setup-${APPVER}.exe"
 !define MUI_ABORTWARNING
 
 !define MUI_WELCOMEPAGE_TITLE "Bienvenue dans Layers Split"
-!define MUI_WELCOMEPAGE_TEXT "Layers Split sépare un morceau en stems grâce à l'intelligence artificielle : voix lead, chœurs, batterie, basse et instruments. Il analyse aussi le tempo, la tonalité et le loudness.$\r$\n$\r$\nCet assistant va l'installer sur votre ordinateur, avec le plugin VST3 pour Ableton Live et les autres logiciels de musique.$\r$\n$\r$\nLa séparation fonctionne sans Internet. Une carte graphique (DirectX 12) la rend beaucoup plus rapide.$\r$\n$\r$\nBy JB Praise — for church musician."
+!define MUI_WELCOMEPAGE_TEXT "Layers Split sépare un morceau en stems grâce à l'intelligence artificielle : voix lead, chœurs, batterie, basse, guitares (et guitare solo), piano / claviers et autres instruments. Il analyse aussi le tempo, la tonalité et le loudness.$\r$\n$\r$\nCet assistant va l'installer sur votre ordinateur, avec le plugin VST3 pour Ableton Live et les autres logiciels de musique.$\r$\n$\r$\nLa séparation fonctionne sans Internet. Une carte graphique (DirectX 12) la rend beaucoup plus rapide.$\r$\n$\r$\nBy JB Praise — for church musician."
 !define MUI_COMPONENTSPAGE_SMALLDESC
 !define MUI_FINISHPAGE_TITLE "Layers Split est installé"
 !define MUI_FINISHPAGE_RUN
@@ -115,6 +115,7 @@ Section "Layers Split" SecApp
   DetailPrint "Installation des modèles d'intelligence artificielle..."
   SetOutPath "$INSTDIR\models"
   File "${PAYLOAD}\models\*.onnx"
+  File "${PAYLOAD}\models\*.json"
   SetOutPath "$INSTDIR"
 
   WriteUninstaller "$INSTDIR\Desinstaller.exe"
@@ -175,6 +176,7 @@ Section "Uninstall"
   Delete "$INSTDIR\Licences.txt"
   Delete "$INSTDIR\LayersSplit.ico"
   Delete "$INSTDIR\models\*.onnx"
+  Delete "$INSTDIR\models\*.json"
   RMDir "$INSTDIR\models"
   Delete "$INSTDIR\Desinstaller.exe"
   RMDir "$INSTDIR"

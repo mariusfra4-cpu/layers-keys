@@ -1,4 +1,6 @@
 #include "TrackView.h"
+
+#include <algorithm>
 #include "../Core/Text.h"
 
 namespace lsplit
@@ -79,10 +81,11 @@ void StemLaneHeader::paint (juce::Graphics& g)
     const int h = getHeight();
     g.setColour (present ? theme::textBright : theme::dim);
     g.setFont (theme::font (14.0f, true));
-    g.drawText (U (stemName (id)), txt.withY (h / 2 - 19).withHeight (18), juce::Justification::centredLeft, true);
+    const bool detailed = d != nullptr && d->hasStems && d->stems.present[stemGuitar];
+    g.drawText (id == stemOther && ! detailed ? U ("Instruments") : U (stemName (id)), txt.withY (h / 2 - 19).withHeight (18), juce::Justification::centredLeft, true);
     g.setColour (theme::dim);
     g.setFont (theme::font (11.5f));
-    g.drawText (U (theme::stemSubtitle (id)), txt.withY (h / 2 + 1).withHeight (16), juce::Justification::centredLeft, true);
+    g.drawText (id == stemOther && ! detailed ? U ("Claviers, guitares, etc.") : U (theme::stemSubtitle (id)), txt.withY (h / 2 + 1).withHeight (16), juce::Justification::centredLeft, true);
 
     // vu-mètre
     const float lvl = juce::jlimit (0.0f, 1.0f, proc.stemLevel[(size_t) id].load());
@@ -137,11 +140,37 @@ TrackView::TrackView (LayersSplitProcessor& p) : proc (p)
 juce::Rectangle<int> TrackView::overviewArea() const { return { 0, 0, getWidth(), overviewH }; }
 juce::Rectangle<int> TrackView::rulerArea() const { return { headerWidth, overviewH, getWidth() - headerWidth, rulerH }; }
 
+void TrackView::updateVisibleLanes()
+{
+    // stems calculés, ou ceux que les réglages actuels vont produire
+    visible.clear();
+    const auto& s = proc.settings;
+    for (int k = 0; k < numStems; ++k)
+    {
+        bool show;
+        if (data != nullptr && data->hasStems)
+            show = data->stems.present[k];
+        else
+            show = k == stemLead || k == stemOther
+                || (k == stemBacking && s.splitVocals)
+                || ((k == stemDrums || k == stemBass) && s.splitDrumsBass)
+                || ((k == stemGuitar || k == stemPiano) && s.detailInstruments)
+                || (k == stemGuitarSolo && s.detailInstruments && s.splitGuitarSolo);
+        if (show) visible.push_back (k);
+    }
+    for (int k = 0; k < numStems; ++k)
+        headers[k]->setVisible (std::find (visible.begin(), visible.end(), k) != visible.end());
+}
+
 juce::Rectangle<int> TrackView::laneArea (int stem) const
 {
+    const auto it = std::find (visible.begin(), visible.end(), stem);
+    if (it == visible.end()) return {};
+    const int idx = (int) (it - visible.begin());
     const int top = overviewH + rulerH;
-    const int h = juce::jmax (44, (getHeight() - top) / numStems);
-    return { 0, top + stem * h, getWidth(), h };
+    const int count = juce::jmax (1, (int) visible.size());
+    const int h = juce::jmax (36, (getHeight() - top) / count);
+    return { 0, top + idx * h, getWidth(), h };
 }
 
 juce::Rectangle<int> TrackView::waveColumn() const
@@ -151,6 +180,7 @@ juce::Rectangle<int> TrackView::waveColumn() const
 
 void TrackView::resized()
 {
+    updateVisibleLanes();
     for (int k = 0; k < numStems; ++k)
         headers[k]->setBounds (laneArea (k).withWidth (headerWidth));
 }
@@ -158,6 +188,7 @@ void TrackView::resized()
 void TrackView::refresh()
 {
     data = proc.getData();
+    resized();
     for (auto* h : headers) h->refresh();
     lastPlayheadX = -1;
     repaint();
@@ -244,10 +275,11 @@ void TrackView::paint (juce::Graphics& g)
     // pistes
     bool anySolo = false;
     for (int k = 0; k < numStems; ++k) anySolo = anySolo || proc.controls[(size_t) k].solo.load();
-    for (int k = 0; k < numStems; ++k)
+    for (size_t vi = 0; vi < visible.size(); ++vi)
     {
+        const int k = visible[vi];
         auto la = laneArea (k);
-        g.setColour (k % 2 == 0 ? juce::Colour (0xff0c0d11) : theme::bg);
+        g.setColour (vi % 2 == 0 ? juce::Colour (0xff0c0d11) : theme::bg);
         g.fillRect (la.withTrimmedLeft (headerWidth));
         g.setColour (theme::line);
         g.drawHorizontalLine (la.getBottom() - 1, (float) headerWidth, (float) getWidth());
@@ -262,7 +294,7 @@ void TrackView::paint (juce::Graphics& g)
             drawWave (g, data->stemPeaks[k], la.withX (wc.getX()).withWidth (wc.getWidth()).reduced (0, 6), col,
                       juce::jlimit (0.25f, 2.0f, gl));
         }
-        else if (data != nullptr && k == 0)
+        else if (data != nullptr && vi == 0)
         {
             g.setColour (theme::dim);
             g.setFont (theme::font (13.0f));
