@@ -1,0 +1,23 @@
+Archive:  eli-guitar-app/build/eliguitarchords.apk
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+     3272  1980-01-01 00:00   AndroidManifest.xml
+     8643  1980-01-01 00:00   res/drawable-xxxhdpi-v4/ic_bg.png
+    30671  1980-01-01 00:00   res/drawable-xxxhdpi-v4/ic_fg.png
+    62511  1980-01-01 00:00   res/drawable-xxxhdpi-v4/ic_launcher.png
+      448  1980-01-01 00:00   res/mipmap-anydpi-v26/ic_launcher.xml
+     1552  1980-01-01 00:00   resources.arsc
+     2064  1980-01-01 00:00   assets/android.js
+   250616  1980-01-01 00:00   assets/index.html
+     4230  1980-01-01 00:00   assets/licence.html
+    30750  1980-01-01 00:00   assets/logo.png
+    32580  2026-11-21 11:41   classes.dex
+     1198  2026-11-21 11:41   META-INF/JBKEYS.SF
+     1184  2026-11-21 11:41   META-INF/JBKEYS.RSA
+     1071  2026-11-21 11:41   META-INF/MANIFEST.MF
+---------                     -------
+   430790                     14 files
+package: com.elipraise.guitarchords
+uses-permission: name='android.permission.RECORD_AUDIO'
+uses-permission: name='android.permission.MODIFY_AUDIO_SETTINGS'
+contenu vérifié

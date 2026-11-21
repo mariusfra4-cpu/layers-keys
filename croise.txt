@@ -1,0 +1,4 @@
+OK    mot de passe de test accepté
+OK    mauvais mot de passe refusé
+OK    clé publique de l'appli de test = générateur de test
+OK    20 téléphones au hasard : chaque clé marche sur son téléphone et seulement sur lui
