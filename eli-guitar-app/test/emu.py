@@ -153,7 +153,8 @@ adb("shell", "input", "swipe", "160", "200", "160", "600", "300")   # remonte en
 time.sleep(1)
 x = wait_for(lambda x: "correspond pas" in x or "Vérifie qu" in x, 25)
 shot("2-mauvaise-cle")
-check(("correspond pas" in x or "Vérifie qu" in x) and last_page() == "écran de licence", "mauvaise clé refusée")
+refus = "clé refusée" in adb("logcat", "-d", "-s", "EliGuitarChords:I")
+check(refus and last_page() == "écran de licence", "mauvaise clé refusée (message affiché : " + ("oui" if ("correspond pas" in x or "Vérifie qu" in x) else "non lu") + ")")
 
 # 3. le générateur fabrique la clé
 adb("shell", "am", "start", "-n", GPKG + "/.MainActivity")

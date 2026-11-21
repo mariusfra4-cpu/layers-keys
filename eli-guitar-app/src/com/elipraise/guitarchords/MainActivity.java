@@ -397,7 +397,9 @@ public class MainActivity extends Activity {
 
         /** Clé de licence (envoyée par Eli Praise) : 1 = valable pour ce téléphone (appli activée), 0 = refusée. */
         @JavascriptInterface public int activateKey(String key) {
-            return Licence.setKey(MainActivity.this, key) ? 1 : 0;
+            boolean ok = Licence.setKey(MainActivity.this, key);
+            android.util.Log.i("EliGuitarChords", ok ? "clé acceptée" : "clé refusée");
+            return ok ? 1 : 0;
         }
 
         /** Texte du presse-papiers (pour « Coller ma clé »). */
