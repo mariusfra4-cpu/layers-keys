@@ -94,6 +94,20 @@ bool isAudioFile (const juce::File& f)
     return audioExtensions().contains (f.getFileExtension().toLowerCase());
 }
 
+bool writeSharedFile (const juce::File& target, const juce::String& text)
+{
+    target.getParentDirectory().createDirectory();
+    for (int attempt = 0; attempt < 12; ++attempt)
+    {
+        {
+            juce::TemporaryFile tmp (target);
+            if (tmp.getFile().replaceWithText (text) && tmp.overwriteTargetFileWithTemporary()) return true;
+        }
+        juce::Thread::sleep (25);   // fichier lu au même instant par l'application ou un plugin : on réessaie
+    }
+    return false;
+}
+
 // ---------------------------------------------------------------------------------------------
 // LibraryStore
 // ---------------------------------------------------------------------------------------------
@@ -231,10 +245,8 @@ bool LibraryStore::save()
     const juce::ScopedLock sl (lock);
     std::vector<Library> plain;
     for (auto& l : libs) plain.push_back (*l);
-    storeFile.getParentDirectory().createDirectory();
-    juce::TemporaryFile tmp (storeFile);
-    if (! tmp.getFile().replaceWithText (juce::JSON::toString (toVar (plain), false))) return false;
-    if (! tmp.overwriteTargetFileWithTemporary()) return false;
+    if (! writeSharedFile (storeFile, juce::JSON::toString (toVar (plain), false))) { dirty = true; return false; }
+    dirty = false;
    #if ! JUCE_WINDOWS
     storeFile.setReadOnly (false);
     ::chmod (storeFile.getFullPathName().toRawUTF8(), 0666); // modifiable par tous les comptes du Mac
@@ -249,6 +261,7 @@ bool LibraryStore::reloadIfChanged()
     auto t = storeFile.getLastModificationTime();
     {
         const juce::ScopedLock sl (lock);
+        if (dirty) { save(); return false; }     // nos changements pas encore écrits : on ne relit pas l'ancien fichier
         if (t == lastSeen) return false;
     }
     return load();

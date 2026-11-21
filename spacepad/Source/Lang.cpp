@@ -110,7 +110,7 @@ static void saveAll()
     for (auto v : ui.midiMap) mm.add (v);
     o->setProperty ("midiMap", mm);
     v.getDynamicObject()->setProperty ("ui", juce::var (o));
-    f.replaceWithText (juce::JSON::toString (v));
+    writeSharedFile (f, juce::JSON::toString (v));
     lastSeen = f.getLastModificationTime();
     ++version;
 }

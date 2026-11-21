@@ -42,5 +42,6 @@ private:
     juce::String setName;
     std::atomic<int> currentIndex { -1 }, changes { 0 };
     juce::Time lastSeen;
+    bool dirty = false;
 };
 }

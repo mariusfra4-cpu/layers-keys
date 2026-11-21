@@ -64,10 +64,8 @@ bool Setlist::save()
     }
     root->setProperty ("songs", arr);
     auto f = file();
-    f.getParentDirectory().createDirectory();
-    juce::TemporaryFile tmp (f);
-    if (! tmp.getFile().replaceWithText (juce::JSON::toString (juce::var (root)))) return false;
-    if (! tmp.overwriteTargetFileWithTemporary()) return false;
+    if (! writeSharedFile (f, juce::JSON::toString (juce::var (root)))) { dirty = true; return false; }
+    dirty = false;
     lastSeen = f.getLastModificationTime();
     ++changes;
     return true;
@@ -77,6 +75,7 @@ bool Setlist::reloadIfChanged()
 {
     {
         const juce::ScopedLock sl (lock);
+        if (dirty) { save(); return false; }     // nos changements pas encore écrits : on ne relit pas l'ancien fichier
         if (file().getLastModificationTime() == lastSeen) return false;
     }
     return load();

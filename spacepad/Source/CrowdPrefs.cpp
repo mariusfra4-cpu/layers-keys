@@ -55,9 +55,9 @@ bool CrowdPrefs::saveIfDirty()
         dirty = false;
     }
     auto f = file();
-    f.getParentDirectory().createDirectory();
-    const bool ok = f.replaceWithText (juce::JSON::toString (root));
+    const bool ok = writeSharedFile (f, juce::JSON::toString (root));
     const juce::ScopedLock sl (lock);
+    if (! ok) dirty = true;            // réessayé au prochain enregistrement
     lastSeen = f.getLastModificationTime();
     return ok;
 }

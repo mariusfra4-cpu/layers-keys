@@ -48,6 +48,8 @@ struct Library
 
 juce::String makeLibraryId (const juce::String& folder);
 bool isAudioFile (const juce::File& f);
+// écrit un fichier commun (application + plugins) de façon sûre ; sous Windows, réessaie si un autre programme le lit à ce moment
+bool writeSharedFile (const juce::File& target, const juce::String& text);
 
 // ---------------------------------------------------------------------------------------------
 // Fichier commun des bibliothèques
@@ -81,6 +83,7 @@ private:
     mutable juce::CriticalSection lock;
     std::vector<std::shared_ptr<const Library>> libs;
     juce::File storeFile;
+    bool dirty = false;
     juce::Time lastSeen;
     std::atomic<int> changes { 0 };
 };
