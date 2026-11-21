@@ -1,0 +1,241 @@
+[0/2] Re-checking globbed directories...
+[1/100] Generating juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData1.cpp, juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData2.cpp, juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData3.cpp, juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData4.cpp, juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData5.cpp, juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData6.cpp, juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData.h
+[2/100] Building CXX object CMakeFiles/SpacepadData.dir/juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData5.cpp.o
+[3/100] Building CXX object CMakeFiles/SpacepadData.dir/juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData1.cpp.o
+[4/100] Building CXX object CMakeFiles/SpacepadData.dir/juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData6.cpp.o
+[5/100] Building CXX object CMakeFiles/SpacepadData.dir/juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData2.cpp.o
+[6/100] Building CXX object CMakeFiles/SpacepadData.dir/juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData4.cpp.o
+[7/100] Building CXX object CMakeFiles/SpacepadData.dir/juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData3.cpp.o
+[8/100] Linking CXX static library libSpacepadData.a
+[9/100] Building CXX object CMakeFiles/Spacepad.dir/Source/Lang.cpp.o
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/Lang.cpp: In function ‘void spacepad::saveAll()’:
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/Lang.cpp:110:15: warning: declaration of ‘v’ shadows a previous local [-Wshadow]
+  110 |     for (auto v : ui.midiMap) mm.add (v);
+      |               ^
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/Lang.cpp:87:10: note: shadowed declaration is here
+   87 |     auto v = f.existsAsFile() ? juce::JSON::parse (f.loadFileAsString()) : juce::var();
+      |          ^
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/Lang.cpp: In function ‘juce::String spacepad::L(const char*, const char*, const char*)’:
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/Lang.cpp:160:12: warning: enumeration value ‘FR’ not handled in switch [-Wswitch-enum]
+  160 |     switch (lang())
+      |            ^
+[10/100] Building CXX object CMakeFiles/Spacepad.dir/Source/KeyDetect.cpp.o
+[11/100] Building CXX object CMakeFiles/Spacepad.dir/Source/Setlist.cpp.o
+[12/100] Building CXX object CMakeFiles/Spacepad.dir/Source/Library.cpp.o
+[13/100] Building CXX object CMakeFiles/Spacepad.dir/Source/PadEngine.cpp.o
+[14/100] Building CXX object CMakeFiles/Spacepad.dir/Source/Modulation.cpp.o
+[15/100] Building CXX object CMakeFiles/Spacepad.dir/Source/Effects.cpp.o
+[16/100] Building CXX object CMakeFiles/Spacepad.dir/Source/AudioOpen.cpp.o
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/AudioOpen.cpp: In function ‘juce::AudioBuffer<float> spacepad::{anonymous}::decodeWav(const juce::MemoryBlock&, double&, juce::String&)’:
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/AudioOpen.cpp:174:50: warning: conversion to ‘size_t’ {aka ‘long unsigned int’} from ‘int’ may change the sign of the result [-Wsign-conversion]
+  174 |                 const auto* s = p + (size_t) i * frame + (size_t) ch * bps;
+      |                                                  ^~~~~
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/AudioOpen.cpp:174:72: warning: conversion to ‘size_t’ {aka ‘long unsigned int’} from ‘int’ may change the sign of the result [-Wsign-conversion]
+  174 |                 const auto* s = p + (size_t) i * frame + (size_t) ch * bps;
+      |                                                                        ^~~
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/AudioOpen.cpp:199:48: warning: conversion to ‘size_t’ {aka ‘long unsigned int’} from ‘int’ may change the sign of the result [-Wsign-conversion]
+  199 |             const auto* blk = p + (size_t) b * blockAlign;
+      |                                                ^~~~~~~~~~
+[17/100] Building CXX object CMakeFiles/Spacepad.dir/Source/CrowdPrefs.cpp.o
+[18/100] Building CXX object CMakeFiles/juce_vst3_helper.dir/_deps/juce-src/modules/juce_audio_plugin_client/VST3/juce_VST3ManifestHelper.cpp.o
+[19/100] Building CXX object CMakeFiles/Spacepad.dir/Source/PluginEditor.cpp.o
+In file included from /home/runner/work/layers-keys/layers-keys/spacepad/Source/PluginEditor.h:3,
+                 from /home/runner/work/layers-keys/layers-keys/spacepad/Source/PluginEditor.cpp:1:
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h: In member function ‘void spacepad::LibraryPanel::showTab(bool)’:
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:213:24: warning: declaration of ‘crowdTab’ shadows a member of ‘spacepad::LibraryPanel’ [-Wshadow]
+  213 |     void showTab (bool crowdTab) { showTabIndex (crowdTab ? 1 : 0); }
+      |                   ~~~~~^~~~~~~~
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:231:41: note: shadowed declaration is here
+  231 |     juce::TextButton padTab { "PADS" }, crowdTab { "CROWDS" }, setTab { "SETLIST" };
+      |                                         ^~~~~~~~
+[20/100] Building CXX object CMakeFiles/Spacepad.dir/Source/UI.cpp.o
+In file included from /home/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h:3,
+                 from /home/runner/work/layers-keys/layers-keys/spacepad/Source/UI.cpp:2:
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h: In member function ‘void spacepad::LibraryPanel::showTab(bool)’:
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:213:24: warning: declaration of ‘crowdTab’ shadows a member of ‘spacepad::LibraryPanel’ [-Wshadow]
+  213 |     void showTab (bool crowdTab) { showTabIndex (crowdTab ? 1 : 0); }
+      |                   ~~~~~^~~~~~~~
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:231:41: note: shadowed declaration is here
+  231 |     juce::TextButton padTab { "PADS" }, crowdTab { "CROWDS" }, setTab { "SETLIST" };
+      |                                         ^~~~~~~~
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h: In function ‘void spacepad::glowText(juce::Graphics&, const juce::String&, juce::Font, juce::Rectangle<float>, juce::Justification, juce::Colour, juce::Colour, int, float)’:
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h:12:17: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+   12 |     if (kerning != 0) f.setExtraKerningFactor (kerning);
+      |         ~~~~~~~~^~~~
+[21/100] Building CXX object CMakeFiles/Spacepad.dir/Source/PluginProcessor.cpp.o
+In file included from /home/runner/work/layers-keys/layers-keys/spacepad/Source/PluginEditor.h:3,
+                 from /home/runner/work/layers-keys/layers-keys/spacepad/Source/PluginProcessor.cpp:2:
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h: In member function ‘void spacepad::LibraryPanel::showTab(bool)’:
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:213:24: warning: declaration of ‘crowdTab’ shadows a member of ‘spacepad::LibraryPanel’ [-Wshadow]
+  213 |     void showTab (bool crowdTab) { showTabIndex (crowdTab ? 1 : 0); }
+      |                   ~~~~~^~~~~~~~
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:231:41: note: shadowed declaration is here
+  231 |     juce::TextButton padTab { "PADS" }, crowdTab { "CROWDS" }, setTab { "SETLIST" };
+      |                                         ^~~~~~~~
+[22/100] Building CXX object CMakeFiles/Spacepad.dir/Source/UISpace.cpp.o
+In file included from /home/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h:3,
+                 from /home/runner/work/layers-keys/layers-keys/spacepad/Source/UISpace.cpp:5:
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h: In member function ‘void spacepad::LibraryPanel::showTab(bool)’:
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:213:24: warning: declaration of ‘crowdTab’ shadows a member of ‘spacepad::LibraryPanel’ [-Wshadow]
+  213 |     void showTab (bool crowdTab) { showTabIndex (crowdTab ? 1 : 0); }
+      |                   ~~~~~^~~~~~~~
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:231:41: note: shadowed declaration is here
+  231 |     juce::TextButton padTab { "PADS" }, crowdTab { "CROWDS" }, setTab { "SETLIST" };
+      |                                         ^~~~~~~~
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h: In function ‘void spacepad::glowText(juce::Graphics&, const juce::String&, juce::Font, juce::Rectangle<float>, juce::Justification, juce::Colour, juce::Colour, int, float)’:
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h:12:17: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+   12 |     if (kerning != 0) f.setExtraKerningFactor (kerning);
+      |         ~~~~~~~~^~~~
+[23/100] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_ara.cpp.o
+[24/100] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_lv2_libs.cpp.o
+[25/100] Building CXX object CMakeFiles/Spacepad.dir/Source/UIExtra.cpp.o
+In file included from /home/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h:3,
+                 from /home/runner/work/layers-keys/layers-keys/spacepad/Source/UIExtra.cpp:2:
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h: In member function ‘void spacepad::LibraryPanel::showTab(bool)’:
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:213:24: warning: declaration of ‘crowdTab’ shadows a member of ‘spacepad::LibraryPanel’ [-Wshadow]
+  213 |     void showTab (bool crowdTab) { showTabIndex (crowdTab ? 1 : 0); }
+      |                   ~~~~~^~~~~~~~
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:231:41: note: shadowed declaration is here
+  231 |     juce::TextButton padTab { "PADS" }, crowdTab { "CROWDS" }, setTab { "SETLIST" };
+      |                                         ^~~~~~~~
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h: In function ‘void spacepad::glowText(juce::Graphics&, const juce::String&, juce::Font, juce::Rectangle<float>, juce::Justification, juce::Colour, juce::Colour, int, float)’:
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h:12:17: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+   12 |     if (kerning != 0) f.setExtraKerningFactor (kerning);
+      |         ~~~~~~~~^~~~
+[26/100] Building CXX object CMakeFiles/Spacepad.dir/Source/UIPanels.cpp.o
+In file included from /home/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h:3,
+                 from /home/runner/work/layers-keys/layers-keys/spacepad/Source/UIPanels.cpp:2:
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h: In member function ‘void spacepad::LibraryPanel::showTab(bool)’:
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:213:24: warning: declaration of ‘crowdTab’ shadows a member of ‘spacepad::LibraryPanel’ [-Wshadow]
+  213 |     void showTab (bool crowdTab) { showTabIndex (crowdTab ? 1 : 0); }
+      |                   ~~~~~^~~~~~~~
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:231:41: note: shadowed declaration is here
+  231 |     juce::TextButton padTab { "PADS" }, crowdTab { "CROWDS" }, setTab { "SETLIST" };
+      |                                         ^~~~~~~~
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h: In function ‘void spacepad::glowText(juce::Graphics&, const juce::String&, juce::Font, juce::Rectangle<float>, juce::Justification, juce::Colour, juce::Colour, int, float)’:
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h:12:17: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+   12 |     if (kerning != 0) f.setExtraKerningFactor (kerning);
+      |         ~~~~~~~~^~~~
+[27/100] Building CXX object CMakeFiles/Spacepad.dir/Source/UICrowd.cpp.o
+In file included from /home/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h:3,
+                 from /home/runner/work/layers-keys/layers-keys/spacepad/Source/UICrowd.cpp:3:
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h: In member function ‘void spacepad::LibraryPanel::showTab(bool)’:
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:213:24: warning: declaration of ‘crowdTab’ shadows a member of ‘spacepad::LibraryPanel’ [-Wshadow]
+  213 |     void showTab (bool crowdTab) { showTabIndex (crowdTab ? 1 : 0); }
+      |                   ~~~~~^~~~~~~~
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:231:41: note: shadowed declaration is here
+  231 |     juce::TextButton padTab { "PADS" }, crowdTab { "CROWDS" }, setTab { "SETLIST" };
+      |                                         ^~~~~~~~
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h: In function ‘void spacepad::glowText(juce::Graphics&, const juce::String&, juce::Font, juce::Rectangle<float>, juce::Justification, juce::Colour, juce::Colour, int, float)’:
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h:12:17: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+   12 |     if (kerning != 0) f.setExtraKerningFactor (kerning);
+      |         ~~~~~~~~^~~~
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/UICrowd.cpp: In member function ‘void spacepad::HallView::render(float)’:
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/UICrowd.cpp:392:21: warning: declaration of ‘t’ shadows a member of ‘spacepad::HallView’ [-Wshadow]
+  392 |         const float t = std::pow (0.72f, (float) i), half = 400 * t, top = vy - 430 * t, bot = vy + 60 + (H - vy) * t * 0.95f, cw = 26 * t + 3;
+      |                     ^
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:474:37: note: shadowed declaration is here
+  474 |     float imageScale = 0, glow = 0, t = 0;
+      |                                     ^
+[28/100] Building CXX object CMakeFiles/Spacepad.dir/Source/UIMain.cpp.o
+In file included from /home/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h:3,
+                 from /home/runner/work/layers-keys/layers-keys/spacepad/Source/UIMain.cpp:3:
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h: In member function ‘void spacepad::LibraryPanel::showTab(bool)’:
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:213:24: warning: declaration of ‘crowdTab’ shadows a member of ‘spacepad::LibraryPanel’ [-Wshadow]
+  213 |     void showTab (bool crowdTab) { showTabIndex (crowdTab ? 1 : 0); }
+      |                   ~~~~~^~~~~~~~
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:231:41: note: shadowed declaration is here
+  231 |     juce::TextButton padTab { "PADS" }, crowdTab { "CROWDS" }, setTab { "SETLIST" };
+      |                                         ^~~~~~~~
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h: In function ‘void spacepad::glowText(juce::Graphics&, const juce::String&, juce::Font, juce::Rectangle<float>, juce::Justification, juce::Colour, juce::Colour, int, float)’:
+/home/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h:12:17: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+   12 |     if (kerning != 0) f.setExtraKerningFactor (kerning);
+      |         ~~~~~~~~^~~~
+[29/100] Building C object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_graphics/juce_graphics_Sheenbidi.c.o
+[30/100] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_gui_extra/juce_gui_extra.cpp.o
+[31/100] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_events/juce_events.cpp.o
+[32/100] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_core/juce_core_CompilationTime.cpp.o
+[33/100] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.cpp.o
+[34/100] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_data_structures/juce_data_structures.cpp.o
+[35/100] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_audio_basics/juce_audio_basics.cpp.o
+[36/100] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_core/juce_core.cpp.o
+[37/100] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp.o
+[38/100] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_audio_utils/juce_audio_utils.cpp.o
+[39/100] Linking CXX executable juce_vst3_helper
+[40/100] Building CXX object CMakeFiles/Spacepad_Standalone.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_AAX.cpp.o
+[41/100] Building CXX object CMakeFiles/Spacepad_Standalone.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_AAX_utils.cpp.o
+[42/100] Building CXX object CMakeFiles/Spacepad_Standalone.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_ARA.cpp.o
+[43/100] Building CXX object CMakeFiles/Spacepad_Standalone.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_LV2.cpp.o
+[44/100] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_audio_devices/juce_audio_devices.cpp.o
+[45/100] Building CXX object CMakeFiles/Spacepad_Standalone.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_Unity.cpp.o
+[46/100] Building CXX object CMakeFiles/Spacepad_Standalone.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_VST2.cpp.o
+[47/100] Building CXX object CMakeFiles/Spacepad_Standalone.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_VST3.cpp.o
+[48/100] Building CXX object CMakeFiles/Spacepad_VST3.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_AAX.cpp.o
+[49/100] Building CXX object CMakeFiles/Spacepad_VST3.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_AAX_utils.cpp.o
+[50/100] Building CXX object CMakeFiles/Spacepad_VST3.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_ARA.cpp.o
+[51/100] Building CXX object CMakeFiles/Spacepad_VST3.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_LV2.cpp.o
+[52/100] Building CXX object CMakeFiles/Spacepad_VST3.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_Standalone.cpp.o
+[53/100] Building CXX object CMakeFiles/Spacepad_VST3.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_Unity.cpp.o
+[54/100] Building CXX object CMakeFiles/Spacepad_VST3.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_VST2.cpp.o
+[55/100] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_audio_formats/juce_audio_formats.cpp.o
+[56/100] Building CXX object CMakeFiles/SpacepadTests.dir/Source/KeyDetect.cpp.o
+[57/100] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_dsp/juce_dsp.cpp.o
+[58/100] Building CXX object CMakeFiles/Spacepad_Standalone.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_Standalone.cpp.o
+[59/100] Building CXX object CMakeFiles/SpacepadTests.dir/Source/Lang.cpp.o
+[60/100] Building CXX object CMakeFiles/SpacepadTests.dir/Source/Setlist.cpp.o
+[61/100] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_graphics/juce_graphics_Harfbuzz.cpp.o
+[62/100] Building CXX object CMakeFiles/SpacepadTests.dir/Source/Effects.cpp.o
+[63/100] Building CXX object CMakeFiles/SpacepadTests.dir/Source/PadEngine.cpp.o
+[64/100] Building CXX object CMakeFiles/SpacepadTests.dir/Source/Library.cpp.o
+[65/100] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.cpp.o
+In file included from /home/runner/work/layers-keys/layers-keys/build/_deps/juce-src/modules/juce_core/system/juce_StandardHeader.h:94,
+                 from /home/runner/work/layers-keys/layers-keys/build/_deps/juce-src/modules/juce_core/juce_core.h:215,
+                 from /home/runner/work/layers-keys/layers-keys/build/_deps/juce-src/modules/juce_graphics/juce_graphics.h:67,
+                 from /home/runner/work/layers-keys/layers-keys/build/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.h:68,
+                 from /home/runner/work/layers-keys/layers-keys/build/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.cpp:55:
+/home/runner/work/layers-keys/layers-keys/build/_deps/juce-src/modules/juce_core/system/juce_PlatformDefs.h:286:38: note: ‘#pragma message: This version of JUCE does not use the splash screen, the flag JUCE_DISPLAY_SPLASH_SCREEN is ignored’
+  286 |  #define JUCE_COMPILER_WARNING(msg)  _Pragma (JUCE_STRINGIFY (message (msg)))
+      |                                      ^~~~~~~
+/home/runner/work/layers-keys/layers-keys/build/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.cpp:61:2: note: in expansion of macro ‘JUCE_COMPILER_WARNING’
+   61 |  JUCE_COMPILER_WARNING ("This version of JUCE does not use the splash screen, the flag JUCE_DISPLAY_SPLASH_SCREEN is ignored")
+      |  ^~~~~~~~~~~~~~~~~~~~~
+[66/100] Building CXX object CMakeFiles/SpacepadTests.dir/Source/AudioOpen.cpp.o
+[67/100] Building CXX object CMakeFiles/SpacepadTests.dir/Source/CrowdPrefs.cpp.o
+[68/100] Linking CXX static library Spacepad_artefacts/Release/libSpacepad_SharedCode.a
+[69/100] Building CXX object CMakeFiles/SpacepadTests.dir/Source/Modulation.cpp.o
+[70/100] Building CXX object CMakeFiles/Spacepad_VST3.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_VST3.cpp.o
+[71/100] Building CXX object CMakeFiles/SpacepadTests.dir/Source/PluginEditor.cpp.o
+[72/100] Building CXX object CMakeFiles/SpacepadTests.dir/Source/UIExtra.cpp.o
+[73/100] Building CXX object CMakeFiles/SpacepadTests.dir/Source/UI.cpp.o
+[74/100] Building CXX object CMakeFiles/SpacepadTests.dir/Source/UISpace.cpp.o
+[75/100] Building CXX object CMakeFiles/SpacepadTests.dir/Source/PluginProcessor.cpp.o
+[76/100] Building CXX object CMakeFiles/SpacepadTests.dir/Source/UIPanels.cpp.o
+[77/100] Building CXX object CMakeFiles/SpacepadTests.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_ara.cpp.o
+[78/100] Building CXX object CMakeFiles/SpacepadTests.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_lv2_libs.cpp.o
+[79/100] Building CXX object CMakeFiles/SpacepadTests.dir/Source/UICrowd.cpp.o
+[80/100] Building CXX object CMakeFiles/SpacepadTests.dir/Source/UIMain.cpp.o
+[81/100] Building CXX object CMakeFiles/SpacepadTests.dir/_deps/juce-src/modules/juce_audio_utils/juce_audio_utils.cpp.o
+[82/100] Building CXX object CMakeFiles/SpacepadTests.dir/tests/Tests.cpp.o
+[83/100] Building C object CMakeFiles/SpacepadTests.dir/_deps/juce-src/modules/juce_graphics/juce_graphics_Sheenbidi.c.o
+[84/100] Building CXX object CMakeFiles/SpacepadTests.dir/_deps/juce-src/modules/juce_events/juce_events.cpp.o
+[85/100] Building CXX object CMakeFiles/SpacepadTests.dir/_deps/juce-src/modules/juce_gui_extra/juce_gui_extra.cpp.o
+[86/100] Building CXX object CMakeFiles/SpacepadTests.dir/_deps/juce-src/modules/juce_core/juce_core_CompilationTime.cpp.o
+[87/100] Building CXX object CMakeFiles/SpacepadTests.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.cpp.o
+[88/100] Building CXX object CMakeFiles/SpacepadTests.dir/_deps/juce-src/modules/juce_data_structures/juce_data_structures.cpp.o
+[89/100] Building CXX object CMakeFiles/SpacepadTests.dir/_deps/juce-src/modules/juce_audio_basics/juce_audio_basics.cpp.o
+[90/100] Building CXX object CMakeFiles/SpacepadTests.dir/_deps/juce-src/modules/juce_audio_devices/juce_audio_devices.cpp.o
+[91/100] Building CXX object CMakeFiles/SpacepadTests.dir/_deps/juce-src/modules/juce_core/juce_core.cpp.o
+[92/100] Building CXX object CMakeFiles/SpacepadTests.dir/_deps/juce-src/modules/juce_audio_formats/juce_audio_formats.cpp.o
+[93/100] Building CXX object CMakeFiles/SpacepadTests.dir/_deps/juce-src/modules/juce_dsp/juce_dsp.cpp.o
+[94/100] Building CXX object CMakeFiles/SpacepadTests.dir/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp.o
+[95/100] Building CXX object CMakeFiles/SpacepadTests.dir/_deps/juce-src/modules/juce_graphics/juce_graphics_Harfbuzz.cpp.o
+[96/100] Building CXX object CMakeFiles/SpacepadTests.dir/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.cpp.o
+[97/100] Linking CXX executable SpacepadTests_artefacts/Release/SpacepadTests
+[98/100] Linking CXX shared module Spacepad_artefacts/Release/VST3/Spacepad.vst3/Contents/x86_64-linux/Spacepad.so
+lto-wrapper: warning: using serial compilation of 95 LTRANS jobs
+lto-wrapper: note: see the ‘-flto’ option documentation for more information
+removing moduleinfo.json
+creating /home/runner/work/layers-keys/layers-keys/build/Spacepad_artefacts/Release/VST3/Spacepad.vst3/Contents/Resources/moduleinfo.json
+[99/100] Linking CXX executable Spacepad_artefacts/Release/Standalone/Spacepad
+lto-wrapper: warning: using serial compilation of 96 LTRANS jobs
+lto-wrapper: note: see the ‘-flto’ option documentation for more information
