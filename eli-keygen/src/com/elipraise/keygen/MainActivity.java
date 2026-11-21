@@ -33,7 +33,7 @@ import org.json.JSONObject;
 
 /** Eli Clés — générateur de licences Eli Guitar Chords. Outil PRIVÉ d'Eli Praise. */
 public class MainActivity extends Activity {
-    static final int BG = 0xFF0F172A, PANEL = 0xFF1E293B, GOLD = 0xFFFB923C, GOLD_HI = 0xFFFDBA74, TEXT = 0xFFF1F5F9, GREY = 0xFF94A3B8, RED = 0xFFF87171, GREEN = 0xFF4ADE80;
+    static final int BG = 0xFF0F172A, PANEL = 0xFF1E293B, GOLD = 0xFFA78BFA, GOLD_HI = 0xFFC4B5FD, TEXT = 0xFFF1F5F9, GREY = 0xFF94A3B8, RED = 0xFFF87171, GREEN = 0xFF4ADE80;
 
     SharedPreferences prefs;
     byte[] seed;
@@ -106,7 +106,7 @@ public class MainActivity extends Activity {
         b.setAllCaps(false);
         b.setTextSize(15);
         b.setTypeface(Typeface.DEFAULT_BOLD);
-        b.setTextColor(primary ? 0xFF1C0A00 : TEXT);
+        b.setTextColor(primary ? 0xFF1E1035 : TEXT);
         b.setBackground(box(primary ? GOLD : 0xFF273449, primary ? GOLD_HI : 0xFF3B4A63, 10));
         b.setMinHeight(dp(48));
         b.setPadding(dp(14), dp(8), dp(14), dp(8));

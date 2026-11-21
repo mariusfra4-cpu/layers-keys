@@ -72,7 +72,7 @@ public class MainActivity extends Activity {
         web = new WebView(this);
         web.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         boolean night = (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
-        web.setBackgroundColor(night ? Color.rgb(0x16, 0x14, 0x0f) : Color.rgb(0xfa, 0xf8, 0xf4));
+        web.setBackgroundColor(night ? Color.rgb(0x15, 0x12, 0x1c) : Color.rgb(0xf8, 0xf5, 0xfd));
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
@@ -137,6 +137,7 @@ public class MainActivity extends Activity {
         if (n.endsWith(".svg")) return "image/svg+xml";
         if (n.endsWith(".mid") || n.endsWith(".midi")) return "audio/midi";
         if (n.endsWith(".pdf")) return "application/pdf";
+        if (n.endsWith(".zip")) return "application/zip";
         if (n.endsWith(".txt")) return "text/plain";
         if (n.endsWith(".mp3")) return "audio/mpeg";
         if (n.endsWith(".wav")) return "audio/wav";
@@ -167,8 +168,13 @@ public class MainActivity extends Activity {
                 shownOpen = open && p.equals("index.html");
                 android.util.Log.i("EliGuitarChords", "page affichée : " + (shownOpen ? "application" : "écran de licence"));
                 String html = new String(data, StandardCharsets.UTF_8);
-                if (shownOpen) // la licence est gérée par l'appli : l'ancien écran de code et « Verrouiller » sont masqués
-                    html = html.replaceFirst("</head>", "<style>#lk,[data-lock]{display:none!important}</style></head>");
+                if (shownOpen) {
+                    // licence du téléphone valable : le verrou par code de la version web n'est pas lancé
+                    // (l'écran de code est retiré, et le bouton « Verrouiller » masqué)
+                    html = html.replace("function lkInit(){LKX.init()}",
+                            "function lkInit(){var l=document.getElementById('lk');if(l)l.remove()}");
+                    html = html.replaceFirst("</head>", "<style>[data-lock]{display:none!important}</style></head>");
+                }
                 String shim = new String(asset("android.js"), StandardCharsets.UTF_8);
                 int i = html.indexOf("<head>");
                 String tag = "<script>" + shim + "</script>";

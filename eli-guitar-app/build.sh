@@ -10,7 +10,7 @@ PLAT=$(ls -d "$SDK"/platforms/android-* | grep -Ev "beta|ext|rc|preview" | sort 
 AJ="$PLAT/android.jar"
 OUT=${OUT:-$HERE/build}
 VCODE=${VCODE:-1}
-VNAME=${VNAME:-2.0.0}
+VNAME=${VNAME:-3.0.0}
 echo "build-tools: $BT ; plateforme: $PLAT"
 rm -rf "$OUT" && mkdir -p "$OUT/classes" "$OUT/src"
 cp -r src/. "$OUT/src/"
