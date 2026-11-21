@@ -24,6 +24,9 @@ jobs:
           sudo apt-get install -y -qq ffmpeg > /dev/null
           pip install -q torch --index-url https://download.pytorch.org/whl/cpu
           pip install -q demucs onnx onnxruntime soundfile
+          pip download -q basic-pitch==0.4.0 --no-deps -d /tmp/bp
+          unzip -q -j /tmp/bp/basic_pitch-0.4.0-py2.py3-none-any.whl basic_pitch/saved_models/icassp_2022/nmp.onnx -d /tmp/bp
+          mkdir -p ~/hd && cp /tmp/bp/nmp.onnx ~/hd/basic_pitch.onnx
           mkdir -p ~/hd /tmp/test /tmp/ort
           curl -sL -o /tmp/test/exemple.mp3 https://raw.githubusercontent.com/deezer/spleeter/master/audio_example.mp3
           ffmpeg -loglevel error -y -i /tmp/test/exemple.mp3 -ar 44100 -ac 2 -c:a pcm_f32le /tmp/test/exemple.wav
@@ -115,7 +118,7 @@ jobs:
           Copy-Item C:\deps\ort\runtimes\win-x64\native\onnxruntime.dll C:\rt\
           Copy-Item C:\deps\dml\bin\x64-win\DirectML.dll C:\rt\
           Copy-Item C:\deps\models\*.onnx C:\rt\models\
-          Copy-Item C:\deps\hd\htdemucs_6s.onnx, C:\deps\hd\htdemucs_6s.onnx.json C:\rt\models\
+          Copy-Item C:\deps\hd\htdemucs_6s.onnx, C:\deps\hd\htdemucs_6s.onnx.json, C:\deps\hd\basic_pitch.onnx C:\rt\models\
           Invoke-WebRequest https://raw.githubusercontent.com/deezer/spleeter/master/audio_example.mp3 -OutFile C:\test\exemple.mp3
 
       - name: Test de séparation (outil en ligne de commande, processeur)
@@ -169,19 +172,19 @@ jobs:
           Set-Location split\nsis
           makensis /V3 layerssplit.nsi 2>&1 | Tee-Object -Append C:\lslogs\07_installateur.txt
           if ($LASTEXITCODE -ne 0) { exit 1 }
-          Get-Item Layers-Split-Setup-1.1.0.exe | Format-Table Name,Length | Out-String | Tee-Object -Append C:\lslogs\07_installateur.txt
+          Get-Item Layers-Split-Setup-1.2.0.exe | Format-Table Name,Length | Out-String | Tee-Object -Append C:\lslogs\07_installateur.txt
 
       - name: Test installation silencieuse
         shell: pwsh
         run: |
           $log = "C:\lslogs\08_installation.txt"
-          $setup = (Resolve-Path split\nsis\Layers-Split-Setup-1.1.0.exe).Path
+          $setup = (Resolve-Path split\nsis\Layers-Split-Setup-1.2.0.exe).Path
           $p = Start-Process $setup -ArgumentList "/S" -Wait -PassThru
           "code installation : $($p.ExitCode)" | Tee-Object $log
           $pf = "$env:ProgramFiles\Layers Split"
           $vst = "$env:CommonProgramW6432\VST3\Layers Split.vst3"
           $ok = $true
-          foreach ($x in @("$pf\Layers Split.exe","$pf\onnxruntime.dll","$pf\DirectML.dll","$pf\models\Kim_Vocal_2.onnx","$pf\models\UVR_MDXNET_KARA_2.onnx","$pf\models\kuielab_a_drums.onnx","$pf\models\kuielab_a_bass.onnx","$pf\models\UVR-MDX-NET-Inst_HQ_3.onnx","$pf\models\htdemucs_6s.onnx","$pf\models\htdemucs_6s.onnx.json","$pf\Desinstaller.exe","$vst\Contents\x86_64-win\Layers Split.vst3","$env:PUBLIC\Desktop\Layers Split.lnk")) {
+          foreach ($x in @("$pf\Layers Split.exe","$pf\onnxruntime.dll","$pf\DirectML.dll","$pf\models\Kim_Vocal_2.onnx","$pf\models\UVR_MDXNET_KARA_2.onnx","$pf\models\kuielab_a_drums.onnx","$pf\models\kuielab_a_bass.onnx","$pf\models\UVR-MDX-NET-Inst_HQ_3.onnx","$pf\models\htdemucs_6s.onnx","$pf\models\htdemucs_6s.onnx.json","$pf\models\basic_pitch.onnx","$pf\Desinstaller.exe","$vst\Contents\x86_64-win\Layers Split.vst3","$env:PUBLIC\Desktop\Layers Split.lnk")) {
             $e = Test-Path -LiteralPath $x
             if (-not $e) { $ok = $false }
             "{0} : {1}" -f $x, $e | Tee-Object -Append $log
@@ -214,7 +217,7 @@ jobs:
             $bmp.Save("C:\lslogs\capture_$n.png")
           }
           $exe = "$env:ProgramFiles\Layers Split\Layers Split.exe"
-          $app = Start-Process $exe -ArgumentList '"C:\test\exemple.mp3"','--separer','--rapide','--cpu','--solo' -PassThru
+          $app = Start-Process $exe -ArgumentList '"C:\test\exemple.mp3"','--separer','--rapide','--cpu','--solo','--detacher' -PassThru
           Start-Sleep 8
           Snap "1_ouverture"
           Start-Sleep 25
@@ -233,7 +236,7 @@ jobs:
         shell: pwsh
         run: |
           $log = "C:\lslogs\11_desinstallation.txt"
-          $setup = (Resolve-Path split\nsis\Layers-Split-Setup-1.1.0.exe).Path
+          $setup = (Resolve-Path split\nsis\Layers-Split-Setup-1.2.0.exe).Path
           $p = Start-Process $setup -ArgumentList "/S" -Wait -PassThru
           "code réinstallation (mise à jour) : $($p.ExitCode)" | Tee-Object $log
           $pf = "$env:ProgramFiles\Layers Split"
@@ -258,7 +261,7 @@ jobs:
           git config user.email "ci@users.noreply.github.com"
           git checkout --orphan ci-split-win-tmp
           git rm -rf . >/dev/null 2>&1 || true
-          git clean -fdxq -e split/nsis/Layers-Split-Setup-1.1.0.exe || true
+          git clean -fdxq -e split/nsis/Layers-Split-Setup-1.2.0.exe || true
           cp /tmp/o/* . 2>/dev/null || true
           echo "run $GITHUB_RUN_ID $GITHUB_SHA" > run.txt
           git add -A ':!split'
@@ -271,7 +274,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $f = Get-ChildItem -Recurse -Filter Layers-Split-Setup-1.1.0.exe | Select-Object -First 1
+          $f = Get-ChildItem -Recurse -Filter Layers-Split-Setup-1.2.0.exe | Select-Object -First 1
           gh release delete layers-split-test --yes --cleanup-tag 2>$null
-          $notes = "Layers Split 1.1.0 pour Windows 10/11 (64 bits) — version de test.`n`nApplication autonome + plugin VST3. Séparation par IA : voix lead, chœurs, batterie, basse, guitares, guitare solo, piano / claviers, autres instruments.`n`nCompilation $env:GITHUB_SHA"
-          gh release create layers-split-test $f.FullName --target $env:GITHUB_SHA --prerelease --title "Layers Split 1.1.0 (Windows) - test" --notes $notes
+          $notes = "Layers Split 1.2.0 pour Windows 10/11 (64 bits) — version de test.`n`nApplication autonome + plugin VST3. Séparation par IA : voix lead, chœurs (avec pupitres soprano, alto, ténor, basse), batterie, basse, guitares, guitare solo, piano / claviers, autres instruments.`n`nCompilation $env:GITHUB_SHA"
+          gh release create layers-split-test $f.FullName --target $env:GITHUB_SHA --prerelease --title "Layers Split 1.2.0 (Windows) - test" --notes $notes

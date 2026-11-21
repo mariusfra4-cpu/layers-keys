@@ -1,5 +1,6 @@
 #include "Separator.h"
 #include "DemucsModel.h"
+#include "ChoirSplit.h"
 #include "Dsp.h"
 #include "LeadSplit.h"
 
@@ -27,6 +28,7 @@ namespace
     const ModelDef kDrums    { "kuielab_a_drums.onnx",       { 4096,  2048, 512, 1.035f } };
     const ModelDef kBass     { "kuielab_a_bass.onnx",        { 16384, 2048, 512, 1.035f } };
     const char* kDemucs = "htdemucs_6s.onnx";
+    const char* kBasicPitch = "basic_pitch.onnx";
 
     bool fileExists (const std::string& path)
     {
@@ -65,6 +67,10 @@ const char* stemName (int id)
         case stemGuitarSolo: return "Guitare solo";
         case stemPiano:   return "Piano / claviers";
         case stemOther:   return "Autres";
+        case stemSoprano: return "Soprano";
+        case stemAlto:    return "Alto";
+        case stemTenor:   return "Ténor";
+        case stemBassVoice: return "Basse (voix)";
         default:          return "?";
     }
 }
@@ -81,6 +87,10 @@ const char* stemFileName (int id)
         case stemGuitarSolo: return "Guitare solo";
         case stemPiano:   return "Piano";
         case stemOther:   return "Instruments";
+        case stemSoprano: return "Choeur - Soprano";
+        case stemAlto:    return "Choeur - Alto";
+        case stemTenor:   return "Choeur - Tenor";
+        case stemBassVoice: return "Choeur - Basse";
         default:          return "Stem";
     }
 }
@@ -102,6 +112,8 @@ bool Separator::checkModels (std::string& missing, const SeparationSettings& s) 
 {
     missing.clear();
     std::vector<std::string> files { kVocals.file, kInstHQ3.file, kKaraoke.file, kDrums.file, kBass.file };
+    if (s.splitVocals)
+        files.push_back (kBasicPitch);
     if (s.detailInstruments)
     {
         files.push_back (kDemucs);
@@ -218,7 +230,7 @@ bool Separator::run (const StereoBuffer& mixIn, double sr, const SeparationSetti
 
     // répartition de la barre de progression selon le coût estimé de chaque étape
     double wVoc = ultra ? 4.0 : (fast ? 1.0 : 2.0);
-    double wKar = s.splitVocals ? (fast ? 0.7 : 1.4) : 0.0;
+    double wKar = s.splitVocals ? (fast ? 0.7 : 1.4) + 0.15 : 0.0;
     const bool detail = s.detailInstruments;
     double wDB  = detail ? 3.0 : (s.splitDrumsBass ? (ultra ? 2.4 : 1.2) : 0.0);
     double wSolo = detail && s.splitGuitarSolo ? 0.2 : 0.0;
@@ -268,6 +280,7 @@ bool Separator::run (const StereoBuffer& mixIn, double sr, const SeparationSetti
 
     // 2. voix lead / chœurs : le modèle karaoké garde les chœurs et retire la voix principale
     StereoBuffer lead, backing;
+    StereoBuffer choir[numVoices];
     if (s.splitVocals)
     {
         auto [a, b] = span (wKar);
@@ -280,6 +293,13 @@ bool Separator::run (const StereoBuffer& mixIn, double sr, const SeparationSetti
             lead.l[i] = vocals.l[i] - backing.l[i];
             lead.r[i] = vocals.r[i] - backing.r[i];
         }
+
+        // pupitres du chœur (soprano, alto, ténor, basse) : décomposition du stem « Chœurs »
+        if (progress && ! progress ("Pupitres du chœur", pos / wTotal))
+            return false;
+        if (! splitChoir (backing, modelRate, choir, modelsDir + kBasicPitch,
+                          [&] (double) { return ! progress || progress ("Pupitres du chœur", pos / wTotal); }))
+            return false;
     }
     else
     {
@@ -350,6 +370,24 @@ bool Separator::run (const StereoBuffer& mixIn, double sr, const SeparationSetti
         back (backing);
         result.stems[stemBacking] = std::move (backing);
         result.present[stemBacking] = true;
+
+        // les pupitres : la basse vocale est recalculée par soustraction pour que leur somme = Chœurs exactement
+        const int ids[numVoices] = { stemSoprano, stemAlto, stemTenor, stemBassVoice };
+        for (int v = 0; v < numVoices - 1; ++v)
+        {
+            back (choir[v]);
+            result.stems[ids[v]] = std::move (choir[v]);
+            result.present[ids[v]] = true;
+        }
+        StereoBuffer last = result.stems[stemBacking];
+        for (int v = 0; v < numVoices - 1; ++v)
+            for (size_t i = 0; i < n; ++i)
+            {
+                last.l[i] -= result.stems[ids[v]].l[i];
+                last.r[i] -= result.stems[ids[v]].r[i];
+            }
+        result.stems[stemBassVoice] = std::move (last);
+        result.present[stemBassVoice] = true;
     }
     if (s.splitDrumsBass)
     {

@@ -21,7 +21,11 @@ namespace lsplit
 
 enum class Quality { fast = 0, high = 1, ultra = 2 };
 
-enum StemId { stemLead = 0, stemBacking, stemDrums, stemBass, stemGuitar, stemGuitarSolo, stemPiano, stemOther, numStems };
+enum StemId { stemLead = 0, stemBacking, stemDrums, stemBass, stemGuitar, stemGuitarSolo, stemPiano, stemOther,
+              // pupitres du chœur : une décomposition de « Chœurs » (leur somme = Chœurs), pas des stems en plus
+              stemSoprano, stemAlto, stemTenor, stemBassVoice, numStems };
+
+inline bool isChoirVoice (int id) { return id >= stemSoprano && id <= stemBassVoice; }
 
 const char* stemName (int id);      // nom français affiché
 const char* stemFileName (int id);  // nom de fichier (sans accents)

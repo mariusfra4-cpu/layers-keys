@@ -400,8 +400,10 @@ void LayersSplitEditor::paint (juce::Graphics& g)
     if (d != nullptr && d->hasStems)
     {
         int c = 0;
-        for (int k = 0; k < numStems; ++k) c += d->stems.present[k] ? 1 : 0;
-        stemsCount = juce::String (c) + " stems";
+        int voices = 0;
+        for (int k = 0; k < numStems; ++k)
+            (isChoirVoice (k) ? voices : c) += d->stems.present[k] ? 1 : 0;
+        stemsCount = juce::String (c) + " stems" + (voices > 0 ? " + " + juce::String (voices) + " voix" : juce::String());
     }
     paintCard (g, cell (5), lsplit::U ("SÉPARATION"), stemsCount,
                d != nullptr && d->hasStems ? (d->deviceUsed.isNotEmpty() ? d->deviceUsed : juce::String ("depuis le cache")) : juce::String ("somme = original"));
@@ -502,12 +504,11 @@ void LayersSplitEditor::exportStems (int preset)
 
     const int bits = format.getSelectedId() > 0 ? format.getSelectedId() : 24;
     float gains[numStems];
-    bool anySolo = false;
-    for (int k = 0; k < numStems; ++k) anySolo = anySolo || proc.controls[(size_t) k].solo.load();
+    const bool anySolo = proc.anySoloInMix (*d);
     for (int k = 0; k < numStems; ++k)
     {
         const auto& c = proc.controls[(size_t) k];
-        gains[k] = (c.mute.load() || (anySolo && ! c.solo.load())) ? 0.0f
+        gains[k] = (! proc.stemInMix (*d, k) || c.mute.load() || (anySolo && ! c.solo.load())) ? 0.0f
                  : juce::Decibels::decibelsToGain (c.gainDb.load(), -60.0f) * juce::Decibels::decibelsToGain (proc.masterDb.load(), -60.0f);
     }
     std::vector<float> g (gains, gains + numStems);
@@ -562,7 +563,8 @@ void LayersSplitEditor::exportStems (int preset)
                 case 1: write ("Acapella", sumOf ({ stemLead, stemBacking }, nullptr)); break;
                 case 2: write ("Instrumental", sumOf ({ stemDrums, stemBass, stemGuitar, stemGuitarSolo, stemPiano, stemOther }, nullptr)); break;
                 case 3: write ("Sans voix lead", sumOf ({ stemBacking, stemDrums, stemBass, stemGuitar, stemGuitarSolo, stemPiano, stemOther }, nullptr)); break;
-                case 4: write ("Mixage", sumOf ({ stemLead, stemBacking, stemDrums, stemBass, stemGuitar, stemGuitarSolo, stemPiano, stemOther }, g.data())); break;
+                case 4: write ("Mixage", sumOf ({ stemLead, stemBacking, stemDrums, stemBass, stemGuitar, stemGuitarSolo, stemPiano, stemOther,
+                                                  stemSoprano, stemAlto, stemTenor, stemBassVoice }, g.data())); break;
                 default: break;
             }
 

@@ -34,6 +34,7 @@ LayersSplitProcessor::LayersSplitProcessor() : AudioProcessor (makeBuses())
                 else if (a == "--cpu") settings.useGpu = false;
                 else if (a == "--solo") settings.splitGuitarSolo = true;
                 else if (a == "--simple") settings.detailInstruments = false;
+                else if (a == "--detacher") choirDetached = true;
             }
             for (const auto& a : args)
             {
@@ -231,6 +232,22 @@ bool LayersSplitProcessor::isBusesLayoutSupported (const BusesLayout& layouts) c
     return layouts.inputBuses.isEmpty();
 }
 
+bool LayersSplitProcessor::stemInMix (const PlayData& d, int k) const
+{
+    if (! d.hasStems || ! d.stems.present[k]) return false;
+    const bool detached = choirDetached.load() && d.stems.present[stemSoprano];
+    if (isChoirVoice (k)) return detached;
+    if (k == stemBacking) return ! detached;
+    return true;
+}
+
+bool LayersSplitProcessor::anySoloInMix (const PlayData& d) const
+{
+    for (int k = 0; k < numStems; ++k)
+        if (stemInMix (d, k) && controls[(size_t) k].solo.load()) return true;
+    return false;
+}
+
 float LayersSplitProcessor::stemGainLinear (int k, bool anySolo) const
 {
     const auto& c = controls[(size_t) k];
@@ -295,14 +312,13 @@ void LayersSplitProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
     if (seekRequested.exchange (false))
         for (auto& i : interp) i.reset();
 
-    bool anySolo = false;
-    for (int k = 0; k < numStems; ++k) anySolo = anySolo || controls[(size_t) k].solo.load();
+    const bool anySolo = anySoloInMix (d);
 
     const bool original = listenOriginal.load() || ! d.hasStems;
     const float master = juce::Decibels::decibelsToGain (masterDb.load(), -60.0f);
     float gains[numStems];
     for (int k = 0; k < numStems; ++k)
-        gains[k] = d.hasStems && d.stems.present[k] ? stemGainLinear (k, anySolo) : 0.0f;
+        gains[k] = stemInMix (d, k) ? stemGainLinear (k, anySolo) : 0.0f;
 
     // bus de sortie actifs
     const int numBuses = juce::jmin (getBusCount (false), numStems + 1);
@@ -451,6 +467,7 @@ void LayersSplitProcessor::getStateInformation (juce::MemoryBlock& destData)
     x.setAttribute ("splitGuitarSolo", settings.splitGuitarSolo);
     x.setAttribute ("followHost", followHost.load());
     x.setAttribute ("loop", loop.load());
+    x.setAttribute ("choirDetached", choirDetached.load());
     x.setAttribute ("master", masterDb.load());
     for (int k = 0; k < numStems; ++k)
     {
@@ -478,6 +495,7 @@ void LayersSplitProcessor::setStateInformation (const void* data, int sizeInByte
     const bool gs = x->getBoolAttribute ("splitGuitarSolo", false);
     followHost = x->getBoolAttribute ("followHost", true);
     loop = x->getBoolAttribute ("loop", false);
+    choirDetached = x->getBoolAttribute ("choirDetached", false);
     masterDb = (float) x->getDoubleAttribute ("master", 0.0);
     for (auto* c : x->getChildWithTagNameIterator ("Stem"))
     {

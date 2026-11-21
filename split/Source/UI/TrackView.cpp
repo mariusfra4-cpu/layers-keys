@@ -36,6 +36,20 @@ StemLaneHeader::StemLaneHeader (LayersSplitProcessor& p, int stemId) : proc (p),
     gain.setTooltip ("Volume du stem (double-clic : 0 dB)");
     addAndMakeVisible (gain);
 
+    if (id == stemBacking)
+    {
+        // petit bouton à côté de « Chœurs » : affiche les pupitres soprano, alto, ténor, basse
+        detachBtn.setTooltip (lsplit::U ("Détacher les chœurs en pupitres : soprano, alto, ténor, basse (expérimental)"));
+        detachBtn.getProperties().set ("bold", true);
+        detachBtn.onClick = [this]
+        {
+            proc.choirDetached = ! proc.choirDetached.load();
+            refresh();
+            if (onLayoutChanged) onLayoutChanged();
+        };
+        addAndMakeVisible (detachBtn);
+    }
+
     setTooltip ("Glissez ce stem vers une piste de votre logiciel de musique");
     refresh();
 }
@@ -57,6 +71,13 @@ void StemLaneHeader::refresh()
     const bool present = d != nullptr && d->hasStems && d->stems.present[id];
     for (juce::Component* comp : { (juce::Component*) &soloBtn, (juce::Component*) &muteBtn, (juce::Component*) &gain })
         comp->setEnabled (present);
+    if (id == stemBacking)
+    {
+        const bool voices = d != nullptr && d->hasStems && d->stems.present[stemSoprano];
+        detachBtn.setVisible (voices);
+        detachBtn.setButtonText (proc.choirDetached.load() ? lsplit::U ("Regrouper ▴") : lsplit::U ("Détacher ▾"));
+        detachBtn.setToggleState (proc.choirDetached.load(), juce::dontSendNotification);
+    }
     repaint();
 }
 
@@ -74,10 +95,18 @@ void StemLaneHeader::paint (juce::Graphics& g)
     const bool present = d != nullptr && d->hasStems && d->stems.present[id];
     const auto col = theme::stemColour (id);
 
+    const bool sub = isChoirVoice (id);   // pupitre : décalé sous « Chœurs »
+    const float barX = sub ? 26.0f : 10.0f;
+    if (sub)
+    {
+        g.setColour (theme::stemColour (stemBacking).withAlpha (0.35f));
+        g.fillRect (12.0f, 0.0f, 2.0f, (float) getHeight());
+        g.fillRect (12.0f, (float) getHeight() * 0.5f, 10.0f, 2.0f);
+    }
     g.setColour (present ? col : col.withAlpha (0.25f));
-    g.fillRoundedRectangle (juce::Rectangle<float> (10.0f, 8.0f, 4.0f, (float) getHeight() - 16.0f), 2.0f);
+    g.fillRoundedRectangle (juce::Rectangle<float> (barX, 8.0f, 4.0f, (float) getHeight() - 16.0f), 2.0f);
 
-    auto txt = r.withTrimmedLeft (22).withTrimmedRight (150);
+    auto txt = r.withTrimmedLeft ((int) barX + 12).withTrimmedRight (150);
     const int h = getHeight();
     g.setColour (present ? theme::textBright : theme::dim);
     g.setFont (theme::font (14.0f, true));
@@ -85,7 +114,8 @@ void StemLaneHeader::paint (juce::Graphics& g)
     g.drawText (id == stemOther && ! detailed ? U ("Instruments") : U (stemName (id)), txt.withY (h / 2 - 19).withHeight (18), juce::Justification::centredLeft, true);
     g.setColour (theme::dim);
     g.setFont (theme::font (11.5f));
-    g.drawText (id == stemOther && ! detailed ? U ("Claviers, guitares, etc.") : U (theme::stemSubtitle (id)), txt.withY (h / 2 + 1).withHeight (16), juce::Justification::centredLeft, true);
+    if (! detachBtn.isVisible())
+        g.drawText (id == stemOther && ! detailed ? U ("Claviers, guitares, etc.") : U (theme::stemSubtitle (id)), txt.withY (h / 2 + 1).withHeight (16), juce::Justification::centredLeft, true);
 
     // vu-mètre
     const float lvl = juce::jlimit (0.0f, 1.0f, proc.stemLevel[(size_t) id].load());
@@ -110,6 +140,8 @@ void StemLaneHeader::resized()
     auto r = getLocalBounds().reduced (6, 0).withTrimmedRight (12);
     const int cy = getHeight() / 2;
     auto right = r.removeFromRight (136);
+    if (id == stemBacking)
+        detachBtn.setBounds (r.getX() + 16, cy + 1, 92, 18);   // à la place du sous-titre
     soloBtn.setBounds (right.getX(), cy - 12, 24, 24);
     muteBtn.setBounds (right.getX() + 28, cy - 12, 24, 24);
     gain.setBounds (right.getX() + 58, cy - 10, right.getWidth() - 58, 20);
@@ -133,7 +165,11 @@ void StemLaneHeader::mouseDrag (const juce::MouseEvent& e)
 TrackView::TrackView (LayersSplitProcessor& p) : proc (p)
 {
     for (int k = 0; k < numStems; ++k)
-        addAndMakeVisible (headers.add (new StemLaneHeader (proc, k)));
+    {
+        auto* h = headers.add (new StemLaneHeader (proc, k));
+        h->onLayoutChanged = [this] { refresh(); };
+        addAndMakeVisible (h);
+    }
     refresh();
 }
 
@@ -145,11 +181,16 @@ void TrackView::updateVisibleLanes()
     // stems calculés, ou ceux que les réglages actuels vont produire
     visible.clear();
     const auto& s = proc.settings;
-    for (int k = 0; k < numStems; ++k)
+    // ordre d'affichage : les pupitres juste sous « Chœurs »
+    static const int order[] = { stemLead, stemBacking, stemSoprano, stemAlto, stemTenor, stemBassVoice,
+                                 stemDrums, stemBass, stemGuitar, stemGuitarSolo, stemPiano, stemOther };
+    for (int k : order)
     {
         bool show;
         if (data != nullptr && data->hasStems)
-            show = data->stems.present[k];
+            show = data->stems.present[k] && (! isChoirVoice (k) || proc.choirDetached.load());
+        else if (isChoirVoice (k))
+            show = false;
         else
             show = k == stemLead || k == stemOther
                 || (k == stemBacking && s.splitVocals)
@@ -273,8 +314,7 @@ void TrackView::paint (juce::Graphics& g)
     }
 
     // pistes
-    bool anySolo = false;
-    for (int k = 0; k < numStems; ++k) anySolo = anySolo || proc.controls[(size_t) k].solo.load();
+    const bool anySolo = data != nullptr && proc.anySoloInMix (*data);
     for (size_t vi = 0; vi < visible.size(); ++vi)
     {
         const int k = visible[vi];
@@ -287,7 +327,7 @@ void TrackView::paint (juce::Graphics& g)
         if (data != nullptr && data->hasStems && data->stems.present[k])
         {
             const auto& c = proc.controls[(size_t) k];
-            const bool audible = ! c.mute.load() && (! anySolo || c.solo.load());
+            const bool audible = proc.stemInMix (*data, k) && ! c.mute.load() && (! anySolo || c.solo.load());
             const float gl = juce::Decibels::decibelsToGain (c.gainDb.load(), -60.0f);
             auto col = theme::stemColour (k);
             if (! audible || proc.listenOriginal.load()) col = col.withSaturation (0.15f).withAlpha (0.45f);

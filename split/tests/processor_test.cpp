@@ -66,6 +66,25 @@ static void runTests (juce::File song)
     p->listenOriginal = false;
     CHECK (std::abs (orig - all) < 0.5, "stems additionnés = original (écart " + std::to_string (orig - all) + " dB)");
 
+    // chœurs détachés en pupitres : le mixage ne change pas
+    CHECK (d->stems.present[lsplit::stemSoprano] && d->stems.present[lsplit::stemBassVoice], "pupitres du chœur calculés");
+    p->choirDetached = true;
+    p->seekSeconds (0); p->play();
+    const double detached = renderRms (*p, 200, 512, fin);
+    CHECK (std::abs (detached - all) < 0.5, "chœurs détachés = même mixage (écart " + std::to_string (detached - all) + " dB)");
+    p->controls[lsplit::stemSoprano].solo = true;
+    p->seekSeconds (3); p->play();
+    const double sop = renderRms (*p, 100, 512, fin);
+    CHECK (fin && sop < all, "solo soprano : " + std::to_string (sop) + " dB");
+    p->controls[lsplit::stemSoprano].solo = false;
+    p->choirDetached = false;
+    // un solo resté sur un pupitre caché ne doit pas couper le son une fois regroupé
+    p->controls[lsplit::stemAlto].solo = true;
+    p->seekSeconds (0); p->play();
+    const double regroup = renderRms (*p, 100, 512, fin);
+    CHECK (regroup > -40, "solo sur pupitre caché ignoré : " + std::to_string (regroup) + " dB");
+    p->controls[lsplit::stemAlto].solo = false;
+
     for (int k = 0; k < lsplit::numStems; ++k) p->controls[(size_t) k].mute = true;
     p->seekSeconds (0); p->play();
     const double muted = renderRms (*p, 50, 512, fin);

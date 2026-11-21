@@ -113,7 +113,8 @@ int main (int argc, char* argv[])
     {
         if (! res.present[k]) continue;
         const auto& st = res.stems[k];
-        for (size_t i = 0; i < sum.size(); ++i) { sum.l[i] += st.l[i]; sum.r[i] += st.r[i]; }
+        if (! isChoirVoice (k)) // les pupitres sont une décomposition de « Chœurs »
+            for (size_t i = 0; i < sum.size(); ++i) { sum.l[i] += st.l[i]; sum.r[i] += st.r[i]; }
         if (! writeWav (out.getChildFile (juce::String (stemFileName (k)) + ".wav"), st, sr, 24, jerr))
         {
             std::cerr << "ERREUR : " << jerr << "\n";
@@ -123,6 +124,15 @@ int main (int argc, char* argv[])
     }
     for (size_t i = 0; i < sum.size(); ++i) { sum.l[i] -= mix.l[i]; sum.r[i] -= mix.r[i]; }
     const double residual = rmsDb (sum) - rmsDb (mix);
+    double choirResidual = -200.0;
+    if (res.present[stemSoprano])
+    {
+        StereoBuffer c = res.stems[stemBacking];
+        for (int k = stemSoprano; k <= stemBassVoice; ++k)
+            for (size_t i = 0; i < c.size(); ++i) { c.l[i] -= res.stems[k].l[i]; c.r[i] -= res.stems[k].r[i]; }
+        choirResidual = rmsDb (c) - rmsDb (res.stems[stemBacking]);
+        std::cout << "residu (somme des pupitres - choeurs) : " << juce::String (choirResidual, 1) << " dB\n";
+    }
     std::cout << "residu (somme des stems - original) : " << juce::String (residual, 1) << " dB\n";
 
     AnalysisResult a;
@@ -133,7 +143,7 @@ int main (int argc, char* argv[])
     std::cout << "analyse : " << a.bpm << " BPM, " << a.keyName() << " (" << a.camelot() << "), "
               << juce::String (a.lufs, 1) << " LUFS, crete " << juce::String (a.peakDb, 1) << " dBFS\n";
 
-    if (residual > -60.0)
+    if (residual > -60.0 || choirResidual > -60.0)
     {
         std::cerr << "ERREUR : la somme des stems ne redonne pas l'original\n";
         return 7;

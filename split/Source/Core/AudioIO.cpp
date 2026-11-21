@@ -20,7 +20,7 @@ namespace
             && d.getChildFile ("models").isDirectory();
     }
 
-    const int kCacheVersion = 2;
+    const int kCacheVersion = 3;
 }
 
 juce::File findRuntimeDir()

@@ -22,10 +22,12 @@ public:
     void refresh();
     juce::File stemFile() const;
 
+    std::function<void()> onLayoutChanged; // « Détacher » / « Regrouper » les chœurs
+
 private:
     LayersSplitProcessor& proc;
     const int id;
-    juce::TextButton soloBtn { "S" }, muteBtn { "M" };
+    juce::TextButton soloBtn { "S" }, muteBtn { "M" }, detachBtn;
     juce::Slider gain;
     bool dragStarted = false;
 };

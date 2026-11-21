@@ -11,6 +11,9 @@ Layers Split utilise les composants suivants. Merci à leurs auteurs.
 - pocketfft (Max-Planck-Society) - licence BSD 3 clauses
   https://github.com/mreineck/pocketfft
 
+Basic Pitch (Spotify) - détection des notes - licence Apache 2.0
+  https://github.com/spotify/basic-pitch
+
 Modèle Demucs « htdemucs_6s » (Meta Platforms) - licence MIT
   https://github.com/facebookresearch/demucs
 

@@ -68,6 +68,11 @@ public:
     std::atomic<bool> followHost { true };  // plugin : suit la lecture du DAW
     std::atomic<bool> listenOriginal { false }; // A/B : écoute du mix original
     std::atomic<bool> loop { false };
+    std::atomic<bool> choirDetached { false };  // chœurs détachés en pupitres (soprano, alto, ténor, basse)
+
+    // Ce stem fait-il partie du mixage ? (les pupitres remplacent « Chœurs » quand ils sont détachés)
+    bool stemInMix (const lsplit::PlayData& d, int k) const;
+    bool anySoloInMix (const lsplit::PlayData& d) const;
 
     // Console : un réglage par stem
     struct StemControl
