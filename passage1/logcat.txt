@@ -1,0 +1,155 @@
+--------- beginning of system
+11-21 11:45:11.995   552  1041 I ActivityManager: Force stopping com.elipraise.guitarchords appid=10126 user=0: from pid 3398
+11-21 11:45:11.996   552  1041 I ActivityManager: Killing 3161:com.elipraise.guitarchords/u0a126 (adj 0): stop com.elipraise.guitarchords due to from pid 3398
+11-21 11:45:11.997   552  1041 D OomAdjuster: Not killing cached processes
+--------- beginning of main
+11-21 11:45:11.997  3199  3199 I cr_ChildProcessService: Destroying ChildProcessService pid=3199
+11-21 11:45:11.997   552  1041 I ActivityManager: Killing 3199:com.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0a126i1 (adj 0): isolated not needed
+11-21 11:45:11.998   552  1041 W ActivityTaskManager: Force removing ActivityRecord{cc61c0a u0 com.elipraise.guitarchords/.MainActivity} t11 f}}: app died, no saved state
+11-21 11:45:12.000   552  1041 W InputManager-JNI: Input channel object 'a3a927a com.elipraise.guitarchords/com.elipraise.guitarchords.MainActivity (client)' was disposed without first being removed with the input manager!
+11-21 11:45:12.006   972   972 D CarrierSvcBindHelper: onHandleForceStop: [com.elipraise.guitarchords]
+11-21 11:45:12.006   972   972 D CarrierSvcBindHelper: No carrier app for: 0
+11-21 11:45:12.009   436   446 W TransactionTracing: Could not find layer handle 0x7f7d627afcf0
+11-21 11:45:12.021   552   584 I libprocessgroup: Successfully killed process cgroup uid 10126 pid 3161 in 24ms
+11-21 11:45:12.024   552   574 V WindowManager: Unknown focus tokens, dropping reportFocusChanged
+11-21 11:45:12.026   436   436 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+11-21 11:45:12.040  2557  2557 I LatinIME: Starting input. Cursor position = 11,11
+11-21 11:45:12.046   436   446 W TransactionTracing: Could not find layer handle 0x7f7d627b2270
+11-21 11:45:12.046   436   446 W TransactionTracing: Could not find layer handle 0x7f7d627b14f0
+11-21 11:45:12.046   436   446 W TransactionTracing: Could not find layer handle 0x7f7d627b14f0
+11-21 11:45:12.053   552  2712 D CompatibilityChangeReporter: Compat change id reported: 161252188; UID 10126; state: ENABLED
+11-21 11:45:12.053   552  2712 I ActivityTaskManager: START u0 {flg=0x10000000 cmp=com.elipraise.guitarchords/.MainActivity} from uid 2000
+11-21 11:45:12.053   552  2712 D CompatibilityChangeReporter: Compat change id reported: 194480991; UID 10126; state: ENABLED
+11-21 11:45:12.053   791   958 D EGL_emulation: app_time_stats: avg=2282.71ms min=8.40ms max=4557.01ms count=2
+11-21 11:45:12.054   552  2712 D CompatibilityChangeReporter: Compat change id reported: 174042980; UID 10126; state: DISABLED
+11-21 11:45:12.054   552  2712 D CompatibilityChangeReporter: Compat change id reported: 184838306; UID 10126; state: DISABLED
+11-21 11:45:12.054   552  2712 D CompatibilityChangeReporter: Compat change id reported: 185004937; UID 10126; state: DISABLED
+11-21 11:45:12.054   552  2712 D CompatibilityChangeReporter: Compat change id reported: 181136395; UID 10126; state: DISABLED
+11-21 11:45:12.054   552  2712 D CompatibilityChangeReporter: Compat change id reported: 174042936; UID 10126; state: DISABLED
+11-21 11:45:12.055   552  2712 D CompatibilityChangeReporter: Compat change id reported: 197654537; UID 10126; state: ENABLED
+11-21 11:45:12.055   552  2712 D CompatibilityChangeReporter: Compat change id reported: 205907456; UID 10126; state: ENABLED
+11-21 11:45:12.056   552  1756 V ActivityManager: Got obituary of 3161:com.elipraise.guitarchords
+11-21 11:45:12.064   360   360 I Zygote  : Process 3161 exited due to signal 9 (Killed)
+--------- beginning of kernel
+11-21 11:45:12.252     0     0 I binder  : undelivered transaction 137976, process died.
+11-21 11:45:12.254     0     0 I binder  : undelivered transaction 137771, process died.
+11-21 11:45:12.263     0     0 I binder  : undelivered transaction 137848, process died.
+11-21 11:45:12.264     0     0 I binder  : undelivered transaction 137975, process died.
+11-21 11:45:12.070   910   910 I Zygote  : Process 3199 exited due to signal 9 (Killed)
+11-21 11:45:12.072   552  3407 D CompatibilityChangeReporter: Compat change id reported: 168419799; UID 10126; state: DISABLED
+11-21 11:45:12.073   552  1406 D CoreBackPreview: Window{5b00457 u0 Splash Screen com.elipraise.guitarchords}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@8b8342d, mPriority=0}
+11-21 11:45:12.075   436   436 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+11-21 11:45:12.075   436   436 E BpTransactionCompletedListener: Failed to transact (-32)
+11-21 11:45:12.079   791   841 D SplashScreenView: Build android.window.SplashScreenView{2b79263 V.E...... ......ID 0,0-0,0}
+11-21 11:45:12.079   791   841 D SplashScreenView: Icon: view: android.widget.ImageView{255ae60 V.ED..... ......I. 0,0-0,0 #10204dc android:id/splashscreen_icon_view} drawable: com.android.wm.shell.startingsurface.SplashscreenIconDrawableFactory$ImmobileIconDrawable@7dcaf19 size: 160
+11-21 11:45:12.079   791   841 D SplashScreenView: Branding: view: android.view.View{ca65bde G.ED..... ......I. 0,0-0,0 #10204db android:id/splashscreen_branding_view} drawable: null size w: 0 h: 0
+11-21 11:45:12.080   552   584 I libprocessgroup: Successfully killed process cgroup uid 99001 pid 3199 in 5ms
+11-21 11:45:12.083   552   574 D CompatibilityChangeReporter: Compat change id reported: 135634846; UID 10126; state: DISABLED
+11-21 11:45:12.083   552   574 D CompatibilityChangeReporter: Compat change id reported: 177438394; UID 10126; state: DISABLED
+11-21 11:45:12.083   552   574 D CompatibilityChangeReporter: Compat change id reported: 135772972; UID 10126; state: DISABLED
+11-21 11:45:12.083   552   574 D CompatibilityChangeReporter: Compat change id reported: 135754954; UID 10126; state: ENABLED
+11-21 11:45:12.083   552   574 W ActivityManager: setHasOverlayUi called on unknown pid: 3161
+11-21 11:45:12.084   552   583 D CompatibilityChangeReporter: Compat change id reported: 143937733; UID 10126; state: ENABLED
+11-21 11:45:12.090   360   360 D Zygote  : Forked child process 3410
+11-21 11:45:12.090   552   583 I ActivityManager: Start proc 3410:com.elipraise.guitarchords/u0a126 for next-top-activity {com.elipraise.guitarchords/com.elipraise.guitarchords.MainActivity}
+11-21 11:45:12.099  2880  2880 W OnBackInvokedCallback: OnBackInvokedCallback is not enabled for the application.
+11-21 11:45:12.099  2880  2880 W OnBackInvokedCallback: Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+11-21 11:45:12.107  3410  3410 W se.guitarchords: Unexpected CPU variant for x86: x86_64.
+11-21 11:45:12.107  3410  3410 W se.guitarchords: Known variants: atom, sandybridge, silvermont, kabylake, default
+11-21 11:45:12.108   791   958 W Parcel  : Expecting binder but got null!
+11-21 11:45:12.300     0     0 I logd    : logdr: UID=2000 GID=2000 PID=3412 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns
+11-21 11:45:12.125   448   459 I adbd    : jdwp connection from 3410
+11-21 11:45:12.146  3410  3410 D CompatibilityChangeReporter: Compat change id reported: 171979766; UID 10126; state: ENABLED
+11-21 11:45:12.151  3410  3410 V GraphicsEnvironment: ANGLE Developer option for 'com.elipraise.guitarchords' set to: 'default'
+11-21 11:45:12.151  3410  3410 V GraphicsEnvironment: ANGLE GameManagerService for com.elipraise.guitarchords: false
+11-21 11:45:12.151  3410  3410 V GraphicsEnvironment: Neither updatable production driver nor prerelease driver is supported.
+11-21 11:45:12.151  3410  3410 D NetworkSecurityConfig: No Network Security Config specified, using platform default
+11-21 11:45:12.151  3410  3410 D NetworkSecurityConfig: No Network Security Config specified, using platform default
+11-21 11:45:12.163  2880  2880 D InsetsController: show(ime(), fromIme=true)
+11-21 11:45:12.164  3410  3434 D libEGL  : loaded /vendor/lib64/egl/libEGL_emulation.so
+11-21 11:45:12.164  3410  3434 D libEGL  : loaded /vendor/lib64/egl/libGLESv1_CM_emulation.so
+11-21 11:45:12.165  3410  3434 D libEGL  : loaded /vendor/lib64/egl/libGLESv2_emulation.so
+11-21 11:45:12.174  3410  3410 I WebViewFactory: Loading com.android.webview version 101.0.4951.61 (code 495156106)
+11-21 11:45:12.182  3410  3410 D nativeloader: classloader namespace configured for unbundled product apk. library_path=/product/app/webview/lib/x86_64:/product/app/webview/webview.apk!/lib/x86_64:/product/lib64:/system/product/lib64
+11-21 11:45:12.189  3410  3410 I cr_WVCFactoryProvider: Loaded version=101.0.4951.61 minSdkVersion=23 isBundle=false multiprocess=true packageId=2
+11-21 11:45:12.198  3410  3438 I cr_VariationsUtils: Failed reading seed file "/data/user/0/com.elipraise.guitarchords/app_webview/variations_seed_new"
+11-21 11:45:12.198  3410  3438 I cr_VariationsUtils: Failed reading seed file "/data/user/0/com.elipraise.guitarchords/app_webview/variations_seed"
+11-21 11:45:12.201  3410  3410 I cr_LibraryLoader: Successfully loaded native library
+11-21 11:45:12.201  3410  3410 I cr_CachingUmaRecorder: Flushed 9 samples from 9 histograms.
+11-21 11:45:12.203   552  1041 D CompatibilityChangeReporter: Compat change id reported: 161145287; UID 10126; state: DISABLED
+11-21 11:45:12.204   552  1041 D CompatibilityChangeReporter: Compat change id reported: 135634846; UID 99002; state: DISABLED
+11-21 11:45:12.204   552   583 D CompatibilityChangeReporter: Compat change id reported: 143937733; UID 10126; state: ENABLED
+11-21 11:45:12.208   910   910 D Zygote  : Forked child process 3440
+11-21 11:45:12.209   552   583 I ActivityManager: Start proc 3440:com.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0i2 for  {com.elipraise.guitarchords/org.chromium.content.app.SandboxedProcessService0:0}
+11-21 11:45:12.213  3410  3410 D CompatibilityChangeReporter: Compat change id reported: 183155436; UID 10126; state: ENABLED
+11-21 11:45:12.215  3440  3440 W ocessService0:0: Unexpected CPU variant for x86: x86_64.
+11-21 11:45:12.215  3440  3440 W ocessService0:0: Known variants: atom, sandybridge, silvermont, kabylake, default
+11-21 11:45:12.216   448   459 I adbd    : jdwp connection from 3440
+11-21 11:45:12.221  3440  3440 D CompatibilityChangeReporter: Compat change id reported: 171979766; UID 99002; state: ENABLED
+11-21 11:45:12.223  3410  3463 W chromium: [WARNING:dns_config_service_android.cc(115)] Failed to read DnsConfig.
+11-21 11:45:12.238  3440  3440 D NetworkSecurityConfig: No Network Security Config specified, using platform default
+11-21 11:45:12.238  3440  3440 D NetworkSecurityConfig: No Network Security Config specified, using platform default
+11-21 11:45:12.239  3440  3440 I cr_WebViewApkApp: Launched version=101.0.4951.61 minSdkVersion=23 isBundle=false processName=com.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0
+11-21 11:45:12.239  3440  3440 I cr_ChildProcessService: Creating new ChildProcessService pid=3440
+11-21 11:45:12.240  3410  3410 D CompatibilityChangeReporter: Compat change id reported: 171228096; UID 10126; state: ENABLED
+11-21 11:45:12.240   208   208 E SELinux : avc:  denied  { find } for pid=3440 uid=99002 name=content_capture scontext=u:r:isolated_app:s0:c512,c768 tcontext=u:object_r:content_capture_service:s0 tclass=service_manager permissive=0
+11-21 11:45:12.249  3410  3459 W cr_media: Requires BLUETOOTH permission
+11-21 11:45:12.265  3440  3468 I cr_LibraryLoader: Successfully loaded native library
+11-21 11:45:12.265  3410  3471 D HostConnection: HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_has_shared_slots_host_memory_allocator ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_vulkan_queue_submit_with_commands ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_read_color_buffer_dma ANDROID_EMU_hwc_multi_configs ANDROID_EMU_hwc_color_transform ANDROID_EMU_hwc_display_power_mode GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0 
+11-21 11:45:12.265  3440  3468 I cr_CachingUmaRecorder: Flushed 3 samples from 3 histograms.
+11-21 11:45:12.266  3440  3468 W SystemServiceRegistry: No service published for: uimode
+11-21 11:45:12.269  3410  3471 D EGL_emulation: eglCreateContext: 0x76d8d13f9dd0: maj 3 min 0 rcv 3
+11-21 11:45:12.269  3410  3471 D EGL_emulation: eglMakeCurrent: 0x76d8d13f9dd0: ver 3 0 (tinfo 0x76daee6ab080) (first time)
+11-21 11:45:12.280   552  1535 D CoreBackPreview: Window{54d8132 u0 com.elipraise.guitarchords/com.elipraise.guitarchords.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@6ce7e7e, mPriority=0}
+11-21 11:45:12.287  3410  3471 D EGL_emulation: eglCreateContext: 0x76d8d13f9dd0: maj 3 min 0 rcv 3
+11-21 11:45:12.290   552   552 W NotificationHistory: Attempted to add notif for locked/gone/disabled user 0
+11-21 11:45:12.295  3410  3410 D CompatibilityChangeReporter: Compat change id reported: 193247900; UID 10126; state: ENABLED
+11-21 11:45:12.300  3410  3432 D HostConnection: HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_has_shared_slots_host_memory_allocator ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_vulkan_queue_submit_with_commands ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_read_color_buffer_dma ANDROID_EMU_hwc_multi_configs ANDROID_EMU_hwc_color_transform ANDROID_EMU_hwc_display_power_mode GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0 
+11-21 11:45:12.300  3410  3432 W OpenGLRenderer: Failed to initialize 101010-2 format, error = EGL_SUCCESS
+11-21 11:45:12.301  3410  3432 D EGL_emulation: eglCreateContext: 0x76d8d13f9950: maj 3 min 0 rcv 3
+11-21 11:45:12.302  3410  3432 D EGL_emulation: eglMakeCurrent: 0x76d8d13f9950: ver 3 0 (tinfo 0x76daee6ab100) (first time)
+11-21 11:45:12.311   209   209 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.mapper@4.0::IMapper/default in either framework or device VINTF manifest.
+11-21 11:45:12.320  3410  3432 I Gralloc4: mapper 4.x is not supported
+11-21 11:45:12.329   436   446 W TransactionTracing: Could not find layer handle 0x7f7d627b50f0
+11-21 11:45:12.331   209   209 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.allocator@4.0::IAllocator/default in either framework or device VINTF manifest.
+11-21 11:45:12.331   208   208 I servicemanager: Could not find android.hardware.graphics.allocator.IAllocator/default in the VINTF manifest.
+11-21 11:45:12.332  3410  3432 W Gralloc4: allocator 4.x is not supported
+11-21 11:45:12.335   791  2585 D HostConnection: HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_has_shared_slots_host_memory_allocator ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_vulkan_queue_submit_with_commands ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_read_color_buffer_dma ANDROID_EMU_hwc_multi_configs ANDROID_EMU_hwc_color_transform ANDROID_EMU_hwc_display_power_mode GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0 
+11-21 11:45:12.335   791  2585 W OpenGLRenderer: Failed to initialize 101010-2 format, error = EGL_SUCCESS
+11-21 11:45:12.336   791  2585 D EGL_emulation: eglCreateContext: 0x76d8d1467090: maj 3 min 0 rcv 3
+11-21 11:45:12.337   791  2585 D EGL_emulation: eglMakeCurrent: 0x76d8d1467090: ver 3 0 (tinfo 0x76daee360200) (first time)
+11-21 11:45:12.337  3410  3432 D HostConnection: HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_has_shared_slots_host_memory_allocator ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_vulkan_queue_submit_with_commands ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_read_color_buffer_dma ANDROID_EMU_hwc_multi_configs ANDROID_EMU_hwc_color_transform ANDROID_EMU_hwc_display_power_mode GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0 
+11-21 11:45:12.339  3410  3463 I EliGuitarChords: page affichée : application
+11-21 11:45:12.458  3410  3432 W Parcel  : Expecting binder but got null!
+11-21 11:45:12.467   552   571 I ActivityTaskManager: Displayed com.elipraise.guitarchords/.MainActivity: +413ms
+11-21 11:45:12.469  3410  3471 D EGL_emulation: eglCreateContext: 0x76d8d13fcad0: maj 3 min 0 rcv 3
+11-21 11:45:12.481   552  3407 D CompatibilityChangeReporter: Compat change id reported: 214016041; UID 10126; state: ENABLED
+11-21 11:45:12.509   552  1535 W InputManager-JNI: Input channel object '5b00457 Splash Screen com.elipraise.guitarchords (client)' was disposed without first being removed with the input manager!
+11-21 11:45:12.512   436   446 W TransactionTracing: Could not find layer handle 0x7f7d627b45b0
+11-21 11:45:12.512   436   446 W TransactionTracing: Could not find layer handle 0x7f7d627b45b0
+11-21 11:45:12.512   552  3407 W WindowManager: Failed looking up window session=Session{a31ad63 791:u0a10109} callers=com.android.server.wm.WindowManagerService.windowForClientLocked:5972 com.android.server.wm.Session.setOnBackInvokedCallbackInfo:943 android.view.IWindowSession$Stub.onTransact:1180 
+11-21 11:45:12.512   552  3407 E WindowManager: setOnBackInvokedCallback(): No window state for package:com.android.systemui
+11-21 11:45:13.085   436   446 W TransactionTracing: Could not find layer handle 0x7f7d627b3170
+11-21 11:45:13.321     0     0 I logd    : logdr: UID=2000 GID=2000 PID=3490 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns
+11-21 11:45:13.398  1349  1349 I ProvidersCache: Updating roots due to change on user 0at content://com.android.providers.media.documents/root
+11-21 11:45:13.633  3410  3432 D EGL_emulation: app_time_stats: avg=392.65ms min=18.70ms max=1130.94ms count=3
+11-21 11:45:13.644  3410  3429 I OpenGLRenderer: Davey! duration=1033ms; Flags=0, FrameTimelineVsyncId=10343, IntendedVsync=115078650661, Vsync=115078650661, InputEventId=0, HandleInputStart=115078996568, AnimationStart=115078997480, PerformTraversalsStart=115079910275, DrawStart=115079935643, FrameDeadline=115095317327, FrameInterval=115078993774, FrameStartTime=16666666, SyncQueued=115080075991, SyncStart=115080117669, IssueDrawCommandsStart=115080149436, SwapBuffers=116102142109, FrameCompleted=116112094649, DequeueBufferDuration=3175, QueueBufferDuration=147409, GpuCompleted=116112094649, SwapBuffersCompleted=116103084819, DisplayPresentTime=0, CommandSubmissionCompleted=116102142109, 
+11-21 11:45:16.335     0     0 I logd    : logdr: UID=2000 GID=2000 PID=3498 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns
+11-21 11:45:16.182  3503  3503 W ProcessState: Extra binder thread started, but 0 threads requested. Do not use *startThreadPool when zero threads are requested.
+11-21 11:45:16.186   209   209 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.mapper@4.0::IMapper/default in either framework or device VINTF manifest.
+11-21 11:45:16.186  3503  3504 I Gralloc4: mapper 4.x is not supported
+11-21 11:45:16.198  3503  3504 D HostConnection: HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_has_shared_slots_host_memory_allocator ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_vulkan_queue_submit_with_commands ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_read_color_buffer_dma ANDROID_EMU_hwc_multi_configs ANDROID_EMU_hwc_color_transform ANDROID_EMU_hwc_display_power_mode GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0 
+11-21 11:45:16.236   552   572 D AutofillManagerService: onBackKeyPressed()
+11-21 11:45:16.238   552  1535 I ActivityTaskManager: moveTaskToBack: Task{c1e1b3c #12 type=standard A=10126:com.elipraise.guitarchords}
+11-21 11:45:16.259   436   436 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+11-21 11:45:16.276   436   446 W TransactionTracing: Could not find layer handle 0x7f7d627b4d90
+11-21 11:45:16.283   791   958 D EGL_emulation: app_time_stats: avg=599.93ms min=1.70ms max=3769.68ms count=7
+11-21 11:45:16.285  2557  2557 I LatinIME: Starting input. Cursor position = 11,11
+11-21 11:45:16.295   436   446 W TransactionTracing: Could not find layer handle 0x7f7d627b3470
+11-21 11:45:16.295   436   446 W TransactionTracing: Could not find layer handle 0x7f7d627b1250
+11-21 11:45:16.314  2880  2880 W OnBackInvokedCallback: OnBackInvokedCallback is not enabled for the application.
+11-21 11:45:16.314  2880  2880 W OnBackInvokedCallback: Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+11-21 11:45:16.324  2880  2880 D InsetsController: show(ime(), fromIme=true)
+11-21 11:45:16.326   436   446 W TransactionTracing: Could not find layer handle 0x7f7d627b25d0
+11-21 11:45:16.516   552   552 W NotificationHistory: Attempted to add notif for locked/gone/disabled user 0
+11-21 11:45:17.005   552  2114 E TaskPersister: File error accessing recents directory (directory doesn't exist?).

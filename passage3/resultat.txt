@@ -1,0 +1,19 @@
+Performing Streamed Install
+Success
+Performing Streamed Install
+Success
+OK    l'appli n'a pas la permission Internet
+OK    écran de licence : téléphone non activé
+OK    code du téléphone affiché
+code : ELI-W8QG-METM-U9SM-EVCF
+OK    champ de la clé visible
+OK    mauvaise clé refusée (message affiché : non lu)
+OK    générateur : demande du mot de passe
+OK    générateur déverrouillé par le mot de passe
+OK    générateur : clé de licence fabriquée
+clé : KCLLLY7J-CUHKIPFI-QJ62WGNV-IYVW4TQT-HHG53JG3-QNEQWWSB-ACD2Q2OU-G3QZ4B7Y-LD4QHTCX-X6OAAIFC-ELD66YNQ-LBKR3GLQ-GL5Y6DY
+OK    générateur : clé faite pour le code du client
+OK    clé du générateur acceptée : l'application s'ouvre
+OK    réouverture : l'application s'ouvre directement
+OK    aucun plantage (appli et générateur)
+RESULTAT OK
