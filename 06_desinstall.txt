@@ -1,0 +1,7 @@
+code désinstallation: 0
+C:\Program Files\Layers Keys\LayersKeys.exe encore présent : False
+C:\Program Files\Common Files\VST3\Layers Keys.vst3 encore présent : False
+C:\Users\Public\Desktop\Layers Keys.lnk encore présent : False
+C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Layers Keys encore présent : False
+HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\LayersKeys encore présent : False
+données conservées après désinstallation (attendu True) : True
