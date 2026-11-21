@@ -1620,6 +1620,13 @@ static void testAutomation (const juce::File& root)
     p.setMode (1); p.pressKey (4); p.addSongFromCurrent ("B");
     host ("a_song", 1);
     CHECK (p.setlist().current() == 0 && p.currentKey() == 9 && p.currentMode() == 0, "lecture : le chant 1 de la setlist revient (chant " << p.setlist().current() << ", " << p.currentKey() << "/" << p.currentMode() << ")");
+    // le logiciel de musique écrit une valeur pendant qu'une autre action de Spacepad se termine : elle n'est pas écrasée
+    {
+        auto* prm = p.params.getParameter ("a_song");
+        prm->setValueNotifyingHost (prm->convertTo0to1 (2.0f));
+        p.setMode (p.currentMode());
+        CHECK (juce::roundToInt (val ("a_song")) == 2, "une valeur ecrite par le logiciel de musique n'est jamais ecrasee par Spacepad");
+    }
     host ("a_song", 2);
     CHECK (p.setlist().current() == 1 && p.currentKey() == 4 && p.currentMode() == 1, "lecture : le chant 2 de la setlist revient (chant " << p.setlist().current() << ", " << p.currentKey() << "/" << p.currentMode() << ", a_song " << val ("a_song") << ", a_key " << val ("a_key") << ")");
     // projet rouvert : le pad ne démarre pas tout seul

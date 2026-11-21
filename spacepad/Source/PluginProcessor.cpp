@@ -716,17 +716,23 @@ void SpacepadProcessor::setAuto (const char* id, float v)
 
 void SpacepadProcessor::pushAuto()
 {
-    setAuto ("a_key", (float) keyNow.load());
-    setAuto ("a_mode", (float) modeNow.load());
-    setAuto ("a_play", padOn.load() ? 1.0f : 0.0f);
-    setAuto ("a_song", (float) (songs.current() + 1));
-    lastSongParam = juce::roundToInt (p ("a_song"));
+    auto send = [this] (const char* id, int& sent, int now)
+    {
+        if (now == sent) return false;
+        sent = now;
+        setAuto (id, (float) now);
+        return true;
+    };
+    send ("a_key", sentKey, keyNow.load());
+    send ("a_mode", sentMode, modeNow.load());
+    send ("a_play", sentPlay, padOn.load() ? 1 : 0);
+    if (send ("a_song", sentSong, songs.current() + 1)) lastSongParam = songs.current() + 1;
     for (int s = 0; s < 2; ++s)
     {
         const auto id = "a_c" + juce::String (s + 1);
         const int idx = crowdIdx[s].load();
-        setAuto (id.toRawUTF8(), idx >= 0 ? 1.0f : 0.0f);
-        if (idx >= 0) setAuto ((id + "snd").toRawUTF8(), (float) (idx + 1));
+        send (id.toRawUTF8(), sentOn[s], idx >= 0 ? 1 : 0);
+        if (idx >= 0) send ((id + "snd").toRawUTF8(), sentSnd[s], idx + 1);
     }
 }
 
@@ -880,6 +886,7 @@ void SpacepadProcessor::setStateInformation (const void* data, int size)
         if (! state.isValid() || ! state.hasType (params.state.getType())) return;
         AutoScope automation (*this);     // après chargement : les paramètres reprennent l'état réel (le pad ne part pas tout seul)
         params.replaceState (state);
+        sentKey = sentMode = sentPlay = sentSong = sentOn[0] = sentOn[1] = sentSnd[0] = sentSnd[1] = -999;   // tout renvoyer
         {
             const juce::ScopedLock sl (stateLock);
             const char* keys[] = { "padLibraryMajor", "padLibraryMinor" };

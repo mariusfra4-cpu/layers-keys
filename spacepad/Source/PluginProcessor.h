@@ -147,6 +147,9 @@ private:
     void setAuto (const char* id, float realValue);
     juce::CriticalSection autoLock;
     int autoDepth = 0, lastSongParam = 0;
+    // dernier état envoyé au logiciel de musique : on n'envoie que ce que Spacepad a changé lui-même,
+    // pour ne jamais écraser une valeur que le logiciel de musique vient d'écrire (lecture de l'automation)
+    int sentKey = -999, sentMode = -999, sentPlay = -999, sentSong = -999, sentOn[2] { -999, -999 }, sentSnd[2] { -999, -999 };
     float p (const char* id) const { return params.getRawParameterValue (id)->load(); }
     float p (const juce::String& id) const { return params.getRawParameterValue (id)->load(); }
     void setParam (const char* id, float realValue);
