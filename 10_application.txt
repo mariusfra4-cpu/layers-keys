@@ -1,0 +1,31 @@
+application en marche : True
+
+FullName                                                                                    Length
+--------                                                                                    ------
+C:\Users\runneradmin\AppData\Local\LayersSplit\Cache\5b81c53d8a61e054\Basse.wav            3852392
+C:\Users\runneradmin\AppData\Local\LayersSplit\Cache\5b81c53d8a61e054\Batterie.wav         3852392
+C:\Users\runneradmin\AppData\Local\LayersSplit\Cache\5b81c53d8a61e054\Choeur - Alto.wav    3852392
+C:\Users\runneradmin\AppData\Local\LayersSplit\Cache\5b81c53d8a61e054\Choeur - Basse.wav   3852392
+C:\Users\runneradmin\AppData\Local\LayersSplit\Cache\5b81c53d8a61e054\Choeur - Soprano.wav 3852392
+C:\Users\runneradmin\AppData\Local\LayersSplit\Cache\5b81c53d8a61e054\Choeur - Tenor.wav   3852392
+C:\Users\runneradmin\AppData\Local\LayersSplit\Cache\5b81c53d8a61e054\Choeurs.wav          3852392
+C:\Users\runneradmin\AppData\Local\LayersSplit\Cache\5b81c53d8a61e054\Guitares.wav         3852392
+C:\Users\runneradmin\AppData\Local\LayersSplit\Cache\5b81c53d8a61e054\info.xml                 383
+C:\Users\runneradmin\AppData\Local\LayersSplit\Cache\5b81c53d8a61e054\Instruments.wav      3852392
+C:\Users\runneradmin\AppData\Local\LayersSplit\Cache\5b81c53d8a61e054\Piano.wav            3852392
+C:\Users\runneradmin\AppData\Local\LayersSplit\Cache\5b81c53d8a61e054\Voix lead.wav        3852392
+C:\Users\runneradmin\AppData\Local\LayersSplit\Cache\5b81c53d8a7198f1\Basse.wav            3852392
+C:\Users\runneradmin\AppData\Local\LayersSplit\Cache\5b81c53d8a7198f1\Batterie.wav         3852392
+C:\Users\runneradmin\AppData\Local\LayersSplit\Cache\5b81c53d8a7198f1\Choeur - Alto.wav    3852392
+C:\Users\runneradmin\AppData\Local\LayersSplit\Cache\5b81c53d8a7198f1\Choeur - Basse.wav   3852392
+C:\Users\runneradmin\AppData\Local\LayersSplit\Cache\5b81c53d8a7198f1\Choeur - Soprano.wav 3852392
+C:\Users\runneradmin\AppData\Local\LayersSplit\Cache\5b81c53d8a7198f1\Choeur - Tenor.wav   3852392
+C:\Users\runneradmin\AppData\Local\LayersSplit\Cache\5b81c53d8a7198f1\Choeurs.wav          3852392
+C:\Users\runneradmin\AppData\Local\LayersSplit\Cache\5b81c53d8a7198f1\Guitare solo.wav     3852392
+C:\Users\runneradmin\AppData\Local\LayersSplit\Cache\5b81c53d8a7198f1\Guitares.wav         3852392
+C:\Users\runneradmin\AppData\Local\LayersSplit\Cache\5b81c53d8a7198f1\info.xml                 383
+C:\Users\runneradmin\AppData\Local\LayersSplit\Cache\5b81c53d8a7198f1\Instruments.wav      3852392
+C:\Users\runneradmin\AppData\Local\LayersSplit\Cache\5b81c53d8a7198f1\Piano.wav            3852392
+C:\Users\runneradmin\AppData\Local\LayersSplit\Cache\5b81c53d8a7198f1\Voix lead.wav        3852392
+
+

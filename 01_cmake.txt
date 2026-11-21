@@ -1,0 +1,44 @@
+-- Building for: Visual Studio 18 2026
+-- The C compiler identification is MSVC 19.52.37029.0
+-- The CXX compiler identification is MSVC 19.52.37029.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.52.37025/bin/Hostx64/x64/cl.exe - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.52.37025/bin/Hostx64/x64/cl.exe - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Configuring juceaide
+-- Building juceaide
+-- Exporting juceaide
+-- Testing juceaide
+-- Finished setting up juceaide
+CMake Warning (policy) at C:/deps/JUCE/extras/Build/CMake/JUCEUtils.cmake:883 (add_custom_command):
+  The following keywords are not supported when using
+  add_custom_command(TARGET): DEPENDS.
+
+  Policy CMP0175 is not set: add_custom_command() rejects invalid arguments.
+  Run "cmake --help-policy CMP0175" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  C:/deps/JUCE/extras/Build/CMake/JUCEUtils.cmake:1218 (_juce_create_windows_package)
+  C:/deps/JUCE/extras/Build/CMake/JUCEUtils.cmake:1460 (_juce_set_plugin_target_properties)
+  C:/deps/JUCE/extras/Build/CMake/JUCEUtils.cmake:1597 (_juce_link_plugin_wrapper)
+  C:/deps/JUCE/extras/Build/CMake/JUCEUtils.cmake:2190 (_juce_configure_plugin_targets)
+  CMakeLists.txt:48 (juce_add_plugin)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Failed
+-- Looking for pthread_create in pthreads
+-- Looking for pthread_create in pthreads - not found
+-- Looking for pthread_create in pthread
+-- Looking for pthread_create in pthread - not found
+-- Found Threads: TRUE
+-- Configuring done (62.7s)
+-- Generating done (0.3s)
+-- Build files have been written to: C:/b

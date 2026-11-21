@@ -1,0 +1,34 @@
+code installation : 0
+C:\Program Files\Layers Split\Layers Split.exe : True
+C:\Program Files\Layers Split\onnxruntime.dll : True
+C:\Program Files\Layers Split\DirectML.dll : True
+C:\Program Files\Layers Split\models\Kim_Vocal_2.onnx : True
+C:\Program Files\Layers Split\models\UVR_MDXNET_KARA_2.onnx : True
+C:\Program Files\Layers Split\models\kuielab_a_drums.onnx : True
+C:\Program Files\Layers Split\models\kuielab_a_bass.onnx : True
+C:\Program Files\Layers Split\models\UVR-MDX-NET-Inst_HQ_3.onnx : True
+C:\Program Files\Layers Split\models\htdemucs_6s.onnx : True
+C:\Program Files\Layers Split\models\htdemucs_6s.onnx.json : True
+C:\Program Files\Layers Split\models\basic_pitch.onnx : True
+C:\Program Files\Layers Split\Desinstaller.exe : True
+C:\Program Files\Common Files\VST3\Layers Split.vst3\Contents\x86_64-win\Layers Split.vst3 : True
+C:\Users\Public\Desktop\Layers Split.lnk : True
+
+InstallDir   : C:\Program Files\Layers Split
+Version      : 1.2.0
+VST3         : 1
+PSPath       : Microsoft.PowerShell.Core\Registry::HKEY_LOCAL_MACHINE\Software\JB Praise\Layers Split
+PSParentPath : Microsoft.PowerShell.Core\Registry::HKEY_LOCAL_MACHINE\Software\JB Praise
+PSChildName  : Layers Split
+PSDrive      : HKLM
+PSProvider   : Microsoft.PowerShell.Core\Registry
+
+
+
+DisplayName     : Layers Split
+DisplayVersion  : 1.2.0
+Publisher       : JB Praise
+UninstallString : "C:\Program Files\Layers Split\Desinstaller.exe"
+EstimatedSize   : 391937
+
+

@@ -1,0 +1,38 @@
+moteur : C:\rt
+onnxruntime 1.20.1 (DirectML disponible)
+fichier : exemple.mp3 0:10 44100 Hz
+  0 % Séparation des voix
+  15 % Séparation des voix
+  31 % Séparation des voix
+  45 % Voix lead / chœurs
+  58 % Voix lead / chœurs
+  77 % Batterie
+  96 % Basse
+separation : 23.8137 s sur Processeur
+stem Voix lead : -18.9 dB
+stem Choeurs : -41.5 dB
+stem Batterie : -18.3 dB
+stem Basse : -19.8 dB
+stem Instruments : -18.5 dB
+stem Choeur - Soprano : -53.7 dB
+stem Choeur - Alto : -53.7 dB
+stem Choeur - Tenor : -51.9 dB
+stem Choeur - Basse : -53.6 dB
+residu (somme des pupitres - choeurs) : -158.5 dB
+residu (somme des stems - original) : -145.6 dB
+analyse : 146.5 BPM, Fa majeur (7B), -9.4 LUFS, crete 0.4 dBFS
+OK
+
+Name                  Length
+----                  ------
+Basse.wav            2889320
+Batterie.wav         2889320
+Choeur - Alto.wav    2889320
+Choeur - Basse.wav   2889320
+Choeur - Soprano.wav 2889320
+Choeur - Tenor.wav   2889320
+Choeurs.wav          2889320
+Instruments.wav      2889320
+Voix lead.wav        2889320
+
+

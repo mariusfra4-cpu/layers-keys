@@ -1,0 +1,17 @@
+ok : morceau ouvert
+ok : stems disponibles : Séparation terminée en 0:24 (Processeur).
+ok : stems enregistrés dans le cache
+ok : aucune valeur invalide
+ok : niveau de lecture normal : -12.650381 dB
+ok : stems additionnés = original (écart 0.000000 dB)
+ok : pupitres du chœur calculés
+ok : chœurs détachés = même mixage (écart 0.000000 dB)
+ok : solo soprano : -49.678741 dB
+ok : solo sur pupitre caché ignoré : -13.604601 dB
+ok : tout en muet = silence
+ok : solo voix lead : -16.512105 dB
+ok : arrêt automatique en fin de morceau
+ok : bloc plus grand que prévu traité sans erreur
+ok : projet rechargé avec ses stems (cache)
+ok : réglages du projet conservés
+TOUS LES TESTS PASSENT

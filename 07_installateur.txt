@@ -1,0 +1,51 @@
+
+FullName                                                                                                   Length
+--------                                                                                                   ------
+D:\a\layers-keys\layers-keys\split\nsis\payload\DirectML.dll                                             18527776
+D:\a\layers-keys\layers-keys\split\nsis\payload\Layers Split.exe                                          7509504
+D:\a\layers-keys\layers-keys\split\nsis\payload\Licences.txt                                                 1142
+D:\a\layers-keys\layers-keys\split\nsis\payload\onnxruntime.dll                                          14682160
+D:\a\layers-keys\layers-keys\split\nsis\payload\Layers Split.vst3\desktop.ini                                  80
+D:\a\layers-keys\layers-keys\split\nsis\payload\Layers Split.vst3\Plugin.ico                                23501
+D:\a\layers-keys\layers-keys\split\nsis\payload\Layers Split.vst3\Contents\Resources\moduleinfo.json         1430
+D:\a\layers-keys\layers-keys\split\nsis\payload\Layers Split.vst3\Contents\x86_64-win\Layers Split.vst3   7598080
+D:\a\layers-keys\layers-keys\split\nsis\payload\models\basic_pitch.onnx                                    230444
+D:\a\layers-keys\layers-keys\split\nsis\payload\models\htdemucs_6s.onnx                                 114560631
+D:\a\layers-keys\layers-keys\split\nsis\payload\models\htdemucs_6s.onnx.json                                  158
+D:\a\layers-keys\layers-keys\split\nsis\payload\models\Kim_Vocal_2.onnx                                  66759214
+D:\a\layers-keys\layers-keys\split\nsis\payload\models\kuielab_a_bass.onnx                               29703204
+D:\a\layers-keys\layers-keys\split\nsis\payload\models\kuielab_a_drums.onnx                              29703204
+D:\a\layers-keys\layers-keys\split\nsis\payload\models\UVR_MDXNET_KARA_2.onnx                            52786726
+D:\a\layers-keys\layers-keys\split\nsis\payload\models\UVR-MDX-NET-Inst_HQ_3.onnx                        66759214
+
+
+MakeNSIS v3.13 - Copyright 1999-2026 Contributors
+See the file COPYING for license details.
+Credits can be found in the Users Manual.
+
+Processing config: C:\Program Files (x86)\NSIS\nsisconf.nsh
+Processing script file: "layerssplit.nsi" (UTF8)
+
+Processed 1 file, writing output (x86-unicode):
+
+Output: "D:\a\layers-keys\layers-keys\split\nsis\Layers-Split-Setup-1.2.0.exe"
+Install: 5 pages (320 bytes), 2 sections (1 required) (4144 bytes), 739 instructions (20692 bytes), 300 strings (11852 bytes), 1 language table (330 bytes).
+Uninstall: 3 pages (256 bytes), 1 section (2072 bytes), 374 instructions (10472 bytes), 183 strings (7050 bytes), 1 language table (274 bytes).
+Datablock optimizer saved 154546 bytes (~0.0%).
+
+Using lzma (compress whole) compression.
+
+EXE header size:               70144 / 38912 bytes
+Install code:                          (37802 bytes)
+Install data:                          (409085466 bytes)
+Uninstall code+data:                   (259516 bytes)
+Compressed data:           296402016 / 409382784 bytes
+CRC (0x8940EC93):                  4 / 4 bytes
+
+Total size:                296472164 / 409421700 bytes (72.4%)
+
+Name                            Length
+----                            ------
+Layers-Split-Setup-1.2.0.exe 296472164
+
+

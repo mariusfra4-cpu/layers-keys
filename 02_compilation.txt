@@ -1,0 +1,122 @@
+MSBuild version 18.12.2-1.26514.2+04f6ca984 for .NET Framework
+
+  Checking File Globs
+  1>Checking Build System
+  Generating LayersSplit_artefacts/JuceLibraryCode/LayersSplit_resources.rc
+  Building Custom Rule D:/a/layers-keys/layers-keys/split/CMakeLists.txt
+  LayersSplit_rc_lib.vcxproj -> C:\b\LayersSplit_rc_lib.dir\Release\LayersSplit_rc_lib.lib
+  Building Custom Rule D:/a/layers-keys/layers-keys/split/CMakeLists.txt
+  PluginProcessor.cpp
+  PluginEditor.cpp
+  TrackView.cpp
+  SeparationJob.cpp
+  OrtRuntime.cpp
+  Dsp.cpp
+  MdxModel.cpp
+  DemucsModel.cpp
+  LeadSplit.cpp
+  ChoirSplit.cpp
+  BasicPitch.cpp
+  Separator.cpp
+  Analysis.cpp
+  AudioIO.cpp
+  juce_audio_processors.cpp
+  juce_audio_processors_ara.cpp
+  juce_audio_processors_lv2_libs.cpp
+  juce_gui_extra.cpp
+  juce_gui_basics.cpp
+  juce_graphics.cpp
+C:\deps\JUCE\modules\juce_gui_basics\juce_gui_basics.cpp(61): warning : This version of JUCE does not use the splash screen, the flag JUCE_DISPLAY_SPLASH_SCREEN is ignored [C:\b\LayersSplit.vcxproj]
+  juce_graphics_Harfbuzz.cpp
+  juce_events.cpp
+  juce_core.cpp
+  juce_core_CompilationTime.cpp
+  juce_data_structures.cpp
+  juce_audio_basics.cpp
+  juce_audio_utils.cpp
+  juce_audio_formats.cpp
+  juce_audio_devices.cpp
+  juce_graphics_Sheenbidi.c
+  LayersSplit.vcxproj -> C:\b\LayersSplit_artefacts\Release\Layers Split_SharedCode.lib
+  Building Custom Rule D:/a/layers-keys/layers-keys/split/CMakeLists.txt
+  juce_audio_plugin_client_AAX.cpp
+  juce_audio_plugin_client_AAX_utils.cpp
+  juce_audio_plugin_client_ARA.cpp
+  juce_audio_plugin_client_LV2.cpp
+  juce_audio_plugin_client_Standalone.cpp
+  juce_audio_plugin_client_Unity.cpp
+  juce_audio_plugin_client_VST2.cpp
+  juce_audio_plugin_client_VST3.cpp
+  Generating code
+  Finished generating code
+  LayersSplit_Standalone.vcxproj -> C:\b\LayersSplit_artefacts\Release\Standalone\Layers Split.exe
+MSBuild version 18.12.2-1.26514.2+04f6ca984 for .NET Framework
+
+  Checking File Globs
+  LayersSplit_rc_lib.vcxproj -> C:\b\LayersSplit_rc_lib.dir\Release\LayersSplit_rc_lib.lib
+  LayersSplit.vcxproj -> C:\b\LayersSplit_artefacts\Release\Layers Split_SharedCode.lib
+  Building Custom Rule D:/a/layers-keys/layers-keys/split/CMakeLists.txt
+  juce_VST3ManifestHelper.cpp
+  juce_vst3_helper.vcxproj -> C:\b\Release\juce_vst3_helper.exe
+  Building Custom Rule D:/a/layers-keys/layers-keys/split/CMakeLists.txt
+  juce_audio_plugin_client_AAX.cpp
+  juce_audio_plugin_client_AAX_utils.cpp
+  juce_audio_plugin_client_ARA.cpp
+  juce_audio_plugin_client_LV2.cpp
+  juce_audio_plugin_client_Standalone.cpp
+  juce_audio_plugin_client_Unity.cpp
+  juce_audio_plugin_client_VST2.cpp
+  juce_audio_plugin_client_VST3.cpp
+     Creating library C:/b/LayersSplit_artefacts/Release/VST3/Layers Split.lib and object C:/b/LayersSplit_artefacts/Release/VST3/Layers Split.exp
+  Generating code
+  Finished generating code
+  LayersSplit_VST3.vcxproj -> C:\b\LayersSplit_artefacts\Release\VST3\Layers Split.vst3\Contents\x86_64-win\Layers Split.vst3
+  removing moduleinfo.json
+  creating C:/b/LayersSplit_artefacts/Release/VST3/Layers Split.vst3/Contents/Resources/moduleinfo.json
+MSBuild version 18.12.2-1.26514.2+04f6ca984 for .NET Framework
+
+  Checking File Globs
+  Generating LayersSplitCli_artefacts/JuceLibraryCode/LayersSplitCli_resources.rc
+  Building Custom Rule D:/a/layers-keys/layers-keys/split/CMakeLists.txt
+  LayersSplitCli_rc_lib.vcxproj -> C:\b\LayersSplitCli_rc_lib.dir\Release\LayersSplitCli_rc_lib.lib
+  Building Custom Rule D:/a/layers-keys/layers-keys/split/CMakeLists.txt
+  main.cpp
+  OrtRuntime.cpp
+  Dsp.cpp
+  MdxModel.cpp
+  DemucsModel.cpp
+  LeadSplit.cpp
+  ChoirSplit.cpp
+  BasicPitch.cpp
+  Separator.cpp
+  Analysis.cpp
+  AudioIO.cpp
+  juce_audio_formats.cpp
+  juce_audio_basics.cpp
+  juce_core.cpp
+  juce_core_CompilationTime.cpp
+  juce_events.cpp
+  LayersSplitCli.vcxproj -> C:\b\LayersSplitCli_artefacts\Release\LayersSplitCli.exe
+MSBuild version 18.12.2-1.26514.2+04f6ca984 for .NET Framework
+
+  Checking File Globs
+  LayersSplit.vcxproj -> C:\b\LayersSplit_artefacts\Release\Layers Split_SharedCode.lib
+  Building Custom Rule D:/a/layers-keys/layers-keys/split/CMakeLists.txt
+  processor_test.cpp
+  Generating code
+  Finished generating code
+  LayersSplitTests.vcxproj -> C:\b\Release\LayersSplitTests.exe
+
+FullName                                                                                           Length
+--------                                                                                           ------
+C:\b\LayersSplit_artefacts\Release\Layers Split_SharedCode.lib                                  292482280
+C:\b\LayersSplit_artefacts\Release\Standalone\Layers Split.exe                                    7509504
+C:\b\LayersSplit_artefacts\Release\VST3\Layers Split.exp                                              899
+C:\b\LayersSplit_artefacts\Release\VST3\Layers Split.lib                                             2218
+C:\b\LayersSplit_artefacts\Release\VST3\Layers Split.vst3\desktop.ini                                  80
+C:\b\LayersSplit_artefacts\Release\VST3\Layers Split.vst3\Plugin.ico                                23501
+C:\b\LayersSplit_artefacts\Release\VST3\Layers Split.vst3\Contents\Resources\moduleinfo.json         1430
+C:\b\LayersSplit_artefacts\Release\VST3\Layers Split.vst3\Contents\x86_64-win\Layers Split.vst3   7598080
+C:\b\LayersSplitCli_artefacts\Release\LayersSplitCli.exe                                          3159552
+
+
