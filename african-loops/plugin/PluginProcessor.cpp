@@ -1,4 +1,5 @@
 #include "PluginProcessor.h"
+#include "Lang.h"
 
 #include "PluginEditor.h"
 
@@ -89,7 +90,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout AfricanLoopsProcessor::layou
     p.push_back(std::make_unique<APB>(PID{ids::echoPing, 1}, "Echo Ping-pong", true));
     F(ids::echoLowCut, "Echo Coupe-bas", 20, 1000, 200, hz, 0.5f);
     // fondus (en mesures)
-    auto bars = [](float v, int) { return juce::String(v, 2) + (v > 1.001f ? " mesures" : " mesure"); };
+    auto bars = [](float v, int) { return juce::String(v, 2) + lang::tr(v > 1.001f ? " mesures" : " mesure"); };
     F(ids::fadeIn, "Fondu entree", 0, 4, 1, bars);
     F(ids::fadeOut, "Fondu sortie", 0, 4, 2, bars);
     p.push_back(std::make_unique<APB>(PID{ids::xfade, 1}, "Fondu enchaine", false));
@@ -543,7 +544,7 @@ void AfricanLoopsProcessor::loadLoopAsync(const juce::File& file) {
         if (!loadAudio(file, a, err)) {
             if (ticket == loadTicket.load()) {
                 std::lock_guard<std::mutex> lk(stateMu);
-                error = file.getFileName() + " : " + err;
+                error = file.getFileName() + " : " + lang::tr(err);
                 loading.store(false);
                 ++loads;
             }
@@ -632,7 +633,7 @@ void AfricanLoopsProcessor::scanFolderAsync(const juce::File& dir, bool force) {
         {
             std::lock_guard<std::mutex> lk(stateMu);
             if (ok) lib = l;
-            else error = juce::String::fromUTF8(err.c_str());
+            else error = lang::tr(juce::String::fromUTF8(err.c_str()));
         }
         scanning.store(false);
         ++libs;

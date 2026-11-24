@@ -63,5 +63,7 @@ UTILISATION
   EQ PAR PISTE : graves / médium / aigus de chaque percussion.
   FADE : fondus au départ / à l'arrêt (en mesures) et fondu enchaîné entre
   deux loops.
+- ⚙ (en haut à droite) : la langue du logiciel - Français, English, Español,
+  Português. Le changement est immédiat et gardé pour la prochaine fois.
 - Clavier : Espace = lecture / arrêt ; flèches haut / bas = loop précédente /
   suivante.

@@ -2,6 +2,7 @@
 // audio qui tourne sans arrêt, l'interface ouverte, des loops chargées
 // pendant la lecture, la sauvegarde du projet, le glisser-déposer…
 #include "TestLoops.h"
+#include "../Lang.h"
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
@@ -285,6 +286,31 @@ int main(int argc, char** argv) {
                 }
                 fx->setVisible(false);
             }
+        }
+
+        // 5 ter bis. langues : l'interface change tout de suite, rien ne reste en français
+        {
+            const auto before = lang::current();
+            CHECK(lang::missing().isEmpty(), "traductions manquantes : %s", lang::missing().joinIntoString(", ").toRawUTF8());
+            lang::set(lang::En);
+            CHECK(TR("Annuler") == "Cancel" && TR("PRESETS / BIBLIOTHÈQUE") == "PRESETS / LIBRARY", "anglais : %s", TR("Annuler").toRawUTF8());
+            CHECK(TR("Texte inconnu") == "Texte inconnu", "un texte inconnu doit rester tel quel");
+            lang::set(lang::Es);
+            CHECK(TR("Annuler") == "Cancelar", "espagnol");
+            lang::set(lang::Pt);
+            CHECK(TR("Toutes les loops") == juce::String::fromUTF8("Todos os loops"), "portugais");
+            const char* shotsL[] = {"11_langue_en.png", "12_langue_es.png", "13_langue_pt.png"};
+            const lang::Id ls[] = {lang::En, lang::Es, lang::Pt};
+            for (int k = 0; k < 3; ++k) {
+                lang::set(ls[k]);
+                waitFor([] { return false; }, 250);  // la minuterie de l'interface voit le changement
+                snapshot(*ed, shots.getChildFile(shotsL[k]));
+            }
+            lang::set(lang::Fr);
+            CHECK(TR("Annuler") == "Annuler", "retour au français");
+            waitFor([] { return false; }, 250);
+            lang::set(before);
+            CHECK(audio->bad == 0, "langues : son invalide");
         }
 
         // 5 quater. setups : enregistrer, changer tout, rappeler, renommer, supprimer

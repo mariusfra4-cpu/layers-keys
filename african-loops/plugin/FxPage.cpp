@@ -1,4 +1,5 @@
 #include "FxPage.h"
+#include "Lang.h"
 
 #include "Effects.h"
 
@@ -43,7 +44,7 @@ void LabeledKnob::paint(juce::Graphics& g) {
     auto r = getLocalBounds().withTrimmedTop(slider.getBottom() + 1);
     g.setFont(ui::font(8.f, true).withExtraKerningFactor(0.1f));
     g.setColour(labelColour);
-    g.drawText(upper(label), r.removeFromTop(12), juce::Justification::centred, true);
+    g.drawText(upper(lang::tr(label)), r.removeFromTop(12), juce::Justification::centred, true);
     if (param) ui::drawGlowText(g, param->getCurrentValueAsText(), r.removeFromTop(13).toFloat(), ui::font(9.5f, true), col::amber);
 }
 
@@ -71,7 +72,7 @@ void ChoiceRow::paint(juce::Graphics& g) {
         g.fillRoundedRectangle(r, 4);
         g.setColour(on ? juce::Colour(0xff2a1600) : juce::Colour(0xff9b958b));
         g.setFont(ui::font(9.5f, true).withExtraKerningFactor(0.08f));
-        g.drawText(labels[i], r, juce::Justification::centred, true);
+        g.drawText(lang::tr(labels[i]), r, juce::Justification::centred, true);
     }
 }
 
@@ -102,21 +103,21 @@ FxPage::FxPage(AfricanLoopsProcessor& p) : proc(p) {
 
     using namespace ids;
     // --- master
-    toggle(masterFx, juce::String::fromUTF8("COMPRESSEUR + LIMITEUR : ACTIFS"), Master);
+    toggle(masterFx, TR("COMPRESSEUR + LIMITEUR : ACTIFS"), Master);
     knob(eqLow, "Graves", Master, true);
-    knob(eqLowMid, juce::String::fromUTF8("Bas-médium"), Master, true);
-    knob(eqHighMid, juce::String::fromUTF8("Haut-médium"), Master, true);
+    knob(eqLowMid, TR("Bas-médium"), Master, true);
+    knob(eqHighMid, TR("Haut-médium"), Master, true);
     knob(eqHigh, "Aigus", Master, true);
-    knob(eqLowFreq, juce::String::fromUTF8("Fréq. graves"), Master);
+    knob(eqLowFreq, TR("Fréq. graves"), Master);
     knob(compThr, "Seuil", Master);
     knob(compRatio, "Ratio", Master);
     knob(compAtk, "Attaque", Master);
-    knob(compRel, juce::String::fromUTF8("Relâchement"), Master);
+    knob(compRel, TR("Relâchement"), Master);
     knob(ceiling, "Plafond", Master);
     knob(makeup, "Gain", Master);
     // --- réverbération
     toggle(sendFx, "ACTIVE", Send);
-    auto* types = new ChoiceRow(p, revType, {"STUDIO", "SALLE", juce::String::fromUTF8("ÉGLISE"), "PLAQUE"});
+    auto* types = new ChoiceRow(p, revType, {"STUDIO", "SALLE", TR("ÉGLISE"), "PLAQUE"});
     owned.emplace_back(types);
     items.push_back({types, Send});
     addChildComponent(types);
@@ -142,13 +143,13 @@ FxPage::FxPage(AfricanLoopsProcessor& p) : proc(p) {
     knob(revWidth, "Largeur", Send);
     knob(revSize, "Taille", Send);
     knob(revDamp, "Amorti", Send);
-    knob(revPre, juce::String::fromUTF8("Pré-délai"), Send);
+    knob(revPre, TR("Pré-délai"), Send);
     knob(revLowCut, "Coupe-bas", Send);
     knob(revHighCut, "Coupe-haut", Send);
     for (int i = 0; i < africanloops::kNumTracks; ++i) sendKnobs[(size_t)i] = knob(ids::send(i), juce::String(i + 1), Send);
     // --- modulation et écho
     toggle(modFx, "ACTIVE", Mod);
-    auto* mt = new ChoiceRow(p, modType, {"CHORUS", "FLANGER", "PHASER", juce::String::fromUTF8("TRÉMOLO")});
+    auto* mt = new ChoiceRow(p, modType, {"CHORUS", "FLANGER", "PHASER", TR("TRÉMOLO")});
     owned.emplace_back(mt);
     items.push_back({mt, Mod});
     addChildComponent(mt);
@@ -157,7 +158,7 @@ FxPage::FxPage(AfricanLoopsProcessor& p) : proc(p) {
     knob(modFb, "Retour", Mod);
     knob(modMix, "Mix", Mod);
     toggle(ids::echo, "ACTIF", Mod);
-    auto* ed = new ChoiceRow(p, echoDiv, {"1/4", juce::String::fromUTF8("1/8 POINTÉE"), "1/8", "1/16"});
+    auto* ed = new ChoiceRow(p, echoDiv, {"1/4", TR("1/8 POINTÉE"), "1/8", "1/16"});
     owned.emplace_back(ed);
     items.push_back({ed, Mod});
     addChildComponent(ed);
@@ -168,15 +169,15 @@ FxPage::FxPage(AfricanLoopsProcessor& p) : proc(p) {
     // --- égaliseur de chaque piste
     for (int i = 0; i < africanloops::kNumTracks; ++i) {
         lowKnobs[(size_t)i] = knob(ids::tLow(i), "Graves", TrackEq, true);
-        midKnobs[(size_t)i] = knob(ids::tMid(i), juce::String::fromUTF8("Médium"), TrackEq, true);
+        midKnobs[(size_t)i] = knob(ids::tMid(i), TR("Médium"), TrackEq, true);
         highKnobs[(size_t)i] = knob(ids::tHigh(i), "Aigus", TrackEq, true);
     }
     // --- fondus
     toggle(fade, "ACTIFS", Fade);
-    knob(fadeIn, juce::String::fromUTF8("Entrée"), Fade);
+    knob(fadeIn, TR("Entrée"), Fade);
     knob(fadeOut, "Sortie", Fade);
     toggle(xfade, "ACTIF", Fade);
-    knob(xfadeLen, juce::String::fromUTF8("Durée"), Fade);
+    knob(xfadeLen, TR("Durée"), Fade);
 
     show(Master);
 }
@@ -215,7 +216,7 @@ void FxPage::show(Tab t) {
 void FxPage::setTrackNames(const juce::StringArray& names) {
     trackNames = names;
     for (int i = 0; i < africanloops::kNumTracks; ++i) {
-        const auto n = i < names.size() && names[i].isNotEmpty() ? names[i] : juce::String::fromUTF8("—");
+        const auto n = i < names.size() && names[i].isNotEmpty() ? names[i] : TR("—");
         if (sendKnobs[(size_t)i]) sendKnobs[(size_t)i]->label = n;
         for (auto* k : {lowKnobs[(size_t)i], midKnobs[(size_t)i], highKnobs[(size_t)i]})
             if (k) k->repaint();
@@ -318,7 +319,7 @@ void FxPage::paint(juce::Graphics& g) {
             {
                 g.setColour(col::engraveDark);
                 g.setFont(ui::font(8.f, true));
-                g.drawText(juce::String::fromUTF8("RÉDUCTION"), reductionBar.translated(0, -13).withHeight(12), juce::Justification::left);
+                g.drawText(TR("RÉDUCTION"), reductionBar.translated(0, -13).withHeight(12), juce::Justification::left);
                 g.setColour(juce::Colour(0xff050505));
                 g.fillRoundedRectangle(reductionBar, 4);
                 const float red = juce::jlimit(0.f, 20.f, proc.gainReduction()) / 20.f;
@@ -353,9 +354,9 @@ void FxPage::paint(juce::Graphics& g) {
             for (int r = 0; r < 3; ++r)
                 ui::drawEngraved(g, juce::String::fromUTF8(rowsTxt[r]), {12, 86 + r * 86, 74, 14}, 8.5f, juce::Justification::centredRight);
             for (int i = 0; i < africanloops::kNumTracks; ++i) {
-                const auto n = i < trackNames.size() && trackNames[i].isNotEmpty() ? trackNames[i] : juce::String::fromUTF8("—");
+                const auto n = i < trackNames.size() && trackNames[i].isNotEmpty() ? trackNames[i] : TR("—");
                 ui::drawGlowText(g, n, juce::Rectangle<float>(92.f + i * 84, 44, 80, 14), ui::font(9.f, true),
-                                 n == juce::String::fromUTF8("—") ? col::lcdDim : col::amber);
+                                 n == TR("—") ? col::lcdDim : col::amber);
             }
             break;
         }
@@ -366,7 +367,7 @@ void FxPage::paint(juce::Graphics& g) {
             drawFade(g, fadeGraph);
             g.setColour(col::lcdText);
             g.setFont(ui::font(11.5f));
-            g.drawFittedText(juce::String::fromUTF8("Quand vous choisissez une autre loop pendant la lecture, l'ancienne "
+            g.drawFittedText(TR("Quand vous choisissez une autre loop pendant la lecture, l'ancienne "
                                                     "s'efface pendant que la nouvelle monte, à partir de la mesure suivante."),
                              juce::Rectangle<int>(400, 70, 370, 60), juce::Justification::topLeft, 4);
             break;
@@ -443,8 +444,8 @@ void FxPage::drawReverb(juce::Graphics& g, juce::Rectangle<float> r) {
     g.fillRect(r.getX() + 6, r.getY() + 14, 2.f, r.getHeight() - 20);  // le son direct
     g.setColour(col::lcdDim);
     g.setFont(ui::font(8.5f, true));
-    g.drawText(juce::String::fromUTF8("PRÉ-DÉLAI ") + juce::String(juce::roundToInt(pre)) + " ms", r.reduced(8, 3), juce::Justification::topLeft);
-    g.drawText(juce::String::fromUTF8("DURÉE ≈ ") + juce::String(decaySec, 1) + " s", r.reduced(8, 3), juce::Justification::topRight);
+    g.drawText(TR("PRÉ-DÉLAI ") + juce::String(juce::roundToInt(pre)) + " ms", r.reduced(8, 3), juce::Justification::topLeft);
+    g.drawText(TR("DURÉE ≈ ") + juce::String(decaySec, 1) + " s", r.reduced(8, 3), juce::Justification::topRight);
 }
 
 void FxPage::drawMod(juce::Graphics& g, juce::Rectangle<float> r) {
@@ -500,6 +501,6 @@ void FxPage::drawFade(juce::Graphics& g, juce::Rectangle<float> r) {
     g.strokePath(p, juce::PathStrokeType(2.5f));
     g.setColour(col::lcdDim);
     g.setFont(ui::font(8.5f, true));
-    g.drawText(juce::String::fromUTF8("ENTRÉE"), juce::Rectangle<float>(x0, yBot - 2, 80, 12), juce::Justification::left);
+    g.drawText(TR("ENTRÉE"), juce::Rectangle<float>(x0, yBot - 2, 80, 12), juce::Justification::left);
     g.drawText("SORTIE", juce::Rectangle<float>(xc - 80, yBot - 2, 80, 12), juce::Justification::right);
 }

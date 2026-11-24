@@ -179,7 +179,11 @@ private:
     AfricanLoopsProcessor& proc;
     ui::LookAndFeel lnf;
     Face face{*this};
-    juce::TooltipWindow tooltips{this, 600};
+    // bulles d'aide traduites dans la langue choisie
+    struct Tooltips : juce::TooltipWindow {
+        using juce::TooltipWindow::TooltipWindow;
+        juce::String getTipFor(juce::Component& c) override;
+    } tooltips{this, 600};
     juce::Image noise;
 
     BrowserPanel browser;
@@ -195,6 +199,14 @@ private:
     ui::HwButton stop{"STOP", ui::HwButton::Style::Plain}, play{"", ui::HwButton::Style::Play};
     ui::HwButton setupSave{"ENREGISTRER SETUP", ui::HwButton::Style::Plain},
         setupList{juce::String::fromUTF8("MES SETUPS  ▾"), ui::HwButton::Style::Plain};
+    // ⚙ : paramètres (langue)
+    struct GearButton : ui::HwButton {
+        GearButton() : ui::HwButton("", ui::HwButton::Style::Plain) {}
+        void paintButton(juce::Graphics&, bool over, bool down) override;
+    } settings;
+    void settingsMenu();
+    void languageChanged();
+    int shownLang = -1;
     FxPage fxPage{proc};
     void openFx(FxPage::Tab t);
     void closeFx();

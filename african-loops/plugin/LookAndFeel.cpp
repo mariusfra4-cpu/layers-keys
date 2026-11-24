@@ -1,4 +1,5 @@
 #include "LookAndFeel.h"
+#include "Lang.h"
 
 #include <juce_audio_basics/juce_audio_basics.h>
 
@@ -34,8 +35,9 @@ void drawLcd(juce::Graphics& g, juce::Rectangle<float> r, float radius) {
     g.fillRoundedRectangle(r, radius);
 }
 
-void drawEngraved(juce::Graphics& g, const juce::String& text, juce::Rectangle<int> r, float size,
+void drawEngraved(juce::Graphics& g, const juce::String& french, juce::Rectangle<int> r, float size,
                   juce::Justification j, juce::Colour c) {
+    const auto text = lang::tr(french);
     auto f = font(size, true).withExtraKerningFactor(0.16f);
     g.setFont(f);
     g.setColour(juce::Colours::black.withAlpha(0.8f));
@@ -44,8 +46,9 @@ void drawEngraved(juce::Graphics& g, const juce::String& text, juce::Rectangle<i
     g.drawText(text, r, j, false);
 }
 
-void drawGlowText(juce::Graphics& g, const juce::String& text, juce::Rectangle<float> r, juce::Font f,
+void drawGlowText(juce::Graphics& g, const juce::String& french, juce::Rectangle<float> r, juce::Font f,
                   juce::Colour c, juce::Justification j) {
+    const auto text = lang::tr(french);
     g.setFont(f);
     g.setColour(c.withAlpha(0.18f));
     for (auto d : {juce::Point<float>(-1, 0), {1, 0}, {0, -1}, {0, 1}}) g.drawText(text, r.translated(d.x, d.y), j, true);
@@ -234,7 +237,7 @@ void HwButton::paintButton(juce::Graphics& g, bool over, bool down) {
         g.setColour(juce::Colours::white.withAlpha(0.04f));
         g.fillRoundedRectangle(face, 4);
     }
-    const auto t = getButtonText();
+    const auto t = lang::tr(getButtonText());
     if (style == Style::Play && t.isEmpty()) {  // triangle Play
         juce::Path p;
         auto c = face.getCentre();
