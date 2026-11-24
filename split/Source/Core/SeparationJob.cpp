@@ -1,4 +1,5 @@
 #include "SeparationJob.h"
+#include "../Engine/Dsp.h"
 #include "Text.h"
 
 namespace lsplit
@@ -14,16 +15,17 @@ SeparationJob::~SeparationJob()
     stopThread (60000);
 }
 
-bool SeparationJob::start (const Request& r, Callback onDone)
+bool SeparationJob::start (const Request& r, Callback onDone, Callback onPreview)
 {
     if (isThreadRunning())
         return false;
     req = r;
     callback = std::move (onDone);
+    preview = std::move (onPreview);
     prog = 0.0;
     startMs = juce::Time::getMillisecondCounterHiRes();
     setStep (lsplit::U ("Préparation"), 0.0);
-    return startThread (juce::Thread::Priority::normal);
+    return startThread (juce::Thread::Priority::low);
 }
 
 void SeparationJob::cancel()
@@ -49,6 +51,18 @@ void SeparationJob::setStep (const juce::String& s, double p)
         step = s;
     }
     prog = juce::jlimit (0.0, 1.0, p);
+}
+
+void SeparationJob::postPreview (PlayDataPtr d, const juce::String& info)
+{
+    if (! preview) return;
+    Result r;
+    r.ok = true;
+    r.data = std::move (d);
+    r.info = info;
+    auto cb = preview;
+    auto flag = alive;
+    juce::MessageManager::callAsync ([cb, flag, r] { if (flag->alive && cb) cb (r); });
 }
 
 void SeparationJob::run()
@@ -172,11 +186,36 @@ SeparationJob::Result SeparationJob::doWork()
     }
 
     const double t0 = juce::Time::getMillisecondCounterHiRes();
-    const bool done = sep.run (data->mix, data->sampleRate, req.settings, data->stems,
+    auto settings = req.settings;
+    settings.lowMemory = juce::SystemStats::getMemorySizeInMegabytes() < 12 * 1024;
+    const bool done = sep.run (data->mix, data->sampleRate, settings, data->stems,
                                [this] (const std::string& s, double p)
                                {
                                    setStep (juce::String::fromUTF8 (s.c_str()), p * 0.95);
                                    return ! threadShouldExit();
+                               },
+                               [this, &data] (const StemSet& part)
+                               {
+                                   // instruments prêts : on les montre tout de suite (voix provisoire)
+                                   auto p = std::make_shared<PlayData>();
+                                   p->sourceFile = data->sourceFile;
+                                   p->sampleRate = part.sampleRate;
+                                   if (std::abs (part.sampleRate - data->sampleRate) < 0.5)
+                                       p->mix = data->mix;
+                                   else
+                                   {
+                                       p->mix.l = resample (data->mix.l.data(), data->mix.size(), data->sampleRate, part.sampleRate);
+                                       p->mix.r = resample (data->mix.r.data(), data->mix.size(), data->sampleRate, part.sampleRate);
+                                   }
+                                   p->mixPeaks = data->mixPeaks;
+                                   p->stems = part;
+                                   p->hasStems = true;
+                                   p->isPreview = true;
+                                   p->analysis = data->analysis;
+                                   p->hasAnalysis = false;
+                                   for (int k = 0; k < numStems; ++k)
+                                       if (part.present[k]) p->stemPeaks[k] = computePeaks (part.stems[k]);
+                                   postPreview (p, U ("Instruments prêts. Les voix sont en cours d'affinage…"));
                                });
     if (! done || threadShouldExit())
         return res; // annulé
@@ -210,7 +249,9 @@ SeparationJob::Result SeparationJob::doWork()
         if (st.present[k])
             data->stemPeaks[k] = computePeaks (st.stems[k]);
 
-    // 5. cache (permet de rouvrir le projet instantanément et de glisser les stems vers le DAW)
+    // 5. résultat affiché tout de suite ; puis cache (réouverture instantanée, glisser vers le DAW)
+    data->cacheDir = dir;
+    postPreview (data, {});
     setStep ("Enregistrement des stems", 0.98);
     juce::String cerr;
     if (saveToCache (dir, *data, cerr))
@@ -221,6 +262,7 @@ SeparationJob::Result SeparationJob::doWork()
     else
     {
         dir.deleteRecursively();
+        data->cacheDir = juce::File();
         res.info = "Attention : " + cerr;
     }
 

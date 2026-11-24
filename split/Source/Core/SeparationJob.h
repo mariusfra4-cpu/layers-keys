@@ -43,8 +43,9 @@ public:
     SeparationJob();
     ~SeparationJob() override;
 
-    // Faux si un travail est déjà en cours.
-    bool start (const Request& r, Callback onDone);
+    // Faux si un travail est déjà en cours. onPreview : résultats à afficher avant la fin
+    // (instruments prêts, puis stems finaux pendant l'écriture du cache).
+    bool start (const Request& r, Callback onDone, Callback onPreview = nullptr);
     void cancel();
     bool isRunning() const { return isThreadRunning(); }
 
@@ -58,7 +59,8 @@ private:
     void setStep (const juce::String& s, double p);
 
     Request req;
-    Callback callback;
+    Callback callback, preview;
+    void postPreview (PlayDataPtr d, const juce::String& info);
     std::atomic<double> prog { 0.0 };
     std::atomic<double> startMs { 0.0 };
     juce::CriticalSection stepLock;

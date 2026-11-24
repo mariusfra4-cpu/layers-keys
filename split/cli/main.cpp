@@ -111,6 +111,8 @@ int main (int argc, char* argv[])
     }
     const double secs = (juce::Time::getMillisecondCounterHiRes() - t0) / 1000.0;
     std::cout << "separation : " << secs << " s sur " << res.deviceUsed << "\n";
+    if (! Separator::deviceReport().empty())
+        std::cout << "choix de l'appareil : " << Separator::deviceReport() << "\n";
 
     out.createDirectory();
     StereoBuffer sum;

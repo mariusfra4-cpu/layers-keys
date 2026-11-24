@@ -26,6 +26,7 @@ struct PlayData
     StereoBuffer mix;
     StemSet stems;              // vide tant que la séparation n'est pas faite
     bool hasStems = false;
+    bool isPreview = false;     // résultat provisoire (séparation encore en cours)
 
     Peaks mixPeaks;
     Peaks stemPeaks[numStems];

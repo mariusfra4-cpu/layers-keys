@@ -13,14 +13,19 @@ public:
     using Progress = std::function<bool (double)>;
 
     // pathUtf8 : fichier .onnx ; ses réglages sont lus dans « fichier.onnx.json ».
-    bool load (const std::string& pathUtf8, Device device, std::string& error);
+    bool load (const std::string& pathUtf8, Device device, std::string& error, bool keepArena = true);
     bool isLoaded() const { return session != nullptr; }
 
     int sourceIndex (const std::string& name) const;   // -1 si absent
     const std::vector<std::string>& sources() const { return names; }
 
     // in : signal 44,1 kHz. out : une source par entrée de sources(). Faux si annulé.
-    bool process (const StereoBuffer& in, std::vector<StereoBuffer>& out, const Progress& progress);
+    // overlap : recouvrement des segments (0,25 = qualité de référence de Demucs, 0,1 = plus rapide).
+    bool process (const StereoBuffer& in, std::vector<StereoBuffer>& out, const Progress& progress,
+                  double overlap = 0.25);
+
+    // Durée d'un segment sur l'appareil choisi (comparaison carte graphique / processeur).
+    double timeOneSegment (const StereoBuffer& in);
 
 private:
     void runSegment (const StereoBuffer& in, long start, std::vector<std::vector<float>>& out);

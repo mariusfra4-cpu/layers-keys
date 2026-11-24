@@ -6,7 +6,7 @@ Unicode true
 
 !define APPNAME "Layers Split"
 !ifndef APPVER
-  !define APPVER "1.2.0"
+  !define APPVER "1.3.0"
 !endif
 !define PUBLISHER "JB Praise"
 !define UNKEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\LayersSplit"

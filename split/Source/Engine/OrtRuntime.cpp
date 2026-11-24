@@ -1,6 +1,8 @@
 #include "OrtRuntime.h"
 
 #include <algorithm>
+#include <cstdlib>
+#include <thread>
 
 #if defined(_WIN32)
  #ifndef NOMINMAX
@@ -172,6 +174,22 @@ bool OrtRuntime::load (const std::string& dir, std::string& error)
 Ort::Env& OrtRuntime::env()
 {
     return *gEnv;
+}
+
+void OrtRuntime::configure (Ort::SessionOptions& options, bool keepArena)
+{
+    options.SetGraphOptimizationLevel (GraphOptimizationLevel::ORT_ENABLE_ALL);
+    // nombre de fils : réglage d'ONNX Runtime = les cœurs physiques ; sur les portables à
+    // hyper-threading, les cœurs logiques restants servent à l'interface et au son
+    options.SetIntraOpNumThreads (0);
+    options.SetInterOpNumThreads (1);
+    // les fils de calcul s'endorment au lieu de tourner à vide : le processeur reste disponible
+    options.AddConfigEntry ("session.intra_op.allow_spinning", "0");
+    options.AddConfigEntry ("session.inter_op.allow_spinning", "0");
+    // mémoire : pas de « plan mémoire » pré-réservé ; réserve interne seulement si elle accélère vraiment
+    options.DisableMemPattern();
+    if (! keepArena)
+        options.DisableCpuMemArena();
 }
 
 bool OrtRuntime::appendDirectML (Ort::SessionOptions& options, std::string& error)

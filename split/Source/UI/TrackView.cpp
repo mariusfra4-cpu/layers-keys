@@ -401,7 +401,13 @@ void TrackView::updatePlayhead()
         if (lastPlayheadX >= 0) repaint (lastPlayheadX - 3, 0, 7, getHeight());
         repaint (x - 3, 0, 7, getHeight());
     }
-    for (auto* h : headers) h->repaint (h->getWidth() - 14, 0, 14, h->getHeight());
+    // vu-mètres : seulement s'ils bougent
+    bool levels = proc.isPlaying();
+    for (int k = 0; k < numStems && ! levels; ++k) levels = proc.stemLevel[(size_t) k].load() > 0.001f;
+    if (levels || metersWereActive)
+        for (auto* h : headers)
+            if (h->isVisible()) h->repaint (h->getWidth() - 14, 0, 14, h->getHeight());
+    metersWereActive = levels;
 }
 
 void TrackView::seekFromX (int x)

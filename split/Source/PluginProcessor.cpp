@@ -75,16 +75,20 @@ void LayersSplitProcessor::setStatus (const juce::String& s, bool error)
 void LayersSplitProcessor::publish (PlayDataPtr d)
 {
     // l'ancienne version reste vivante quelques secondes : le fil audio ne libère jamais de mémoire
+    // même morceau (résultat provisoire puis final) : la lecture continue au même endroit
+    const bool sameSong = current != nullptr && d != nullptr && current->sourceFile == d->sourceFile && current->hasStems;
+    const double posSec = positionSeconds();
     retired = current;
     retiredAt = juce::Time::getMillisecondCounter();
     current = std::move (d);
     {
         const juce::SpinLock::ScopedLockType sl (playLock);
         playData = current.get();
-        playPos = 0.0;
+        playPos = sameSong && current != nullptr ? std::floor (juce::jlimit (0.0, (double) current->length(), posSec * current->sampleRate)) : 0.0;
         seekRequested = true;
     }
-    playing = false;
+    if (! sameSong)
+        playing = false;
     sendChangeMessage();
 }
 
@@ -126,7 +130,12 @@ void LayersSplitProcessor::startSeparation()
     r.settings = settings;
     r.existing = current;
     setStatus (lsplit::U ("Séparation en cours…"));
-    job.start (r, [this] (const SeparationJob::Result& res) { onJobDone (res); });
+    job.start (r, [this] (const SeparationJob::Result& res) { onJobDone (res); },
+               [this] (const SeparationJob::Result& res)
+               {
+                   publish (res.data);
+                   if (res.info.isNotEmpty()) setStatus (res.info);
+               });
     sendChangeMessage();
 }
 
@@ -148,7 +157,10 @@ void LayersSplitProcessor::onJobDone (const SeparationJob::Result& r)
         return;
     }
 
-    publish (r.data);
+    if (r.data != current)
+        publish (r.data);
+    else
+        sendChangeMessage();
 
     if (r.data->hasStems)
     {

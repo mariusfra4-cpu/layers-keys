@@ -212,9 +212,12 @@ void LayersSplitEditor::timerCallback()
 {
     const auto d = proc.getData();
     const double pos = proc.positionSeconds();
-    timeLabel.setText (formatTime (pos, true) + (d != nullptr ? "  /  " + formatTime (d->durationSec()) : juce::String()),
-                       juce::dontSendNotification);
-    playBtn.setButtonText (proc.isPlaying() ? "Pause" : "Lecture");
+    const auto t = formatTime (pos, true) + (d != nullptr ? "  /  " + formatTime (d->durationSec()) : juce::String());
+    if (t != timeLabel.getText())
+        timeLabel.setText (t, juce::dontSendNotification);
+    const juce::String pb = proc.isPlaying() ? "Pause" : "Lecture";
+    if (pb != playBtn.getButtonText())
+        playBtn.setButtonText (pb);
     tracks.updatePlayhead();
 
     const bool busy = proc.isBusy();
@@ -224,7 +227,11 @@ void LayersSplitEditor::timerCallback()
         syncFromProcessor();
     }
     if (busy)
-        repaint (sideArea());
+    {
+        // seulement la zone de progression (pas tout le panneau)
+        repaint (separateBtn.getX(), separateBtn.getBottom(), separateBtn.getWidth(), 56);
+        if (++busyTicks % 15 == 0) repaint (getLocalBounds().removeFromBottom (footH)); // pied de page 2 fois par seconde
+    }
 }
 
 //==============================================================================

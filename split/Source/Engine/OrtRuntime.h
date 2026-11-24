@@ -31,6 +31,10 @@ public:
 
     static std::string version();
 
+    // Réglages communs : un cœur laissé libre pour l'interface et le son, pas d'attente active.
+    // keepArena : garde la réserve mémoire interne (plus rapide pour Demucs, plus gourmand).
+    static void configure (Ort::SessionOptions& options, bool keepArena = false);
+
 private:
     static std::mutex& mutex();
 };

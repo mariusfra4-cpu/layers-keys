@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <array>
 #include <stdexcept>
+#include <chrono>
+#include <cmath>
 #include <thread>
 
 namespace lsplit
@@ -18,8 +20,7 @@ bool MdxModel::load (const std::string& path, const MdxParams& params, Device de
     try
     {
         Ort::SessionOptions opts;
-        opts.SetGraphOptimizationLevel (GraphOptimizationLevel::ORT_ENABLE_ALL);
-        opts.SetIntraOpNumThreads ((int) std::max (1u, std::thread::hardware_concurrency()));
+        OrtRuntime::configure (opts);
 
         if (device == Device::gpu)
         {
@@ -137,7 +138,8 @@ void MdxModel::runChunk (const float* l, const float* r, float* outL, float* out
     }
 }
 
-bool MdxModel::process (const StereoBuffer& in, StereoBuffer& out, bool denoise, const Progress& progress)
+bool MdxModel::process (const StereoBuffer& in, StereoBuffer& out, bool denoise, const Progress& progress,
+                        const std::vector<char>* active)
 {
     if (session == nullptr)
         throw std::runtime_error ("Modèle non chargé.");
@@ -147,16 +149,11 @@ bool MdxModel::process (const StereoBuffer& in, StereoBuffer& out, bool denoise,
     const size_t trim = (size_t) p.nfft / 2;
     const size_t gen = chunk - 2 * trim;
     const size_t pad = gen - n % gen;
-    const size_t total = trim + n + pad + trim;
-
-    // signal complété de zéros : [trim][signal][pad][trim]
-    std::vector<float> ml (total, 0.0f), mr (total, 0.0f);
-    std::copy (in.l.begin(), in.l.end(), ml.begin() + (long) trim);
-    std::copy (in.r.begin(), in.r.end(), mr.begin() + (long) trim);
-
+    // le signal est vu comme [trim zéros][signal][pad zéros][trim zéros] ; chaque morceau est copié
+    // à la volée (pas de copie complète du morceau en mémoire)
     out.resize (n);
     const size_t count = (n + pad) / gen;
-    std::vector<float> cl (chunk), cr (chunk);
+    std::vector<float> il (chunk), ir (chunk), cl (chunk), cr (chunk);
 
     for (size_t k = 0; k < count; ++k)
     {
@@ -164,7 +161,17 @@ bool MdxModel::process (const StereoBuffer& in, StereoBuffer& out, bool denoise,
             return false;
 
         const size_t start = k * gen;
-        runChunk (ml.data() + start, mr.data() + start, cl.data(), cr.data(), denoise);
+        if (active != nullptr && k < active->size() && ! (*active)[k])
+            continue; // rien à séparer ici (sortie = silence)
+
+        for (size_t i = 0; i < chunk; ++i)
+        {
+            const long src = (long) (start + i) - (long) trim;
+            const bool inside = src >= 0 && src < (long) n;
+            il[i] = inside ? in.l[(size_t) src] : 0.0f;
+            ir[i] = inside ? in.r[(size_t) src] : 0.0f;
+        }
+        runChunk (il.data(), ir.data(), cl.data(), cr.data(), denoise);
 
         // on ne garde que le centre (les bords de chaque morceau sont moins fiables)
         for (size_t i = 0; i < gen; ++i)
@@ -178,6 +185,43 @@ bool MdxModel::process (const StereoBuffer& in, StereoBuffer& out, bool denoise,
     if (progress)
         progress (1.0);
     return true;
+}
+
+std::vector<char> MdxModel::chunkActivity (const StereoBuffer& ref, double thresholdDb) const
+{
+    // un morceau est « actif » si le signal de référence y dépasse le seuil (relatif au niveau moyen)
+    const size_t n = ref.size();
+    const size_t chunk = (size_t) p.hop * (size_t) (p.dimT - 1);
+    const size_t trim = (size_t) p.nfft / 2;
+    const size_t gen = chunk - 2 * trim;
+    const size_t count = numChunks (n);
+    double total = 0.0;
+    for (size_t i = 0; i < n; ++i) total += (double) ref.l[i] * ref.l[i] + (double) ref.r[i] * ref.r[i];
+    const double meanPow = total / (double) std::max<size_t> (1, n);
+    const double thr = std::max (1.0e-9, meanPow * std::pow (10.0, thresholdDb / 10.0));
+
+    std::vector<char> act (count, 0);
+    for (size_t k = 0; k < count; ++k)
+    {
+        // zone utile du morceau + une marge de chaque côté
+        const size_t a = k * gen > trim ? k * gen - trim : 0;
+        const size_t b = std::min (n, k * gen + gen + trim);
+        double e = 0.0;
+        for (size_t i = a; i < b; ++i) e += (double) ref.l[i] * ref.l[i] + (double) ref.r[i] * ref.r[i];
+        act[k] = b > a && e / (double) (b - a) > thr ? 1 : 0;
+    }
+    return act;
+}
+
+double MdxModel::timeOneChunk (const StereoBuffer& in)
+{
+    const size_t chunk = (size_t) p.hop * (size_t) (p.dimT - 1);
+    std::vector<float> il (chunk, 0.0f), ir (chunk, 0.0f), cl (chunk), cr (chunk);
+    for (size_t i = 0; i < chunk && i < in.size(); ++i) { il[i] = in.l[i]; ir[i] = in.r[i]; }
+    runChunk (il.data(), ir.data(), cl.data(), cr.data(), false); // préchauffage (compilation GPU, etc.)
+    const auto t0 = std::chrono::steady_clock::now();
+    runChunk (il.data(), ir.data(), cl.data(), cr.data(), false);
+    return std::chrono::duration<double> (std::chrono::steady_clock::now() - t0).count();
 }
 
 } // namespace lsplit

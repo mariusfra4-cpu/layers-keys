@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cmath>
 #include <filesystem>
 #include <fstream>
@@ -47,7 +48,7 @@ namespace
     }
 }
 
-bool DemucsModel::load (const std::string& path, Device device, std::string& error)
+bool DemucsModel::load (const std::string& path, Device device, std::string& error, bool keepArena)
 {
     session.reset();
     dev = device;
@@ -78,8 +79,7 @@ bool DemucsModel::load (const std::string& path, Device device, std::string& err
     try
     {
         Ort::SessionOptions opts;
-        opts.SetGraphOptimizationLevel (GraphOptimizationLevel::ORT_ENABLE_ALL);
-        opts.SetIntraOpNumThreads ((int) std::max (1u, std::thread::hardware_concurrency()));
+        OrtRuntime::configure (opts, keepArena);
         if (device == Device::gpu)
         {
             std::string e;
@@ -193,7 +193,8 @@ void DemucsModel::runSegment (const StereoBuffer& in, long start, std::vector<st
         }
 }
 
-bool DemucsModel::process (const StereoBuffer& in, std::vector<StereoBuffer>& out, const Progress& progress)
+bool DemucsModel::process (const StereoBuffer& in, std::vector<StereoBuffer>& out, const Progress& progress,
+                           double overlap)
 {
     if (session == nullptr)
         throw std::runtime_error ("Modèle Demucs non chargé.");
@@ -222,9 +223,9 @@ bool DemucsModel::process (const StereoBuffer& in, std::vector<StereoBuffer>& ou
         x.r[i] = (in.r[i] - meanf) / stdv;
     }
 
-    // segments avec 25 % de recouvrement et fondu triangulaire (demucs.apply)
+    // segments recouvrants avec fondu triangulaire (demucs.apply) ; accumulation directe dans « out »
     const size_t segLen = (size_t) segment;
-    const size_t stride = (size_t) (0.75 * (double) segLen);
+    const size_t stride = std::max<size_t> (1, (size_t) ((1.0 - std::clamp (overlap, 0.0, 0.5)) * (double) segLen));
     std::vector<float> weight (segLen);
     {
         const size_t half = segLen / 2;
@@ -234,7 +235,8 @@ bool DemucsModel::process (const StereoBuffer& in, std::vector<StereoBuffer>& ou
         for (auto& w : weight) w /= mx;
     }
 
-    std::vector<std::vector<float>> acc ((size_t) S * 2, std::vector<float> (n, 0.0f));
+    out.assign ((size_t) S, StereoBuffer());
+    for (auto& o : out) o.resize (n);
     std::vector<float> wsum (n, 0.0f);
     const size_t count = n == 0 ? 0 : (n + stride - 1) / stride;
     std::vector<std::vector<float>> seg;
@@ -248,34 +250,39 @@ bool DemucsModel::process (const StereoBuffer& in, std::vector<StereoBuffer>& ou
         // segment plus court (fin du morceau) : centré, avec la musique qui précède (demucs TensorChunk.padded)
         const long delta = (long) segLen - len;
         runSegment (x, (long) off - delta / 2, seg);
-        for (size_t ch = 0; ch < seg.size(); ++ch)
-        {
-            float* a = acc[ch].data() + off;
-            const float* s = seg[ch].data() + delta / 2;
-            for (int i = 0; i < len; ++i)
-                a[i] += weight[(size_t) i] * s[i];
-        }
+        for (int src = 0; src < S; ++src)
+            for (int c = 0; c < 2; ++c)
+            {
+                float* a = (c == 0 ? out[(size_t) src].l : out[(size_t) src].r).data() + off;
+                const float* sg = seg[(size_t) (src * 2 + c)].data() + delta / 2;
+                for (int i = 0; i < len; ++i)
+                    a[i] += weight[(size_t) i] * sg[i];
+            }
         for (int i = 0; i < len; ++i)
             wsum[off + (size_t) i] += weight[(size_t) i];
     }
+    StereoBuffer().l.swap (x.l); // libère la copie normalisée au plus tôt
+    x = StereoBuffer();
 
-    out.assign ((size_t) S, StereoBuffer());
-    for (int src = 0; src < S; ++src)
-    {
-        auto& o = out[(size_t) src];
-        o.resize (n);
-        const auto& al = acc[(size_t) src * 2];
-        const auto& ar = acc[(size_t) src * 2 + 1];
+    for (auto& o : out)
         for (size_t i = 0; i < n; ++i)
         {
             const float w = wsum[i] > 0.0f ? wsum[i] : 1.0f;
-            o.l[i] = al[i] / w * stdv + meanf;
-            o.r[i] = ar[i] / w * stdv + meanf;
+            o.l[i] = o.l[i] / w * stdv + meanf;
+            o.r[i] = o.r[i] / w * stdv + meanf;
         }
-    }
     if (progress)
         progress (1.0);
     return true;
+}
+
+double DemucsModel::timeOneSegment (const StereoBuffer& in)
+{
+    std::vector<std::vector<float>> seg;
+    runSegment (in, 0, seg); // préchauffage
+    const auto t0 = std::chrono::steady_clock::now();
+    runSegment (in, 0, seg);
+    return std::chrono::duration<double> (std::chrono::steady_clock::now() - t0).count();
 }
 
 } // namespace lsplit

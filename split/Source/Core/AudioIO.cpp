@@ -20,7 +20,7 @@ namespace
             && d.getChildFile ("models").isDirectory();
     }
 
-    const int kCacheVersion = 3;
+    const int kCacheVersion = 4;
 }
 
 juce::File findRuntimeDir()
@@ -230,7 +230,7 @@ bool saveToCache (const juce::File& dir, const PlayData& d, juce::String& error)
     dir.createDirectory();
     for (int k = 0; k < numStems; ++k)
         if (d.stems.present[k])
-            if (! writeWav (dir.getChildFile (juce::String (stemFileName (k)) + ".wav"), d.stems.stems[k], d.sampleRate, 32, error))
+            if (! writeWav (dir.getChildFile (juce::String (stemFileName (k)) + ".wav"), d.stems.stems[k], d.sampleRate, 24, error))
                 return false;
 
     juce::XmlElement info ("LayersSplitCache");

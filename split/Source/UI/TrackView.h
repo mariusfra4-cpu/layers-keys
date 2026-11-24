@@ -67,6 +67,7 @@ private:
     PlayDataPtr data;
     std::vector<int> visible;   // stems affichés, dans l'ordre
     int lastPlayheadX = -1;
+    bool metersWereActive = false;
     bool dragOver = false;
 
     static constexpr int headerWidth = 270;

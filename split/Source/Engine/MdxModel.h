@@ -41,7 +41,15 @@ public:
     Device device() const { return dev; }
 
     // Sépare la source principale du modèle. Faux si annulé ; lance std::exception en cas d'erreur.
-    bool process (const StereoBuffer& in, StereoBuffer& out, bool denoise, const Progress& progress);
+    // active : un drapeau par morceau (numChunks) ; les morceaux inactifs ne sont pas calculés (silence).
+    bool process (const StereoBuffer& in, StereoBuffer& out, bool denoise, const Progress& progress,
+                  const std::vector<char>* active = nullptr);
+
+    // Morceaux où « ref » contient du signal (au-dessus de thresholdDb sous son niveau moyen).
+    std::vector<char> chunkActivity (const StereoBuffer& ref, double thresholdDb) const;
+
+    // Durée d'un morceau sur l'appareil choisi (pour comparer carte graphique et processeur).
+    double timeOneChunk (const StereoBuffer& in);
 
     // Nombre d'exécutions du réseau nécessaires (pour l'estimation de la progression).
     size_t numChunks (size_t numSamples) const;

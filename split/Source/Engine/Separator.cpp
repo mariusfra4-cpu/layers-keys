@@ -4,7 +4,10 @@
 #include "Dsp.h"
 #include "LeadSplit.h"
 
+#include <chrono>
 #include <cmath>
+#include <map>
+#include <mutex>
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
@@ -25,8 +28,6 @@ namespace
     const ModelDef kVocals   { "Kim_Vocal_2.onnx",           { 7680,  3072, 256, 1.009f } };
     const ModelDef kInstHQ3  { "UVR-MDX-NET-Inst_HQ_3.onnx", { 6144,  3072, 256, 1.022f } };
     const ModelDef kKaraoke  { "UVR_MDXNET_KARA_2.onnx",     { 5120,  2048, 256, 1.065f } };
-    const ModelDef kDrums    { "kuielab_a_drums.onnx",       { 4096,  2048, 512, 1.035f } };
-    const ModelDef kBass     { "kuielab_a_bass.onnx",        { 16384, 2048, 512, 1.035f } };
     const char* kDemucs = "htdemucs_6s.onnx";
     const char* kBasicPitch = "basic_pitch.onnx";
 
@@ -52,6 +53,24 @@ namespace
     {
         b.l.resize (n, 0.0f);
         b.r.resize (n, 0.0f);
+    }
+
+    void release (StereoBuffer& b)
+    {
+        std::vector<float>().swap (b.l);
+        std::vector<float>().swap (b.r);
+    }
+
+    // Choix de l'appareil, une fois par modèle et par session : la carte graphique n'est gardée
+    // que si elle est réellement plus rapide que le processeur (puces Intel intégrées souvent lentes).
+    std::mutex gChoiceLock;
+    std::map<std::string, Device> gChoice;
+    std::map<std::string, std::string> gChoiceNote;
+
+    void addDevice (std::string& deviceUsed, const std::string& dev)
+    {
+        if (deviceUsed.empty()) deviceUsed = dev;
+        else if (deviceUsed.find (dev) == std::string::npos) deviceUsed += " + " + dev;
     }
 }
 
@@ -111,13 +130,13 @@ Separator::Separator (std::string dir) : modelsDir (std::move (dir))
 bool Separator::checkModels (std::string& missing, const SeparationSettings& s) const
 {
     missing.clear();
-    std::vector<std::string> files { kVocals.file, kInstHQ3.file, kKaraoke.file, kDrums.file, kBass.file };
+    std::vector<std::string> files { kDemucs, std::string (kDemucs) + ".json" };
+    if (s.quality != Quality::fast) files.push_back (kVocals.file);
+    if (s.quality == Quality::ultra) files.push_back (kInstHQ3.file);
     if (s.splitVocals)
-        files.push_back (kBasicPitch);
-    if (s.detailInstruments)
     {
-        files.push_back (kDemucs);
-        files.push_back (std::string (kDemucs) + ".json");
+        files.push_back (kKaraoke.file);
+        files.push_back (kBasicPitch);
     }
     for (const auto& f : files)
         if (! fileExists (modelsDir + f))
@@ -125,90 +144,159 @@ bool Separator::checkModels (std::string& missing, const SeparationSettings& s) 
     return missing.empty();
 }
 
-bool Separator::runDemucs (const StereoBuffer& in, std::vector<StereoBuffer>& out, std::vector<std::string>& names,
-                           bool gpu, double from, double to, const Progress& progress, std::string& deviceUsed)
+std::string Separator::deviceReport()
 {
-    const std::string path = modelsDir + kDemucs;
-    const std::string label = "Guitares, piano, batterie, basse";
-    auto report = [&] (double f) { return ! progress || progress (label, from + (to - from) * f); };
-    if (! report (0.0)) return false;
-
-    DemucsModel model;
-    std::string err;
-    bool onGpu = false;
-    if (gpu && OrtRuntime::directMLAvailable())
-        onGpu = model.load (path, Device::gpu, err);
-    if (! onGpu && ! model.load (path, Device::cpu, err))
-        throw std::runtime_error ("Chargement du modèle " + std::string (kDemucs) + " impossible : " + err);
-
-    try
-    {
-        if (! model.process (in, out, report)) return false;
-    }
-    catch (const std::exception&)
-    {
-        if (! onGpu) throw;
-        onGpu = false;
-        if (! model.load (path, Device::cpu, err))
-            throw std::runtime_error ("Chargement du modèle " + std::string (kDemucs) + " impossible : " + err);
-        if (! model.process (in, out, report)) return false;
-    }
-    names = model.sources();
-
-    const std::string dev = onGpu ? "GPU (DirectML)" : "Processeur";
-    if (deviceUsed.empty()) deviceUsed = dev;
-    else if (deviceUsed.find (dev) == std::string::npos) deviceUsed += " + " + dev;
-    return true;
+    std::lock_guard<std::mutex> lock (gChoiceLock);
+    std::string r;
+    for (const auto& [k, v] : gChoiceNote)
+        r += (r.empty() ? "" : " ; ") + v;
+    return r;
 }
 
 bool Separator::runModel (const char* file, const MdxParams& params, const StereoBuffer& in, StereoBuffer& out,
                           bool denoise, bool gpu, const std::string& label, double from, double to,
-                          const Progress& progress, std::string& deviceUsed)
+                          const Progress& progress, std::string& deviceUsed, const std::vector<char>* active)
 {
     const std::string path = modelsDir + file;
     auto report = [&] (double f) { return ! progress || progress (label, from + (to - from) * f); };
-
     if (! report (0.0))
         return false;
 
     MdxModel model;
     std::string err;
-    bool onGpu = false;
-
+    Device dev = Device::cpu;
     if (gpu && OrtRuntime::directMLAvailable())
-        onGpu = model.load (path, params, Device::gpu, err);
+    {
+        bool known = false;
+        {
+            std::lock_guard<std::mutex> lock (gChoiceLock);
+            if (auto it = gChoice.find (file); it != gChoice.end()) { dev = it->second; known = true; }
+        }
+        if (! known)
+        {
+            // mesure : un morceau sur la carte graphique, un sur le processeur
+            double tg = 1.0e9, tc = 1.0e9;
+            try
+            {
+                if (model.load (path, params, Device::gpu, err)) tg = model.timeOneChunk (in);
+            }
+            catch (const std::exception&) { tg = 1.0e9; }
+            MdxModel cpuModel;
+            if (cpuModel.load (path, params, Device::cpu, err)) tc = cpuModel.timeOneChunk (in);
+            dev = tg < 0.85 * tc ? Device::gpu : Device::cpu;
+            std::lock_guard<std::mutex> lock (gChoiceLock);
+            gChoice[file] = dev;
+            char note[160];
+            std::snprintf (note, sizeof (note), "%s : GPU %.1f s / processeur %.1f s par morceau", file,
+                           tg > 1.0e8 ? -1.0 : tg, tc);
+            gChoiceNote[file] = note;
+            if (dev == Device::cpu) model = std::move (cpuModel);
+        }
+    }
 
-    if (! onGpu && ! model.load (path, params, Device::cpu, err))
-        throw std::runtime_error ("Chargement du modèle " + std::string (file) + " impossible : " + err);
+    if (! model.isLoaded() || model.device() != dev)
+        if (! model.load (path, params, dev, err))
+        {
+            if (dev == Device::gpu && model.load (path, params, Device::cpu, err))
+                dev = Device::cpu;
+            else
+                throw std::runtime_error ("Chargement du modèle " + std::string (file) + " impossible : " + err);
+        }
 
     try
     {
-        if (! model.process (in, out, denoise, report))
+        if (! model.process (in, out, denoise, report, active))
             return false;
     }
     catch (const std::exception&)
     {
-        if (! onGpu)
+        if (dev != Device::gpu)
             throw;
-
-        // La carte graphique a échoué en cours de route : on recommence sur le processeur.
-        onGpu = false;
+        // la carte graphique a échoué en cours de route : on recommence sur le processeur
+        dev = Device::cpu;
+        {
+            std::lock_guard<std::mutex> lock (gChoiceLock);
+            gChoice[file] = Device::cpu;
+        }
         if (! model.load (path, params, Device::cpu, err))
             throw std::runtime_error ("Chargement du modèle " + std::string (file) + " impossible : " + err);
-        if (! model.process (in, out, denoise, report))
+        if (! model.process (in, out, denoise, report, active))
             return false;
     }
+    addDevice (deviceUsed, dev == Device::gpu ? "GPU (DirectML)" : "Processeur");
+    return true;
+}
 
-    const std::string dev = onGpu ? "GPU (DirectML)" : "Processeur";
-    if (deviceUsed.empty())
-        deviceUsed = dev;
-    else if (deviceUsed.find (dev) == std::string::npos)
-        deviceUsed += " + " + dev;
+bool Separator::runDemucs (const StereoBuffer& in, std::vector<StereoBuffer>& out, std::vector<std::string>& names,
+                           bool gpu, double overlap, double from, double to, const Progress& progress, std::string& deviceUsed,
+                           bool keepArena)
+{
+    const std::string path = modelsDir + kDemucs;
+    const std::string label = "Batterie, basse, guitares, piano";
+    auto report = [&] (double f) { return ! progress || progress (label, from + (to - from) * f); };
+    if (! report (0.0)) return false;
+
+    DemucsModel model;
+    std::string err;
+    Device dev = Device::cpu;
+    if (gpu && OrtRuntime::directMLAvailable())
+    {
+        bool known = false;
+        {
+            std::lock_guard<std::mutex> lock (gChoiceLock);
+            if (auto it = gChoice.find (kDemucs); it != gChoice.end()) { dev = it->second; known = true; }
+        }
+        if (! known)
+        {
+            double tg = 1.0e9, tc = 1.0e9;
+            try
+            {
+                if (model.load (path, Device::gpu, err, keepArena)) tg = model.timeOneSegment (in);
+            }
+            catch (const std::exception&) { tg = 1.0e9; }
+            DemucsModel cpuModel;
+            if (cpuModel.load (path, Device::cpu, err, keepArena)) tc = cpuModel.timeOneSegment (in);
+            dev = tg < 0.85 * tc ? Device::gpu : Device::cpu;
+            std::lock_guard<std::mutex> lock (gChoiceLock);
+            gChoice[kDemucs] = dev;
+            char note[160];
+            std::snprintf (note, sizeof (note), "%s : GPU %.1f s / processeur %.1f s par segment", kDemucs,
+                           tg > 1.0e8 ? -1.0 : tg, tc);
+            gChoiceNote[kDemucs] = note;
+        }
+    }
+    if (! model.isLoaded() || dev == Device::cpu)
+        if (! model.load (path, dev, err, keepArena))
+        {
+            if (dev == Device::gpu && model.load (path, Device::cpu, err, keepArena))
+                dev = Device::cpu;
+            else
+                throw std::runtime_error ("Chargement du modèle " + std::string (kDemucs) + " impossible : " + err);
+        }
+
+    try
+    {
+        if (! model.process (in, out, report, overlap)) return false;
+    }
+    catch (const std::exception&)
+    {
+        if (dev != Device::gpu) throw;
+        dev = Device::cpu;
+        {
+            std::lock_guard<std::mutex> lock (gChoiceLock);
+            gChoice[kDemucs] = Device::cpu;
+        }
+        if (! model.load (path, Device::cpu, err, keepArena))
+            throw std::runtime_error ("Chargement du modèle " + std::string (kDemucs) + " impossible : " + err);
+        if (! model.process (in, out, report, overlap)) return false;
+    }
+    names = model.sources();
+    addDevice (deviceUsed, dev == Device::gpu ? "GPU (DirectML)" : "Processeur");
     return true;
 }
 
 bool Separator::run (const StereoBuffer& mixIn, double sr, const SeparationSettings& s,
-                     StemSet& result, const Progress& progress)
+                     StemSet& result, const Progress& progress, const Partial& onPartial)
 {
     const size_t n = mixIn.size();
     if (n == 0)
@@ -222,98 +310,32 @@ bool Separator::run (const StereoBuffer& mixIn, double sr, const SeparationSetti
     result.sampleRate = sr;
 
     const bool needResample = std::abs (sr - modelRate) > 0.5;
-    const StereoBuffer mix = needResample ? resampled (mixIn, sr, modelRate) : mixIn;
+    StereoBuffer mixResampled;
+    if (needResample) mixResampled = resampled (mixIn, sr, modelRate);
+    const StereoBuffer& mix = needResample ? mixResampled : mixIn;
     const size_t m = mix.size();
 
     const bool fast = s.quality == Quality::fast;
     const bool ultra = s.quality == Quality::ultra;
-
-    // répartition de la barre de progression selon le coût estimé de chaque étape
-    double wVoc = ultra ? 4.0 : (fast ? 1.0 : 2.0);
-    double wKar = s.splitVocals ? (fast ? 0.7 : 1.4) + 0.15 : 0.0;
     const bool detail = s.detailInstruments;
-    double wDB  = detail ? 3.0 : (s.splitDrumsBass ? (ultra ? 2.4 : 1.2) : 0.0);
-    double wSolo = detail && s.splitGuitarSolo ? 0.2 : 0.0;
-    const double wTotal = wVoc + wKar + wDB + wSolo + 0.1;
+
+    // progression : poids estimés de chaque étape
+    const double wDem = fast ? 0.8 : 1.0;
+    const double wVoc = fast ? 0.0 : (ultra ? 5.0 : 1.2);
+    const double wKar = s.splitVocals ? (ultra ? 1.6 : 0.8) : 0.0;
+    const double wChoir = s.splitVocals ? 0.1 : 0.0;
+    const double wSolo = detail && s.splitGuitarSolo ? 0.1 : 0.0;
+    const double wTotal = wDem + wVoc + wKar + wChoir + wSolo + 0.05;
     double pos = 0.0;
     auto span = [&] (double w) { const double a = pos / wTotal; pos += w; return std::make_pair (a, pos / wTotal); };
 
-    // 1. voix
-    StereoBuffer vocals;
+    // 1. Demucs sur le morceau entier : batterie, basse, guitares, piano, autres… et repérage du chant
+    StereoBuffer dVocals, drums, bass, guitar, piano;
     {
-        if (ultra)
-        {
-            auto [a, b] = span (wVoc * 0.5);
-            if (! runModel (kVocals.file, kVocals.params, mix, vocals, true, s.useGpu,
-                            "Voix (modèle 1/2)", a, b, progress, result.deviceUsed))
-                return false;
-
-            StereoBuffer inst;
-            auto [c, d] = span (wVoc * 0.5);
-            if (! runModel (kInstHQ3.file, kInstHQ3.params, mix, inst, true, s.useGpu,
-                            "Voix (modèle 2/2)", c, d, progress, result.deviceUsed))
-                return false;
-
-            // ensemble : moyenne des deux estimations des voix
-            for (size_t i = 0; i < m; ++i)
-            {
-                vocals.l[i] = 0.5f * (vocals.l[i] + (mix.l[i] - inst.l[i]));
-                vocals.r[i] = 0.5f * (vocals.r[i] + (mix.r[i] - inst.r[i]));
-            }
-        }
-        else
-        {
-            auto [a, b] = span (wVoc);
-            if (! runModel (kVocals.file, kVocals.params, mix, vocals, ! fast, s.useGpu,
-                            "Séparation des voix", a, b, progress, result.deviceUsed))
-                return false;
-        }
-    }
-
-    StereoBuffer inst;
-    inst.resize (m);
-    for (size_t i = 0; i < m; ++i)
-    {
-        inst.l[i] = mix.l[i] - vocals.l[i];
-        inst.r[i] = mix.r[i] - vocals.r[i];
-    }
-
-    // 2. voix lead / chœurs : le modèle karaoké garde les chœurs et retire la voix principale
-    StereoBuffer lead, backing;
-    StereoBuffer choir[numVoices];
-    if (s.splitVocals)
-    {
-        auto [a, b] = span (wKar);
-        if (! runModel (kKaraoke.file, kKaraoke.params, vocals, backing, ! fast, s.useGpu,
-                        "Voix lead / chœurs", a, b, progress, result.deviceUsed))
-            return false;
-        lead.resize (m);
-        for (size_t i = 0; i < m; ++i)
-        {
-            lead.l[i] = vocals.l[i] - backing.l[i];
-            lead.r[i] = vocals.r[i] - backing.r[i];
-        }
-
-        // pupitres du chœur (soprano, alto, ténor, basse) : décomposition du stem « Chœurs »
-        if (progress && ! progress ("Pupitres du chœur", pos / wTotal))
-            return false;
-        if (! splitChoir (backing, modelRate, choir, modelsDir + kBasicPitch,
-                          [&] (double) { return ! progress || progress ("Pupitres du chœur", pos / wTotal); }))
-            return false;
-    }
-    else
-    {
-        lead = vocals;
-    }
-
-    // 3. batterie et basse (et en mode détaillé : guitares, piano), extraites de l'instrumental
-    StereoBuffer drums, bass, guitar, guitarSolo, piano;
-    if (detail)
-    {
-        auto [a, b] = span (wDB);
+        auto [a, b] = span (wDem);
         std::vector<StereoBuffer> src;
         std::vector<std::string> names;
-        if (! runDemucs (inst, src, names, s.useGpu, a, b, progress, result.deviceUsed))
+        if (! runDemucs (mix, src, names, s.useGpu, fast ? 0.1 : 0.25, a, b, progress, result.deviceUsed, ! s.lowMemory))
             return false;
         auto take = [&] (const char* name, StereoBuffer& dst)
         {
@@ -321,64 +343,183 @@ bool Separator::run (const StereoBuffer& mixIn, double sr, const SeparationSetti
                 if (names[i] == name) { dst = std::move (src[i]); fitLength (dst, m); return true; }
             return false;
         };
-        if (! take ("guitar", guitar) || ! take ("piano", piano))
-            throw std::runtime_error ("Le modèle Demucs ne contient pas les sources guitare / piano.");
-        if (s.splitDrumsBass && (! take ("drums", drums) || ! take ("bass", bass)))
-            throw std::runtime_error ("Le modèle Demucs ne contient pas les sources batterie / basse.");
+        if (! take ("vocals", dVocals) || ! take ("drums", drums) || ! take ("bass", bass)
+            || ! take ("guitar", guitar) || ! take ("piano", piano))
+            throw std::runtime_error ("Le modèle Demucs ne contient pas les sources attendues.");
+    }
+    if (! s.splitDrumsBass) { release (drums); release (bass); }
+    if (! detail) { release (guitar); release (piano); }
 
-        if (s.splitGuitarSolo)
+    // résultat provisoire : les instruments sont prêts, la voix est celle de Demucs (affinée ensuite)
+    if (onPartial && ! fast && ! s.lowMemory)
+    {
+        StemSet part;
+        part.sampleRate = modelRate;
+        auto put = [&] (int id, const StereoBuffer& b) { if (! b.l.empty()) { part.stems[id] = b; part.present[id] = true; } };
+        put (stemLead, dVocals);
+        put (stemDrums, drums);
+        put (stemBass, bass);
+        put (stemGuitar, guitar);
+        put (stemPiano, piano);
+        StereoBuffer other = mix;
+        for (int k = 0; k < stemOther; ++k)
+            if (part.present[k])
+                for (size_t i = 0; i < m; ++i) { other.l[i] -= part.stems[k].l[i]; other.r[i] -= part.stems[k].r[i]; }
+        part.stems[stemOther] = std::move (other);
+        part.present[stemOther] = true;
+        part.deviceUsed = result.deviceUsed;
+        onPartial (part);
+    }
+
+    // 2. voix
+    StereoBuffer vocals;
+    if (fast)
+    {
+        vocals = std::move (dVocals);
+    }
+    else if (ultra)
+    {
+        // deux modèles complets avec double passage anti-bruit, moyennés
+        auto [a, b] = span (wVoc * 0.5);
+        if (! runModel (kVocals.file, kVocals.params, mix, vocals, true, s.useGpu,
+                        "Voix (modèle 1/2)", a, b, progress, result.deviceUsed))
+            return false;
+        StereoBuffer inst;
+        auto [c, d] = span (wVoc * 0.5);
+        if (! runModel (kInstHQ3.file, kInstHQ3.params, mix, inst, true, s.useGpu,
+                        "Voix (modèle 2/2)", c, d, progress, result.deviceUsed))
+            return false;
+        for (size_t i = 0; i < m; ++i)
         {
-            auto [c, d] = span (wSolo);
-            if (! splitLead (guitar, modelRate, guitarSolo,
-                             [&] (double f) { return ! progress || progress ("Guitare solo", c + (d - c) * f); }))
-                return false;
-            for (size_t i = 0; i < m; ++i)
+            vocals.l[i] = 0.5f * (vocals.l[i] + (mix.l[i] - inst.l[i]));
+            vocals.r[i] = 0.5f * (vocals.r[i] + (mix.r[i] - inst.r[i]));
+        }
+        release (dVocals);
+    }
+    else
+    {
+        // modèle de voix de haute qualité, seulement là où Demucs a entendu du chant
+        auto [a, b] = span (wVoc);
+        const size_t chunk = (size_t) kVocals.params.hop * (size_t) (kVocals.params.dimT - 1);
+        const size_t gen = chunk - (size_t) kVocals.params.nfft;
+        // activité par morceau (même découpage que le modèle)
+        std::vector<char> active;
+        {
+            const size_t count = (m + (gen - m % gen)) / gen;
+            double total = 0.0;
+            for (size_t i = 0; i < m; ++i) total += (double) dVocals.l[i] * dVocals.l[i] + (double) dVocals.r[i] * dVocals.r[i];
+            const double thr = std::max (1.0e-10, total / (double) m * 1.0e-3); // 30 dB sous le niveau moyen du chant
+            active.assign (count, 0);
+            const size_t trim = (size_t) kVocals.params.nfft / 2;
+            for (size_t k = 0; k < count; ++k)
             {
-                guitar.l[i] -= guitarSolo.l[i];
-                guitar.r[i] -= guitarSolo.r[i];
+                const size_t s0 = k * gen > trim ? k * gen - trim : 0, s1 = std::min (m, k * gen + gen + trim);
+                double en = 0.0;
+                for (size_t i = s0; i < s1; ++i) en += (double) dVocals.l[i] * dVocals.l[i] + (double) dVocals.r[i] * dVocals.r[i];
+                active[k] = s1 > s0 && en / (double) (s1 - s0) > thr ? 1 : 0;
             }
         }
+        if (! runModel (kVocals.file, kVocals.params, mix, vocals, false, s.useGpu,
+                        "Voix (haute qualité)", a, b, progress, result.deviceUsed, &active))
+            return false;
+        // morceaux sans chant : la (très faible) voix de Demucs
+        for (size_t k = 0; k < active.size(); ++k)
+            if (! active[k])
+                for (size_t i = k * gen; i < std::min (m, (k + 1) * gen); ++i)
+                {
+                    vocals.l[i] = dVocals.l[i];
+                    vocals.r[i] = dVocals.r[i];
+                }
+        release (dVocals);
     }
-    else if (s.splitDrumsBass)
+
+    // 3. voix lead / chœurs : le modèle karaoké garde les chœurs (seulement là où on chante)
+    StereoBuffer lead, backing;
+    StereoBuffer choir[numVoices];
+    if (s.splitVocals)
     {
-        auto [a, b] = span (wDB * 0.5);
-        if (! runModel (kDrums.file, kDrums.params, inst, drums, ultra, s.useGpu,
-                        "Batterie", a, b, progress, result.deviceUsed))
+        auto [a, b] = span (wKar);
+        std::vector<char> active;
+        {
+            const size_t chunk = (size_t) kKaraoke.params.hop * (size_t) (kKaraoke.params.dimT - 1);
+            const size_t gen = chunk - (size_t) kKaraoke.params.nfft;
+            const size_t trim = (size_t) kKaraoke.params.nfft / 2;
+            const size_t count = (m + (gen - m % gen)) / gen;
+            double total = 0.0;
+            for (size_t i = 0; i < m; ++i) total += (double) vocals.l[i] * vocals.l[i] + (double) vocals.r[i] * vocals.r[i];
+            const double thr = std::max (1.0e-10, total / (double) m * 1.0e-3);
+            active.assign (count, 0);
+            for (size_t k = 0; k < count; ++k)
+            {
+                const size_t s0 = k * gen > trim ? k * gen - trim : 0, s1 = std::min (m, k * gen + gen + trim);
+                double en = 0.0;
+                for (size_t i = s0; i < s1; ++i) en += (double) vocals.l[i] * vocals.l[i] + (double) vocals.r[i] * vocals.r[i];
+                active[k] = s1 > s0 && en / (double) (s1 - s0) > thr ? 1 : 0;
+            }
+        }
+        if (! runModel (kKaraoke.file, kKaraoke.params, vocals, backing, ultra, s.useGpu,
+                        "Voix lead / chœurs", a, b, progress, result.deviceUsed, &active))
             return false;
-        auto [c, d] = span (wDB * 0.5);
-        if (! runModel (kBass.file, kBass.params, inst, bass, ultra, s.useGpu,
-                        "Basse", c, d, progress, result.deviceUsed))
+        lead.resize (m);
+        for (size_t i = 0; i < m; ++i)
+        {
+            lead.l[i] = vocals.l[i] - backing.l[i];
+            lead.r[i] = vocals.r[i] - backing.r[i];
+        }
+        release (vocals);
+
+        auto [c, d] = span (wChoir);
+        if (! splitChoir (backing, modelRate, choir, modelsDir + kBasicPitch,
+                          [&] (double f) { return ! progress || progress ("Pupitres du chœur", c + (d - c) * f); }))
             return false;
+    }
+    else
+    {
+        lead = std::move (vocals);
+    }
+
+    // 4. guitare solo / rythmique
+    StereoBuffer guitarSolo;
+    if (detail && s.splitGuitarSolo)
+    {
+        auto [c, d] = span (wSolo);
+        if (! splitLead (guitar, modelRate, guitarSolo,
+                         [&] (double f) { return ! progress || progress ("Guitare solo", c + (d - c) * f); }))
+            return false;
+        for (size_t i = 0; i < m; ++i)
+        {
+            guitar.l[i] -= guitarSolo.l[i];
+            guitar.r[i] -= guitarSolo.r[i];
+        }
     }
 
     if (progress && ! progress ("Finalisation", pos / wTotal))
         return false;
 
-    // retour à la fréquence d'origine, puis « Instruments » = mix − tout le reste (somme exacte)
-    auto back = [&] (StereoBuffer& b)
+    // 5. retour à la fréquence d'origine ; « Autres » = original − tout le reste (somme exacte)
+    auto store = [&] (int id, StereoBuffer& b)
     {
+        if (b.l.empty()) return;
         if (needResample) b = resampled (b, modelRate, sr);
         fitLength (b, n);
+        result.stems[id] = std::move (b);
+        result.present[id] = true;
     };
+    store (stemLead, lead);
+    store (stemBacking, backing);
+    store (stemDrums, drums);
+    store (stemBass, bass);
+    store (stemGuitar, guitar);
+    store (stemGuitarSolo, guitarSolo);
+    store (stemPiano, piano);
+    mixResampled = StereoBuffer();
 
-    back (lead);
-    result.stems[stemLead] = std::move (lead);
-    result.present[stemLead] = true;
-
-    if (s.splitVocals)
+    if (result.present[stemBacking])
     {
-        back (backing);
-        result.stems[stemBacking] = std::move (backing);
-        result.present[stemBacking] = true;
-
-        // les pupitres : la basse vocale est recalculée par soustraction pour que leur somme = Chœurs exactement
+        // pupitres : la basse vocale par soustraction, pour que leur somme = Chœurs exactement
         const int ids[numVoices] = { stemSoprano, stemAlto, stemTenor, stemBassVoice };
         for (int v = 0; v < numVoices - 1; ++v)
-        {
-            back (choir[v]);
-            result.stems[ids[v]] = std::move (choir[v]);
-            result.present[ids[v]] = true;
-        }
+            store (ids[v], choir[v]);
         StereoBuffer last = result.stems[stemBacking];
         for (int v = 0; v < numVoices - 1; ++v)
             for (size_t i = 0; i < n; ++i)
@@ -388,28 +529,6 @@ bool Separator::run (const StereoBuffer& mixIn, double sr, const SeparationSetti
             }
         result.stems[stemBassVoice] = std::move (last);
         result.present[stemBassVoice] = true;
-    }
-    if (s.splitDrumsBass)
-    {
-        back (drums);
-        back (bass);
-        result.stems[stemDrums] = std::move (drums);
-        result.stems[stemBass] = std::move (bass);
-        result.present[stemDrums] = result.present[stemBass] = true;
-    }
-    if (detail)
-    {
-        back (guitar);
-        back (piano);
-        result.stems[stemGuitar] = std::move (guitar);
-        result.stems[stemPiano] = std::move (piano);
-        result.present[stemGuitar] = result.present[stemPiano] = true;
-        if (s.splitGuitarSolo)
-        {
-            back (guitarSolo);
-            result.stems[stemGuitarSolo] = std::move (guitarSolo);
-            result.present[stemGuitarSolo] = true;
-        }
     }
 
     StereoBuffer other;

@@ -62,6 +62,7 @@ private:
     std::unique_ptr<juce::FileChooser> chooser;
     lsplit::PlayDataPtr shownData;
     bool wasBusy = false;
+    int busyTicks = 0;
     std::atomic<bool> exporting { false };
     juce::String exportStatus;
     bool exportError = false;

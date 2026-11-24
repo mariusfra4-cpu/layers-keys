@@ -18,8 +18,6 @@ Modèle Demucs « htdemucs_6s » (Meta Platforms) - licence MIT
   https://github.com/facebookresearch/demucs
 
 Modèles de séparation (réseaux MDX-Net) :
-- kuielab_a_drums, kuielab_a_bass : KUIELab (MDX-Net, Music Demixing Challenge 2021) - licence MIT
-  https://github.com/kuielab/mdx-net
 - Kim_Vocal_2 (Kimberley Jensen), UVR-MDX-NET-Inst_HQ_3 et UVR_MDXNET_KARA_2 (Anjok07 / aufr33),
   distribués par le projet Ultimate Vocal Remover - licence MIT
   https://github.com/Anjok07/ultimatevocalremovergui

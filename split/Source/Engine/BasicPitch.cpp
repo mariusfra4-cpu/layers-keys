@@ -21,7 +21,7 @@ void BasicPitchFrames::compute (const StereoBuffer& in, double sr, const std::st
     x.insert (x.begin(), (size_t) (kOverlap / 2), 0.0f);
 
     Ort::SessionOptions opts;
-    opts.SetIntraOpNumThreads (2);
+    OrtRuntime::configure (opts);
     Ort::Session session (OrtRuntime::env(), toOrtPath (path).c_str(), opts);
     Ort::AllocatorWithDefaultOptions alloc;
     const std::string inName = session.GetInputNameAllocated (0, alloc).get();
