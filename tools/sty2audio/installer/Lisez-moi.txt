@@ -1,0 +1,26 @@
+﻿CONVERTISSEUR STY  -  styles Yamaha vers MP3 et WAV
+By JB Praise - for church musician
+====================================================
+
+CONVERTIR
+ - Double-cliquez sur l'icône « Convertisseur STY (MP3 WAV) » du Bureau,
+   puis choisissez un ou plusieurs styles (Ctrl+clic pour en choisir plusieurs).
+ - Ou glissez vos fichiers .sty (ou un dossier entier) sur cette icône.
+ - Ou clic droit sur un style -> « Convertir en MP3 et WAV »
+   (sous Windows 11 : « Afficher d'autres options » d'abord),
+   ou clic droit -> Envoyer vers -> « Convertisseur STY (MP3 WAV) ».
+
+RÉSULTAT
+ Un dossier « nom du style (audio) » est créé à côté du style et s'ouvre tout seul :
+   ... - 00 Complet.mp3   Intro -> Main A -> Fill -> Main B ... -> Ending
+   ... - 01 Intro A.mp3, 02 Main A.mp3, 03 Fill In AA.mp3 ... (et les .wav)
+
+RÉGLAGES (pour les habitués de l'invite de commandes)
+ sty2audio.exe -tonalite Re -tempo 100 -repetitions 4 -format mp3 "C:\Styles\MonStyle.sty"
+ sty2audio.exe -h   affiche toutes les options.
+
+BON À SAVOIR
+ - Les instruments viennent de la banque de sons GeneralUser GS (incluse) :
+   ce sont des équivalents General MIDI, pas les sons Yamaha d'origine.
+ - Pour utiliser une autre banque de sons : -sf2 "C:\chemin\son.sf2".
+ - Si ffmpeg.exe est copié dans ce dossier, les MP3 sont encodés avec LAME.

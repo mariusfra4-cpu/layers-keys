@@ -1,0 +1,63 @@
+name: Convertisseur STY (test Windows)
+on:
+  push:
+    paths: ['tools/sty2audio/**', '.github/workflows/sty2audio.yml']
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Installation silencieuse
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path C:\stylogs | Out-Null
+          $p = Start-Process tools\sty2audio\setup\Convertisseur-STY-Setup-1.0.0.exe -ArgumentList "/S" -Wait -PassThru
+          "code de sortie : $($p.ExitCode)" | Tee-Object C:\stylogs\01_installation.txt
+          Get-ChildItem "C:\Program Files\Convertisseur STY" | Format-Table Name,Length | Out-String | Tee-Object -Append C:\stylogs\01_installation.txt
+          if (-not (Test-Path "C:\Program Files\Convertisseur STY\sty2audio.exe")) { throw "sty2audio.exe absent" }
+          if (-not (Test-Path "C:\Program Files\Convertisseur STY\GeneralUser-GS.sf2")) { throw "SoundFont absente" }
+          $k = "HKLM:\Software\Classes\SystemFileAssociations\.sty\shell\ConvertirSTYenMP3\command"
+          (Get-ItemProperty $k)."(default)" | Tee-Object -Append C:\stylogs\01_installation.txt
+          Test-Path "C:\Users\Public\Desktop\Convertisseur STY (MP3 WAV).lnk" | Tee-Object -Append C:\stylogs\01_installation.txt
+      - name: Conversion (64 bits, programme installé)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path C:\styles | Out-Null
+          Copy-Item tools\sty2audio\testdata\TestPop.sty "C:\styles\Mon Style à tester.sty"
+          & "C:\Program Files\Convertisseur STY\sty2audio.exe" -pause=false -ouvrir=false "C:\styles\Mon Style à tester.sty" 2>&1 | Tee-Object C:\stylogs\02_conversion64.txt
+          if ($LASTEXITCODE -ne 0) { throw "échec de la conversion" }
+          Get-ChildItem "C:\styles\Mon Style à tester (audio)" | Format-Table Name,Length | Out-String | Tee-Object -Append C:\stylogs\02_conversion64.txt
+          if ((Get-ChildItem "C:\styles\Mon Style à tester (audio)\*.mp3").Count -ne 9) { throw "9 MP3 attendus" }
+          if ((Get-ChildItem "C:\styles\Mon Style à tester (audio)\*.wav").Count -ne 9) { throw "9 WAV attendus" }
+          Copy-Item "C:\styles\Mon Style à tester (audio)\*Complet.mp3" C:\stylogs\
+      - name: Conversion (32 bits, tonalité et tempo)
+        shell: pwsh
+        run: |
+          & tools\sty2audio\bin\sty2audio32.exe -pause=false -ouvrir=false -sf2 "C:\Program Files\Convertisseur STY\GeneralUser-GS.sf2" -tonalite Re -tempo 100 -format mp3 -sortie C:\sortie32 "C:\styles\Mon Style à tester.sty" 2>&1 | Tee-Object C:\stylogs\03_conversion32.txt
+          if ($LASTEXITCODE -ne 0) { throw "échec 32 bits" }
+          Get-ChildItem -Recurse C:\sortie32 | Format-Table Name,Length | Out-String | Tee-Object -Append C:\stylogs\03_conversion32.txt
+      - name: Fenêtre de choix des fichiers (double-clic)
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          Add-Type -AssemblyName System.Windows.Forms,System.Drawing
+          $p = Start-Process "C:\Program Files\Convertisseur STY\sty2audio.exe" -PassThru
+          Start-Sleep 8
+          $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+          $bmp = New-Object System.Drawing.Bitmap $b.Width,$b.Height
+          [System.Drawing.Graphics]::FromImage($bmp).CopyFromScreen($b.Location,[System.Drawing.Point]::Empty,$b.Size)
+          $bmp.Save("C:\stylogs\04_fenetre_choix.png")
+          Stop-Process -Id $p.Id -Force
+      - name: Désinstallation silencieuse
+        shell: pwsh
+        run: |
+          Start-Process "C:\Program Files\Convertisseur STY\Desinstaller.exe" -ArgumentList "/S" -Wait
+          Start-Sleep 5
+          "reste : $(Test-Path 'C:\Program Files\Convertisseur STY\sty2audio.exe')" | Tee-Object C:\stylogs\05_desinstallation.txt
+          "clic droit : $(Test-Path 'HKLM:\Software\Classes\SystemFileAssociations\.sty\shell\ConvertirSTYenMP3')" | Tee-Object -Append C:\stylogs\05_desinstallation.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-convertisseur-sty
+          path: C:\stylogs

@@ -50,6 +50,7 @@ func main() {
 	norm := fl.Bool("normaliser", true, "ajuster le volume au maximum sans saturer (même gain pour tout le style)")
 	pause := fl.Bool("pause", runtime.GOOS == "windows", "attendre Entrée avant de fermer la fenêtre")
 	tailSec := fl.Float64("queue", 4, "durée maximale (s) de la résonance après la fin de la section")
+	ouvrir := fl.Bool("ouvrir", true, "ouvrir le dossier des fichiers audio à la fin (Windows)")
 	list := fl.Bool("infos", false, "afficher seulement le contenu des styles, sans convertir")
 	fl.Usage = func() {
 		fmt.Fprintln(os.Stderr, "sty2audio — conversion des styles Yamaha en MP3 et WAV")
@@ -61,7 +62,7 @@ func main() {
 	fl.Parse(args)
 	code := run(fl.Args(), runOpts{
 		sf2: *sf2Path, formats: *formats, outDir: *outDir, sections: *sections,
-		complet: *complet, seules: *seules, bits: *bits, kbps: *kbps, list: *list, norm: *norm,
+		complet: *complet, seules: *seules, ouvrir: *ouvrir, bits: *bits, kbps: *kbps, list: *list, norm: *norm,
 		opt: Options{Rate: *rate, Repeats: *repeats, FillRepeats: *fillRep, BPM: *bpm,
 			Transpose: *xpose, Reverb: *reverb, TailMax: *tailSec},
 		key: *key,
@@ -73,9 +74,11 @@ func main() {
 	os.Exit(code)
 }
 
+var lastOutDir string
+
 type runOpts struct {
 	sf2, formats, outDir, sections, key string
-	complet, seules, list, norm         bool
+	complet, seules, list, norm, ouvrir bool
 	bits, kbps                          int
 	opt                                 Options
 }
@@ -110,8 +113,17 @@ func run(paths []string, ro runOpts) int {
 	}
 
 	recursive := true
+	if len(paths) == 0 && runtime.GOOS == "windows" {
+		// double-clic : fenêtre de choix des fichiers
+		fmt.Println("Choisissez vos styles dans la fenêtre qui vient de s'ouvrir…")
+		paths = pickStyles()
+		if len(paths) == 0 {
+			fmt.Println("Aucun fichier choisi.")
+			return 1
+		}
+	}
 	if len(paths) == 0 {
-		// lancé sans fichier (double-clic) : on cherche à côté du programme
+		// lancé sans fichier : on cherche à côté du programme
 		dirs := []string{"."}
 		if exe, err := os.Executable(); err == nil {
 			dirs = append(dirs, filepath.Dir(exe))
@@ -179,6 +191,9 @@ func run(paths []string, ro runOpts) int {
 		fmt.Printf(", %d en erreur", failed)
 	}
 	fmt.Println(".")
+	if ro.ouvrir && lastOutDir != "" {
+		openFolder(lastOutDir)
+	}
 	if failed > 0 {
 		return 1
 	}
@@ -412,6 +427,9 @@ func convertOne(path string, sf *SoundFont, ro runOpts, wantMP3, wantWAV bool, f
 		fmt.Printf("  OK %-28s %5.1f s  [%s]\n", j.name, secs, strings.Join(done, "+"))
 	}
 	fmt.Printf("  -> %s  (%.1f s)\n", dir, time.Since(t0).Seconds())
+	if lastOutDir == "" {
+		lastOutDir = dir
+	}
 	return nil
 }
 
