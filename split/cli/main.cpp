@@ -93,6 +93,12 @@ int main (int argc, char* argv[])
     {
         sep.run (mix, sr, s, res, [&] (const std::string& step, double p)
         {
+            static std::string lastStep;
+            if (step != lastStep)
+            {
+                std::cout << "  [" << juce::String ((juce::Time::getMillisecondCounterHiRes() - t0) / 1000.0, 1) << " s] " << step << "\n";
+                lastStep = step;
+            }
             const int pct = (int) (p * 100);
             if (pct - lastPct >= 10) { std::cout << "  " << pct << " % " << step << "\n"; lastPct = pct; }
             return true;
