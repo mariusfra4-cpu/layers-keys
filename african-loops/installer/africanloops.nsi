@@ -21,7 +21,7 @@ OutFile "African-Loops-Pro-Setup-${APPVER}.exe"
 RequestExecutionLevel admin
 InstallDir "$PROGRAMFILES64\African Loops Pro"
 InstallDirRegKey HKLM "${REGKEY}" "InstallDir"
-BrandingText "African Loops Pro - By JB Praise"
+BrandingText "African Loops Pro - For church musicians and producers - By JB Praise"
 SetCompressor /SOLID lzma
 ShowInstDetails show
 ShowUninstDetails show
@@ -45,7 +45,7 @@ VIAddVersionKey /LANG=1036 "OriginalFilename" "African-Loops-Pro-Setup-1.0.0.exe
 !define MUI_ABORTWARNING
 
 !define MUI_WELCOMEPAGE_TITLE "Bienvenue dans African Loops Pro"
-!define MUI_WELCOMEPAGE_TEXT "African Loops Pro joue vos loops africaines (WAV et MP3) en boucle, sur 8 pistes : tempo trouvé automatiquement, percussions reconnues et séparées (kick, caisse claire, hi-hat, djembé, talking drum), bibliothèque classée par style.$\r$\n$\r$\nCet assistant va l'installer sur votre ordinateur, avec le plugin VST3 pour FL Studio, Ableton et les autres logiciels de musique.$\r$\n$\r$\nBy JB Praise."
+!define MUI_WELCOMEPAGE_TEXT "For church musicians and producers.$\r$\n$\r$\nAfrican Loops Pro joue vos loops africaines (WAV et MP3) en boucle, sur 8 pistes : tempo trouvé automatiquement, percussions reconnues et séparées (kick, caisse claire, hi-hat, djembé, talking drum), bibliothèque classée par style.$\r$\n$\r$\nCet assistant va l'installer sur votre ordinateur, avec le plugin VST3 pour FL Studio, Ableton et les autres logiciels de musique.$\r$\n$\r$\nBy JB Praise."
 !define MUI_COMPONENTSPAGE_SMALLDESC
 !define MUI_FINISHPAGE_TITLE "African Loops Pro est installé"
 !define MUI_FINISHPAGE_TEXT "African Loops Pro est prêt.$\r$\n$\r$\nDans votre logiciel de musique, lancez une recherche de nouveaux plugins si besoin : African Loops Pro apparaît dans les instruments."
