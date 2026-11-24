@@ -1,5 +1,6 @@
 #pragma once
 
+#include "FxPage.h"
 #include "LookAndFeel.h"
 #include "PluginProcessor.h"
 
@@ -25,6 +26,19 @@ private:
     bool dragStarted = false;
 };
 
+// Liste des styles : on peut y déposer une loop pour la ranger.
+class StyleListBox : public juce::ListBox, public juce::DragAndDropTarget {
+public:
+    StyleListBox(const juce::String& name, juce::ListBoxModel* m) : juce::ListBox(name, m) {}
+    std::function<bool(int row)> canDrop;
+    std::function<void(int row, const juce::String& path)> onDrop;
+    int dropRow = -1;  // style survolé pendant le glisser
+    bool isInterestedInDragSource(const SourceDetails& d) override { return d.description.toString().startsWith("loop:"); }
+    void itemDragMove(const SourceDetails& d) override;
+    void itemDragExit(const SourceDetails&) override { dropRow = -1; repaint(); }
+    void itemDropped(const SourceDetails& d) override;
+};
+
 // Navigateur : dossier de loops, styles, recherche, liste des loops.
 class BrowserPanel : public juce::Component, private juce::ListBoxModel {
 public:
@@ -37,6 +51,10 @@ public:
     void chooseFolder();
     void chooseFile();
     void step(int delta);  // loop précédente / suivante (live)
+    void newStyle();
+    void importInto(const juce::String& style);
+    void chooseImport();
+    static juce::String favoritesLabel();
 
 private:
     // liste des styles (catégories)
@@ -55,6 +73,8 @@ private:
     void returnKeyPressed(int row) override { loadRow(row); }
     juce::String getTooltipForRow(int row) override;
     void selectedRowsChanged(int row) override;
+    juce::var getDragSourceDescription(const juce::SparseSet<int>& rows) override;
+    bool isRealStyle(int row) const;
 
     void rebuildLoops();
     void loadRow(int row);
@@ -66,9 +86,11 @@ private:
     std::vector<int> categoryCounts;
     std::vector<const africanloops::Entry*> rows;
     CategoryModel catModel{*this};
-    juce::ListBox catList{"styles", &catModel}, loopList{"loops", this};
+    StyleListBox catList{"styles", &catModel};
+    juce::ListBox loopList{"loops", this};
     juce::TextEditor search;
-    ui::HwButton folderButton{"DOSSIER", ui::HwButton::Style::Plain}, fileButton{"+ FICHIER", ui::HwButton::Style::Plain};
+    ui::HwButton folderButton{"DOSSIER", ui::HwButton::Style::Plain}, fileButton{"+ FICHIER", ui::HwButton::Style::Plain},
+        styleButton{"+ STYLE", ui::HwButton::Style::Plain}, importButton{"IMPORTER", ui::HwButton::Style::Plain};
     WaveformView wave;
     std::unique_ptr<juce::FileChooser> chooser;
     juce::Rectangle<int> titleArea;
@@ -171,6 +193,13 @@ private:
         mono{"MONO", ui::HwButton::Style::Plain};
     SignatureTable signature;
     ui::HwButton stop{"STOP", ui::HwButton::Style::Plain}, play{"", ui::HwButton::Style::Play};
+    ui::HwButton setupSave{"ENREGISTRER SETUP", ui::HwButton::Style::Plain},
+        setupList{juce::String::fromUTF8("MES SETUPS  ▾"), ui::HwButton::Style::Plain};
+    FxPage fxPage{proc};
+    void openFx(FxPage::Tab t);
+    void closeFx();
+    void saveSetupDialog();
+    void setupsMenu();
     std::vector<std::unique_ptr<ChannelStrip>> strips;
     std::vector<std::unique_ptr<SliderAtt>> sliderAtts;
     std::vector<std::unique_ptr<ButtonAtt>> buttonAtts;

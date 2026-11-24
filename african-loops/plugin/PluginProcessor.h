@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Effects.h"
 #include "LinkSync.h"
 
 #include <AfricanLoops/AfricanLoops.h>
@@ -16,6 +17,20 @@ inline const juce::String lp{"lp"}, hp{"hp"}, warmth{"warmth"};
 inline const juce::String bpm{"bpm"}, presetBpm{"presetBpm"}, syncHost{"syncHost"}, link{"link"};
 inline const juce::String masterFx{"masterFx"}, sendFx{"sendFx"}, modFx{"modFx"}, fade{"fade"};
 inline const juce::String metronome{"metronome"}, signature{"signature"}, feel{"feel"}, mono{"mono"};
+// égaliseur, dynamique, réverbération, modulation, écho, fondus
+inline const juce::String eqLow{"eqLow"}, eqLowFreq{"eqLowFreq"}, eqLowMid{"eqLowMid"}, eqHighMid{"eqHighMid"}, eqHigh{"eqHigh"};
+inline const juce::String compThr{"compThr"}, compRatio{"compRatio"}, compAtk{"compAtk"}, compRel{"compRel"}, makeup{"makeup"},
+    ceiling{"ceiling"};
+inline const juce::String revType{"revType"}, revSize{"revSize"}, revDamp{"revDamp"}, revWidth{"revWidth"}, revPre{"revPre"},
+    revLowCut{"revLowCut"}, revHighCut{"revHighCut"}, revLevel{"revLevel"};
+inline const juce::String modType{"modType"}, modRate{"modRate"}, modDepth{"modDepth"}, modFb{"modFb"}, modMix{"modMix"};
+inline const juce::String echo{"echo"}, echoDiv{"echoDiv"}, echoFb{"echoFb"}, echoMix{"echoMix"}, echoPing{"echoPing"},
+    echoLowCut{"echoLowCut"};
+inline const juce::String fadeIn{"fadeIn"}, fadeOut{"fadeOut"}, xfade{"xfade"}, xfadeLen{"xfadeLen"};
+inline juce::String send(int i) { return "send" + juce::String(i + 1); }
+inline juce::String tLow(int i) { return "tLow" + juce::String(i + 1); }
+inline juce::String tMid(int i) { return "tMid" + juce::String(i + 1); }
+inline juce::String tHigh(int i) { return "tHigh" + juce::String(i + 1); }
 inline juce::String gain(int i) { return "gain" + juce::String(i + 1); }
 inline juce::String pan(int i) { return "pan" + juce::String(i + 1); }
 inline juce::String mute(int i) { return "mute" + juce::String(i + 1); }
@@ -74,7 +89,7 @@ public:
     int loadCounter() const { return loads.load(); }
 
     // --- bibliothèque
-    void scanFolderAsync(const juce::File& folder);
+    void scanFolderAsync(const juce::File& folder, bool force = false);
     bool isScanning() const { return scanning.load(); }
     void scanProgress(int& done, int& total) const { done = scanDone.load(); total = scanTotal.load(); }
     std::shared_ptr<const africanloops::Library> library() const;
@@ -83,6 +98,25 @@ public:
     void setCategory(const juce::String& path, const juce::String& category);
     void renameCategory(const juce::String& from, const juce::String& to);
     void removeCategory(const juce::String& name);  // ses loops vont dans « Non classés »
+    void setFavorite(const juce::String& path, bool on);
+    // Nouveau style : il apparaît tout de suite, et son dossier est créé à côté des loops.
+    bool addStyle(const juce::String& name);
+    // Copie des loops (WAV / MP3) dans le dossier d'un style, puis analyse.
+    int importLoops(const juce::Array<juce::File>& files, const juce::String& style);
+    juce::File styleFolder(const juce::String& style) const;
+
+    // --- setups : tout l'état (loop, tempo, mixer, effets) sous un nom
+    struct SetupInfo {
+        juce::String name, loop;
+        double bpm = 0;
+        juce::Time saved;
+    };
+    static juce::File setupsFolder();
+    bool saveSetup(const juce::String& name);
+    bool loadSetup(const juce::String& name);
+    bool renameSetup(const juce::String& from, const juce::String& to);
+    bool deleteSetup(const juce::String& name);
+    juce::Array<SetupInfo> setups() const;
 
     // --- glisser vers le logiciel de musique
     // Fabrique un WAV de ce qu'on entend (track = -1) ou d'une piste seule.
@@ -91,12 +125,15 @@ public:
     // --- vumètres
     void meters(float& l, float& r) const { l = outPeakL.load(); r = outPeakR.load(); }
     float trackPeak(int i) const;
+    float gainReduction() const { return reduction.load(); }  // compresseur, en dB
 
     static bool loadAudio(const juce::File& f, africanloops::Audio& out, juce::String& error);
 
 private:
     static juce::AudioProcessorValueTreeState::ParameterLayout layout();
-    void applyFx(juce::AudioBuffer<float>& buffer);
+    juce::ValueTree fullState();
+    void applyState(const juce::ValueTree& state);
+    void editLibrary(const std::function<bool(africanloops::Library&)>& change);
     void publishLoad(std::shared_ptr<Current> c);
 
     std::unique_ptr<africanloops::Looper> looper;
@@ -108,8 +145,15 @@ private:
     struct Raw {
         std::atomic<float>*master, *masterPan, *masterMute, *lp, *hp, *warmth, *bpm, *presetBpm, *syncHost, *link, *masterFx,
             *sendFx, *modFx, *fade, *metronome, *signature, *feel, *mono;
-        std::array<std::atomic<float>*, africanloops::kNumTracks> gain, pan, mute, solo;
+        std::array<std::atomic<float>*, africanloops::kNumTracks> gain, pan, mute, solo, send, tLow, tMid, tHigh;
+        std::atomic<float>*eqLow, *eqLowFreq, *eqLowMid, *eqHighMid, *eqHigh, *compThr, *compRatio, *compAtk, *compRel,
+            *makeup, *ceiling, *revSize, *revDamp, *revWidth, *revPre, *revLowCut, *revHighCut, *revLevel, *modType, *modRate,
+            *modDepth, *modFb, *modMix, *echo, *echoDiv, *echoFb, *echoMix, *echoPing, *echoLowCut, *fadeIn, *fadeOut, *xfade,
+            *xfadeLen;
     } raw{};
+    FxChain fx;
+    std::vector<std::vector<float>> trackBuf;  // une piste par tampon (2 canaux × 8 pistes)
+    std::vector<float> clickL, clickR;
 
     // Un seul fil pour charger les loops (seule la dernière choisie compte) et
     // un fil de basse priorité pour analyser le dossier : le logiciel hôte garde
@@ -138,17 +182,12 @@ private:
 
     std::atomic<bool> wantPlay{false}, hostSynced{false};
     std::atomic<double> shownBPM{120}, loopBpm{0};
-    std::atomic<float> outPeakL{0}, outPeakR{0};
+    std::atomic<float> outPeakL{0}, outPeakR{0}, reduction{0};
     bool lastHostPlaying = false;
 
     // effets
-    juce::dsp::StateVariableTPTFilter<float> lowpass, highpass;
-    juce::dsp::Compressor<float> comp;
-    juce::dsp::Limiter<float> limiter;
     juce::dsp::Limiter<float> safety;  // protection finale, toujours active : jamais au-dessus de -0,3 dB
-    juce::dsp::Reverb reverb;
-    juce::dsp::Chorus<float> chorus;
-    juce::SmoothedValue<float> fadeGain{1.f}, lpHz{20000.f}, hpHz{20.f}, warm{0.f};
+    juce::SmoothedValue<float> fadeGain{1.f};
     bool stopAfterFade = false;
     bool looperPlaying = false;
 

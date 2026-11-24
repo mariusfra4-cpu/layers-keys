@@ -46,6 +46,61 @@ juce::AudioProcessorValueTreeState::ParameterLayout AfricanLoopsProcessor::layou
     p.push_back(std::make_unique<APC>(PID{ids::signature, 1}, "Signature", juce::StringArray{"4/4", "3/4", "6/8"}, 0));
     p.push_back(std::make_unique<APC>(PID{ids::feel, 1}, "Feel", juce::StringArray{"STANDARD", "DOUBLE", "HALF"}, 0));
     p.push_back(std::make_unique<APB>(PID{ids::mono, 1}, "Mono", false));
+    auto dbs = [](float v, int) { return (v > 0 ? "+" : "") + juce::String(v, 1) + " dB"; };
+    auto hz = [](float v, int) { return v >= 1000 ? juce::String(v / 1000, 1) + " kHz" : juce::String(juce::roundToInt(v)) + " Hz"; };
+    auto ms = [](float v, int) { return juce::String(juce::roundToInt(v)) + " ms"; };
+    auto pc = [](float v, int) { return juce::String(juce::roundToInt(v * 100)) + " %"; };
+    auto F = [&](const juce::String& id, const juce::String& name, float lo, float hi, float def, auto fmt, float skew = 1.f) {
+        p.push_back(std::make_unique<APF>(PID{id, 1}, name, juce::NormalisableRange<float>(lo, hi, 0.f, skew), def,
+                                          juce::AudioParameterFloatAttributes().withStringFromValueFunction(fmt)));
+    };
+    // égaliseur master
+    F(ids::eqLow, "EQ Graves", -12, 12, 0, dbs);
+    F(ids::eqLowFreq, "EQ Freq. graves", 40, 250, 80, hz, 0.6f);
+    F(ids::eqLowMid, "EQ Bas-medium", -12, 12, 0, dbs);
+    F(ids::eqHighMid, "EQ Haut-medium", -12, 12, 0, dbs);
+    F(ids::eqHigh, "EQ Aigus", -12, 12, 0, dbs);
+    // compresseur / limiteur
+    F(ids::compThr, "Comp Seuil", -40, 0, -14, dbs);
+    F(ids::compRatio, "Comp Ratio", 1, 10, 3, [](float v, int) { return juce::String(v, 1) + " : 1"; }, 0.6f);
+    F(ids::compAtk, "Comp Attaque", 1, 100, 8, ms, 0.5f);
+    F(ids::compRel, "Comp Relachement", 20, 600, 120, ms, 0.5f);
+    F(ids::makeup, "Gain", 0, 12, 2, dbs);
+    F(ids::ceiling, "Limiteur Plafond", -6, 0, -0.3f, dbs);
+    // réverbération
+    p.push_back(std::make_unique<APC>(PID{ids::revType, 1}, "Reverb Type", juce::StringArray{"Studio", "Salle", "Eglise", "Plaque"}, 2));
+    F(ids::revSize, "Reverb Taille", 0, 1, 0.78f, pc);
+    F(ids::revDamp, "Reverb Amorti", 0, 1, 0.4f, pc);
+    F(ids::revWidth, "Reverb Largeur", 0, 1, 1, pc);
+    F(ids::revPre, "Reverb Pre-delai", 0, 150, 25, ms);
+    F(ids::revLowCut, "Reverb Coupe-bas", 20, 1000, 150, hz, 0.5f);
+    F(ids::revHighCut, "Reverb Coupe-haut", 1500, 18000, 8000, hz, 0.5f);
+    F(ids::revLevel, "Reverb Niveau", 0, 1, 0.35f, pc);
+    // modulation et écho
+    p.push_back(std::make_unique<APC>(PID{ids::modType, 1}, "Mod Type", juce::StringArray{"Chorus", "Flanger", "Phaser", "Tremolo"}, 0));
+    F(ids::modRate, "Mod Vitesse", 0.05f, 10, 0.6f, [](float v, int) { return juce::String(v, 2) + " Hz"; }, 0.4f);
+    F(ids::modDepth, "Mod Profondeur", 0, 1, 0.3f, pc);
+    F(ids::modFb, "Mod Retour", 0, 0.9f, 0, pc);
+    F(ids::modMix, "Mod Mix", 0, 1, 0.35f, pc);
+    p.push_back(std::make_unique<APB>(PID{ids::echo, 1}, "Echo", false));
+    p.push_back(std::make_unique<APC>(PID{ids::echoDiv, 1}, "Echo Division", juce::StringArray{"1/4", "1/8 pointee", "1/8", "1/16"}, 1));
+    F(ids::echoFb, "Echo Retour", 0, 0.9f, 0.38f, pc);
+    F(ids::echoMix, "Echo Mix", 0, 1, 0.2f, pc);
+    p.push_back(std::make_unique<APB>(PID{ids::echoPing, 1}, "Echo Ping-pong", true));
+    F(ids::echoLowCut, "Echo Coupe-bas", 20, 1000, 200, hz, 0.5f);
+    // fondus (en mesures)
+    auto bars = [](float v, int) { return juce::String(v, 2) + (v > 1.001f ? " mesures" : " mesure"); };
+    F(ids::fadeIn, "Fondu entree", 0, 4, 1, bars);
+    F(ids::fadeOut, "Fondu sortie", 0, 4, 2, bars);
+    p.push_back(std::make_unique<APB>(PID{ids::xfade, 1}, "Fondu enchaine", false));
+    F(ids::xfadeLen, "Fondu enchaine duree", 0.05f, 2, 0.25f, bars);
+    for (int i = 0; i < kNumTracks; ++i) {
+        juce::String n = "Ch " + juce::String(i + 1) + " ";
+        F(ids::send(i), n + "Envoi reverb", 0, 1, 0.25f, pc);
+        F(ids::tLow(i), n + "Graves", -12, 12, 0, dbs);
+        F(ids::tMid(i), n + "Medium", -12, 12, 0, dbs);
+        F(ids::tHigh(i), n + "Aigus", -12, 12, 0, dbs);
+    }
     for (int i = 0; i < kNumTracks; ++i) {
         juce::String n = "Ch " + juce::String(i + 1) + " ";
         p.push_back(std::make_unique<APF>(PID{ids::gain(i), 1}, n + "Volume",
@@ -76,7 +131,22 @@ AfricanLoopsProcessor::AfricanLoopsProcessor()
         raw.pan[i] = r(ids::pan((int)i));
         raw.mute[i] = r(ids::mute((int)i));
         raw.solo[i] = r(ids::solo((int)i));
+        raw.send[i] = r(ids::send((int)i));
+        raw.tLow[i] = r(ids::tLow((int)i));
+        raw.tMid[i] = r(ids::tMid((int)i));
+        raw.tHigh[i] = r(ids::tHigh((int)i));
     }
+    raw.eqLow = r(ids::eqLow); raw.eqLowFreq = r(ids::eqLowFreq); raw.eqLowMid = r(ids::eqLowMid);
+    raw.eqHighMid = r(ids::eqHighMid); raw.eqHigh = r(ids::eqHigh);
+    raw.compThr = r(ids::compThr); raw.compRatio = r(ids::compRatio); raw.compAtk = r(ids::compAtk); raw.compRel = r(ids::compRel);
+    raw.makeup = r(ids::makeup); raw.ceiling = r(ids::ceiling);
+    raw.revSize = r(ids::revSize); raw.revDamp = r(ids::revDamp); raw.revWidth = r(ids::revWidth); raw.revPre = r(ids::revPre);
+    raw.revLowCut = r(ids::revLowCut); raw.revHighCut = r(ids::revHighCut); raw.revLevel = r(ids::revLevel);
+    raw.modType = r(ids::modType); raw.modRate = r(ids::modRate); raw.modDepth = r(ids::modDepth); raw.modFb = r(ids::modFb);
+    raw.modMix = r(ids::modMix);
+    raw.echo = r(ids::echo); raw.echoDiv = r(ids::echoDiv); raw.echoFb = r(ids::echoFb); raw.echoMix = r(ids::echoMix);
+    raw.echoPing = r(ids::echoPing); raw.echoLowCut = r(ids::echoLowCut);
+    raw.fadeIn = r(ids::fadeIn); raw.fadeOut = r(ids::fadeOut); raw.xfade = r(ids::xfade); raw.xfadeLen = r(ids::xfadeLen);
     startTimerHz(5);
 }
 
@@ -120,35 +190,16 @@ void AfricanLoopsProcessor::prepareToPlay(double sampleRate, int samplesPerBlock
     rate = sampleRate;
     maxBlock = std::max(1, samplesPerBlock);
     work.setSize(2, maxBlock, false, true, true);
+    trackBuf.assign((size_t)kNumTracks * 2, std::vector<float>((size_t)maxBlock, 0.f));
+    clickL.assign((size_t)maxBlock, 0.f);
+    clickR.assign((size_t)maxBlock, 0.f);
     juce::dsp::ProcessSpec spec{sampleRate, (juce::uint32)maxBlock, 2};
-    lowpass.prepare(spec);
-    lowpass.setType(juce::dsp::StateVariableTPTFilterType::lowpass);
-    highpass.prepare(spec);
-    highpass.setType(juce::dsp::StateVariableTPTFilterType::highpass);
-    comp.prepare(spec);
-    comp.setThreshold(-14.f);
-    comp.setRatio(3.f);
-    comp.setAttack(8.f);
-    comp.setRelease(120.f);
-    limiter.prepare(spec);
-    limiter.setThreshold(-0.5f);
-    limiter.setRelease(80.f);
+    fx.prepare(sampleRate, maxBlock);
     safety.prepare(spec);
     safety.setThreshold(-0.3f);
     safety.setRelease(60.f);
-    reverb.prepare(spec);
-    juce::dsp::Reverb::Parameters rp;
-    rp.roomSize = 0.55f; rp.damping = 0.5f; rp.wetLevel = 0.22f; rp.dryLevel = 1.f; rp.width = 1.f;
-    reverb.setParameters(rp);
-    chorus.prepare(spec);
-    chorus.setRate(0.6f); chorus.setDepth(0.3f); chorus.setCentreDelay(7.f); chorus.setFeedback(0.f); chorus.setMix(0.35f);
     fadeGain.reset(sampleRate, 0.5);
     fadeGain.setCurrentAndTargetValue(1.f);
-    lpHz.reset(sampleRate, 0.05);
-    hpHz.reset(sampleRate, 0.05);
-    warm.reset(sampleRate, 0.05);
-    lpHz.setCurrentAndTargetValue(lpToHz(raw.lp->load()));
-    hpHz.setCurrentAndTargetValue(hpToHz(raw.hp->load()));
 }
 
 void AfricanLoopsProcessor::setPlaying(bool on) { wantPlay.store(on); }
@@ -223,14 +274,25 @@ void AfricanLoopsProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
     lastHostPlaying = hostPlaying;
     const bool want = useLink ? ls.playing : (wantPlay.load() || hostDrives);
     const bool fade = raw.fade->load() > 0.5f;
+    // durée des fondus : en mesures, au tempo joué
+    const double barSec = bpb * 60.0 / std::max(20.0, (s.presetBPM && orig > 0 ? orig : s.globalBPM) * s.feel);
     if (want && !looperPlaying) {
         looperPlaying = true;
         stopAfterFade = false;
-        if (fade) { fadeGain.setCurrentAndTargetValue(0.f); fadeGain.setTargetValue(1.f); }
+        const double secs = raw.fadeIn->load() * barSec;
+        if (fade && secs > 0.005) { fadeGain.reset(rate, secs); fadeGain.setCurrentAndTargetValue(0.f); fadeGain.setTargetValue(1.f); }
         else fadeGain.setCurrentAndTargetValue(1.f);
     } else if (!want && looperPlaying && !stopAfterFade) {
-        if (fade) { stopAfterFade = true; fadeGain.setTargetValue(0.f); }
-        else looperPlaying = false;
+        const double secs = raw.fadeOut->load() * barSec;
+        if (fade && secs > 0.005) {
+            stopAfterFade = true;
+            const float now = fadeGain.getCurrentValue();
+            fadeGain.reset(rate, secs);
+            fadeGain.setCurrentAndTargetValue(now);
+            fadeGain.setTargetValue(0.f);
+        } else {
+            looperPlaying = false;
+        }
     } else if (want && stopAfterFade) {  // relancé pendant le fondu de fin
         stopAfterFade = false;
         fadeGain.setTargetValue(1.f);
@@ -241,6 +303,7 @@ void AfricanLoopsProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
         fadeGain.setCurrentAndTargetValue(1.f);
     }
     s.playing = looperPlaying;
+    s.crossfade = raw.xfade->load() > 0.5f ? raw.xfadeLen->load() * barSec : 0.0;
     // calage sur la position du logiciel hôte : seulement si on joue à son tempo
     // (sinon les deux tempos diffèrent et la lecture sauterait sans cesse)
     if (useLink) {
@@ -253,10 +316,52 @@ void AfricanLoopsProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
 
     float* L = work.getWritePointer(0);
     float* R = work.getWritePointer(1);
-    looper->process(s, L, R, n);
+    // chaque piste dans son tampon, le métronome à part
+    if ((int)clickL.size() < n) {  // hôte qui dépasse la taille annoncée (rare)
+        for (auto& v : trackBuf) v.assign((size_t)n, 0.f);
+        clickL.assign((size_t)n, 0.f);
+        clickR.assign((size_t)n, 0.f);
+    }
+    std::array<africanloops::Bus, kNumTracks> buses;
+    std::array<bool, kNumTracks> active{};
+    for (size_t i = 0; i < (size_t)kNumTracks; ++i) {
+        buses[i] = africanloops::Bus{trackBuf[2 * i].data(), trackBuf[2 * i + 1].data()};
+        active[i] = true;
+    }
+    looper->processTracks(s, buses, africanloops::Bus{clickL.data(), clickR.data()}, n);
+
+    // effets : égaliseur de chaque piste, réverbération, master
+    FxChain::Settings fs;
+    for (size_t i = 0; i < (size_t)kNumTracks; ++i) {
+        fs.trackLow[i] = raw.tLow[i]->load();
+        fs.trackMid[i] = raw.tMid[i]->load();
+        fs.trackHigh[i] = raw.tHigh[i]->load();
+        fs.send[i] = raw.send[i]->load();
+    }
+    fs.master = s.master; fs.masterPan = s.masterPan; fs.masterMute = s.masterMute;
+    fs.lp = raw.lp->load(); fs.hp = raw.hp->load(); fs.warmth = raw.warmth->load();
+    fs.eqLow = raw.eqLow->load(); fs.eqLowFreq = raw.eqLowFreq->load(); fs.eqLowMid = raw.eqLowMid->load();
+    fs.eqHighMid = raw.eqHighMid->load(); fs.eqHigh = raw.eqHigh->load();
+    fs.dynamics = raw.masterFx->load() > 0.5f;
+    fs.compThreshold = raw.compThr->load(); fs.compRatio = raw.compRatio->load(); fs.compAttack = raw.compAtk->load();
+    fs.compRelease = raw.compRel->load(); fs.makeup = raw.makeup->load(); fs.ceiling = raw.ceiling->load();
+    fs.reverbOn = raw.sendFx->load() > 0.5f;
+    fs.revSize = raw.revSize->load(); fs.revDamping = raw.revDamp->load(); fs.revWidth = raw.revWidth->load();
+    fs.revPredelay = raw.revPre->load(); fs.revLowCut = raw.revLowCut->load(); fs.revHighCut = raw.revHighCut->load();
+    fs.revLevel = raw.revLevel->load();
+    fs.modOn = raw.modFx->load() > 0.5f;
+    fs.modType = (int)raw.modType->load();
+    fs.modRate = raw.modRate->load(); fs.modDepth = raw.modDepth->load(); fs.modFeedback = raw.modFb->load(); fs.modMix = raw.modMix->load();
+    fs.echoOn = raw.echo->load() > 0.5f;
+    static constexpr float divs[4] = {1.f, 0.75f, 0.5f, 0.25f};
+    fs.echoBeats = divs[juce::jlimit(0, 3, (int)raw.echoDiv->load())];
+    fs.echoFeedback = raw.echoFb->load(); fs.echoMix = raw.echoMix->load(); fs.echoPingPong = raw.echoPing->load() > 0.5f;
+    fs.echoLowCut = raw.echoLowCut->load();
+    fs.bpm = (s.presetBPM && orig > 0 ? orig : s.globalBPM) * s.feel;
+    fx.process(buses, active, L, R, n, fs);
+    reduction.store(fx.gainReduction());
 
     juce::AudioBuffer<float> view(work.getArrayOfWritePointers(), 2, n);
-    applyFx(view);
 
     // fondu d'entrée / de sortie
     if (fadeGain.isSmoothing() || fadeGain.getCurrentValue() < 1.f) {
@@ -268,6 +373,10 @@ void AfricanLoopsProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
     }
     if (raw.mono->load() > 0.5f)
         for (int i = 0; i < n; ++i) L[i] = R[i] = 0.5f * (L[i] + R[i]);
+    for (int i = 0; i < n; ++i) {  // métronome : par-dessus, sans effets
+        L[i] += clickL[(size_t)i];
+        R[i] += clickR[(size_t)i];
+    }
 
     // protection : le son ne dépasse jamais le maximum (pas de grésillement
     // dans le logiciel de musique, même avec tous les effets et le volume à fond)
@@ -303,47 +412,6 @@ void AfricanLoopsProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
     }
 }
 
-void AfricanLoopsProcessor::applyFx(juce::AudioBuffer<float>& b) {
-    juce::dsp::AudioBlock<float> block(b);
-    juce::dsp::ProcessContextReplacing<float> ctx(block);
-    const int n = b.getNumSamples();
-
-    // filtres globaux
-    const float lpv = raw.lp->load(), hpv = raw.hp->load();
-    lpHz.setTargetValue(lpToHz(lpv));
-    hpHz.setTargetValue(hpToHz(hpv));
-    lpHz.skip(n);
-    hpHz.skip(n);
-    if (lpv < 0.999f || lpHz.isSmoothing()) {
-        lowpass.setCutoffFrequency(juce::jlimit(20.f, (float)(rate * 0.45), lpHz.getCurrentValue()));
-        lowpass.process(ctx);
-    }
-    if (hpv > 0.001f || hpHz.isSmoothing()) {
-        highpass.setCutoffFrequency(juce::jlimit(10.f, (float)(rate * 0.45), hpHz.getCurrentValue()));
-        highpass.process(ctx);
-    }
-    // chaleur : saturation douce, comme une bande ou une console
-    warm.setTargetValue(raw.warmth->load());
-    if (warm.getTargetValue() > 0.001f || warm.isSmoothing()) {
-        for (int i = 0; i < n; ++i) {
-            const float w = warm.getNextValue(), drive = 1.f + 3.f * w, norm = 1.f / std::tanh(drive);
-            for (int c = 0; c < 2; ++c) {
-                float& x = b.getWritePointer(c)[i];
-                x += w * (std::tanh(drive * x) * norm - x);
-            }
-        }
-    } else {
-        warm.skip(n);
-    }
-    if (raw.modFx->load() > 0.5f) chorus.process(ctx);
-    if (raw.sendFx->load() > 0.5f) reverb.process(ctx);
-    if (raw.masterFx->load() > 0.5f) {
-        comp.process(ctx);
-        b.applyGain(juce::Decibels::decibelsToGain(3.f));  // compensation
-        limiter.process(ctx);
-    }
-}
-
 // ------------------------------------------------------------------ chargement
 
 namespace {
@@ -367,7 +435,12 @@ bool decodeMp3(const uint8_t* p, size_t size, Audio& out, juce::String& err) {
         return false;
     }
     const auto maxLen = (juce::int64)(reader->sampleRate * kMaxSeconds);
-    const int len = (int)std::min(reader->lengthInSamples, maxLen);
+    auto gap = readMp3Gapless(bytes);
+    juce::int64 total = reader->lengthInSamples;
+    // la longueur annoncée par le décodeur est fausse pour les MP3 à 22 kHz (il compte
+    // 1152 échantillons par bloc au lieu de 576) : on prend le nombre de blocs écrit dans le fichier
+    if (gap.frames > 0) total = std::min<juce::int64>(total, gap.frames * (reader->sampleRate >= 32000 ? 1152 : 576));
+    const int len = (int)std::min(total, maxLen);
     if (len <= 0 || reader->sampleRate < 1000) { err = juce::String::fromUTF8("MP3 vide ou abîmé"); return false; }
     // lecture par morceaux : pour certains MP3 (22 kHz…), la longueur annoncée est
     // fausse ; on garde tout ce qui se lit vraiment
@@ -377,9 +450,13 @@ bool decodeMp3(const uint8_t* p, size_t size, Audio& out, juce::String& err) {
     out.R.reserve((size_t)len);
     const int chans = (int)std::max(1u, std::min(2u, reader->numChannels));
     juce::AudioBuffer<float> buf(chans, 16384);
-    for (int pos = 0; pos < len;) {
-        const int n = std::min(16384, len - pos);
-        if (!reader->read(&buf, 0, n, pos, true, true)) break;
+    for (int pos = 0, step = 16384; pos < len;) {
+        const int n = std::min(step, len - pos);
+        if (!reader->read(&buf, 0, n, pos, true, true)) {
+            if (step <= 64) break;  // vraie fin du son
+            step /= 4;              // on s'approche de la fin par petits morceaux : rien n'est perdu
+            continue;
+        }
         out.L.insert(out.L.end(), buf.getReadPointer(0), buf.getReadPointer(0) + n);
         const float* r = buf.getReadPointer(chans > 1 ? 1 : 0);
         out.R.insert(out.R.end(), r, r + n);
@@ -390,8 +467,8 @@ bool decodeMp3(const uint8_t* p, size_t size, Audio& out, juce::String& err) {
         for (auto& x : *v)
             if (!std::isfinite(x)) x = 0;
     out.metaBPM = readMp3Bpm(bytes);  // tempo écrit dans l'étiquette
-    auto gap = readMp3Gapless(bytes);
     if (!gap.found) {
+        out.lengthUncertain = true;  // le silence de fin de l'encodeur est inconnu
         // pas de chiffres écrits par l'encodeur (MP3 dans un WAV, vieux encodeurs) : le
         // retard habituel est de 576 échantillons ; on le retire s'il ne contient presque rien
         float peak = 0, head = 0;
@@ -520,12 +597,12 @@ juce::String AfricanLoopsProcessor::loadError() const {
     return error;
 }
 
-void AfricanLoopsProcessor::scanFolderAsync(const juce::File& dir) {
+void AfricanLoopsProcessor::scanFolderAsync(const juce::File& dir, bool force) {
     if (!dir.isDirectory()) return;
     // le logiciel hôte peut rouvrir le projet plusieurs fois de suite : une
     // vérification du même dossier toutes les 30 secondes suffit
     const auto now = juce::Time::getMillisecondCounter();
-    if (library() && dir == lastScanDir && now - lastScanMs < 30000) return;
+    if (!force && library() && dir == lastScanDir && now - lastScanMs < 30000) return;
     if (scanning.exchange(true)) return;
     lastScanDir = dir;
     lastScanMs = now;
@@ -570,6 +647,52 @@ std::shared_ptr<const Library> AfricanLoopsProcessor::library() const {
 juce::File AfricanLoopsProcessor::libraryFolder() const {
     std::lock_guard<std::mutex> lk(stateMu);
     return folder;
+}
+
+void AfricanLoopsProcessor::editLibrary(const std::function<bool(Library&)>& change) {
+    std::lock_guard<std::mutex> lk(stateMu);
+    if (!lib) return;
+    auto copy = std::make_shared<Library>(*lib);
+    if (change(*copy)) {
+        copy->save();
+        lib = copy;
+        ++libs;
+    }
+}
+
+void AfricanLoopsProcessor::setFavorite(const juce::String& path, bool on) {
+    editLibrary([&](Library& l) { return l.setFavorite(path.toStdString(), on); });
+}
+
+juce::File AfricanLoopsProcessor::styleFolder(const juce::String& style) const {
+    return libraryFolder().getChildFile(juce::File::createLegalFileName(style.trim()));
+}
+
+bool AfricanLoopsProcessor::addStyle(const juce::String& name) {
+    bool ok = false;
+    editLibrary([&](Library& l) { return ok = l.addStyle(name.trim().toStdString()); });
+    if (ok) styleFolder(name).createDirectory();  // les loops importées iront dans ce dossier
+    return ok;
+}
+
+int AfricanLoopsProcessor::importLoops(const juce::Array<juce::File>& files, const juce::String& style) {
+    const auto dir = libraryFolder();
+    if (!dir.isDirectory() || style.trim().isEmpty()) return 0;
+    auto target = styleFolder(style);
+    target.createDirectory();
+    int n = 0;
+    for (const auto& f : files) {
+        if (!f.existsAsFile() || !f.hasFileExtension("wav;wave;mp3")) continue;
+        auto dest = target.getChildFile(f.getFileName());
+        if (dest == f) continue;
+        if (dest.existsAsFile()) dest = target.getNonexistentChildFile(f.getFileNameWithoutExtension(), f.getFileExtension(), false);
+        n += f.copyFileTo(dest) ? 1 : 0;
+    }
+    if (n > 0) {
+        // le dossier porte déjà le nom du style ; s'il a été renommé à la main, on range les loops dedans
+        scanFolderAsync(dir, true);
+    }
+    return n;
 }
 
 void AfricanLoopsProcessor::setCategory(const juce::String& path, const juce::String& category) {
@@ -641,20 +764,17 @@ juce::File AfricanLoopsProcessor::bounceToFile(int trackIndex) {
 
 // ------------------------------------------------------------------ état
 
-void AfricanLoopsProcessor::getStateInformation(juce::MemoryBlock& dest) {
+juce::ValueTree AfricanLoopsProcessor::fullState() {
     auto state = params.copyState();
     if (auto c = current()) state.setProperty("loop", c->file.getFullPathName(), nullptr);
     state.setProperty("folder", libraryFolder().getFullPathName(), nullptr);
-    if (auto xml = state.createXml()) copyXmlToBinary(*xml, dest);
+    return state;
 }
 
-void AfricanLoopsProcessor::setStateInformation(const void* data, int size) {
-    auto xml = getXmlFromBinary(data, size);
-    if (!xml || !xml->hasTagName(params.state.getType())) return;
-    auto state = juce::ValueTree::fromXml(*xml);
-    params.replaceState(state);
+void AfricanLoopsProcessor::applyState(const juce::ValueTree& state) {
+    params.replaceState(state.createCopy());
     juce::File dir(state.getProperty("folder").toString());
-    if (dir.isDirectory()) {
+    if (dir.isDirectory() && dir != libraryFolder()) {
         auto l = std::make_shared<Library>();
         if (Library::loadIndex(toUtf8(dir), *l)) {  // index déjà fait : immédiat
             l->root = toUtf8(dir);
@@ -666,9 +786,79 @@ void AfricanLoopsProcessor::setStateInformation(const void* data, int size) {
         // puis on regarde si des loops ont été ajoutées ou modifiées depuis
         // (seules celles-là sont analysées)
         scanFolderAsync(dir);
+    } else if (dir.isDirectory()) {
+        scanFolderAsync(dir);
     }
     juce::File loop(state.getProperty("loop").toString());
-    if (loop.existsAsFile()) loadLoopAsync(loop);
+    auto c = current();
+    if (loop.existsAsFile() && (!c || c->file != loop)) loadLoopAsync(loop);  // en lecture : entre à la mesure suivante
+}
+
+void AfricanLoopsProcessor::getStateInformation(juce::MemoryBlock& dest) {
+    if (auto xml = fullState().createXml()) copyXmlToBinary(*xml, dest);
+}
+
+void AfricanLoopsProcessor::setStateInformation(const void* data, int size) {
+    auto xml = getXmlFromBinary(data, size);
+    if (!xml || !xml->hasTagName(params.state.getType())) return;
+    applyState(juce::ValueTree::fromXml(*xml));
+}
+
+// ------------------------------------------------------------------ setups
+
+juce::File AfricanLoopsProcessor::setupsFolder() {
+    return juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
+        .getChildFile("African Loops").getChildFile("Setups");
+}
+
+namespace {
+juce::File setupFile(const juce::String& name) {
+    return AfricanLoopsProcessor::setupsFolder().getChildFile(juce::File::createLegalFileName(name.trim()) + ".alsetup");
+}
+}  // namespace
+
+bool AfricanLoopsProcessor::saveSetup(const juce::String& name) {
+    if (name.trim().isEmpty()) return false;
+    auto state = fullState();
+    state.setProperty("setupName", name.trim(), nullptr);
+    state.setProperty("setupBpm", displayedBPM(), nullptr);
+    setupsFolder().createDirectory();
+    auto xml = state.createXml();
+    return xml && xml->writeTo(setupFile(name));
+}
+
+bool AfricanLoopsProcessor::loadSetup(const juce::String& name) {
+    auto xml = juce::XmlDocument::parse(setupFile(name));
+    if (!xml || !xml->hasTagName(params.state.getType())) return false;
+    applyState(juce::ValueTree::fromXml(*xml));
+    return true;
+}
+
+bool AfricanLoopsProcessor::renameSetup(const juce::String& from, const juce::String& to) {
+    auto src = setupFile(from), dst = setupFile(to);
+    if (!src.existsAsFile() || to.trim().isEmpty() || dst.existsAsFile()) return false;
+    auto xml = juce::XmlDocument::parse(src);
+    if (!xml) return false;
+    xml->setAttribute("setupName", to.trim());
+    return xml->writeTo(dst) && src.deleteFile();
+}
+
+bool AfricanLoopsProcessor::deleteSetup(const juce::String& name) { return setupFile(name).moveToTrash() || setupFile(name).deleteFile(); }
+
+juce::Array<AfricanLoopsProcessor::SetupInfo> AfricanLoopsProcessor::setups() const {
+    juce::Array<SetupInfo> out;
+    for (const auto& f : setupsFolder().findChildFiles(juce::File::findFiles, false, "*.alsetup")) {
+        auto xml = juce::XmlDocument::parse(f);
+        if (!xml) continue;
+        SetupInfo si;
+        si.name = xml->getStringAttribute("setupName", f.getFileNameWithoutExtension());
+        si.loop = juce::File(xml->getStringAttribute("loop")).getFileNameWithoutExtension();
+        si.bpm = xml->getDoubleAttribute("setupBpm");
+        si.saved = f.getLastModificationTime();
+        out.add(si);
+    }
+    std::sort(out.begin(), out.end(), [](const SetupInfo& a, const SetupInfo& b) { return a.saved > b.saved; });
+    return out;
 }
 
 juce::AudioProcessorEditor* AfricanLoopsProcessor::createEditor() { return new AfricanLoopsEditor(*this); }

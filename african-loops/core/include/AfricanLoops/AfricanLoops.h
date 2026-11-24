@@ -30,6 +30,9 @@ struct Audio {
     double metaBPM = 0;  // tempo écrit dans le fichier (bloc « acid » du WAV, étiquette BPM du MP3), 0 = absent
     int metaBeats = 0;
     int loopStart = 0, loopEnd = 0;  // points de boucle écrits dans le WAV (bloc « smpl »), 0 = absents
+    // Longueur incertaine à quelques millisecondes près (MP3 sans les chiffres de
+    // l'encodeur) : elle ne doit pas servir à corriger le tempo.
+    bool lengthUncertain = false;
 
     int frames() const { return (int)L.size(); }
     double seconds() const { return rate > 0 ? (double)L.size() / rate : 0; }
@@ -153,6 +156,7 @@ struct Entry {
     int64_t mtime = 0;  // secondes
     LoopInfo info;
     std::string error;
+    bool favorite = false;  // loop marquée d'une étoile
 };
 
 struct CategoryCount {
@@ -169,6 +173,7 @@ class Library {
 public:
     std::string root;
     std::vector<Entry> entries;
+    std::vector<std::string> styles;  // styles créés à la main (peuvent être vides)
 
     // Analyse toutes les loops du dossier ; ce qui n'a pas changé n'est pas refait.
     // threads = nombre de fils de calcul (0 = la moitié des cœurs).
@@ -184,6 +189,10 @@ public:
 
     std::vector<CategoryCount> categories() const;
     bool setCategory(const std::string& path, const std::string& category);
+    bool setFavorite(const std::string& path, bool on);
+    int favoriteCount() const;
+    // Nouveau style (vide au départ). false s'il existe déjà.
+    bool addStyle(const std::string& name);
     // Renomme un style (toutes ses loops suivent). Renvoie le nombre de loops.
     int renameCategory(const std::string& from, const std::string& to);
     // Supprime un style : ses loops vont dans « Non classés » (aucun fichier effacé).
@@ -227,6 +236,14 @@ struct MixSettings {
     // début du bloc. Négative = décompte avant le départ (silence).
     bool hostClock = false;
     double hostBeats = 0;
+    // Fondu enchaîné quand une nouvelle loop entre (secondes, 0 = coupure nette).
+    double crossfade = 0;
+};
+
+// Un tampon stéréo (deux pointeurs vers n échantillons).
+struct Bus {
+    float* L = nullptr;
+    float* R = nullptr;
 };
 
 // Joue les pistes en boucle sur une horloge musicale (en temps et en mesures) :
@@ -280,6 +297,10 @@ public:
     // Applique les réglages puis rend le bloc, sans jamais attendre : si
     // l'interface charge une loop à cet instant, le bloc est rendu en silence.
     void process(const MixSettings& s, float* outL, float* outR, int n);
+    // Comme process(), mais chaque piste est rendue dans son propre tampon
+    // (volume, pan, mute et solo appliqués ; sans le master) pour que le plugin lui
+    // applique ses effets, et le métronome dans le tampon « click ».
+    void processTracks(const MixSettings& s, const std::array<Bus, kNumTracks>& tracks, Bus click, int n);
 
 private:
     struct Loop {  // une loop prête à jouer
@@ -292,22 +313,28 @@ private:
     void commit(Loop&& l, double anchorBeat);
 
     // tout ce qui suit : appelé verrou pris
-    double playBPM() const;
-    double speed() const;
-    double beatLen() const;       // échantillons de sortie par temps
-    double srcBeatFrames() const; // échantillons de la loop par temps (0 si tempo inconnu)
-    bool transformed() const;     // la mesure réorganise-t-elle les temps ?
-    double loopBeats() const;     // longueur de la boucle jouée, en temps
+    double playBPM() const { return playBPM(cur); }
+    double playBPM(const Loop& l) const;
+    double speed(const Loop& l) const;
+    double beatLen() const;                     // échantillons de sortie par temps
+    static double srcBeatFrames(const Loop& l); // échantillons de la loop par temps (0 si tempo inconnu)
+    bool transformed(const Loop& l) const;      // la mesure réorganise-t-elle les temps ?
+    double loopBeats(const Loop& l) const;      // longueur de la boucle jouée, en temps
+    double loopBeats() const { return loopBeats(cur); }
     double loopLen() const;
-    bool gridAt(double tau, double& grid, double& gain) const;  // temps joué → position dans la loop
-    bool sourcePos(double grid, double& src, double& gain) const;
-    void renderLocked(float* outL, float* outR, int n);
+    bool gridAt(const Loop& l, double tau, double& grid, double& gain) const;  // temps joué → position dans la loop
+    bool sourcePos(const Loop& l, double grid, double& src, double& gain) const;
+    void apply(const MixSettings& s);
+    void renderLocked(float* outL, float* outR, int n, const std::array<Bus, kNumTracks>* tracks = nullptr, Bus click = {});
     void publish();
 
     mutable std::mutex mu;
     int rate;
-    Loop cur, next;
+    Loop cur, next, prev;      // prev : l'ancienne loop pendant le fondu enchaîné
     bool hasNext = false;
+    double prevAnchor = 0;
+    long long xfadeLen = 0, xfadeLeft = 0;  // fondu enchaîné en cours (échantillons)
+    double crossfadeSec = 0;
     double nextAt = 0;  // barre de mesure où la loop suivante entre
     bool hostClock = false;
     double global = 120, feel = 1;

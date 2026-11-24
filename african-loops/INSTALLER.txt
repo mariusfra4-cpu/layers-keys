@@ -30,6 +30,10 @@ UTILISATION
   Clic droit sur une loop : la ranger dans un autre style.
   Clic droit sur un style : le renommer, ou le supprimer (ses loops vont
   dans « Non classés », aucun fichier n'est effacé).
+- ★ : cliquez sur l'étoile d'une loop pour la mettre dans « ★ Favoris ».
+- + STYLE : crée un style (et son dossier). IMPORTER : copie des WAV / MP3
+  dans un style. Glissez une loop sur un style pour l'y ranger.
+  Clic droit sur un style : renommer, supprimer, importer, ouvrir le dossier.
 - + FICHIER, ou glissez un WAV / MP3 sur la fenêtre : ouvre une seule loop.
 - Chaque percussion reconnue arrive sur sa piste : volume, pan, M (couper),
   S (écouter seule).
@@ -48,5 +52,16 @@ UTILISATION
   tempo de chaque loop choisie, avec les mêmes barres de mesure ; Play / Stop
   partent ensemble à la mesure suivante. Dans Ableton : activez Link en haut
   à gauche, et dans les Préférences > Link, « Start Stop Sync ».
+- ENREGISTRER SETUP (en haut à droite) : garde la loop, le tempo, le mixer et
+  tous les effets sous un nom. MES SETUPS : les rappeler, les renommer, les
+  supprimer. Fonctionne dans le VST3 et dans la version seule.
+- PRO RACK FX : chaque bouton ouvre la page des effets à la place du mixer
+  (« RETOUR AU MIXER » ou Échap pour revenir). Bouton allumé = effet actif.
+  MASTER FX : égaliseur 4 bandes, compresseur, limiteur.
+  SEND FX : réverbération (Studio, Salle, Église, Plaque) et envoi par piste.
+  MOD FX : chorus, flanger, phaser, trémolo + écho calé sur le tempo.
+  EQ PAR PISTE : graves / médium / aigus de chaque percussion.
+  FADE : fondus au départ / à l'arrêt (en mesures) et fondu enchaîné entre
+  deux loops.
 - Clavier : Espace = lecture / arrêt ; flèches haut / bas = loop précédente /
   suivante.

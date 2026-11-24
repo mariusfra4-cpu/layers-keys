@@ -74,6 +74,15 @@ void Looper::commit(Loop&& l, double anchorBeat) {
         const auto& o = cur.tracks[(size_t)i];
         n.gain = o.gain; n.pan = o.pan; n.mute = o.mute; n.solo = o.solo;
     }
+    // en lecture, avec fondu enchaîné : l'ancienne loop s'efface pendant que la nouvelle monte
+    if (playing && crossfadeSec > 0 && cur.srcFrames > 0) {
+        prev = std::move(cur);
+        prevAnchor = anchor;
+        xfadeLen = xfadeLeft = std::max(1LL, (long long)std::llround(crossfadeSec * rate));
+    } else {
+        xfadeLeft = 0;
+        prev = Loop{};
+    }
     cur = std::move(l);
     anchor = anchorBeat;
 }
@@ -98,48 +107,48 @@ void Looper::load(const LoopInfo& info, const std::vector<Stem>& stems) {
 
 bool Looper::hasPendingLoop() const { std::lock_guard<std::mutex> lk(mu); return hasNext; }
 
-double Looper::playBPM() const {
-    double base = (preset && cur.origBPM > 0) ? cur.origBPM : global;
+double Looper::playBPM(const Loop& l) const {
+    double base = (preset && l.origBPM > 0) ? l.origBPM : global;
     return base * feel;
 }
-double Looper::speed() const { return cur.origBPM > 0 ? playBPM() / cur.origBPM : 1.0; }
+double Looper::speed(const Loop& l) const { return l.origBPM > 0 ? playBPM(l) / l.origBPM : 1.0; }
 double Looper::beatLen() const { return 60.0 / playBPM() * rate; }
-double Looper::srcBeatFrames() const { return cur.origBPM > 0 ? 60.0 / cur.origBPM * cur.srcRate : 0; }
+double Looper::srcBeatFrames(const Loop& l) { return l.origBPM > 0 ? 60.0 / l.origBPM * l.srcRate : 0; }
 double Looper::beatsPerBar() const { return meterMap(meter).outBar; }
 
-bool Looper::transformed() const {
-    if (meter == Meter::M44 || cur.origBPM <= 0) return false;
-    const double sb = cur.srcFrames / srcBeatFrames();
+bool Looper::transformed(const Loop& l) const {
+    if (meter == Meter::M44 || l.origBPM <= 0) return false;
+    const double sb = l.srcFrames / srcBeatFrames(l);
     return sb >= kSrcBar - 1e-6 && std::abs(sb / kSrcBar - std::round(sb / kSrcBar)) < 1e-3;
 }
 
-double Looper::loopBeats() const {
-    if (cur.srcFrames == 0) return 0;
-    if (cur.origBPM <= 0) {
+double Looper::loopBeats(const Loop& l) const {
+    if (l.srcFrames == 0) return 0;
+    if (l.origBPM <= 0) {
         // tempo inconnu (un seul coup, son très court) : rejoué à chaque temps, en arrondissant au temps supérieur
-        const double natural = (double)cur.srcFrames / cur.srcRate * playBPM() / 60;
+        const double natural = (double)l.srcFrames / l.srcRate * playBPM(l) / 60;
         return std::max(1.0, std::ceil(natural - 1e-6));
     }
-    const double sb = cur.srcFrames / srcBeatFrames();
-    if (transformed()) return std::round(sb / kSrcBar) * meterMap(meter).outBar;
+    const double sb = l.srcFrames / srcBeatFrames(l);
+    if (transformed(l)) return std::round(sb / kSrcBar) * meterMap(meter).outBar;
     return sb;
 }
 
 double Looper::loopLen() const { return loopBeats() * beatLen(); }
 
 // Temps joué depuis le début de la loop → position musicale dans la loop d'origine.
-bool Looper::gridAt(double tau, double& grid, double& gain) const {
-    const double L = loopBeats();
+bool Looper::gridAt(const Loop& l, double tau, double& grid, double& gain) const {
+    const double L = loopBeats(l);
     if (L <= 0) return false;
     double t = std::fmod(tau, L);
     if (t < 0) t += L;
     gain = 1;
-    if (cur.origBPM <= 0) {
-        grid = t * beatLen() / rate * cur.srcRate;
-        return grid < cur.srcFrames;  // au-delà du son : silence jusqu'au temps suivant
+    if (l.origBPM <= 0) {
+        grid = t * (60.0 / playBPM(l) * rate) / rate * l.srcRate;
+        return grid < l.srcFrames;  // au-delà du son : silence jusqu'au temps suivant
     }
     double srcBeat = t;
-    if (transformed()) {
+    if (transformed(l)) {
         const auto& m = meterMap(meter);
         const double bar = std::floor(t / m.outBar);
         const double w = t - bar * m.outBar;
@@ -148,31 +157,31 @@ bool Looper::gridAt(double tau, double& grid, double& gain) const {
         const double frac = w - k * m.seg;
         srcBeat = bar * kSrcBar + m.seq[(size_t)k] * m.seg + frac;
         // petits fondus aux endroits où l'on saute un morceau : aucun clic
-        const double fadeBeats = 0.004 * playBPM() / 60;
+        const double fadeBeats = 0.004 * playBPM(l) / 60;
         const bool leftJump = k == 0 ? (m.seq[(size_t)last] + 1) * m.seg < kSrcBar - 1e-9 : m.seq[(size_t)k - 1] + 1 != m.seq[(size_t)k];
         const bool rightJump = k == last ? (m.seq[(size_t)last] + 1) * m.seg < kSrcBar - 1e-9 : m.seq[(size_t)k] + 1 != m.seq[(size_t)k + 1];
         if (leftJump && frac < fadeBeats) gain = frac / fadeBeats;
         if (rightJump && m.seg - frac < fadeBeats) gain = std::min(gain, (m.seg - frac) / fadeBeats);
     }
-    grid = srcBeat * srcBeatFrames();
+    grid = srcBeat * srcBeatFrames(l);
     return true;
 }
 
 // Position musicale → échantillon de la loop. false = silence (entre la fin d'un
 // morceau et le coup suivant quand on ralentit).
-bool Looper::sourcePos(double grid, double& src, double& gain) const {
-    const double sp = speed();
-    const auto& sl = cur.slices;
+bool Looper::sourcePos(const Loop& l, double grid, double& src, double& gain) const {
+    const double sp = speed(l);
+    const auto& sl = l.slices;
     auto it = std::upper_bound(sl.begin(), sl.end(), grid + 1e-9);
     size_t i = it == sl.begin() ? 0 : (size_t)(it - sl.begin()) - 1;
     const double start = sl[i];
-    const double end = i + 1 < sl.size() ? sl[i + 1] : (double)cur.srcFrames;
+    const double end = i + 1 < sl.size() ? sl[i + 1] : (double)l.srcFrames;
     const double elapsed = (grid - start) / sp;  // temps écoulé dans le morceau, vitesse normale
     src = start + elapsed;
-    if (src >= end || src >= cur.srcFrames) return false;
+    if (src >= end || src >= l.srcFrames) return false;
     gain = 1;
     if (std::abs(sp - 1) < 1e-9) return true;  // tempo d'origine : lecture exacte
-    const double fade = 0.004 * cur.srcRate;    // 4 ms contre les clics
+    const double fade = 0.004 * l.srcRate;      // 4 ms contre les clics
     if (sp < 1 && end - src < fade) gain = (end - src) / fade;
     if (sp > 1) {  // accéléré : le coup suivant arrive plus tôt, le morceau est coupé
         double r = (end - start) / sp - elapsed;
@@ -207,6 +216,7 @@ void Looper::play() {
     playing = true;
     clock = 0;
     if (hasNext) { commit(std::move(next), 0); hasNext = false; }
+    xfadeLeft = 0;
     anchor = 0;
     lastBeat = LLONG_MIN;
 }
@@ -216,6 +226,8 @@ void Looper::stop() {
     clock = 0;
     anchor = 0;
     if (hasNext) { commit(std::move(next), 0); hasNext = false; }
+    xfadeLeft = 0;
+    prev = Loop{};
     lastBeat = LLONG_MIN;
     clickPos = -1;
     publish();
@@ -266,21 +278,18 @@ void Looper::render(float* outL, float* outR, int n) {
     renderLocked(outL, outR, n);
 }
 
-void Looper::process(const MixSettings& s, float* outL, float* outR, int n) {
-    std::unique_lock<std::mutex> lk(mu, std::try_to_lock);
-    if (!lk.owns_lock()) {
-        std::fill(outL, outL + n, 0.f);
-        std::fill(outR, outR + n, 0.f);
-        return;
-    }
+void Looper::apply(const MixSettings& s) {
     for (size_t i = 0; i < (size_t)kNumTracks; ++i) {
-        auto& t = cur.tracks[i];
-        const auto& m = s.tracks[i];
-        t.gain = m.gain; t.pan = m.pan; t.mute = m.mute; t.solo = m.solo;
+        for (Loop* l : {&cur, &prev}) {
+            auto& t = l->tracks[i];
+            const auto& m = s.tracks[i];
+            t.gain = m.gain; t.pan = m.pan; t.mute = m.mute; t.solo = m.solo;
+        }
     }
     master = s.master; masterPan = s.masterPan; masterMute = s.masterMute;
     metronome = s.metronome;
     meter = s.meter;
+    crossfadeSec = std::clamp(s.crossfade, 0.0, 10.0);
     if (s.globalBPM >= 20 && s.globalBPM <= 400) global = s.globalBPM;
     preset = s.presetBPM;
     if (s.feel >= 0.25 && s.feel <= 4) feel = s.feel;
@@ -288,6 +297,7 @@ void Looper::process(const MixSettings& s, float* outL, float* outR, int n) {
         playing = true;
         clock = 0;
         if (hasNext) { commit(std::move(next), 0); hasNext = false; }
+        xfadeLeft = 0;
         anchor = 0;
         lastBeat = LLONG_MIN;
     } else if (!s.playing && playing) {
@@ -295,45 +305,105 @@ void Looper::process(const MixSettings& s, float* outL, float* outR, int n) {
         clock = 0;
         anchor = 0;
         if (hasNext) { commit(std::move(next), 0); hasNext = false; }
+        xfadeLeft = 0;
         clickPos = -1;
     }
     // horloge externe (Link, logiciel hôte) : nos temps suivent les siens (×2 en Double, ÷2 en Half)
     if (s.hostClock) clock = s.hostBeats * feel;
     hostClock = s.hostClock;
+}
+
+void Looper::process(const MixSettings& s, float* outL, float* outR, int n) {
+    std::unique_lock<std::mutex> lk(mu, std::try_to_lock);
+    if (!lk.owns_lock()) {
+        std::fill(outL, outL + n, 0.f);
+        std::fill(outR, outR + n, 0.f);
+        return;
+    }
+    apply(s);
     renderLocked(outL, outR, n);
 }
 
-void Looper::renderLocked(float* outL, float* outR, int n) {
-    std::fill(outL, outL + n, 0.f);
-    std::fill(outR, outR + n, 0.f);
+void Looper::processTracks(const MixSettings& s, const std::array<Bus, kNumTracks>& tracks, Bus click, int n) {
+    std::unique_lock<std::mutex> lk(mu, std::try_to_lock);
+    if (!lk.owns_lock()) {
+        for (const auto& b : tracks)
+            if (b.L) { std::fill(b.L, b.L + n, 0.f); std::fill(b.R, b.R + n, 0.f); }
+        if (click.L) { std::fill(click.L, click.L + n, 0.f); std::fill(click.R, click.R + n, 0.f); }
+        return;
+    }
+    apply(s);
+    renderLocked(nullptr, nullptr, n, &tracks, click);
+}
+
+void Looper::renderLocked(float* outL, float* outR, int n, const std::array<Bus, kNumTracks>* trk, Bus click) {
+    // deux façons de rendre : tout mélangé (outL/outR, avec le master), ou piste par piste
+    const bool split = trk != nullptr;
+    if (!split) {
+        std::fill(outL, outL + n, 0.f);
+        std::fill(outR, outR + n, 0.f);
+    } else {
+        for (const auto& b : *trk)
+            if (b.L) { std::fill(b.L, b.L + n, 0.f); std::fill(b.R, b.R + n, 0.f); }
+        if (click.L) { std::fill(click.L, click.L + n, 0.f); std::fill(click.R, click.R + n, 0.f); }
+    }
     if (!playing || cur.srcFrames == 0) {
         peakL *= 0.9f; peakR *= 0.9f;
         for (auto& t : cur.tracks) t.peak *= 0.9f;
         publish();
         return;
     }
-    const float mg = masterMute ? 0.f : master, ma = (clampPan(masterPan) + 1) * kHalfPi / 2;
+    const float mg = split ? 1.f : (masterMute ? 0.f : master), ma = split ? kHalfPi / 2 : (clampPan(masterPan) + 1) * kHalfPi / 2;
     const float mgl = mg * std::cos(ma) * kSqrt2, mgr = mg * std::sin(ma) * kSqrt2;
     const double bl = beatLen(), step = 1.0 / bl;
     const int bpb = (int)std::lround(beatsPerBar());
     const double clickLen = 0.03 * rate;
     float pl = peakL * 0.9f, pr = peakR * 0.9f;
 
-    struct Live { Track* t; float gl, gr, peak; };
-    Live live[kNumTracks];
-    int nl = 0;
-    auto refreshLive = [&] {
+    struct Live { Track* t; int index; float gl, gr, peak; };
+    Live live[kNumTracks], livePrev[kNumTracks];
+    int nl = 0, np = 0;
+    auto build = [&](Loop& l, Live* out, int& count) {
         bool anySolo = false;
-        for (const auto& t : cur.tracks) anySolo |= (t.audio && t.solo);
-        nl = 0;
-        for (auto& t : cur.tracks) {
+        for (const auto& t : l.tracks) anySolo |= (t.audio && t.solo);
+        count = 0;
+        for (int i = 0; i < kNumTracks; ++i) {
+            auto& t = l.tracks[(size_t)i];
             if (!t.audio) continue;
             float g = (!t.mute && (!anySolo || t.solo)) ? t.gain : 0.f;
             float a = (clampPan(t.pan) + 1) * kHalfPi / 2;  // panoramique à puissance constante
-            live[nl++] = {&t, g * std::cos(a) * kSqrt2, g * std::sin(a) * kSqrt2, 0.f};
+            out[count++] = {&t, i, g * std::cos(a) * kSqrt2, g * std::sin(a) * kSqrt2, 0.f};
         }
     };
-    refreshLive();
+    build(cur, live, nl);
+    if (xfadeLeft > 0) build(prev, livePrev, np);
+
+    // ajoute le son d'une loop à l'instant i, avec un gain
+    auto mixLoop = [&](const Loop& l, double tau, Live* lv, int count, float extra, int i) {
+        double grid, g1, src, g2;
+        if (!gridAt(l, tau, grid, g1) || !sourcePos(l, grid, src, g2)) return;
+        const float g = (float)(g1 * g2) * extra;
+        const size_t j = (size_t)src;
+        const float f = (float)(src - (double)j);
+        for (int k = 0; k < count; ++k) {
+            const Audio& a = *lv[k].t->audio;
+            if (j >= a.L.size()) continue;
+            float sl = a.L[j], sr = a.R[j];
+            if (f != 0 && j + 1 < a.L.size()) {
+                sl += (a.L[j + 1] - a.L[j]) * f;
+                sr += (a.R[j + 1] - a.R[j]) * f;
+            }
+            const float vl = sl * g * lv[k].gl, vr = sr * g * lv[k].gr;
+            lv[k].peak = std::max(lv[k].peak, std::max(std::abs(vl), std::abs(vr)));
+            if (split) {
+                const Bus& b = (*trk)[(size_t)lv[k].index];
+                if (b.L) { b.L[i] += vl; b.R[i] += vr; }
+            } else {
+                outL[i] += vl * mgl;
+                outR[i] += vr * mgr;
+            }
+        }
+    };
 
     for (int i = 0; i < n; ++i) {
         // loop suivante : elle entre pile sur la barre de mesure
@@ -341,26 +411,19 @@ void Looper::renderLocked(float* outL, float* outR, int n) {
             for (int k = 0; k < nl; ++k) live[k].t->peak = std::max(live[k].t->peak * 0.9f, live[k].peak);
             commit(std::move(next), nextAt);
             hasNext = false;
-            refreshLive();
+            build(cur, live, nl);
+            if (xfadeLeft > 0) build(prev, livePrev, np);
         }
         const bool counting = hostClock && clock < 0;  // décompte de Link avant le départ
-        double grid, g1, src, g2;
-        if (!counting && gridAt(clock - anchor, grid, g1) && sourcePos(grid, src, g2)) {
-            const float g = (float)(g1 * g2);
-            const size_t j = (size_t)src;
-            const float f = (float)(src - (double)j);
-            for (int k = 0; k < nl; ++k) {
-                const Audio& a = *live[k].t->audio;
-                if (j >= a.L.size()) continue;
-                float sl = a.L[j], sr = a.R[j];
-                if (f != 0 && j + 1 < a.L.size()) {
-                    sl += (a.L[j + 1] - a.L[j]) * f;
-                    sr += (a.R[j + 1] - a.R[j]) * f;
-                }
-                const float vl = sl * g * live[k].gl, vr = sr * g * live[k].gr;
-                live[k].peak = std::max(live[k].peak, std::max(std::abs(vl), std::abs(vr)));
-                outL[i] += vl * mgl;
-                outR[i] += vr * mgr;
+        if (!counting) {
+            if (xfadeLeft > 0) {
+                // fondu enchaîné à puissance constante
+                const float x = (float)xfadeLeft / (float)xfadeLen;
+                mixLoop(prev, clock - prevAnchor, livePrev, np, std::sin(x * kHalfPi), i);
+                mixLoop(cur, clock - anchor, live, nl, std::cos(x * kHalfPi), i);
+                if (--xfadeLeft == 0) prev = Loop{};
+            } else {
+                mixLoop(cur, clock - anchor, live, nl, 1.f, i);
             }
         }
         if (metronome) {
@@ -376,17 +439,23 @@ void Looper::renderLocked(float* outL, float* outR, int n) {
                 const double t = clickPos / rate;
                 const float c = (float)((clickAccent ? 0.35 : 0.22) *
                                         std::sin(2 * 3.14159265358979 * (clickAccent ? 1500 : 1000) * t) * std::exp(-t / 0.008));
-                outL[i] += c;
-                outR[i] += c;
+                if (split) {
+                    if (click.L) { click.L[i] += c; click.R[i] += c; }
+                } else {
+                    outL[i] += c;
+                    outR[i] += c;
+                }
                 if (++clickPos > clickLen) clickPos = -1;
             }
         }
-        pl = std::max(pl, std::abs(outL[i]));
-        pr = std::max(pr, std::abs(outR[i]));
+        if (!split) {
+            pl = std::max(pl, std::abs(outL[i]));
+            pr = std::max(pr, std::abs(outR[i]));
+        }
         clock += step;
     }
     for (int k = 0; k < nl; ++k) live[k].t->peak = std::max(live[k].t->peak * 0.9f, live[k].peak);
-    peakL = pl; peakR = pr;
+    if (!split) { peakL = pl; peakR = pr; }
     publish();
 }
 

@@ -100,7 +100,8 @@ if(AFRICANLOOPS_PLUGIN)
     plugin/PluginProcessor.cpp
     plugin/PluginEditor.cpp
     plugin/LookAndFeel.cpp
-    plugin/LinkSync.cpp)
+    plugin/LinkSync.cpp
+    plugin/Effects.cpp plugin/FxPage.cpp)
 
   target_compile_definitions(AfricanLoopsPro PUBLIC
     JUCE_WEB_BROWSER=0
@@ -135,7 +136,8 @@ if(AFRICANLOOPS_PLUGIN AND AFRICANLOOPS_PLUGIN_TESTS)
     plugin/PluginProcessor.cpp
     plugin/PluginEditor.cpp
     plugin/LookAndFeel.cpp
-    plugin/LinkSync.cpp)
+    plugin/LinkSync.cpp
+    plugin/Effects.cpp plugin/FxPage.cpp)
   target_compile_definitions(AfricanLoopsPluginTests PRIVATE
     JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0 JUCE_USE_MP3AUDIOFORMAT=1 JUCE_MODAL_LOOPS_PERMITTED=1
     JUCE_STANDALONE_APPLICATION=1)
@@ -157,7 +159,7 @@ if(AFRICANLOOPS_PLUGIN AND AFRICANLOOPS_PLUGIN_TESTS)
     target_compile_options(AfricanLoopsTour PRIVATE /utf-8)
   endif()
   target_sources(AfricanLoopsTour PRIVATE
-    plugin/tests/Tour.cpp plugin/PluginProcessor.cpp plugin/PluginEditor.cpp plugin/LookAndFeel.cpp plugin/LinkSync.cpp)
+    plugin/tests/Tour.cpp plugin/PluginProcessor.cpp plugin/PluginEditor.cpp plugin/LookAndFeel.cpp plugin/LinkSync.cpp plugin/Effects.cpp plugin/FxPage.cpp)
   target_compile_definitions(AfricanLoopsTour PRIVATE
     JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0 JUCE_USE_MP3AUDIOFORMAT=1 JUCE_MODAL_LOOPS_PERMITTED=1 JUCE_STANDALONE_APPLICATION=1)
   target_link_libraries(AfricanLoopsTour PRIVATE

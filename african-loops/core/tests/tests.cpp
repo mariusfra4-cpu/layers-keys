@@ -255,6 +255,21 @@ static void testLibrary() {
         CHECK(lib2.find((dir / ".." / "ailleurs.wav").string()) == nullptr, "fichier hors bibliothèque trouvé");
     }
 
+    current = "favoris et styles créés à la main";
+    CHECK(lib2.setFavorite("Worship/Praise Drums.wav", true) && lib2.favoriteCount() == 1, "étoile");
+    CHECK(lib2.addStyle("Mes Préférées") && !lib2.addStyle("Mes Préférées") && !lib2.addStyle("Worship"), "nouveau style");
+    CHECK(lib2.save(), "sauvegarde");
+    {
+        Library again;
+        CHECK(Library::scan(dir.string(), again, err, nullptr), "scan");
+        bool vide = false;
+        for (auto& c : again.categories()) vide |= c.name == "Mes Préférées" && c.count == 0;
+        CHECK(vide, "le style vide créé à la main a disparu");
+        CHECK(again.favoriteCount() == 1, "l'étoile a disparu après une nouvelle analyse");
+        CHECK(again.renameCategory("Mes Préférées", "Top") == 1, "renommer un style vide");
+        CHECK(again.removeCategory("Top") == 1 && again.styles.empty(), "supprimer un style vide");
+    }
+
     current = "supprimer / renommer un style";
     CHECK(lib2.removeCategory("I Love") == 1, "suppression du style");
     CHECK(lib2.renameCategory("Worship", "Louange") == 1, "renommage du style");
@@ -667,6 +682,97 @@ static void testSeamlessFiles() {
     }
 }
 
+static void testPrecision() {
+    current = "précision : loop à un tempo non entier (95,6 BPM)";
+    for (double bpm : {95.6, 87.3, 121.5}) {
+        Audio a = synthLoop(bpm, 4, 0);  // coupée pile : 16 temps exactement
+        auto info = analyse(a, "groove.wav");
+        const double exactLen = 16 * 60.0 / bpm * kRate;
+        CHECK(info.tempo.beats == 16 && std::abs(info.tempo.bpm - bpm) < 0.02, "%.1f BPM : trouvé %.3f, %d temps", bpm,
+              info.tempo.bpm, info.tempo.beats);
+        std::vector<Stem> st;
+        separate(a, "groove.wav", st);
+        Looper l(kRate);
+        l.load(info, st);
+        l.setPresetBPM(true);
+        CHECK(std::abs(l.loopLength() - a.frames()) < 1.5, "%.1f BPM : boucle de %.1f au lieu de %d échantillons", bpm,
+              l.loopLength(), a.frames());
+        (void)exactLen;
+    }
+    current = "précision : le nom dit 96 mais la loop est coupée à 95,6";
+    {
+        Audio a = synthLoop(95.6, 4, 0);
+        auto info = analyse(a, "groove_96bpm.wav");
+        CHECK(std::abs(info.tempo.bpm - 95.6) < 0.02 && info.tempo.beats == 16, "tempo %.3f (%d temps)", info.tempo.bpm, info.tempo.beats);
+    }
+    current = "précision : silence d'encodeur en trop → tempo entier, silence retiré";
+    {
+        Audio a = synthLoop(100, 2, 0);
+        a.L.insert(a.L.end(), 900, 0.f);
+        a.R.insert(a.R.end(), 900, 0.f);
+        auto info = analyse(a, "loop.wav");
+        CHECK(info.tempo.bpm == 100 && info.tempo.beats == 8, "tempo %.3f (%d temps)", info.tempo.bpm, info.tempo.beats);
+    }
+}
+
+static void testTracksAndCrossfade() {
+    current = "pistes séparées pour les effets (somme = mélange)";
+    Audio a = synthLoop(98, 1, 0);
+    std::vector<Stem> st;
+    auto info = separate(a, "x.wav", st);
+    Looper l1(kRate), l2(kRate);
+    l1.load(info, st);
+    l2.load(info, st);
+    MixSettings s;
+    s.globalBPM = 98;
+    s.playing = true;
+    s.metronome = true;
+    s.tracks[1].gain = 0.5f;
+    s.tracks[2].pan = -0.7f;
+    const int n = 20000;
+    std::vector<float> L(n), R(n);
+    l1.process(s, L.data(), R.data(), n);
+    std::vector<std::vector<float>> tl(kNumTracks, std::vector<float>(n)), tr(kNumTracks, std::vector<float>(n));
+    std::vector<float> cl(n), cr(n);
+    std::array<Bus, kNumTracks> buses;
+    for (int i = 0; i < kNumTracks; ++i) buses[(size_t)i] = {tl[(size_t)i].data(), tr[(size_t)i].data()};
+    l2.processTracks(s, buses, {cl.data(), cr.data()}, n);
+    double d = 0;
+    for (int j = 0; j < n; ++j) {
+        float sl = cl[(size_t)j];
+        for (int i = 0; i < kNumTracks; ++i) sl += tl[(size_t)i][(size_t)j];
+        d = std::max(d, (double)std::abs(sl - L[(size_t)j]));
+    }
+    CHECK(d < 1e-5, "la somme des pistes séparées diffère du mélange (%g)", d);
+    CHECK(energy(cl, 0, n) > 0.01, "le métronome n'est pas dans son tampon à part");
+
+    current = "fondu enchaîné au changement de loop";
+    Audio b = synthLoop(98, 1, 0);
+    for (auto& v : b.L) v = 0;  // b silencieuse : pendant le fondu, a s'éteint progressivement
+    for (auto& v : b.R) v = 0;
+    std::vector<Stem> sb;
+    LoopInfo ib = info;
+    sb.push_back({"LOOP", std::make_shared<Audio>(b)});
+    Looper l(kRate);
+    l.load(info, st);
+    s.metronome = false;
+    s.crossfade = 0.2;  // 200 ms
+    const int beat = 27000;
+    std::vector<float> o((size_t)beat * 2), o2(o.size());
+    l.process(s, o.data(), o2.data(), (int)o.size());  // 2 temps
+    l.load(ib, sb);                                     // entre au temps 4 (mesure suivante)
+    std::vector<float> p((size_t)beat * 3), p2(p.size());
+    l.process(s, p.data(), p2.data(), (int)p.size());  // temps 2 à 5
+    const int at = 2 * beat;  // temps 4 dans ce bloc
+    const int half = (int)(0.1 * kRate);
+    double ref = energy(a.L, 0, 2000), mid = 0, after = energy(p, at + (int)(0.25 * kRate), at + (int)(0.25 * kRate) + 2000);
+    for (int j = at + half; j < at + half + 2000; ++j) mid += (double)a.L[(size_t)(j - at)] * a.L[(size_t)(j - at)];
+    CHECK(energy(p, at + half, at + half + 2000) > 0.2 * mid && energy(p, at + half, at + half + 2000) < 0.9 * mid + 1e-9,
+          "au milieu du fondu, l'ancienne loop doit être à moitié");
+    CHECK(after < 1e-6, "après le fondu, l'ancienne loop s'entend encore");
+    (void)ref;
+}
+
 static void testProcess() {
     current = "réglages par bloc (plugin)";
     Audio a = synthLoop(98, 1, 0);
@@ -712,6 +818,8 @@ int main() {
     testContinuousLoop();
     testBounceAndMetronome();
     testProcess();
+    testTracksAndCrossfade();
+    testPrecision();
     testSeamlessFiles();
     testSwitchOnNextBar();
     testMeters();

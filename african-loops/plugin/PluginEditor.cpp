@@ -36,6 +36,20 @@ void styleKnob(juce::Slider& s, bool bipolar = false) {
     s.setMouseDragSensitivity(180);
 }
 
+// Petite fenêtre « nom » (nouveau style, renommer, setup…).
+void askText(const juce::String& title, const juce::String& prompt, const juce::String& initial,
+             std::function<void(const juce::String&)> done) {
+    auto* w = new juce::AlertWindow(title, prompt, juce::MessageBoxIconType::NoIcon);
+    w->addTextEditor("t", initial);
+    w->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
+    w->addButton("Annuler", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+    w->enterModalState(true, juce::ModalCallbackFunction::create([w, done](int res) {
+                           auto t = w->getTextEditorContents("t").trim();
+                           if (res == 1 && t.isNotEmpty()) done(t);
+                       }),
+                       true);
+}
+
 // Lance le glisser-déposer d'un fichier vers le logiciel de musique.
 void dragOut(const juce::File& f, juce::Component* source) {
     if (f.existsAsFile())
@@ -111,7 +125,7 @@ void WaveformView::mouseDrag(const juce::MouseEvent& e) {
 // ====================================================================== navigateur
 
 BrowserPanel::BrowserPanel(AfricanLoopsProcessor& p) : proc(p), wave(p) {
-    for (auto* lb : {&catList, &loopList}) {
+    for (juce::ListBox* lb : {static_cast<juce::ListBox*>(&catList), &loopList}) {
         lb->setRowHeight(22);
         lb->setColour(juce::ListBox::backgroundColourId, juce::Colours::transparentBlack);
         lb->setOutlineThickness(0);
@@ -129,8 +143,90 @@ BrowserPanel::BrowserPanel(AfricanLoopsProcessor& p) : proc(p), wave(p) {
     fileButton.onClick = [this] { chooseFile(); };
     addAndMakeVisible(folderButton);
     addAndMakeVisible(fileButton);
+    styleButton.setTooltip(juce::String::fromUTF8("Créer un nouveau style"));
+    styleButton.onClick = [this] { newStyle(); };
+    importButton.setTooltip(juce::String::fromUTF8("Copier des loops (WAV, MP3) dans un style"));
+    importButton.onClick = [this] { chooseImport(); };
+    addAndMakeVisible(styleButton);
+    addAndMakeVisible(importButton);
     addAndMakeVisible(wave);
+    loopList.setMultipleSelectionEnabled(false);
+    catList.canDrop = [this](int row) { return isRealStyle(row); };
+    catList.onDrop = [this](int row, const juce::String& path) {
+        if (isRealStyle(row)) proc.setCategory(path, categories[row]);
+    };
     refreshLibrary();
+}
+
+juce::String BrowserPanel::favoritesLabel() { return juce::String::fromUTF8("★ Favoris"); }
+
+// ligne 0 : Favoris, ligne 1 : toutes les loops, ensuite les vrais styles
+bool BrowserPanel::isRealStyle(int row) const { return row >= 2 && row < categories.size(); }
+
+void BrowserPanel::newStyle() {
+    juce::Component::SafePointer<BrowserPanel> safe(this);
+    askText(juce::String::fromUTF8("Nouveau style"), juce::String::fromUTF8("Nom du style :"), "", [safe](const juce::String& n) {
+        if (safe && safe->proc.addStyle(n)) {
+            safe->refreshLibrary();
+            int r = safe->categories.indexOf(n);
+            if (r >= 0) safe->catList.selectRow(r);
+        }
+    });
+}
+
+void BrowserPanel::importInto(const juce::String& style) {
+    chooser = std::make_unique<juce::FileChooser>(juce::String::fromUTF8("Loops à copier dans « ") + style + juce::String::fromUTF8(" »"),
+                                                  juce::File::getSpecialLocation(juce::File::userMusicDirectory), "*.wav;*.wave;*.mp3");
+    juce::Component::SafePointer<BrowserPanel> safe(this);
+    chooser->launchAsync(juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles |
+                             juce::FileBrowserComponent::canSelectMultipleItems,
+                         [safe, style](const juce::FileChooser& fc) {
+                             if (safe) safe->proc.importLoops(fc.getResults(), style);
+                         });
+}
+
+void BrowserPanel::chooseImport() {
+    if (!lib) { chooseFolder(); return; }  // pas encore de dossier de loops
+    const int r = catList.getSelectedRow();
+    if (isRealStyle(r) && categories[r] != juce::String::fromUTF8(kUncategorized)) {
+        importInto(categories[r]);
+        return;
+    }
+    // aucun style choisi : on demande lequel
+    juce::PopupMenu m;
+    m.addSectionHeader(juce::String::fromUTF8("Importer dans le style…"));
+    for (int i = 2; i < categories.size(); ++i)
+        if (categories[i] != juce::String::fromUTF8(kUncategorized)) m.addItem(100 + i, categories[i]);
+    m.addSeparator();
+    m.addItem(1, juce::String::fromUTF8("Nouveau style…"));
+    juce::Component::SafePointer<BrowserPanel> safe(this);
+    m.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(&importButton), [safe](int res) {
+        if (!safe || res == 0) return;
+        if (res >= 100) { safe->importInto(safe->categories[res - 100]); return; }
+        askText(juce::String::fromUTF8("Nouveau style"), juce::String::fromUTF8("Nom du style :"), "", [safe](const juce::String& n) {
+            if (safe && safe->proc.addStyle(n)) safe->importInto(n);
+        });
+    });
+}
+
+juce::var BrowserPanel::getDragSourceDescription(const juce::SparseSet<int>& sel) {
+    if (sel.size() != 1) return {};
+    const int r = sel[0];
+    if (r < 0 || r >= (int)rows.size()) return {};
+    return "loop:" + juce::String::fromUTF8(rows[(size_t)r]->path.c_str());
+}
+
+void StyleListBox::itemDragMove(const SourceDetails& d) {
+    const int r = getRowContainingPosition(d.localPosition.x, d.localPosition.y);
+    const int nr = (canDrop && canDrop(r)) ? r : -1;
+    if (nr != dropRow) { dropRow = nr; repaint(); }
+}
+
+void StyleListBox::itemDropped(const SourceDetails& d) {
+    const int r = getRowContainingPosition(d.localPosition.x, d.localPosition.y);
+    dropRow = -1;
+    repaint();
+    if (onDrop && canDrop && canDrop(r)) onDrop(r, d.description.toString().fromFirstOccurrenceOf("loop:", false, false));
 }
 
 BrowserPanel::~BrowserPanel() {
@@ -161,6 +257,8 @@ void BrowserPanel::refreshLibrary() {
     lib = proc.library();
     categories.clear();
     categoryCounts.clear();
+    categories.add(favoritesLabel());
+    categoryCounts.push_back(lib ? lib->favoriteCount() : 0);
     categories.add(juce::String::fromUTF8("Toutes les loops"));
     categoryCounts.push_back(lib ? (int)lib->entries.size() : 0);
     if (lib)
@@ -169,7 +267,8 @@ void BrowserPanel::refreshLibrary() {
             categoryCounts.push_back(c.count);
         }
     catList.updateContent();
-    int sel = std::max(0, categories.indexOf(previous));
+    int sel = previous.isEmpty() ? (catList.getSelectedRow() == 0 ? 0 : 1) : categories.indexOf(previous);
+    if (sel < 0) sel = 1;
     catList.selectRow(sel, true, true);
     catList.scrollToEnsureRowIsOnscreen(sel);
     rebuildLoops();
@@ -178,12 +277,16 @@ void BrowserPanel::refreshLibrary() {
 
 juce::String BrowserPanel::selectedCategory() const {
     int r = catList.getSelectedRow();
-    return r > 0 && r < categories.size() ? categories[r] : juce::String();
+    return isRealStyle(r) ? categories[r] : juce::String();
 }
 
 void BrowserPanel::rebuildLoops() {
     rows.clear();
-    if (lib) rows = lib->search(selectedCategory().toStdString(), search.getText().toStdString());
+    if (lib) {
+        rows = lib->search(selectedCategory().toStdString(), search.getText().toStdString());
+        if (catList.getSelectedRow() == 0)  // ★ Favoris
+            rows.erase(std::remove_if(rows.begin(), rows.end(), [](const Entry* e) { return !e->favorite; }), rows.end());
+    }
     loopList.updateContent();
     // garde la loop jouée en surbrillance
     int sel = -1;
@@ -208,39 +311,61 @@ void BrowserPanel::CategoryModel::paintListBoxItem(int row, juce::Graphics& g, i
         g.setColour(col::amber);
         g.fillRect(0, 0, 3, h);
     }
+    if (row == owner.catList.dropRow) {  // une loop survole ce style
+        g.setColour(col::amber.withAlpha(0.35f));
+        g.fillRect(0, 0, w, h);
+        g.setColour(col::amber);
+        g.drawRect(0, 0, w, h, 1);
+    }
     g.setFont(ui::font(12.f));
     g.setColour(selected ? juce::Colours::white : col::lcdText);
-    g.drawText(owner.categories[row], 10, 0, w - 44, h, juce::Justification::centredLeft, true);
+    if (row == 0) {
+        g.setColour(col::amber);
+        g.drawText(juce::String::fromUTF8("★"), 10, 0, 14, h, juce::Justification::centredLeft);
+        g.setColour(selected ? juce::Colours::white : col::lcdText);
+        g.drawText("Favoris", 26, 0, w - 60, h, juce::Justification::centredLeft, true);
+    } else {
+        g.drawText(owner.categories[row], 10, 0, w - 44, h, juce::Justification::centredLeft, true);
+    }
     g.setColour(col::lcdDim);
     g.drawText(juce::String(owner.categoryCounts[(size_t)row]), w - 40, 0, 32, h, juce::Justification::centredRight);
 }
 
 void BrowserPanel::CategoryModel::listBoxItemClicked(int row, const juce::MouseEvent& e) {
-    // clic droit sur un style : le renommer ou le supprimer
-    if (!e.mods.isPopupMenu() || row <= 0 || row >= owner.categories.size()) return;
-    const juce::String name = owner.categories[row];
-    if (name == juce::String::fromUTF8(kUncategorized)) return;
+    // clic droit sur un style : tout gérer
+    if (!e.mods.isPopupMenu()) return;
+    auto& o = owner;
+    const bool real = o.isRealStyle(row) && o.categories[row] != juce::String::fromUTF8(kUncategorized);
+    const juce::String name = real ? o.categories[row] : juce::String();
     juce::PopupMenu m;
-    m.addSectionHeader(name);
-    m.addItem(1, juce::String::fromUTF8("Renommer ce style…"));
-    m.addItem(2, juce::String::fromUTF8("Supprimer ce style (ses loops vont dans « Non classés »)"));
-    juce::Component::SafePointer<BrowserPanel> safe(&owner);
-    m.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(&owner.catList), [safe, name](int r) {
+    if (real) {
+        m.addSectionHeader(name);
+        m.addItem(1, juce::String::fromUTF8("Renommer ce style…"));
+        m.addItem(3, juce::String::fromUTF8("Importer des loops dans ce style…"));
+        m.addItem(4, juce::String::fromUTF8("Ouvrir le dossier"), o.proc.styleFolder(name).isDirectory());
+        m.addSeparator();
+    }
+    m.addItem(5, juce::String::fromUTF8("Nouveau style…"), o.lib != nullptr);
+    if (real) {
+        m.addSeparator();
+        m.addItem(2, juce::String::fromUTF8("Supprimer ce style (ses loops vont dans « Non classés »)"));
+    }
+    juce::Component::SafePointer<BrowserPanel> safe(&o);
+    m.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(&o.catList), [safe, name](int r) {
         if (!safe || r == 0) return;
-        if (r == 2) {
-            safe->proc.removeCategory(name);
-            return;
+        switch (r) {
+            case 1:
+                askText(juce::String::fromUTF8("Renommer le style"), juce::String::fromUTF8("Nouveau nom :"), name,
+                        [safe, name](const juce::String& to) {
+                            if (safe && to != name) safe->proc.renameCategory(name, to);
+                        });
+                break;
+            case 2: safe->proc.removeCategory(name); break;
+            case 3: safe->importInto(name); break;
+            case 4: safe->proc.styleFolder(name).startAsProcess(); break;
+            case 5: safe->newStyle(); break;
+            default: break;
         }
-        auto* w = new juce::AlertWindow(juce::String::fromUTF8("Renommer le style"), juce::String::fromUTF8("Nouveau nom :"),
-                                        juce::MessageBoxIconType::NoIcon);
-        w->addTextEditor("name", name);
-        w->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
-        w->addButton("Annuler", 0, juce::KeyPress(juce::KeyPress::escapeKey));
-        w->enterModalState(true, juce::ModalCallbackFunction::create([safe, name, w](int res) {
-                               auto to = w->getTextEditorContents("name").trim();
-                               if (safe && res == 1 && to.isNotEmpty() && to != name) safe->proc.renameCategory(name, to);
-                           }),
-                           true);
     });
 }
 
@@ -258,7 +383,13 @@ void BrowserPanel::paintListBoxItem(int row, juce::Graphics& g, int w, int h, bo
     g.setColour(bad ? col::red.withAlpha(0.8f) : selected ? juce::Colours::white : col::lcdText);
     juce::String name = (selected && proc.isPlaying() ? juce::String::fromUTF8("▶ ") : juce::String()) + fileStem(e.path);
     const int chipsW = 162, bpmW = 40;
-    g.drawText(name, 8, 0, w - chipsW - bpmW - 14, h, juce::Justification::centredLeft, true);
+    // étoile : un clic dessus = favori
+    g.setFont(ui::font(14.f));
+    g.setColour(e.favorite ? col::amber : juce::Colour(0xff4a3c2c));
+    g.drawText(juce::String::fromUTF8(e.favorite ? "★" : "☆"), 4, 0, 18, h, juce::Justification::centred);
+    g.setFont(ui::font(12.f));
+    g.setColour(bad ? col::red.withAlpha(0.8f) : selected ? juce::Colours::white : col::lcdText);
+    g.drawText(name, 24, 0, w - chipsW - bpmW - 30, h, juce::Justification::centredLeft, true);
     if (bad) {
         g.setFont(ui::font(10.f));
         g.drawText(juce::String::fromUTF8("illisible (survoler)"), w - chipsW - 4, 0, chipsW, h, juce::Justification::centredRight);
@@ -314,46 +445,52 @@ void BrowserPanel::selectedRowsChanged(int row) {
 
 void BrowserPanel::listBoxItemClicked(int row, const juce::MouseEvent& e) {
     if (row < 0 || row >= (int)rows.size()) return;
+    const std::string path = rows[(size_t)row]->path;
+    const bool fav = rows[(size_t)row]->favorite;
     if (!e.mods.isPopupMenu()) {
+        if (e.x < 22) {  // clic sur l'étoile : favori ou non, sans changer de loop
+            proc.setFavorite(juce::String::fromUTF8(path.c_str()), !fav);
+            return;
+        }
         loadRow(row);
         return;
     }
-    // clic droit : ranger la loop dans un autre style
-    const std::string path = rows[(size_t)row]->path;
+    // clic droit : favori, ranger dans un style, montrer le fichier
     juce::PopupMenu m, into;
-    for (int i = 1; i < categories.size(); ++i) into.addItem(100 + i, categories[i]);
+    for (int i = 2; i < categories.size(); ++i) into.addItem(100 + i, categories[i]);
     into.addSeparator();
     into.addItem(1, juce::String::fromUTF8("Nouveau style…"));
     m.addSectionHeader(fileStem(path));
+    m.addItem(2, fav ? juce::String::fromUTF8("☆  Retirer des favoris") : juce::String::fromUTF8("★  Ajouter aux favoris"));
     m.addSubMenu(juce::String::fromUTF8("Ranger dans le style"), into);
+    m.addItem(3, juce::String::fromUTF8("Montrer le fichier"));
     juce::Component::SafePointer<BrowserPanel> safe(this);
-    m.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(&loopList), [safe, path](int r) {
+    m.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(&loopList), [safe, path, fav](int r) {
         if (!safe || r == 0) return;
         auto& self = *safe;
-        if (r >= 100) {
-            self.proc.setCategory(juce::String::fromUTF8(path.c_str()), self.categories[r - 100]);
+        const auto p = juce::String::fromUTF8(path.c_str());
+        if (r >= 100) { self.proc.setCategory(p, self.categories[r - 100]); return; }
+        if (r == 2) { self.proc.setFavorite(p, !fav); return; }
+        if (r == 3) {
+            if (self.lib) juce::File(juce::String::fromUTF8(self.lib->root.c_str())).getChildFile(p).revealToUser();
             return;
         }
-        auto* w = new juce::AlertWindow(juce::String::fromUTF8("Nouveau style"), juce::String::fromUTF8("Nom du style :"),
-                                        juce::MessageBoxIconType::NoIcon);
-        w->addTextEditor("name", "");
-        w->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
-        w->addButton("Annuler", 0, juce::KeyPress(juce::KeyPress::escapeKey));
-        w->enterModalState(true, juce::ModalCallbackFunction::create([safe, path, w](int res) {
-                               auto name = w->getTextEditorContents("name").trim();
-                               if (safe && res == 1 && name.isNotEmpty())
-                                   safe->proc.setCategory(juce::String::fromUTF8(path.c_str()), name);
-                           }),
-                           true);
+        askText(juce::String::fromUTF8("Nouveau style"), juce::String::fromUTF8("Nom du style :"), "", [safe, p](const juce::String& n) {
+            if (safe) safe->proc.setCategory(p, n);
+        });
     });
 }
 
 void BrowserPanel::resized() {
     auto b = getLocalBounds();
     auto top = b.removeFromTop(36).reduced(10, 7);
-    fileButton.setBounds(top.removeFromRight(84));
-    top.removeFromRight(6);
-    folderButton.setBounds(top.removeFromRight(84));
+    fileButton.setBounds(top.removeFromRight(70));
+    top.removeFromRight(5);
+    folderButton.setBounds(top.removeFromRight(70));
+    top.removeFromRight(5);
+    importButton.setBounds(top.removeFromRight(72));
+    top.removeFromRight(5);
+    styleButton.setBounds(top.removeFromRight(64));
     top.removeFromRight(8);
     search.setBounds(top);
     titleArea = b.removeFromTop(28);
@@ -608,7 +745,7 @@ AfricanLoopsEditor::AfricanLoopsEditor(AfricanLoopsProcessor& p)
             noise.setPixelAt(x, y, juce::Colours::white.withAlpha((float)rnd.nextInt(24) / 255.f));
 
     for (auto* c : std::initializer_list<juce::Component*>{&browser, &bpm, &presetBpm, &hostSync, &linkButton, &lp, &hp, &warmth, &masterFx,
-                                                            &sendFx, &modFx, &fade, &master, &masterPan, &metronome,
+                                                            &sendFx, &modFx, &fade, &master, &masterPan, &metronome, &setupSave, &setupList,
                                                             &masterMute, &mono, &signature, &stop, &play})
         face.addAndMakeVisible(c);
     for (int i = 0; i < kNumTracks; ++i) {
@@ -634,21 +771,31 @@ AfricanLoopsEditor::AfricanLoopsEditor(AfricanLoopsProcessor& p)
     sliderAtts.push_back(std::make_unique<SliderAtt>(p.params, ids::masterPan, masterPan));
 
     for (auto [b, id] : {std::pair<ui::HwButton*, juce::String>{&presetBpm, ids::presetBpm}, {&hostSync, ids::syncHost}, {&linkButton, ids::link},
-                         {&masterFx, ids::masterFx}, {&sendFx, ids::sendFx}, {&modFx, ids::modFx}, {&fade, ids::fade},
+
                          {&metronome, ids::metronome}, {&masterMute, ids::masterMute}, {&mono, ids::mono}}) {
         b->setClickingTogglesState(true);
         buttonAtts.push_back(std::make_unique<ButtonAtt>(p.params, id, *b));
     }
     presetBpm.setLed(true);
-    fade.setLed(true);
     presetBpm.setTooltip(juce::String::fromUTF8("Allumé : la loop joue à son tempo d'origine"));
     hostSync.setTooltip(juce::String::fromUTF8("Allumé : suit le tempo et la lecture de votre logiciel de musique"));
     linkButton.setTooltip(juce::String::fromUTF8("Ableton Link : Ableton et les autres logiciels Link prennent le tempo de "
                                                  "chaque loop, avec les mêmes mesures et le départ ensemble"));
-    masterFx.setTooltip(juce::String::fromUTF8("Compresseur + limiteur sur le mix"));
-    sendFx.setTooltip(juce::String::fromUTF8("Réverbération"));
-    modFx.setTooltip(juce::String::fromUTF8("Chorus (effet d'espace)"));
-    fade.setTooltip(juce::String::fromUTF8("Fondu à l'entrée et à l'arrêt"));
+    masterFx.setTooltip(juce::String::fromUTF8("Égaliseur, compresseur et limiteur du mix (ouvre la page)"));
+    sendFx.setTooltip(juce::String::fromUTF8("Réverbération et envoi de chaque piste (ouvre la page)"));
+    modFx.setTooltip(juce::String::fromUTF8("Chorus, flanger, phaser, trémolo et écho (ouvre la page)"));
+    fade.setTooltip(juce::String::fromUTF8("Fondus et fondu enchaîné (ouvre la page)"));
+    // les boutons du rack ouvrent la page des effets ; allumés = effet actif
+    masterFx.onClick = [this] { openFx(FxPage::Master); };
+    sendFx.onClick = [this] { openFx(FxPage::Send); };
+    modFx.onClick = [this] { openFx(FxPage::Mod); };
+    fade.onClick = [this] { openFx(FxPage::Fade); };
+    fxPage.onClose = [this] { closeFx(); };
+    face.addChildComponent(fxPage);
+    setupSave.setTooltip(juce::String::fromUTF8("Enregistrer tout : la loop, le tempo, le mixer et les effets"));
+    setupSave.onClick = [this] { saveSetupDialog(); };
+    setupList.setTooltip(juce::String::fromUTF8("Rappeler un setup enregistré"));
+    setupList.onClick = [this] { setupsMenu(); };
     lp.setTooltip(juce::String::fromUTF8("Filtre passe-bas : enlève les aigus"));
     hp.setTooltip(juce::String::fromUTF8("Filtre passe-haut : enlève les graves"));
     warmth.setTooltip(juce::String::fromUTF8("Chaleur : saturation douce"));
@@ -691,6 +838,9 @@ void AfricanLoopsEditor::layout() {
     lp.setBounds(X0 + 624, 182, 50, 50);
     hp.setBounds(X0 + 624, 246, 50, 50);
     warmth.setBounds(X0 + 624, 310, 50, 50);
+    fxPage.setBounds(X0 + 6, 384, 782, 328);
+    setupSave.setBounds(kW - X0 - 292, 17, 150, 26);
+    setupList.setBounds(kW - X0 - 134, 17, 110, 26);
     masterFx.setBounds(X0 + 724, 186, 88, 28);
     sendFx.setBounds(X0 + 724, 226, 88, 28);
     modFx.setBounds(X0 + 724, 266, 88, 28);
@@ -708,9 +858,92 @@ void AfricanLoopsEditor::layout() {
 
 void AfricanLoopsEditor::syncChannelNames() {
     auto c = proc.current();
-    for (int i = 0; i < kNumTracks; ++i)
-        strips[(size_t)i]->setName(c && i < (int)c->stems.size() ? juce::String::fromUTF8(c->stems[(size_t)i].kind.c_str())
-                                                                  : juce::String());
+    juce::StringArray names;
+    for (int i = 0; i < kNumTracks; ++i) {
+        const auto n = c && i < (int)c->stems.size() ? juce::String::fromUTF8(c->stems[(size_t)i].kind.c_str()) : juce::String();
+        strips[(size_t)i]->setName(n);
+        names.add(n == perc::Hat ? "HI-HAT" : n == perc::Hand ? "DJEMBE" : n == perc::Talking ? "TALKING" : n);
+    }
+    fxPage.setTrackNames(names);
+}
+
+void AfricanLoopsEditor::openFx(FxPage::Tab t) {
+    fxPage.show(t);
+    fxPage.setVisible(true);
+    fxPage.toFront(false);
+    for (auto& st : strips) st->setVisible(false);
+}
+
+void AfricanLoopsEditor::closeFx() {
+    fxPage.setVisible(false);
+    for (auto& st : strips) st->setVisible(true);
+}
+
+void AfricanLoopsEditor::saveSetupDialog() {
+    auto c = proc.current();
+    const auto suggestion = c ? c->file.getFileNameWithoutExtension() : juce::String("Mon setup");
+    juce::Component::SafePointer<AfricanLoopsEditor> safe(this);
+    askText(juce::String::fromUTF8("Enregistrer le setup"),
+            juce::String::fromUTF8("Nom du setup (la loop, le tempo, le mixer et les effets sont gardés) :"), suggestion,
+            [safe](const juce::String& name) {
+                if (!safe) return;
+                bool exists = false;
+                for (const auto& si : safe->proc.setups()) exists |= si.name == name;
+                if (!exists) { safe->proc.saveSetup(name); return; }
+                juce::AlertWindow::showOkCancelBox(juce::MessageBoxIconType::QuestionIcon, juce::String::fromUTF8("Setup existant"),
+                                                   juce::String::fromUTF8("Remplacer le setup « ") + name + juce::String::fromUTF8(" » ?"),
+                                                   "Remplacer", "Annuler", nullptr,
+                                                   juce::ModalCallbackFunction::create([safe, name](int r) {
+                                                       if (safe && r == 1) safe->proc.saveSetup(name);
+                                                   }));
+            });
+}
+
+void AfricanLoopsEditor::setupsMenu() {
+    const auto list = proc.setups();
+    juce::PopupMenu m, ren, del;
+    m.addSectionHeader(juce::String::fromUTF8("CHARGER UN SETUP"));
+    if (list.isEmpty()) m.addItem(-1, juce::String::fromUTF8("Aucun setup enregistré pour l'instant"), false);
+    for (int i = 0; i < list.size(); ++i) {
+        const auto& si = list.getReference(i);
+        juce::String t = si.name;
+        if (si.loop.isNotEmpty()) t << "   -   " << si.loop;
+        if (si.bpm > 0) t << "   " << bpmText(si.bpm) << " BPM";
+        m.addItem(100 + i, t);
+        ren.addItem(1000 + i, si.name);
+        del.addItem(2000 + i, si.name);
+    }
+    if (!list.isEmpty()) {
+        m.addSeparator();
+        m.addSubMenu("Renommer", ren);
+        m.addSubMenu("Supprimer", del);
+    }
+    m.addSeparator();
+    m.addItem(1, juce::String::fromUTF8("Ouvrir le dossier des setups"));
+    juce::Component::SafePointer<AfricanLoopsEditor> safe(this);
+    m.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(&setupList), [safe, list](int r) {
+        if (!safe || r <= 0) return;
+        if (r == 1) {
+            auto d = AfricanLoopsProcessor::setupsFolder();
+            d.createDirectory();
+            d.startAsProcess();
+        } else if (r >= 2000) {
+            const auto name = list[r - 2000].name;
+            juce::AlertWindow::showOkCancelBox(juce::MessageBoxIconType::WarningIcon, juce::String::fromUTF8("Supprimer le setup"),
+                                               juce::String::fromUTF8("Supprimer « ") + name + juce::String::fromUTF8(" » ?"), "Supprimer",
+                                               "Annuler", nullptr, juce::ModalCallbackFunction::create([safe, name](int res) {
+                                                   if (safe && res == 1) safe->proc.deleteSetup(name);
+                                               }));
+        } else if (r >= 1000) {
+            const auto name = list[r - 1000].name;
+            askText(juce::String::fromUTF8("Renommer le setup"), juce::String::fromUTF8("Nouveau nom :"), name,
+                    [safe, name](const juce::String& to) {
+                        if (safe && to != name) safe->proc.renameSetup(name, to);
+                    });
+        } else if (r >= 100) {
+            safe->proc.loadSetup(list[r - 100].name);
+        }
+    });
 }
 
 void AfricanLoopsEditor::timerCallback() {
@@ -739,6 +972,12 @@ void AfricanLoopsEditor::timerCallback() {
         bpm.repaint();
     }
     play.setToggleState(playing, juce::dontSendNotification);
+    masterFx.setToggleState(paramValue(proc, ids::masterFx) > 0.5f || std::abs(paramValue(proc, ids::eqLow)) + std::abs(paramValue(proc, ids::eqLowMid)) +
+                                std::abs(paramValue(proc, ids::eqHighMid)) + std::abs(paramValue(proc, ids::eqHigh)) > 0.1f,
+                            juce::dontSendNotification);
+    sendFx.setToggleState(paramValue(proc, ids::sendFx) > 0.5f, juce::dontSendNotification);
+    modFx.setToggleState(paramValue(proc, ids::modFx) > 0.5f || paramValue(proc, ids::echo) > 0.5f, juce::dontSendNotification);
+    fade.setToggleState(paramValue(proc, ids::fade) > 0.5f || paramValue(proc, ids::xfade) > 0.5f, juce::dontSendNotification);
     if (const float sig = paramValue(proc, ids::signature) * 10 + paramValue(proc, ids::feel); std::abs(sig - shownSignature) > 1e-3f) {
         shownSignature = sig;
         signature.repaint();
@@ -765,6 +1004,10 @@ void AfricanLoopsEditor::timerCallback() {
 }
 
 bool AfricanLoopsEditor::keyPressed(const juce::KeyPress& k) {
+    if (k == juce::KeyPress::escapeKey && fxPage.isVisible()) {
+        closeFx();
+        return true;
+    }
     if (k == juce::KeyPress::spaceKey) {
         proc.setPlaying(!proc.isPlaying());
         return true;
@@ -861,7 +1104,7 @@ void AfricanLoopsEditor::Face::paintStatic(juce::Graphics& g) {
     g.drawLine(panel.getX(), 58, panel.getRight(), 58);
     g.setColour(juce::Colour(0xff3a3936));
     g.drawLine(panel.getX(), 59, panel.getRight(), 59);
-    for (float vx : {X0 + 60.f, W - X0 - 60.f - 21 * 9}) {
+    for (float vx : {X0 + 60.f}) {  // à droite : les boutons des setups
         for (int i = 0; i < 22; ++i) {
             auto r = juce::Rectangle<float>(vx + i * 9, 18, 4, 22);
             g.setColour(juce::Colour(0xff444444));
@@ -894,6 +1137,24 @@ void AfricanLoopsEditor::Face::paintStatic(juce::Graphics& g) {
         g.drawRoundedRectangle(pro, 3, 1.5f);
         g.setFont(ui::font(16.f, true).withExtraKerningFactor(0.12f));
         g.drawText("PRO", pro, juce::Justification::centred);
+        // signature
+        {
+            auto fBy = ui::font(11.f).italicised().withExtraKerningFactor(0.18f);
+            auto fName = ui::font(11.f, true).withExtraKerningFactor(0.22f);
+            const float wBy = juce::GlyphArrangement::getStringWidth(fBy, "by "), wName = juce::GlyphArrangement::getStringWidth(fName, "JB PRAISE");
+            const float bx = (W - wBy - wName) / 2, by0 = 44;
+            g.setColour(juce::Colours::black.withAlpha(0.8f));
+            g.setFont(fBy);
+            g.drawText("by ", juce::Rectangle<float>(bx, by0 + 1, wBy, 13), juce::Justification::left);
+            g.setFont(fName);
+            g.drawText("JB PRAISE", juce::Rectangle<float>(bx + wBy, by0 + 1, wName + 4, 13), juce::Justification::left);
+            g.setColour(juce::Colour(0xffe8c690));
+            g.setFont(fBy);
+            g.drawText("by ", juce::Rectangle<float>(bx, by0, wBy, 13), juce::Justification::left);
+            g.setColour(juce::Colour(0xfff1c27a));
+            g.setFont(fName);
+            g.drawText("JB PRAISE", juce::Rectangle<float>(bx + wBy, by0, wName + 4, 13), juce::Justification::left);
+        }
         // motif en chevrons de chaque côté
         g.setColour(juce::Colour(0xffc89a55).withAlpha(0.5f));
         for (float side : {-1.f, 1.f}) {

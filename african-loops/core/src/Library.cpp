@@ -20,7 +20,7 @@ namespace africanloops {
 
 const char* const kUncategorized = "Non classés";
 const char* const kIndexFile = ".africanloops-index.json";
-constexpr int kIndexVersion = 3;  // 2 : coups gardés ; 3 : boucle préparée (points de boucle, silence MP3)
+constexpr int kIndexVersion = 4;  // 2 : coups gardés ; 3 : boucle préparée ; 4 : tempo calé sur la longueur exacte
 
 // ---------------------------------------------------------------- styles
 
@@ -112,6 +112,7 @@ struct Json {
         return none;
     }
     double num(double d = 0) const { auto* p = std::get_if<double>(&v); return p ? *p : d; }
+    bool flag() const { auto* p = std::get_if<bool>(&v); return p && *p; }
     std::string str() const { auto* p = std::get_if<std::string>(&v); return p ? *p : ""; }
     const JsonArr& arr() const { static const JsonArr e; auto* p = std::get_if<JsonArr>(&v); return p ? *p : e; }
 };
@@ -213,11 +214,14 @@ fs::path fromUtf8(const std::string& s) { return detail::pathFromUtf8(s); }
 
 bool Library::save() const {
     std::ostringstream o;
-    o << "{\n \"version\": " << kIndexVersion << ",\n \"root\": " << q(root) << ",\n \"entries\": [";
+    o << "{\n \"version\": " << kIndexVersion << ",\n \"root\": " << q(root) << ",\n \"styles\": [";
+    for (size_t k = 0; k < styles.size(); ++k) o << (k ? ", " : "") << q(styles[k]);
+    o << "],\n \"entries\": [";
     for (size_t i = 0; i < entries.size(); ++i) {
         const auto& e = entries[i];
         const auto& t = e.info.tempo;
         o << (i ? ",\n  " : "\n  ") << "{\"path\": " << q(e.path) << ", \"category\": " << q(e.category)
+          << (e.favorite ? ", \"favorite\": true" : "")
           << ", \"size\": " << e.size << ", \"mtime\": " << e.mtime;
         if (!e.error.empty()) o << ", \"error\": " << q(e.error);
         o << ", \"info\": {\"tempo\": {\"bpm\": " << n(t.bpm) << ", \"beats\": " << t.beats << ", \"bars\": " << t.bars
@@ -263,10 +267,13 @@ bool Library::loadIndex(const std::string& root, Library& out) {
     if (!p.ok) return false;
     out = Library{};
     out.root = root;
+    for (const auto& js : j["styles"].arr())
+        if (!js.str().empty()) out.styles.push_back(js.str());
     for (const auto& je : j["entries"].arr()) {
         Entry e;
         e.path = je["path"].str();
         e.category = je["category"].str();
+        e.favorite = je["favorite"].flag();
         e.size = (int64_t)je["size"].num();
         e.mtime = (int64_t)je["mtime"].num();
         e.error = je["error"].str();
@@ -307,11 +314,15 @@ bool Library::scan(const std::string& rootIn, Library& lib, std::string& error, 
     if (ec || !fs::is_directory(root, ec)) { error = "dossier introuvable"; return false; }
     if (!loader) loader = loadWAV;
     std::map<std::string, Entry> old;
-    if (Library prev; loadIndex(toUtf8(root), prev))
+    std::vector<std::string> oldStyles;
+    if (Library prev; loadIndex(toUtf8(root), prev)) {
         for (auto& e : prev.entries) old[e.path] = std::move(e);
+        oldStyles = prev.styles;
+    }
 
     lib = Library{};
     lib.root = toUtf8(root);
+    lib.styles = oldStyles;
     std::vector<size_t> todo;
     for (auto it = fs::recursive_directory_iterator(root, fs::directory_options::skip_permission_denied, ec);
          it != fs::recursive_directory_iterator(); it.increment(ec)) {
@@ -330,9 +341,12 @@ bool Library::scan(const std::string& rootIn, Library& lib, std::string& error, 
         e.size = (int64_t)de.file_size(ec);
         e.mtime = mtimeOf(de);
         auto o = old.find(e.path);
+        if (o != old.end()) {
+            e.favorite = o->second.favorite;  // l'étoile reste, même si le fichier a changé
+            if (!o->second.category.empty()) e.category = o->second.category;  // style choisi à la main : gardé aussi
+        }
         if (o != old.end() && o->second.size == e.size && o->second.mtime == e.mtime && o->second.error.empty()) {
             e.info = o->second.info;
-            if (!o->second.category.empty()) e.category = o->second.category;  // corrections à la main
         } else {
             todo.push_back(lib.entries.size());
         }
@@ -391,8 +405,30 @@ bool Library::upToDate(const Entry& e) const {
     return (int64_t)de.file_size(ec) == e.size && mtimeOf(de) == e.mtime;
 }
 
+bool Library::setFavorite(const std::string& path, bool on) {
+    for (auto& e : entries)
+        if (e.path == path) { e.favorite = on; return true; }
+    return false;
+}
+
+int Library::favoriteCount() const {
+    int n = 0;
+    for (const auto& e : entries) n += e.favorite ? 1 : 0;
+    return n;
+}
+
+bool Library::addStyle(const std::string& name) {
+    const std::string n = trim(name);
+    if (n.empty() || n == kUncategorized) return false;
+    for (const auto& c : categories())
+        if (c.name == n) return false;
+    styles.push_back(n);
+    return true;
+}
+
 std::vector<CategoryCount> Library::categories() const {
     std::map<std::string, int> count;
+    for (const auto& s : styles) count[s] += 0;  // styles créés à la main, même vides
     for (const auto& e : entries) count[e.category]++;
     std::vector<CategoryCount> out;
     for (auto& [name, c] : count)
@@ -406,12 +442,26 @@ int Library::renameCategory(const std::string& from, const std::string& to) {
     int n = 0;
     for (auto& e : entries)
         if (e.category == from) { e.category = to; ++n; }
+    bool known = false;
+    for (auto& s : styles) {
+        if (s == from) { s = to; ++n; }
+        known |= s == to;
+    }
+    if (n > 0 && !known && to != kUncategorized) styles.push_back(to);  // le nouveau nom reste même si le style se vide
+    styles.erase(std::remove(styles.begin(), styles.end(), std::string(kUncategorized)), styles.end());
+    std::sort(styles.begin(), styles.end());
+    styles.erase(std::unique(styles.begin(), styles.end()), styles.end());
     return n;
 }
 
 int Library::removeCategory(const std::string& name) {
     if (name == kUncategorized) return 0;
-    return renameCategory(name, kUncategorized);  // les loops restent, rangées dans « Non classés »
+    int n = 0;
+    for (auto& e : entries)
+        if (e.category == name) { e.category = kUncategorized; ++n; }  // les loops restent, dans « Non classés »
+    const auto before = styles.size();
+    styles.erase(std::remove(styles.begin(), styles.end(), name), styles.end());
+    return n + (int)(before - styles.size());
 }
 
 bool Library::setCategory(const std::string& path, const std::string& category) {

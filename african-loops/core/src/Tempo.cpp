@@ -116,6 +116,22 @@ bool backbeatTooFast(double bpm, const std::vector<Hit>& hits) {
 
 }  // namespace
 
+// La partie du fichier après l'échantillon « from » est-elle (presque) muette ?
+// (silence d'encodeur, fin de réverbération coupée) — sinon c'est de la musique.
+static bool silentAfter(const Audio& a, long long from) {
+    const long long n = a.frames();
+    if (from >= n) return true;
+    if (from < 0) from = 0;
+    double all = 0, end = 0;
+    for (long long i = 0; i < n; ++i) {
+        const double v = 0.5 * ((double)a.L[(size_t)i] + a.R[(size_t)i]);
+        all += v * v;
+        if (i >= from) end += v * v;
+    }
+    const double rmsAll = std::sqrt(all / (double)n), rmsEnd = std::sqrt(end / (double)(n - from));
+    return rmsEnd < 0.1 * rmsAll;
+}
+
 Tempo detectTempo(const Audio& a, const Analysis& an, const std::vector<Hit>& hits, const std::string& filename) {
     const double dur = a.seconds();
     auto finish = [&](Tempo t) {
@@ -140,6 +156,18 @@ Tempo detectTempo(const Audio& a, const Analysis& an, const std::vector<Hit>& hi
             } else {
                 t.beats = (int)std::max(1.0, rb);  // loop très courte
             }
+        }
+        // Précision : si la loop est une vraie boucle (de la musique jusqu'au bout
+        // du fichier), c'est la longueur du fichier qui fait foi. On ajuste le tempo
+        // (au plus 1,5 %) pour que la boucle tombe pile, sans rien couper ni ajouter :
+        // pas de « dandinement » à chaque tour.
+        if (t.source != tempo_source::File && !a.lengthUncertain && dur > 0 && t.bpm > 0 && t.beats > 0) {
+            const double musical = t.beats * 60.0 / t.bpm;  // secondes
+            const double exact = 60.0 * t.beats / dur;
+            const double gap = dur - musical;
+            const bool silence = gap > 0 && silentAfter(a, (long long)std::llround(musical * a.rate));
+            if (std::abs(gap) * a.rate > 2 && !silence && std::abs(exact - t.bpm) / t.bpm < 0.015)
+                t.bpm = std::round(exact * 1000) / 1000;
         }
         if (t.beats > 0 && t.beats % 4 == 0) t.bars = t.beats / 4;
         for (double alt : {t.bpm / 2, t.bpm * 2})

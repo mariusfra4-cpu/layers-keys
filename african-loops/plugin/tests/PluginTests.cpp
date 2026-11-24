@@ -206,6 +206,123 @@ int main(int argc, char** argv) {
         waitFor([&] { return !proc->isLoading(); }, 5000);
         CHECK(proc->loadError().isNotEmpty() && proc->current() == cur, "fichier abîmé mal géré");
 
+        // 5 bis. favoris, nouveaux styles, import
+        proc->setFavorite("Afrobeats/Lagos Street.wav", true);
+        CHECK(proc->library()->favoriteCount() == 1, "favori non enregistré");
+        CHECK(proc->addStyle("Makossa") && proc->styleFolder("Makossa").isDirectory(), "nouveau style non créé");
+        CHECK(!proc->addStyle("Makossa"), "style en double accepté");
+        {
+            auto lib2 = proc->library();
+            bool seen = false;
+            for (auto& c : lib2->categories()) seen |= c.name == "Makossa";
+            CHECK(seen, "le style vide n'apparaît pas");
+        }
+        {
+            auto ext = dir.getSiblingFile(dir.getFileName() + "-import");
+            writeLoop(ext.getChildFile("Douala Night.wav"), 118, 4, 9);
+            CHECK(proc->importLoops({ext.getChildFile("Douala Night.wav")}, "Makossa") == 1, "import refusé");
+            CHECK(waitFor([&] {
+                      auto l = proc->library();
+                      if (proc->isScanning() || !l) return false;
+                      for (auto& e : l->entries)
+                          if (e.category == "Makossa" && e.error.empty()) return true;
+                      return false;
+                  }, 20000),
+                  "la loop importée n'est pas rangée dans son style");
+            CHECK(ext.getChildFile("Douala Night.wav").existsAsFile(), "l'original importé a été déplacé");
+            ext.deleteRecursively();
+        }
+        CHECK(proc->library()->favoriteCount() == 1, "favori perdu après l'analyse");
+        for (auto& c : proc->library()->categories()) CHECK(c.name != "I Love", "le style supprimé est revenu après l'analyse");
+
+        // 5 ter. toute la page des effets à fond : jamais de son invalide ni trop fort
+        proc->loadLoopAsync(dir.getChildFile("Afrobeats/Lagos Street.wav"));
+        waitFor([&] { return !proc->isLoading(); }, 10000);
+        for (auto id : {ids::masterFx, ids::sendFx, ids::modFx, ids::echo, ids::fade, ids::xfade}) setParam(*proc, id, 1);
+        for (auto id : {ids::eqLow, ids::eqLowMid, ids::eqHighMid, ids::eqHigh}) setParam(*proc, id, 12);
+        setParam(*proc, ids::revLevel, 1);
+        setParam(*proc, ids::echoFb, 0.9f);
+        setParam(*proc, ids::modFb, 0.9f);
+        for (int i = 0; i < kNumTracks; ++i) {
+            setParam(*proc, ids::send(i), 1);
+            setParam(*proc, ids::tLow(i), 12);
+            setParam(*proc, ids::tHigh(i), 12);
+        }
+        audio->maxAbs = 0;
+        for (float mt : {0.f, 1.f, 2.f, 3.f})
+            for (float rt : {0.f, 1.f, 2.f, 3.f}) {
+                setParam(*proc, ids::modType, mt);
+                setParam(*proc, ids::revType, rt);
+                waitFor([] { return false; }, 60);
+            }
+        audio->take();
+        waitFor([] { return false; }, 300);
+        CHECK(audio->take() > 1, "pas de son avec les effets");
+        CHECK(audio->bad == 0 && audio->maxAbs.load() <= 0.9661f, "effets : %d invalides, crête %.3f", audio->bad.load(), audio->maxAbs.load());
+        // crossfade pendant le changement de loop
+        proc->loadLoopAsync(dir.getChildFile("Worship/Adoration Groove.wav"));
+        waitFor([&] { return !proc->isLoading(); }, 10000);
+        waitFor([] { return false; }, 600);
+        CHECK(audio->bad == 0, "fondu enchaîné : son invalide");
+        // la page des effets s'ouvre depuis le rack
+        {
+            juce::Component* page = nullptr;
+            std::function<void(juce::Component&)> find = [&](juce::Component& c) {
+                for (auto* ch : c.getChildren()) {
+                    if (dynamic_cast<FxPage*>(ch)) page = ch;
+                    find(*ch);
+                }
+            };
+            find(*ed);
+            CHECK(page != nullptr, "page des effets absente");
+            if (auto* fx = dynamic_cast<FxPage*>(page)) {
+                const char* names[] = {"06_fx_master.png", "07_fx_send.png", "08_fx_mod.png", "09_fx_eq_piste.png", "10_fx_fade.png"};
+                for (int t = 0; t < 5; ++t) {
+                    fx->show((FxPage::Tab)t);
+                    fx->setVisible(true);
+                    waitFor([] { return false; }, 120);
+                    snapshot(*ed, shots.getChildFile(names[t]));
+                }
+                fx->setVisible(false);
+            }
+        }
+
+        // 5 quater. setups : enregistrer, changer tout, rappeler, renommer, supprimer
+        {
+            const juce::String nm = "Test setup " + juce::String(juce::Random::getSystemRandom().nextInt(1 << 20));
+            setParam(*proc, ids::gain(3), 0.25f);
+            setParam(*proc, ids::revSize, 0.8f);
+            CHECK(proc->saveSetup(nm), "setup non enregistré");
+            bool listed = false;
+            for (auto& si : proc->setups()) listed |= si.name == nm && si.loop.contains("Adoration");
+            CHECK(listed, "setup absent de la liste");
+            setParam(*proc, ids::gain(3), 1);
+            setParam(*proc, ids::revSize, 0.2f);
+            proc->loadLoopAsync(dir.getChildFile("coupe-decale groove.wav"));
+            waitFor([&] { return !proc->isLoading(); }, 10000);
+            CHECK(proc->loadSetup(nm), "setup non rappelé");
+            CHECK(waitFor([&] { return !proc->isLoading() && proc->current() && proc->current()->file.getFileName() == "Adoration Groove.wav"; }, 10000),
+                  "le setup n'a pas rappelé sa loop");
+            CHECK(std::abs(proc->params.getRawParameterValue(ids::gain(3))->load() - 0.25f) < 1e-3, "volume du setup non rappelé");
+            CHECK(std::abs(proc->params.getRawParameterValue(ids::revSize)->load() - 0.8f) < 1e-3, "réverbération du setup non rappelée");
+            CHECK(proc->renameSetup(nm, nm + " bis"), "renommage refusé");
+            CHECK(!proc->loadSetup(nm) && proc->loadSetup(nm + " bis"), "renommage raté");
+            CHECK(proc->deleteSetup(nm + " bis"), "suppression refusée");
+            for (auto& si : proc->setups()) CHECK(!si.name.startsWith(nm), "setup supprimé encore listé");
+            CHECK(audio->bad == 0, "setups : son invalide");
+        }
+        for (auto id : {ids::masterFx, ids::sendFx, ids::modFx, ids::echo, ids::fade, ids::xfade}) setParam(*proc, id, 0);
+        for (auto id : {ids::eqLow, ids::eqLowMid, ids::eqHighMid, ids::eqHigh}) setParam(*proc, id, 0);
+        for (int i = 0; i < kNumTracks; ++i) {
+            setParam(*proc, ids::send(i), 0);
+            setParam(*proc, ids::tLow(i), 0);
+            setParam(*proc, ids::tHigh(i), 0);
+            setParam(*proc, ids::gain(i), 1);
+        }
+
+        proc->loadLoopAsync(dir.getChildFile("I Love/Soft Groove 96bpm.wav"));
+        waitFor([&] { return !proc->isLoading(); }, 10000);
+
         // 6. glisser vers le logiciel de musique
         setParam(*proc, ids::bpm, 120);
         waitFor([] { return false; }, 100);
@@ -250,7 +367,7 @@ int main(int argc, char** argv) {
         CHECK(waitFor([&] { return !proc2->isLoading() && proc2->current(); }, 10000), "projet rouvert sans sa loop");
         CHECK(proc2->current() && proc2->current()->file.getFileName() == "Lagos Street.wav", "mauvaise loop rouverte");
         CHECK(proc2->library() != nullptr, "bibliothèque non rouverte tout de suite");
-        CHECK(waitFor([&] { return !proc2->isScanning(); }, 10000) && proc2->library() && proc2->library()->entries.size() == 7,
+        CHECK(waitFor([&] { return !proc2->isScanning(); }, 10000) && proc2->library() && proc2->library()->entries.size() == 8,
               "la loop ajoutée depuis n'est pas trouvée");
         CHECK(std::abs(proc2->params.getRawParameterValue(ids::gain(2))->load() - 0.5f) < 1e-4, "réglage perdu");
         auto audio2 = std::make_unique<AudioThread>(*proc2, 256);
