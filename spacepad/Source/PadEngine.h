@@ -28,6 +28,8 @@ public:
     using Callback = std::function<void (std::shared_ptr<const SampleData>)>;
     void request (const juce::String& path, Callback done);       // appelé depuis l'interface ou le fil audio (sans attente)
     std::shared_ptr<const SampleData> loadNow (const juce::String& path); // chargement direct (tests, préparation)
+    void preload (const juce::StringArray& paths);                 // à charger d'avance, quand le fil est libre (remplace la liste précédente)
+    bool isCached (const juce::String& path) const;
     void clearCache();
 
 private:
@@ -35,8 +37,10 @@ private:
     std::shared_ptr<const SampleData> getOrLoad (const juce::String& path);
 
     juce::AudioFormatManager fm;
-    juce::CriticalSection queueLock, cacheLock;
+    juce::CriticalSection queueLock;
+    mutable juce::CriticalSection cacheLock;
     std::deque<std::pair<juce::String, Callback>> queue;
+    std::deque<juce::String> preloadQueue;
     std::vector<std::shared_ptr<const SampleData>> cache;           // les plus récents à la fin
     juce::WaitableEvent wake;
 };
@@ -56,7 +60,8 @@ class PadChannel
 public:
     void prepare (double hostRate);
     // démarre un son : l'ancien s'efface en "crossfadeSec", le nouveau monte en "fadeInSec"
-    void start (std::shared_ptr<const SampleData> s, int semitones, bool loop, float fadeInSec, float crossfadeSec);
+    // fromFullPart : commencer directement dans la partie « pleine » du son (pads : pas de montée intégrée au fichier)
+    void start (std::shared_ptr<const SampleData> s, int semitones, bool loop, float fadeInSec, float crossfadeSec, bool fromFullPart = false);
     void stop (float fadeSec);
     void setLoop (bool l);
     // ajoute le son dans main (stéréo), la couche grave dans sub, la couche aiguë dans shim
@@ -80,7 +85,7 @@ private:
         enum Type { Start, Stop, Loop } type = Start;
         std::shared_ptr<const SampleData> sample;
         int semis = 0;
-        bool loop = true;
+        bool loop = true, fromFull = false;
         float fadeIn = 1, xfade = 1;
     };
     void applyCommands();

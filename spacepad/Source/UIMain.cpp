@@ -273,7 +273,10 @@ void MainView::step (float dt)
     const auto st = uiSettings();
     anim.t += dt;
     const float target = proc.padActive() ? 1.0f : 0.0f;
-    anim.env += (target - anim.env) * (1.0f - std::exp (-dt / (target > anim.env ? 1.3f : 1.8f)));
+    // la galaxie démarre dès qu'on appuie sur Play (élan immédiat), et ralentit doucement à l'arrêt
+    if (proc.padActive() && ! lastPadActive) anim.surge = juce::jmax (anim.surge, 0.8f);
+    lastPadActive = proc.padActive();
+    anim.env += (target - anim.env) * (1.0f - std::exp (-dt / (target > anim.env ? 0.25f : 1.8f)));
     // un petit élan à chaque changement de tonalité ou de mode
     if (proc.currentKey() != lastKey || proc.currentMode() != lastMode)
     {

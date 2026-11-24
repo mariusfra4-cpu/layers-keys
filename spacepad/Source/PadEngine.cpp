@@ -21,6 +21,13 @@ SampleLoader::~SampleLoader()
 
 void SampleLoader::request (const juce::String& path, Callback done)
 {
+    // déjà en mémoire : on démarre tout de suite, sans attendre le fil de chargement (Play instantané)
+    std::shared_ptr<const SampleData> hit;
+    {
+        const juce::ScopedLock sl (cacheLock);
+        for (auto& c : cache) if (c->path == path) { hit = c; break; }
+    }
+    if (hit != nullptr) { if (done) done (hit); return; }
     {
         const juce::ScopedLock sl (queueLock);
         // une nouvelle demande pour le même canal remplace les anciennes encore en attente
@@ -39,6 +46,23 @@ void SampleLoader::clearCache()
 std::shared_ptr<const SampleData> SampleLoader::loadNow (const juce::String& path)
 {
     return getOrLoad (path);
+}
+
+void SampleLoader::preload (const juce::StringArray& paths)
+{
+    {
+        const juce::ScopedLock sl (queueLock);
+        preloadQueue.clear();
+        for (auto& p : paths) if (! isCached (p)) preloadQueue.push_back (p);
+    }
+    wake.signal();
+}
+
+bool SampleLoader::isCached (const juce::String& path) const
+{
+    const juce::ScopedLock sl (cacheLock);
+    for (auto& c : cache) if (c->path == path) return true;
+    return false;
 }
 
 std::shared_ptr<const SampleData> SampleLoader::getOrLoad (const juce::String& path)
@@ -88,10 +112,10 @@ std::shared_ptr<const SampleData> SampleLoader::getOrLoad (const juce::String& p
     std::shared_ptr<const SampleData> c = d;
     const juce::ScopedLock sl (cacheLock);
     cache.push_back (c);
-    // mémoire : on garde les 10 derniers sons, sans dépasser environ 1,5 Go
+    // mémoire : on garde les 48 derniers sons, sans dépasser environ 1,5 Go
     size_t bytes = 0;
     for (auto& x : cache) bytes += (size_t) x->buffer.getNumSamples() * 2 * sizeof (float);
-    while (cache.size() > 1 && (cache.size() > 10 || bytes > (size_t) 1500 * 1024 * 1024))
+    while (cache.size() > 1 && (cache.size() > 48 || bytes > (size_t) 1500 * 1024 * 1024))
     {
         bytes -= (size_t) cache.front()->buffer.getNumSamples() * 2 * sizeof (float);
         cache.erase (cache.begin());
@@ -108,6 +132,7 @@ void SampleLoader::run()
         {
             const juce::ScopedLock sl (queueLock);
             if (! queue.empty()) { job = std::move (queue.front()); queue.pop_front(); has = true; }
+            else if (! preloadQueue.empty()) { job.first = preloadQueue.front(); preloadQueue.pop_front(); has = true; }   // préparation d'avance
         }
         if (! has) { wake.wait (200); continue; }
         auto s = getOrLoad (job.first);
@@ -178,7 +203,7 @@ std::shared_ptr<const SampleData> PadChannel::current() const
     return latest;
 }
 
-void PadChannel::start (std::shared_ptr<const SampleData> s, int semitones, bool loop, float fadeInSec, float crossfadeSec)
+void PadChannel::start (std::shared_ptr<const SampleData> s, int semitones, bool loop, float fadeInSec, float crossfadeSec, bool fromFullPart)
 {
     if (s == nullptr || s->buffer.getNumSamples() < 16) return;
     if (s->loopEnd <= s->loopStart)
@@ -189,7 +214,7 @@ void PadChannel::start (std::shared_ptr<const SampleData> s, int semitones, bool
         s = withLoop;
     }
     Cmd c;
-    c.type = Cmd::Start; c.sample = std::move (s); c.semis = semitones; c.loop = loop; c.fadeIn = fadeInSec; c.xfade = crossfadeSec;
+    c.type = Cmd::Start; c.sample = std::move (s); c.semis = semitones; c.loop = loop; c.fadeIn = fadeInSec; c.xfade = crossfadeSec; c.fromFull = fromFullPart;
     const juce::SpinLock::ScopedLockType sl (cmdLock);
     cmds.push_back (std::move (c));
 }
@@ -245,6 +270,8 @@ void PadChannel::applyCommands()
         Voice& v = *nv;
         v.s = c.sample;
         v.main = {}; v.sub = {}; v.shim = {};
+        if (c.fromFull && c.loop && v.s->loopEnd > v.s->loopStart)
+            v.main.pos = v.sub.pos = v.shim.pos = (double) v.s->loopStart;   // le pad part déjà « plein »
         v.loop = c.loop;
         v.rate = (v.s->sampleRate / hostRate) * std::pow (2.0, c.semis / 12.0);
         // monte sur le fondu entre tonalités si un son jouait déjà, sinon sur l'attaque
@@ -277,7 +304,8 @@ void PadChannel::render (juce::AudioBuffer<float>& out, juce::AudioBuffer<float>
             v.gain += v.step;
             if (v.step > 0 && v.gain >= v.target) { v.gain = v.target; v.step = 0; }
             if (v.step < 0 && v.gain <= 0) { v.gain = 0; v.active = false; break; }
-            const float g = v.gain * v.gain * (3.0f - 2.0f * v.gain); // courbe douce
+            // montée : à puissance constante (le son est là tout de suite) ; descente : courbe douce (fin bien propre)
+            const float g = v.target > 0 ? std::sin (v.gain * juce::MathConstants<float>::halfPi) : v.gain * v.gain * (3.0f - 2.0f * v.gain);
             o0[i] += g * v.main.read (s, 0, v.loop);
             o1[i] += g * v.main.read (s, 1, v.loop);
             v.main.advance (s, v.rate, v.loop);

@@ -1624,7 +1624,7 @@ static void testAutomation (const juce::File& root)
     {
         auto* prm = p.params.getParameter ("a_song");
         prm->setValueNotifyingHost (prm->convertTo0to1 (2.0f));
-        p.setMode (p.currentMode());
+        p.stopCrowd (1);                         // une autre action de Spacepad se termine à ce moment
         CHECK (juce::roundToInt (val ("a_song")) == 2, "une valeur ecrite par le logiciel de musique n'est jamais ecrasee par Spacepad");
     }
     host ("a_song", 2);
@@ -1637,6 +1637,37 @@ static void testAutomation (const juce::File& root)
     q.runControlForTests();
     CHECK (! q.padActive() && q.currentKey() == 4, "projet rouvert : meme tonalite, le pad attend (pas de depart tout seul) (joue " << (int) q.padActive() << ", ton " << q.currentKey() << ")");
     while (! p.setlist().songs().empty()) p.setlist().remove (0);
+    p.stopAll();
+}
+
+static void testInstantPlay()
+{
+    section ("Play instantane (sons prepares d'avance)");
+    SpacepadProcessor p;
+    p.setPlayConfigDetails (0, 2, 48000, 256);
+    p.prepareToPlay (48000, 256);
+    juce::String warm;
+    for (auto& l : p.libraries().snapshot()) if (l.name == "Warm Pad") warm = l.id;
+    p.selectPadLibrary (warm, 0); p.selectPadLibrary (warm, 1);
+    p.setMode (1);
+    p.pressKey (9); p.stopPad();              // tonalité choisie, pad à l'arrêt
+    auto lib = p.libraries().find (warm);
+    const auto path = lib->sound (lib->slotFor (9, 1).sound)->path;
+    const auto other = lib->sound (lib->slotFor (9, 0).sound)->path;
+    const auto next = lib->sound (lib->slotFor (10, 1).sound)->path;
+    p.loader().clearCache();
+    auto t0 = juce::Time::getMillisecondCounter();
+    while (! (p.loader().isCached (path) && p.loader().isCached (other) && p.loader().isCached (next)) && juce::Time::getMillisecondCounter() - t0 < 5000) juce::Thread::sleep (10);
+    CHECK (p.loader().isCached (path), "le son de la tonalite en cours est prepare d'avance");
+    CHECK (p.loader().isCached (other) && p.loader().isCached (next), "majeur/mineur et la tonalite voisine aussi");
+    runFor (p, 1.0);
+    // Play : le son doit s'entendre en moins de 0,1 s (réglage d'Attack par défaut)
+    p.playPad();
+    juce::AudioBuffer<float> buf (2, 256); juce::MidiBuffer midi;
+    float level = 0;
+    for (int i = 0; i < 48000 / 10 / 256; ++i) { buf.clear(); p.processBlock (buf, midi); level = juce::jmax (level, buf.getRMSLevel (0, 0, 256)); }
+    std::cout << "  niveau 0,1 s apres Play : " << level << " (attack " << p.params.getRawParameterValue ("attack")->load() << " s)\n";
+    CHECK (level > 0.002f, "Play : le pad s'entend tout de suite");
     p.stopAll();
 }
 
@@ -1666,6 +1697,7 @@ int main (int argc, char** argv)
     testCrowdFx (root);
     testWavFormats (tmp);
     testAutomation (root);
+    testInstantPlay();
     if (argc > 1) snapshot (juce::File (juce::String (argv[1])), root);
     if (juce::SystemStats::getEnvironmentVariable ("SPACEPAD_BENCH", {}).isNotEmpty()) benchPaint (root);
    #if ! JUCE_WINDOWS

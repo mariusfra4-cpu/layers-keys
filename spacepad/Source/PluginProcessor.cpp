@@ -44,7 +44,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout SpacepadProcessor::createLay
     add ("crowdvol2", "Volume Crowd 2", 0.80f);
     add ("blend", "Melange A/B", 0.5f);
     add ("mix", "Dosage Pad/Crowd", 0.5f);
-    l.add (std::make_unique<APF> (juce::ParameterID { "attack", 1 }, "Attack", juce::NormalisableRange<float> (0.05f, 8.0f, 0.0f, 0.5f), 2.0f, secs));
+    l.add (std::make_unique<APF> (juce::ParameterID { "attack", 1 }, "Attack", juce::NormalisableRange<float> (0.05f, 8.0f, 0.0f, 0.5f), 0.8f, secs));
     l.add (std::make_unique<APF> (juce::ParameterID { "xfade", 1 }, "Fondu", juce::NormalisableRange<float> (0.1f, 10.0f, 0.0f, 0.5f), 4.0f, secs));
     l.add (std::make_unique<APB> (juce::ParameterID { "loop", 1 }, "Loop", true));
     l.add (std::make_unique<APB> (juce::ParameterID { "freeze", 1 }, "Freeze", false));
@@ -456,7 +456,7 @@ void SpacepadProcessor::startPadKey (int key, int mode, bool fromSilence)
         sampleLoader.request (s->path, [this, gen, slot, attack, xf, loop, fromSilence, &ch] (std::shared_ptr<const SampleData> d)
         {
             if (d != nullptr && gen == generation.load())
-                ch.start (d, slot.semitones, loop, attack, fromSilence ? 0.01f : xf);
+                ch.start (d, slot.semitones, loop, attack, fromSilence ? 0.01f : xf, true);
             --pendingLoads;
         });
     };
@@ -774,6 +774,39 @@ void SpacepadProcessor::pullAuto()
     }
 }
 
+// Préparer d'avance : d'abord les sons de la tonalité en cours (majeur et mineur, pads A et B) et les crowds choisis,
+// puis les autres tonalités si la mémoire le permet. Ainsi Play et les changements de tonalité partent tout de suite.
+void SpacepadProcessor::preloadLikelySounds()
+{
+    juce::String pa[2], pb[2], cl[2];
+    { const juce::ScopedLock sl (stateLock); for (int i = 0; i < 2; ++i) { pa[i] = padLibs[i]; pb[i] = padLibsB[i]; cl[i] = crowdLib[i]; } }
+    const int key = keyNow.load(), mode = modeNow.load();
+    const auto sig = pa[0] + pa[1] + pb[0] + pb[1] + cl[0] + cl[1] + juce::String (key) + juce::String (mode)
+                   + juce::String (crowdIdx[0].load()) + juce::String (crowdIdx[1].load()) + juce::String (store.changeCount());
+    if (sig == lastPreloadSig) return;
+    lastPreloadSig = sig;
+    juce::StringArray paths;
+    double bytes = 0;
+    auto addSound = [&] (const Library& l, int index)
+    {
+        if (auto* s = l.sound (index))
+            if (! paths.contains (s->path))
+            {
+                const double b = juce::jmax (1.0, s->seconds) * 48000.0 * 2 * sizeof (float);
+                if (bytes + b > 900.0 * 1024 * 1024) return;          // on reste raisonnable en mémoire
+                bytes += b;
+                paths.add (s->path);
+            }
+    };
+    auto padFor = [&] (const juce::String& id, int k, int m) { if (auto lib = store.find (id)) addSound (*lib, lib->slotFor (k, m).sound); };
+    for (int m : { mode, 1 - mode }) { padFor (pa[m], key, m); padFor (pb[m], key, m); }
+    for (int s = 0; s < 2; ++s) if (auto lib = store.find (cl[s])) if (crowdIdx[s].load() >= 0) addSound (*lib, crowdIdx[s].load());
+    for (int d = 1; d <= 6; ++d)                                       // tonalités voisines d'abord
+        for (int k : { (key + d) % 12, (key + 12 - d) % 12 }) { padFor (pa[mode], k, mode); padFor (pb[mode], k, mode); }
+    for (int k = 0; k < 12; ++k) padFor (pa[1 - mode], k, 1 - mode);
+    sampleLoader.preload (paths);
+}
+
 void SpacepadProcessor::waitIdleForTests (int ms)
 {
     auto end = juce::Time::getMillisecondCounter() + (juce::uint32) ms;
@@ -849,6 +882,7 @@ void SpacepadProcessor::run()
         wait (5);
         controlStep();
         if (tick % 40 == 0) trackCrowdFx();
+        if (tick % 20 == 0) preloadLikelySounds();
         if (tick % 100 == 0) prefs.saveIfDirty();
         if (++tick % 200 == 0) // environ 1 fois par seconde : bibliothèques ou setlist changées ailleurs
         {
@@ -875,6 +909,7 @@ void SpacepadProcessor::getStateInformation (juce::MemoryBlock& dest)
     state.setProperty ("crowdIndex2", crowdIdx[1].load(), nullptr);
     state.setProperty ("key", keyNow.load(), nullptr);
     state.setProperty ("mode", modeNow.load(), nullptr);
+    state.setProperty ("attackV2", true, nullptr);
     if (auto xml = state.createXml()) copyXmlToBinary (*xml, dest);
 }
 
@@ -886,6 +921,7 @@ void SpacepadProcessor::setStateInformation (const void* data, int size)
         if (! state.isValid() || ! state.hasType (params.state.getType())) return;
         AutoScope automation (*this);     // après chargement : les paramètres reprennent l'état réel (le pad ne part pas tout seul)
         params.replaceState (state);
+        if (! state.hasProperty ("attackV2") && std::abs (p ("attack") - 2.0f) < 0.01f) setParam ("attack", 0.8f);   // ancien réglage d'usine (2 s) : départ plus rapide
         sentKey = sentMode = sentPlay = sentSong = sentOn[0] = sentOn[1] = sentSnd[0] = sentSnd[1] = -999;   // tout renvoyer
         {
             const juce::ScopedLock sl (stateLock);

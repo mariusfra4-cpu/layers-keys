@@ -142,6 +142,8 @@ private:
     void applyCrowdFx (int slot, const CrowdPrefs::Fx&);
     void newCrowdSound (int slot);
     void trackCrowdFx();
+    void preloadLikelySounds();              // charge d'avance les sons de la tonalité en cours (Play instantané)
+    juce::String lastPreloadSig;
     void pushAuto();                         // l'état actuel → paramètres (le logiciel de musique l'enregistre)
     void pullAuto();                         // paramètres changés par le logiciel de musique (lecture de l'automation) → actions
     void setAuto (const char* id, float realValue);

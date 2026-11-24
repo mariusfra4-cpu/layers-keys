@@ -554,6 +554,6 @@ private:
     juce::TooltipWindow tooltips { this, 500 };
     int lastChanges = -1, tick = 0, lastKey = -1, lastMode = -1, lastSettings = -1, lastScale = 100;
     juce::uint32 midiFlashUntil = 0, lastMs = 0;
-    bool screenSaverOff = false, dragOver = false;
+    bool screenSaverOff = false, dragOver = false, lastPadActive = false;
 };
 }
