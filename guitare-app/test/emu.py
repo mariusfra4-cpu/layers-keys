@@ -12,8 +12,12 @@ PKG = 'com.jbpraise.guitare'
 ok = True
 
 
-def sh(cmd, check=False):
-    r = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+def sh(cmd, check=False, timeout=60):
+    try:
+        r = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=timeout)
+    except subprocess.TimeoutExpired:
+        print('  (délai dépassé : %s)' % cmd)
+        return ''
     if check and r.returncode:
         print(r.stdout, r.stderr)
         raise SystemExit('échec : ' + cmd)
@@ -25,7 +29,7 @@ def shot(name):
 
 
 def nodes():
-    sh('adb shell uiautomator dump /sdcard/ui.xml')
+    sh('adb shell uiautomator dump /sdcard/ui.xml', timeout=25)
     xml = sh('adb shell cat /sdcard/ui.xml')
     try:
         root = ET.fromstring(xml[xml.index('<?xml'):] if '<?xml' in xml else xml)
@@ -82,18 +86,24 @@ if vid:
         print('ERREUR : pas de résultat d’analyse')
         ok = False
     # lecture de la vidéo : le compteur de temps doit avancer
-    tap_text('play', last=False)
-    time.sleep(6)
-    txt = all_text()
-    m = re.search(r'elapsed time: (\d+):(\d+)', txt)
-    el = int(m.group(1)) * 60 + int(m.group(2)) if m else -1
-    print('Lecture vidéo : temps écoulé', el, 's', '(en attente de données)' if 'buffering' in txt else '')
-    shot('4b-lecture')
+    pos = [b for t, b in nodes() if t == 'play' or t.startswith('play')]
+    el = -1
+    if pos:
+        b = pos[0]
+        sh('adb logcat -c')
+        sh(f'adb shell input tap {(b[0] + b[2]) // 2} {(b[1] + b[3]) // 2}')
+        time.sleep(8)
+        shot('4b-lecture')
+        lg = sh('adb logcat -d -s AccordLive:V')
+        ts = [float(x) for x in re.findall(r'lecture t=([\d.]+)', lg)]
+        el = max(ts) if ts else -1
+        print('Lecture vidéo : temps atteint', el, 's', '| erreurs :', re.findall(r'lecture impossible[^\n]*', lg))
     if el < 2:
         print('ERREUR : la vidéo ne se lit pas')
         ok = False
-    sh('adb shell input swipe 500 1500 500 500 300'); time.sleep(1)
-    shot('5-grille')
+    # relance l'appli (une vidéo en lecture empêche la lecture de l'interface par uiautomator)
+    sh(f'adb shell am force-stop {PKG}')
+    sh(f'adb shell am start -W -n {PKG}/.MainActivity'); time.sleep(6)
 else:
     pass
 

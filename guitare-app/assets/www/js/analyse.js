@@ -426,6 +426,9 @@ const Analyse = (() => {
     const el = media();
     el.addEventListener('play', () => { cancelAnimationFrame(F.raf); F.raf = requestAnimationFrame(loop); App.keepScreenOn(true); });
     el.addEventListener('pause', () => App.keepScreenOn(false));
+    let lastLog = -9;
+    el.addEventListener('timeupdate', () => { if (Math.abs(el.currentTime - lastLog) >= 2) { lastLog = el.currentTime; console.info('lecture t=' + el.currentTime.toFixed(1)); } });
+    el.addEventListener('error', () => console.error('lecture impossible : ' + (el.error ? el.error.code + ' ' + el.error.message : '')));
     el.addEventListener('seeked', () => updateNow(true));
     $('#fileGrid').addEventListener('click', (e) => {
       const b = e.target.closest('.bar');
