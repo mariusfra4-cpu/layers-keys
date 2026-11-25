@@ -130,7 +130,17 @@ const M = (() => {
     if (bass !== undefined && bass !== null && mod(bass) !== mod(root)) s += '/' + pcName(bass);
     return s;
   }
-  function chordNotes(root, id) { return CHORD_BY_ID[id].iv.map((i) => pcName(root + i)); }
+  // Orthographe des notes d'un accord : dièses pour D E F♯ G A B (sauf mineurs sur D et G), bémols pour D♭ E♭ F A♭ B♭
+  function chordNotes(root, id) {
+    let fl;
+    if (preferFlats !== null) fl = preferFlats;
+    else {
+      const r = mod(root), c = CHORD_BY_ID[id];
+      const minorish = c.iv.includes(3) && !c.iv.includes(4);
+      fl = [1, 3, 5, 8, 10].includes(r) || r === 0 || (minorish && [2, 7].includes(r));
+    }
+    return CHORD_BY_ID[id].iv.map((i) => pcName(root + i, fl));
+  }
   // Analyse d'un symbole tapé par l'utilisateur : "Dm7", "Bbmaj9", "F#m7b5", "C/E"
   const SYM_ALIASES = {
     '': 'maj', 'M': 'maj', 'maj': 'maj', 'm': 'min', 'min': 'min', '-': 'min', '5': '5', 'dim': 'dim', '°': 'dim', 'aug': 'aug', '+': 'aug',
