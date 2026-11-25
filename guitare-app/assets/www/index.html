@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1115">
+<title>AccordLive</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="logo">♪</span> AccordLive</div>
+  <div class="topright"><span id="keyBadge" class="badge hidden"></span></div>
+</header>
+
+<main>
+  <!-- ======================= ANALYSE ======================= -->
+  <section id="tab-analyse" class="tab active">
+    <div class="seg" id="anaMode">
+      <button data-v="mic" class="on">🎤 Micro (temps réel)</button>
+      <button data-v="file">🎬 Vidéo / audio</button>
+    </div>
+
+    <div id="ana-mic">
+      <div class="card live">
+        <div class="livehead">
+          <button id="micBtn" class="btn primary big">▶ Écouter</button>
+          <div class="meter"><div id="micLevel"></div></div>
+        </div>
+        <div class="chordbig" id="liveChord">—</div>
+        <div class="chordsub"><span id="liveRoman"></span> <span id="liveNotes"></span></div>
+        <div class="alts" id="liveAlts"></div>
+        <canvas id="chromaCanvas" width="600" height="90"></canvas>
+        <div class="livediag" id="liveDiag"></div>
+      </div>
+      <div class="card">
+        <div class="row between"><h3>Historique</h3><button class="btn small" id="histClear">Effacer</button></div>
+        <div class="hist" id="liveHist"><p class="muted">Les accords détectés apparaîtront ici.</p></div>
+      </div>
+      <div class="card">
+        <h3>Réglages de détection</h3>
+        <label class="field">Niveau d’accords
+          <select id="liveLevel">
+            <option value="1">Simple (majeur / mineur)</option>
+            <option value="2">+ Septièmes, sus, dim</option>
+            <option value="3" selected>Jazz / Gospel / R&amp;B (9, 11, 13, altérés)</option>
+          </select></label>
+        <label class="field">Réactivité <input type="range" id="liveSpeed" min="1" max="10" value="6"></label>
+        <label class="field">Sensibilité du micro <input type="range" id="liveSens" min="1" max="10" value="6"></label>
+        <label class="field">Tonalité
+          <select id="liveKey"><option value="auto">Automatique</option></select></label>
+        <p class="muted small">Astuce : pose le téléphone près du haut-parleur ou de la guitare. Pour une chanson entière, l’analyse de fichier est plus précise.</p>
+      </div>
+    </div>
+
+    <div id="ana-file" class="hidden">
+      <div class="card">
+        <button id="pickBtn" class="btn primary big">📂 Choisir une vidéo ou un fichier audio</button>
+        <input type="file" id="fileInput" accept="audio/*,video/*" class="hidden">
+        <p class="muted small" id="fileName">MP4, MOV, MKV, MP3, M4A, WAV, OGG, FLAC… Tu peux aussi « Partager » une vidéo vers AccordLive depuis la galerie.</p>
+        <div id="mediaWrap" class="hidden">
+          <video id="media" playsinline controls></video>
+        </div>
+        <div id="progressWrap" class="hidden"><div class="progress"><div id="progressBar"></div></div><p class="muted small" id="progressText"></p></div>
+      </div>
+      <div id="fileResult" class="hidden">
+        <div class="card nowcard">
+          <div class="row between">
+            <div><div class="chordbig small" id="fileNow">—</div><div class="chordsub" id="fileNowSub"></div></div>
+            <div class="nextbox"><span class="muted small">ensuite</span><div id="fileNext" class="nextchord">—</div></div>
+          </div>
+          <div class="livediag" id="fileDiag"></div>
+        </div>
+        <div class="card">
+          <div class="infos" id="fileInfos"></div>
+          <div class="row wrap">
+            <button class="btn small" id="trDown">♭ −1</button>
+            <span id="trLabel" class="tag">Transposition 0</span>
+            <button class="btn small" id="trUp">♯ +1</button>
+            <select id="fileLevel" class="small">
+              <option value="1">Simple</option><option value="2">+ 7e</option><option value="3" selected>Jazz / Gospel / R&amp;B</option>
+            </select>
+            <button class="btn small" id="fileCopy">📋 Copier</button>
+          </div>
+          <p class="muted small" id="capoHint"></p>
+          <div class="grid" id="fileGrid"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= ACCORDS ======================= -->
+  <section id="tab-chords" class="tab">
+    <div class="seg" id="chordMode"><button data-v="lib" class="on">Dictionnaire</button><button data-v="find">Identifier</button></div>
+    <div id="chords-lib">
+      <div class="card">
+        <div class="roots" id="rootPick"></div>
+        <div class="row"><input id="chordSearch" class="search" placeholder="Tape un accord : Dm9, Bb13, F#m7b5, C/E…"></div>
+        <div class="types" id="typePick"></div>
+      </div>
+      <div class="card" id="chordInfo"></div>
+      <div class="diags" id="chordDiags"></div>
+    </div>
+    <div id="chords-find" class="hidden">
+      <div class="card">
+        <p class="muted small">Touche les cases du manche pour placer tes doigts (touche le haut d’une corde pour la couper ×/○). L’appli te dit quel accord tu joues.</p>
+        <div id="finderBoard"></div>
+        <div class="row"><button class="btn small" id="finderPlay">▶ Écouter</button><button class="btn small" id="finderClear">Effacer</button></div>
+        <div id="finderResult" class="finder"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= PROGRESSIONS ======================= -->
+  <section id="tab-progs" class="tab">
+    <div class="chips" id="styleChips"></div>
+    <div id="progList"></div>
+    <div id="progDetail" class="hidden"></div>
+  </section>
+
+  <!-- ======================= THÉORIE ======================= -->
+  <section id="tab-theory" class="tab">
+    <div id="theoryHome">
+      <div class="card">
+        <h3>Explorateur de gammes et modes</h3>
+        <div class="row wrap"><select id="scRoot"></select><select id="scType"></select>
+          <div class="seg mini" id="scLabels"><button data-v="note" class="on">Notes</button><button data-v="deg">Degrés</button></div>
+          <button class="btn small" id="scPlay">▶</button></div>
+        <div class="fbwrap" id="scBoard"></div>
+        <p class="muted small" id="scInfo"></p>
+      </div>
+      <div id="lessonList"></div>
+    </div>
+    <div id="lessonView" class="hidden"></div>
+  </section>
+
+  <!-- ======================= EXERCICES ======================= -->
+  <section id="tab-ex" class="tab">
+    <div id="exList"></div>
+    <div id="exView" class="hidden"></div>
+  </section>
+
+  <!-- ======================= OUTILS ======================= -->
+  <section id="tab-tools" class="tab">
+    <div class="card">
+      <div class="row between"><h3>Accordeur</h3><button id="tunerBtn" class="btn primary">▶ Démarrer</button></div>
+      <div class="tuner">
+        <div class="tnote" id="tNote">—</div>
+        <div class="tgauge"><div class="tscale"></div><div class="tneedle" id="tNeedle"></div></div>
+        <div class="tcents" id="tCents">&nbsp;</div>
+        <div class="tfreq muted small" id="tFreq">&nbsp;</div>
+        <div class="tstrings" id="tStrings"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Métronome</h3>
+      <div class="metro">
+        <div class="bpm"><button class="btn small" id="mMinus">−</button><span id="mBpm">90</span> BPM<button class="btn small" id="mPlus">+</button></div>
+        <input type="range" id="mRange" min="40" max="240" value="90">
+        <div class="row wrap"><button id="mStart" class="btn primary">▶ Démarrer</button><button id="mTap" class="btn">Tap tempo</button>
+          <select id="mBeats"><option value="2">2/4</option><option value="3">3/4</option><option value="4" selected>4/4</option><option value="6">6/8</option></select></div>
+        <div class="mdots" id="mDots"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Réglages</h3>
+      <label class="field">Notation <select id="setNotation"><option value="en">C D E F G A B</option><option value="fr">Do Ré Mi Fa Sol La Si</option></select></label>
+      <label class="field">Accordage de la guitare <select id="setTuning"></select></label>
+      <label class="field">Étiquettes des diagrammes <select id="setLabels"><option value="deg">Degrés (1, 3, ♭7, 9…)</option><option value="note">Notes</option><option value="none">Aucune</option></select></label>
+      <p class="muted small">AccordLive fonctionne sans Internet. Aucune donnée ne quitte ton téléphone.</p>
+    </div>
+  </section>
+</main>
+
+<nav class="bottom" id="nav">
+  <button data-t="analyse" class="on"><span>◉</span>Analyse</button>
+  <button data-t="chords"><span>▦</span>Accords</button>
+  <button data-t="progs"><span>↻</span>Progressions</button>
+  <button data-t="theory"><span>♫</span>Théorie</button>
+  <button data-t="ex"><span>✓</span>Exercices</button>
+  <button data-t="tools"><span>⚙</span>Outils</button>
+</nav>
+<div id="toast" class="toast"></div>
+
+<script src="js/music.js"></script>
+<script src="js/dsp.js"></script>
+<script src="js/synth.js"></script>
+<script src="js/guitar.js"></script>
+<script src="js/progressions.js"></script>
+<script src="js/lessons.js"></script>
+<script src="js/exercises.js"></script>
+<script src="js/app.js"></script>
+<script src="js/analyse.js"></script>
+<script src="js/library.js"></script>
+<script src="js/practice.js"></script>
+<script src="js/tools.js"></script>
+</body>
+</html>

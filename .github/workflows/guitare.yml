@@ -1,0 +1,79 @@
+# Construit AccordLive (application guitare Android) et la teste dans un émulateur.
+# APK publié dans la branche « ci-guitare » ; captures d'écran et journaux dans « ci-guitare-test ».
+name: AccordLive Android
+on:
+  push:
+    paths: ['guitare-app/**', '.github/workflows/guitare.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tests de la reconnaissance d'accords (Node)
+        run: |
+          cd guitare-app/test
+          node dsp_test.js | tee /tmp/tests.txt
+          grep -q "échecs 0/" /tmp/tests.txt
+          node voicing_test.js | tee -a /tmp/tests.txt
+      - name: Construction de l'APK
+        run: |
+          VERSION_CODE=${{ github.run_number }} VERSION_NAME=1.0.${{ github.run_number }} ./guitare-app/build.sh 2>&1 | tee /tmp/build.txt
+          unzip -l guitare-app/build/AccordLive.apk | tee -a /tmp/build.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: accordlive
+          path: guitare-app/build/AccordLive.apk
+      - name: Publier
+        if: always()
+        run: |
+          mkdir -p /tmp/o
+          cp guitare-app/build/AccordLive.apk /tmp/o/AccordLive.apk 2>/dev/null || true
+          cp /tmp/build.txt /tmp/tests.txt /tmp/o/ 2>/dev/null || true
+          git config user.name ci; git config user.email ci@users.noreply.github.com
+          git checkout --orphan ci-guitare-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          git clean -fdxq
+          cp /tmp/o/* . 2>/dev/null || true
+          echo "run $GITHUB_RUN_ID" > run.txt
+          git add -A && git commit -qm "accordlive $GITHUB_RUN_ID"
+          git push -f origin HEAD:refs/heads/ci-guitare
+  emulateur:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: accordlive
+          path: /tmp/art
+      - name: Vidéo de test
+        run: |
+          node guitare-app/test/gen_wav.js /tmp/test.wav "Dm9 G13 Cmaj9 A7b9 Dm7 G7 Cmaj7 C6"
+          ffmpeg -loglevel error -f lavfi -i color=c=black:s=320x240:r=10 -i /tmp/test.wav -shortest -c:v libx264 -pix_fmt yuv420p -c:a aac -b:a 128k /tmp/test.mp4
+          ls -la /tmp/test.mp4
+      - name: KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 33
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          script: mkdir -p /tmp/emu && python3 guitare-app/test/emu.py /tmp/emu /tmp/art/AccordLive.apk /tmp/test.mp4 2>&1 | tee /tmp/emu/resultat.txt
+      - name: Publier
+        if: always()
+        run: |
+          mkdir -p /tmp/o; cp /tmp/emu/* /tmp/o/ 2>/dev/null || true
+          git config user.name ci; git config user.email ci@users.noreply.github.com
+          git checkout --orphan ci-guitare-test-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          git clean -fdxq
+          cp /tmp/o/* . 2>/dev/null || true
+          echo "run $GITHUB_RUN_ID" > run.txt
+          git add -A && git commit -qm "test accordlive $GITHUB_RUN_ID"
+          git push -f origin HEAD:refs/heads/ci-guitare-test
