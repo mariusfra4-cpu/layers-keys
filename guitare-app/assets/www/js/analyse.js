@@ -278,7 +278,7 @@ const Analyse = (() => {
     $('#fileName').textContent = name;
     const el = media();
     if (el.dataset.url) URL.revokeObjectURL(el.dataset.url);
-    if (src.file) { const u = URL.createObjectURL(src.file); el.dataset.url = u; el.src = u; } else { el.dataset.url = ''; el.src = '/media/' + src.id; }
+    if (src.file) { const u = URL.createObjectURL(src.file); el.dataset.url = u; el.src = u; } else { el.dataset.url = ''; let u = '/media/' + src.id; try { u = App.Android.mediaUrl(src.id); } catch (e) { /* ancienne méthode */ } el.crossOrigin = 'anonymous'; el.src = u; }
     const isAudio = (src.file ? src.file.type : src.mime || '').startsWith('audio');
     el.style.maxHeight = isAudio ? '54px' : '';
     $('#mediaWrap').classList.remove('hidden');

@@ -81,6 +81,17 @@ if vid:
     if 'Tonalité' not in txt:
         print('ERREUR : pas de résultat d’analyse')
         ok = False
+    # lecture de la vidéo : le compteur de temps doit avancer
+    tap_text('play', last=False)
+    time.sleep(6)
+    txt = all_text()
+    m = re.search(r'elapsed time: (\d+):(\d+)', txt)
+    el = int(m.group(1)) * 60 + int(m.group(2)) if m else -1
+    print('Lecture vidéo : temps écoulé', el, 's', '(en attente de données)' if 'buffering' in txt else '')
+    shot('4b-lecture')
+    if el < 2:
+        print('ERREUR : la vidéo ne se lit pas')
+        ok = False
     sh('adb shell input swipe 500 1500 500 500 300'); time.sleep(1)
     shot('5-grille')
 else:

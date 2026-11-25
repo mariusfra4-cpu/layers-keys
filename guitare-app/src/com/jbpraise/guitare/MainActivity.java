@@ -47,6 +47,7 @@ public class MainActivity extends Activity {
 
     WebView web;
     final Map<String, Uri> media = new ConcurrentHashMap<>();
+    MediaServer mediaServer;
     int mediaSeq = 0;
     volatile float decodeProgress = -1f;
     PermissionRequest pendingPerm;
@@ -59,6 +60,7 @@ public class MainActivity extends Activity {
         super.onCreate(state);
         getWindow().setStatusBarColor(Color.rgb(15, 17, 21));
         getWindow().setNavigationBarColor(Color.rgb(18, 21, 27));
+        mediaServer = new MediaServer(this, media);
         getExternalFilesDir(null); // dossier propre à l'appli (utilisé par les tests automatiques)
         web = new WebView(this);
         web.setBackgroundColor(Color.rgb(15, 17, 21));
@@ -354,6 +356,13 @@ public class MainActivity extends Activity {
             runOnUiThread(() -> {
                 try { startActivityForResult(openIntent(), REQ_PICK); } catch (Exception e) { Log.e(TAG, "sélecteur", e); }
             });
+        }
+
+        /** Adresse locale (http://127.0.0.1:port) d'où le lecteur vidéo lit le média. */
+        @JavascriptInterface
+        public String mediaUrl(String id) {
+            int port = mediaServer.start();
+            return port > 0 ? "http://127.0.0.1:" + port + "/media/" + id : "/media/" + id;
         }
 
         @JavascriptInterface
