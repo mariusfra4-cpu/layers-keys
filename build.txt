@@ -1,0 +1,52 @@
+build-tools: /usr/local/lib/android/sdk/build-tools/37.0.0 ; plateforme: /usr/local/lib/android/sdk/platforms/android-37.2-beta3
+Note: src/com/jbpraise/guitare/MainActivity.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::loadLibrary has been called by org.conscrypt.NativeLibraryUtil in an unnamed module (file:/usr/local/lib/android/sdk/build-tools/37.0.0/lib/apksigner.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::loadLibrary has been called by org.conscrypt.NativeLibraryUtil in an unnamed module (file:/usr/local/lib/android/sdk/build-tools/37.0.0/lib/apksigner.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+Verifies
+Verified using v1 scheme (JAR signing): false
+Verified using v2 scheme (APK Signature Scheme v2): true
+Verified using v3 scheme (APK Signature Scheme v3): true
+Verified using v3.1 scheme (APK Signature Scheme v3.1): false
+-rw-r--r-- 1 runner runner 133054 Nov 25 20:39 build/AccordLive.apk
+Archive:  guitare-app/build/AccordLive.apk
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+     4168  1980-01-01 00:00   AndroidManifest.xml
+     5992  1980-01-01 00:00   res/drawable/ic_launcher.png
+    11514  1980-01-01 00:00   res/drawable-xxxhdpi-v4/ic_launcher.png
+      428  1980-01-01 00:00   res/xml/network_security_config.xml
+     1344  1980-01-01 00:00   resources.arsc
+    19242  1980-01-01 00:00   assets/www/css/app.css
+    11582  1980-01-01 00:00   assets/www/index.html
+    24266  1980-01-01 00:00   assets/www/js/analyse.js
+     9314  1980-01-01 00:00   assets/www/js/app.js
+    23411  1980-01-01 00:00   assets/www/js/dsp.js
+    12219  1980-01-01 00:00   assets/www/js/exercises.js
+    10178  1980-01-01 00:00   assets/www/js/guitar.js
+    42518  1980-01-01 00:00   assets/www/js/lessons.js
+    14563  1980-01-01 00:00   assets/www/js/library.js
+    18608  1980-01-01 00:00   assets/www/js/music.js
+     5203  1980-01-01 00:00   assets/www/js/passing-ui.js
+    12657  1980-01-01 00:00   assets/www/js/passing.js
+     3811  1980-01-01 00:00   assets/www/js/practice.js
+    19914  1980-01-01 00:00   assets/www/js/progressions.js
+    10701  1980-01-01 00:00   assets/www/js/score.js
+     3415  1980-01-01 00:00   assets/www/js/synth.js
+     5505  1980-01-01 00:00   assets/www/js/tools.js
+    11275  1980-01-01 00:00   assets/www/js/voicings.js
+      495  1980-01-01 00:00   assets/www/js/worker.js
+    29588  2026-11-25 20:39   classes.dex
+     2543  2026-11-25 20:39   META-INF/JBKEYS.SF
+     1184  2026-11-25 20:39   META-INF/JBKEYS.RSA
+     2416  2026-11-25 20:39   META-INF/MANIFEST.MF
+---------                     -------
+   318054                     28 files
