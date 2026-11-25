@@ -64,14 +64,6 @@
         <div id="progressWrap" class="hidden"><div class="progress"><div id="progressBar"></div></div><p class="muted small" id="progressText"></p></div>
       </div>
       <div id="fileResult" class="hidden">
-        <div class="card nowcard">
-          <div class="row between">
-            <div><div class="chordbig small" id="fileNow">—</div><div class="chordsub" id="fileNowSub"></div></div>
-            <div class="nextbox"><span class="muted small">ensuite</span><div id="fileNext" class="nextchord">—</div></div>
-          </div>
-          <div class="livediag" id="fileDiag"></div>
-          <button class="btn small" id="passNext">🎯 Accords de passage vers le suivant</button>
-        </div>
         <div class="card scorecard">
           <div class="seg" id="viewMode"><button data-v="score" class="on">🎼 Partition + tablature</button><button data-v="grid">▦ Grille</button></div>
           <div id="scorePane">
@@ -80,6 +72,14 @@
             <div id="scoreBox"></div>
             <p class="muted small" id="scoreNote">Mélodie principale détectée automatiquement (la voix ou l’instrument le plus fort) : c’est une base de travail, à vérifier à l’oreille. Le mode « Accords » écrit la tablature des accords temps par temps.</p>
           </div>
+        </div>
+        <div class="card nowcard">
+          <div class="row between">
+            <div><div class="chordbig small" id="fileNow">—</div><div class="chordsub" id="fileNowSub"></div></div>
+            <div class="nextbox"><span class="muted small">ensuite</span><div id="fileNext" class="nextchord">—</div></div>
+          </div>
+          <div class="livediag" id="fileDiag"></div>
+          <button class="btn small" id="passNext">🎯 Accords de passage vers le suivant</button>
         </div>
         <div class="card">
           <div class="infos" id="fileInfos"></div>

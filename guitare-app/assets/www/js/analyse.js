@@ -350,6 +350,7 @@ const Analyse = (() => {
     F.score = Score.mount($('#scoreBox'), r, { transpose: F.transpose, mode: F.scoreMode, flats: M.keyPrefersFlats(key) }, (t) => { media().currentTime = t; updateNow(true); });
     M.setPreferFlats(null);
     $('#fileResult').classList.remove('hidden');
+    $('#ana-file').classList.add('analysed');
     updateNow(true);
   }
   const OPEN_MAJ = new Set([0, 9, 7, 4, 2]); // C A G E D

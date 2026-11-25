@@ -266,3 +266,7 @@ table.t th { color: var(--muted); font-weight: 600; }
 .sgut .tabl { font: 800 12px system-ui; fill: #111; }
 .sgut .sn { font: 600 8.5px system-ui; fill: #8a8a8a; }
 #passNext { margin-top: 8px; width: 100%; }
+
+/* vidéo plus compacte quand l'analyse est affichée : vidéo + partition + accord visibles ensemble */
+#ana-file.analysed video { max-height: 26vh; }
+#ana-file.analysed .nowcard .livediag .diag { width: 84px; }
