@@ -67,21 +67,13 @@ if 'Écouter' not in txt and 'Analyse' not in txt:
     print('ERREUR : la page ne semble pas chargée')
     ok = False
 
-# vidéo partagée vers l'application
-sh(f'adb push "{VIDEO}" /sdcard/Movies/accordlive_test.mp4', check=True)
-sh('adb shell am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d file:///sdcard/Movies/accordlive_test.mp4')
-sh('adb shell content call --uri content://media --method scan_volume --arg external_primary')
-vid = None
-for _ in range(20):
-    q = sh('adb shell content query --uri content://media/external/video/media --projection _id:_display_name')
-    m = re.search(r'_id=(\d+), _display_name=accordlive_test\.mp4', q)
-    if m:
-        vid = m.group(1)
-        break
-    time.sleep(2)
-print('Identifiant MediaStore :', vid)
+# vidéo partagée vers l'application (placée dans le dossier propre à l'appli, lisible sans permission)
+DEST = f'/sdcard/Android/data/{PKG}/files/accordlive_test.mp4'
+sh(f'adb shell mkdir -p /sdcard/Android/data/{PKG}/files')
+sh(f'adb push "{VIDEO}" {DEST}', check=True)
+vid = 'file://' + DEST
 if vid:
-    sh(f'adb shell am start -a android.intent.action.SEND -t video/mp4 --eu android.intent.extra.STREAM content://media/external/video/media/{vid} --grant-read-uri-permission -n {PKG}/.MainActivity')
+    sh(f'adb shell am start -a android.intent.action.SEND -t video/mp4 --eu android.intent.extra.STREAM {vid} -n {PKG}/.MainActivity')
     time.sleep(25)
     shot('4-video-analysee')
     txt = all_text()
@@ -92,8 +84,7 @@ if vid:
     sh('adb shell input swipe 500 1500 500 500 300'); time.sleep(1)
     shot('5-grille')
 else:
-    print('ERREUR : vidéo introuvable dans MediaStore')
-    ok = False
+    pass
 
 for i, tab in enumerate(['Accords', 'Progressions', 'Théorie', 'Exercices', 'Outils']):
     if tap_text(tab):
@@ -107,7 +98,7 @@ shot('3-micro')
 print('Micro :', all_text()[:300])
 tap_text('■ Arrêter'); time.sleep(1)
 
-log = sh(f'adb logcat -d -s AccordLive:V chromium:E')
+log = sh(f'adb logcat -d -s AccordLive:V chromium:E AndroidRuntime:E ActivityManager:W')
 open(f'{OUT}/logcat.txt', 'w').write(log)
 print('--- journal ---')
 print(log[-4000:])

@@ -59,6 +59,7 @@ public class MainActivity extends Activity {
         super.onCreate(state);
         getWindow().setStatusBarColor(Color.rgb(15, 17, 21));
         getWindow().setNavigationBarColor(Color.rgb(18, 21, 27));
+        getExternalFilesDir(null); // dossier propre à l'appli (utilisé par les tests automatiques)
         web = new WebView(this);
         web.setBackgroundColor(Color.rgb(15, 17, 21));
         setContentView(web);
