@@ -61,21 +61,11 @@ time.sleep(10)
 shot('1-demarrage')
 txt = all_text()
 print('Écran de démarrage :', txt[:400])
+time.sleep(3)
+txt = txt or all_text()
 if 'Écouter' not in txt and 'Analyse' not in txt:
     print('ERREUR : la page ne semble pas chargée')
     ok = False
-
-for i, tab in enumerate(['Accords', 'Progressions', 'Théorie', 'Exercices', 'Outils']):
-    if tap_text(tab):
-        time.sleep(2)
-        shot(f'2-{i}-{tab}')
-
-# micro : démarre la détection (permission accordée par install -g)
-tap_text('Analyse'); time.sleep(1)
-tap_text('▶ Écouter'); time.sleep(4)
-shot('3-micro')
-print('Micro :', all_text()[:300])
-tap_text('■ Arrêter'); time.sleep(1)
 
 # vidéo partagée vers l'application
 sh(f'adb push "{VIDEO}" /sdcard/Movies/accordlive_test.mp4', check=True)
@@ -104,6 +94,18 @@ if vid:
 else:
     print('ERREUR : vidéo introuvable dans MediaStore')
     ok = False
+
+for i, tab in enumerate(['Accords', 'Progressions', 'Théorie', 'Exercices', 'Outils']):
+    if tap_text(tab):
+        time.sleep(2)
+        shot(f'2-{i}-{tab}')
+
+# micro : démarre la détection (permission accordée par install -g)
+tap_text('Analyse'); time.sleep(1)
+tap_text('▶ Écouter'); time.sleep(4)
+shot('3-micro')
+print('Micro :', all_text()[:300])
+tap_text('■ Arrêter'); time.sleep(1)
 
 log = sh(f'adb logcat -d -s AccordLive:V chromium:E')
 open(f'{OUT}/logcat.txt', 'w').write(log)

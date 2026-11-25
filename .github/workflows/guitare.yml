@@ -64,6 +64,9 @@ jobs:
           api-level: 33
           arch: x86_64
           target: google_apis
+          ram-size: 4096M
+          disk-size: 4G
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
           disable-animations: true
           script: mkdir -p /tmp/emu && python3 guitare-app/test/emu.py /tmp/emu /tmp/art/AccordLive.apk /tmp/test.mp4 2>&1 | tee /tmp/emu/resultat.txt
       - name: Publier
