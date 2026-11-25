@@ -278,7 +278,7 @@ const Analyse = (() => {
     $('#fileName').textContent = name;
     const el = media();
     if (el.dataset.url) URL.revokeObjectURL(el.dataset.url);
-    if (src.file) { const u = URL.createObjectURL(src.file); el.dataset.url = u; el.src = u; } else { el.dataset.url = ''; let u = '/media/' + src.id; try { u = App.Android.mediaUrl(src.id); } catch (e) { /* ancienne méthode */ } el.crossOrigin = 'anonymous'; el.src = u; }
+    if (src.file) { const u = URL.createObjectURL(src.file); el.dataset.url = u; el.src = u; } else { el.dataset.url = ''; let u = '/media/' + src.id; try { u = App.Android.mediaUrl(src.id); } catch (e) { /* ancienne méthode */ } el.removeAttribute('crossorigin'); el.src = u; }
     const isAudio = (src.file ? src.file.type : src.mime || '').startsWith('audio');
     el.style.maxHeight = isAudio ? '54px' : '';
     $('#mediaWrap').classList.remove('hidden');
@@ -308,6 +308,9 @@ const Analyse = (() => {
       F.liveSegs.push({ t: media().currentTime, sym: now.textContent });
       $('#fileGrid').innerHTML = F.liveSegs.slice(-32).map((s) => `<div class="bar"><div class="bc">${s.sym}</div><div class="br">${fmtTime(s.t)}</div></div>`).join('');
     };
+    // l'analyse en direct d'un média servi par le téléphone demande l'en-tête CORS : on recharge en mode « anonymous »
+    const el = media();
+    if (/^http:\/\/127\.0\.0\.1/.test(el.src) && el.crossOrigin !== 'anonymous') { const t = el.currentTime; el.crossOrigin = 'anonymous'; el.src = el.src; el.currentTime = t; }
     try { startMedia(media()); } catch (e) { App.toast('Lecture audio indisponible : ' + e.message); }
   }
   function stopLiveMedia() { if (F.liveMode) { stop(); F.liveMode = false; } }
