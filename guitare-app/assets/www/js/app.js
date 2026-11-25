@@ -75,6 +75,12 @@ const App = (() => {
         return p ? chordCard(p.root, p.id, p.bass) : '';
       }).join('');
     });
+    $$('.xv', root).forEach((d) => {
+      const p = M.parseChord(d.dataset.c);
+      const list = Voicings.family(d.dataset.f, p.root, p.id).slice(0, 12);
+      d.className = 'xc';
+      d.innerHTML = list.map((v) => chordCard(v.root, v.id, undefined, { voicing: { frets: v.frets }, showFrets: true }).replace('<div class="dn">', `<div class="muted small">${v.group}</div><div class="dn">`)).join('');
+    });
     $$('.xs', root).forEach((d) => {
       const r = M.pcFromName(d.dataset.r), sc = M.SCALE_BY_ID[d.dataset.s];
       const midis = sc.iv.concat([12]).map((i) => 48 + r + i + (r > 4 ? 0 : 12));

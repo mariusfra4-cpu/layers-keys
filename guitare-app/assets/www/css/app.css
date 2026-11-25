@@ -217,3 +217,52 @@ table.t th { color: var(--muted); font-weight: 600; }
 .toast { position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%); background: #2b3140; color: var(--text); padding: 10px 16px; border-radius: 10px; font-size: 14px; opacity: 0; pointer-events: none; transition: opacity 0.25s; max-width: 90vw; text-align: center; z-index: 30; }
 .toast.show { opacity: 1; }
 @media (min-width: 700px) { .grid { grid-template-columns: repeat(8, 1fr); } .chordbig { font-size: 96px; } }
+
+/* ---------- accords de passage ---------- */
+.prule { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin-bottom: 10px; }
+.prule h4 { margin: 0 0 4px; color: var(--text); font-size: 15px; }
+.prule .why { color: var(--muted); font-size: 13px; margin: 0 0 8px; }
+.prule .tags { font-size: 11px; color: var(--accent2); text-transform: uppercase; letter-spacing: 0.5px; }
+.pline { display: flex; align-items: center; gap: 6px; padding: 7px 0; border-top: 1px solid var(--line); flex-wrap: wrap; }
+.pline .pb { background: var(--accent); color: #141414; border: 0; border-radius: 50%; width: 30px; height: 30px; font-weight: 800; flex: 0 0 auto; }
+.pline .pd { background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 8px; padding: 3px 8px; font: inherit; font-size: 12px; margin-left: auto; }
+.cchip { background: var(--card2); border: 1px solid var(--line); border-radius: 8px; padding: 3px 8px; text-align: center; line-height: 1.15; }
+.cchip b { display: block; font-size: 14px; }
+.cchip i { font-style: normal; font-size: 10.5px; color: var(--accent2); }
+.cchip.tgt { border-color: var(--accent); }
+.cchip.now { background: var(--accent); color: #141414; }
+.cchip.now i { color: #141414; }
+.parrow { color: var(--muted); }
+.pdiags { display: flex; gap: 6px; overflow-x: auto; width: 100%; padding-top: 6px; }
+.pdiags .dcard { flex: 0 0 104px; }
+
+/* ---------- partition + tablature ---------- */
+.scorecard { padding: 10px; }
+.sview { display: flex; background: #f7f3ea; border-radius: 10px; overflow: hidden; margin: 6px 0; }
+.sgut { flex: 0 0 auto; }
+.sscroll { overflow-x: auto; overflow-y: hidden; flex: 1; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.sscroll::-webkit-scrollbar { display: none; }
+.score { display: block; }
+.score .sl, .sgut .sl { stroke: #3b3b3b; stroke-width: 1; }
+.score .tl, .sgut .tl { stroke: #8a8a8a; stroke-width: 1; }
+.score .bl { stroke: #3b3b3b; stroke-width: 1.2; }
+.score .bn { font: 600 9px system-ui; fill: #9a9a9a; }
+.score .cs { font: 700 14px system-ui; fill: #b0640b; }
+.score .nh { fill: #111; stroke: #111; stroke-width: 1.2; }
+.score .nh.hollow { fill: #f7f3ea; }
+.score .stem { stroke: #111; stroke-width: 1.2; }
+.score .flag { stroke: #111; stroke-width: 1.6; fill: none; }
+.score .dot { fill: #111; }
+.score .acc { font: 600 13px system-ui; fill: #111; }
+.score .tbg { fill: #f7f3ea; }
+.score .tn { font: 700 11.5px system-ui; fill: #111; text-anchor: middle; paint-order: stroke; stroke: #f7f3ea; stroke-width: 4px; }
+.score .tn.rep { fill: #8a8a8a; }
+.score .slash { stroke: #111; stroke-width: 3; }
+.score .cur { fill: #f5a524; opacity: 0.9; }
+.score .empty { font: 13px system-ui; fill: #666; }
+.sgut .gbg { fill: #f7f3ea; }
+.sgut .clef { fill: none; stroke: #111; stroke-width: 2.2; stroke-linecap: round; }
+.sgut .eight { font: 700 10px system-ui; fill: #111; }
+.sgut .tabl { font: 800 12px system-ui; fill: #111; }
+.sgut .sn { font: 600 8.5px system-ui; fill: #8a8a8a; }
+#passNext { margin-top: 8px; width: 100%; }

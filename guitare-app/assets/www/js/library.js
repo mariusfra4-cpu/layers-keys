@@ -5,7 +5,7 @@ const Library = (() => {
   const mod = M.mod;
 
   // =================== Dictionnaire d'accords ===================
-  const C = { root: 0, id: 'maj7', bass: undefined };
+  const C = { root: 0, id: 'maj7', bass: undefined, fam: 'all' };
   const GROUPS = [
     ['Triades', ['maj', 'min', 'dim', 'aug', 'sus2', 'sus4', '5']],
     ['Septièmes et sixtes', ['maj7', '7', 'm7', 'm7b5', 'dim7', 'mmaj7', '7sus4', '6', 'm6']],
@@ -25,7 +25,20 @@ const Library = (() => {
       <div>${c.name} · <span class="muted">${c.style}</span></div>
       <div class="formula">${c.iv.map((i) => `<span class="${i === 0 ? 'r' : ''}">${M.degLabel(i, c.iv)} = ${M.pcName(C.root + i)}</span>`).join('')}</div>
       <div class="muted small">Notes essentielles : ${c.ess.map((i) => M.degLabel(i, c.iv)).join(', ')} · ${vs.length} doigté${vs.length > 1 ? 's' : ''} trouvé${vs.length > 1 ? 's' : ''}</div>`;
-    $('#chordDiags').innerHTML = vs.map((v) => App.chordCard(C.root, C.id, C.bass, { voicing: v, showFrets: true })).join('') || '<p class="muted">Aucun doigté jouable trouvé pour cet accord dans cet accordage.</p>';
+    $('#voicFam').innerHTML = [['all', 'Tous les doigtés']].concat(Voicings.FAMILIES.map((f) => [f.id, f.name])).map(([k, n]) => `<button data-f="${k}" class="${k === C.fam ? 'on' : ''}">${n}</button>`).join('');
+    if (C.fam === 'all') {
+      $('#voicDesc').textContent = 'Doigtés calculés sur tout le manche, du plus grave au plus aigu.';
+      $('#chordDiags').innerHTML = `<div class="diags">${vs.map((v) => App.chordCard(C.root, C.id, C.bass, { voicing: v, showFrets: true })).join('') || '<p class="muted">Aucun doigté jouable trouvé pour cet accord dans cet accordage.</p>'}</div>`;
+    } else {
+      const fam = Voicings.FAMILIES.find((f) => f.id === C.fam);
+      const list = Voicings.family(C.fam, C.root, C.id);
+      $('#voicDesc').textContent = fam.desc;
+      const groups = new Map();
+      for (const v of list) { if (!groups.has(v.group)) groups.set(v.group, []); groups.get(v.group).push(v); }
+      $('#chordDiags').innerHTML = list.length ? [...groups.entries()].map(([g, vs2]) => `<div class="lcat">${g}</div><div class="diags">${vs2.map((v) =>
+        App.chordCard(v.root, v.id, undefined, { voicing: { frets: v.frets }, showFrets: true }).replace('<div class="dn">', `<div class="muted small">${v.label}</div><div class="dn">`)).join('')}</div>`).join('')
+        : '<p class="muted">Cette famille ne s’applique pas à ce type d’accord (essaie un accord de 7e ou de 9e).</p>';
+    }
     $('#chPlay').addEventListener('click', () => Synth.strum(G.chordMidis(C.root, C.id, C.bass)));
     M.setPreferFlats(null);
   }
@@ -34,6 +47,7 @@ const Library = (() => {
     renderChord();
     $('#rootPick').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; C.root = +b.dataset.r; C.bass = undefined; renderChordPickers(); renderChord(); });
     $('#typePick').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; C.id = b.dataset.id; C.bass = undefined; renderChordPickers(); renderChord(); });
+    $('#voicFam').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; C.fam = b.dataset.f; renderChord(); });
     $('#chordSearch').addEventListener('input', (e) => {
       const p = M.parseChord(e.target.value);
       if (!p) return;
@@ -86,6 +100,8 @@ const Library = (() => {
     const p = PROGS.find((x) => x.id === id);
     if (!p) return;
     P.prog = p;
+    const lb = $('#progMode button[data-v="list"]');
+    if (lb && !lb.classList.contains('on')) lb.click();
     P.key = p.mode === 'minor' ? 9 : 0;
     $('#progList').classList.add('hidden'); $('#styleChips').classList.add('hidden');
     $('#progDetail').classList.remove('hidden');

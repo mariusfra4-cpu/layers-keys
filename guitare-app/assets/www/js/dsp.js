@@ -354,8 +354,11 @@ const DSP = (() => {
     onProgress(0.1);
     // 2e passe : chroma par trame
     const chromas = new Array(frames), basses = new Int8Array(frames), energies = new Float32Array(frames);
+    const melMidi = new Int16Array(frames), melSal = new Float32Array(frames);
     for (let f = 0; f < frames; f++) {
       fft.magnitude(x, f * hop, mag);
+      const mm = frameMelody(mag, binHz, tuning);
+      melMidi[f] = mm.midi; melSal[f] = mm.sal;
       const r = chromaFromSpectrum(mag, binHz, tuning);
       chromas[f] = r.chroma; basses[f] = r.bassStrength > 0.05 ? r.bassPc : -1; energies[f] = r.energy;
       if (f % 200 === 0) onProgress(0.1 + 0.6 * (f / frames));
@@ -433,8 +436,66 @@ const DSP = (() => {
       }
       delete sg.bassVotes; delete sg.state;
     }
+    const notes = melodyNotes(melMidi, melSal, energies, eRef, hop / sr, N / 2 / sr);
     onProgress(1);
-    return { segments, key, bpm: tempo.bpm, tuning, beats: beatTimes.slice(0, -1), duration };
+    return { segments, key, bpm: tempo.bpm, tuning, beats: beatTimes.slice(0, -1), duration, notes };
+  }
+
+
+  // ---------- Mélodie principale (saillance harmonique) ----------
+  // Pour chaque note candidate, somme pondérée des amplitudes (log) de ses 5 premières harmoniques.
+  function frameMelody(mag, binHz, tuning = 0, lo = 52, hi = 88) {
+    let maxMag = 1e-12;
+    const kMax = Math.min(mag.length - 2, Math.ceil(5000 / binHz));
+    for (let k = 2; k < kMax; k++) if (mag[k] > maxMag) maxMag = mag[k];
+    const L = (f) => {
+      const b = f / binHz;
+      const k = Math.round(b);
+      if (k < 1 || k >= mag.length - 1) return 0;
+      const m = Math.max(mag[k - 1], mag[k], mag[k + 1]);
+      return Math.log(1 + (30 * m) / maxMag);
+    };
+    let best = -1, bestS = 0;
+    const sal = new Float32Array(hi + 1);
+    for (let n = lo - 12; n <= hi; n++) {
+      const f0 = 440 * Math.pow(2, (n + tuning - 69) / 12);
+      let s = 0, w = 1;
+      for (let h = 1; h <= 5; h++) { s += w * L(f0 * h); w *= 0.75; }
+      sal[n] = s;
+    }
+    for (let n = lo; n <= hi; n++) {
+      // un pic doit dépasser ses voisins d'un demi-ton
+      if (sal[n] < sal[n - 1] || sal[n] < sal[n + 1]) continue;
+      if (sal[n] > bestS) { bestS = sal[n]; best = n; }
+    }
+    // erreur d'octave : la note une octave plus bas explique presque aussi bien le spectre
+    if (best - 12 >= lo && sal[best - 12] > 0.97 * bestS) best -= 12;
+    return { midi: best, sal: bestS };
+  }
+  // Découpe en notes : lissage médian, seuil de voisement, durée minimale
+  function melodyNotes(midi, sal, energy, eRef, dt, offset) {
+    const n = midi.length;
+    const sorted = Float32Array.from(sal).sort();
+    const sRef = sorted[Math.floor(n * 0.9)] || 1;
+    const v = new Int16Array(n);
+    for (let i = 0; i < n; i++) v[i] = sal[i] > sRef * 0.45 && energy[i] > eRef * 0.06 ? midi[i] : -1;
+    const med = new Int16Array(n);
+    for (let i = 0; i < n; i++) {
+      const w = [];
+      for (let k = i - 2; k <= i + 2; k++) w.push(v[Math.max(0, Math.min(n - 1, k))]);
+      w.sort((a, b) => a - b);
+      med[i] = w[2];
+    }
+    const notes = [];
+    let i = 0;
+    while (i < n) {
+      if (med[i] < 0) { i++; continue; }
+      let j = i;
+      while (j + 1 < n && (med[j + 1] === med[i] || (med[j + 1] < 0 && j + 2 < n && med[j + 2] === med[i]))) j++;
+      if (j - i + 1 >= 3) notes.push({ t: i * dt + offset - dt, d: (j - i + 1) * dt, midi: med[i] });
+      i = j + 1;
+    }
+    return notes;
   }
 
   // ---------- Hauteur (accordeur) : YIN ----------
@@ -472,6 +533,6 @@ const DSP = (() => {
     return { freq: sr / better, rms, clarity: 1 - cmnd[tau] };
   }
 
-  return { FFT, chromaFromSpectrum, normalize, templates, scoreChords, bestChord, detectKey, estimateTuning, onsetEnvelope, estimateTempo, trackBeats, viterbi, analyzeSignal, yin, LEVEL_SETS };
+  return { FFT, chromaFromSpectrum, normalize, templates, scoreChords, bestChord, detectKey, estimateTuning, onsetEnvelope, estimateTempo, trackBeats, viterbi, analyzeSignal, yin, frameMelody, LEVEL_SETS };
 })();
 if (typeof module !== 'undefined') module.exports = DSP;

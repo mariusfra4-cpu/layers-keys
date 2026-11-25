@@ -212,7 +212,7 @@ const Analyse = (() => {
   }
 
   // =================== Analyse de fichier ===================
-  const F = { signal: null, sr: 11025, result: null, transpose: 0, beatsChords: [], bars: [], raf: 0, worker: null, liveMode: false, liveSegs: [] };
+  const F = { scoreMode: 'melody', score: null, next: null, signal: null, sr: 11025, result: null, transpose: 0, beatsChords: [], bars: [], raf: 0, worker: null, liveMode: false, liveSegs: [] };
   const media = () => $('#media');
 
   function progress(p, text) {
@@ -344,6 +344,7 @@ const Analyse = (() => {
     // fusionne les mesures vides de début (silence)
     $('#fileGrid').innerHTML = F.bars.map((b, i) => `<div class="bar" data-i="${i}"><div class="bn">${i + 1}</div><div class="bc">${b.syms.map((s) => `<span>${s}</span>`).join('')}</div><div class="br">${b.romans.join(' ')}</div></div>`).join('');
     capoHint();
+    F.score = Score.mount($('#scoreBox'), r, { transpose: F.transpose, mode: F.scoreMode, flats: M.keyPrefersFlats(key) }, (t) => { media().currentTime = t; updateNow(true); });
     M.setPreferFlats(null);
     $('#fileResult').classList.remove('hidden');
     updateNow(true);
@@ -382,16 +383,19 @@ const Analyse = (() => {
       now.dataset.s = sym; now.textContent = sym;
       $('#fileNowSub').innerHTML = sg.root >= 0 ? `<b>${M.romanOf(mod(sg.root + F.transpose), sg.id, key)}</b> · ${M.chordNotes(mod(sg.root + F.transpose), sg.id).join(' ')}` : '';
       const nx = r.segments.slice(i + 1).find((s) => s.root >= 0);
+      F.next = nx ? { root: mod(nx.root + F.transpose), id: nx.id } : null;
+      $('#passNext').textContent = nx ? '🎯 Accords de passage vers ' + symOf(nx) : '🎯 Accords de passage';
       $('#fileNext').textContent = nx ? symOf(nx) : '—';
       const vs = sg.root >= 0 ? G.voicings(mod(sg.root + F.transpose), sg.id, sg.bass === undefined ? undefined : mod(sg.bass + F.transpose)).slice(0, 3) : [];
       $('#fileDiag').innerHTML = vs.map((v) => `<div data-noplay>${G.diagram(mod(sg.root + F.transpose), sg.id, v.frets, { labels: App.settings.labels })}</div>`).join('');
     }
     M.setPreferFlats(null);
+    if (F.score) F.score.update(t);
     const bi = F.bars.findIndex((b) => b.t0 <= t && b.t1 > t);
     if (bi !== lastBar || force) {
       $$('#fileGrid .bar.now').forEach((x) => x.classList.remove('now'));
       const el = $(`#fileGrid .bar[data-i="${bi}"]`);
-      if (el) { el.classList.add('now'); if (!media().paused) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+      if (el) { el.classList.add('now'); if (!media().paused && el.offsetParent) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
       lastBar = bi;
     }
   }
@@ -430,6 +434,9 @@ const Analyse = (() => {
     $('#trDown').addEventListener('click', () => { F.transpose = Math.max(-11, F.transpose - 1); renderResult(); });
     $('#fileLevel').addEventListener('change', async () => { if (F.signal) { progress(0.3, 'Nouvelle analyse…'); await analyse(); } });
     $('#fileCopy').addEventListener('click', () => App.share(exportText()));
+    App.segmented($('#viewMode'), (v) => { $('#scorePane').classList.toggle('hidden', v !== 'score'); $('#fileGrid').classList.toggle('hidden', v !== 'grid'); updateNow(true); });
+    App.segmented($('#scoreMode'), (v) => { F.scoreMode = v; renderResult(); });
+    $('#passNext').addEventListener('click', () => { const n = F.next || (F.result && F.result.segments.find((s) => s.root >= 0)); if (n) PassingUI.openFor(mod(n.root + (F.next ? 0 : F.transpose)), n.id); });
   }
 
   initMic();

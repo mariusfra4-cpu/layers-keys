@@ -10,6 +10,8 @@ function pluck(start, midi, dur, amp) {
 }
 chords.forEach((s, i) => { const p = M.parseChord(s); const iv = M.CHORD_BY_ID[p.id].iv;
   for (let b = 0; b < 4; b++) { const t = (i * 4 + b) * beat; pluck(t, 36 + (p.bass ?? p.root) % 12, beat, 0.4); iv.forEach((v, k) => pluck(t + k * 0.01, 52 + ((p.root - 4 + 12) % 12) + v, beat, 0.22)); } });
+// mélodie facultative (croches) : 4e argument, ex. "E4 G4 A4 -"
+if (process.argv[4]) process.argv[4].split(/\s+/).forEach((n, i) => { const m = M.midiFromName(n); if (m !== null) pluck(i * beat / 2, m, beat / 2, 0.5); });
 const buf = Buffer.alloc(44 + x.length * 2);
 buf.write('RIFF', 0); buf.writeUInt32LE(36 + x.length * 2, 4); buf.write('WAVEfmt ', 8); buf.writeUInt32LE(16, 16); buf.writeUInt16LE(1, 20); buf.writeUInt16LE(1, 22);
 buf.writeUInt32LE(sr, 24); buf.writeUInt32LE(sr * 2, 28); buf.writeUInt16LE(2, 32); buf.writeUInt16LE(16, 34); buf.write('data', 36); buf.writeUInt32LE(x.length * 2, 40);

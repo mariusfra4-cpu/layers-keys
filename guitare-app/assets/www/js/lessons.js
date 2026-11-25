@@ -385,5 +385,103 @@ const LESSONS = [
 <li>Pour une chanson entière, utilise <b>Fichier / Vidéo</b> : l’analyse est plus précise (accordage, tempo, tonalité et lissage).</li>
 <li>Les accords proposés en « alternatives » sont souvent des versions plus riches ou plus simples du même accord (C ↔ Cmaj7 ↔ Am7/C).</li>
 </ul>` },
+
+  // =====================================================================
+  { cat: 'Techniques de guitaristes', id: 'tq-triades', title: 'Les triades sur tout le manche', body: `
+<p>Les grands guitaristes de gospel, de R&B et de funk jouent surtout des <b>triades sur 3 cordes voisines</b>, pas des accords barrés de 6 cordes. C’est plus léger, plus précis, et ça laisse la place à la basse et au clavier.</p>
+<ul>
+<li>Chaque triade existe en <b>3 renversements</b> (fondamentale, tierce ou quinte à la basse) sur <b>4 groupes de cordes</b> : 3-2-1, 4-3-2, 5-4-3, 6-5-4. Soit 12 positions par accord.</li>
+<li>Pour changer d’accord, choisis le renversement <b>le plus proche</b> : les doigts bougent d’une ou deux cases seulement (« voice leading »).</li>
+<li>Commence par les cordes <b>3-2-1</b> : c’est là que vivent le gospel et le R&B.</li>
+</ul>
+<div class="xv" data-c="C" data-f="triads"></div>
+<p><b>Exercice</b> : joue C – F – G – C uniquement sur les cordes 3-2-1, en restant entre les cases 5 et 10.</p>` },
+
+  { cat: 'Techniques de guitaristes', id: 'tq-couleur', title: 'Triades « couleur » : jouer des accords riches facilement', body: `
+<p>Astuce des pianistes reprise par les guitaristes neo-soul : un accord enrichi contient <b>des triades cachées</b>. On joue la triade sur les cordes aiguës pendant que la basse (ou le bassiste) joue la fondamentale.</p>
+<table class="t"><tr><th>Tu joues…</th><th>sur la basse…</th><th>ça donne</th></tr>
+<tr><td>Em</td><td>C</td><td>Cmaj7</td></tr>
+<tr><td>G</td><td>C</td><td>Cmaj9 (sans tierce)</td></tr>
+<tr><td>F</td><td>D</td><td>Dm7</td></tr>
+<tr><td>Am</td><td>D</td><td>D9sus4 (« D11 »)</td></tr>
+<tr><td>F</td><td>G</td><td>G9sus4 (le IV/V gospel)</td></tr>
+<tr><td>A</td><td>G</td><td>G13♯11 (lydien)</td></tr></table>
+<div class="xv" data-c="Dm9" data-f="color"></div>
+<p>Dans l’onglet <b>Accords</b>, choisis n’importe quel accord puis « Triades couleur » : l’appli te les trouve toutes.</p>` },
+
+  { cat: 'Techniques de guitaristes', id: 'tq-jazz', title: 'Comping jazz : shells, guide tones, drop 2', body: `
+<h4>1. Shells</h4>
+<p>Fondamentale + 3 + 7 : trois doigts, le son de l’orchestre de swing. Sur un ii–V–I, les formes alternent entre la corde 6 et la corde 5, la main bouge à peine.</p>
+<div class="xv" data-c="G7" data-f="shell"></div>
+<h4>2. Guide tones</h4>
+<p>Joue seulement la 3 et la 7 de chaque accord, sur deux cordes voisines : Dm7 (F-C) → G7 (F-B) → Cmaj7 (E-B). Une note reste, l’autre descend d’un demi-ton. Ces deux voix « racontent » toute l’harmonie.</p>
+<p><button class="pl" data-n="F3 C4" data-m="chord">▶ Dm7</button> <button class="pl" data-n="F3 B3" data-m="chord">▶ G7</button> <button class="pl" data-n="E3 B3" data-m="chord">▶ Cmaj7</button></p>
+<h4>3. Drop 2 sur les 4 cordes aiguës</h4>
+<p>Le voicing jazz par excellence. Apprends les 4 renversements de Cmaj7, C7, Cm7, Cm7♭5 sur les cordes 4-3-2-1 : tu peux ensuite harmoniser n’importe quelle mélodie.</p>
+<div class="xv" data-c="Cmaj7" data-f="drop2"></div>
+<h4>4. Rythmes de comping</h4>
+<ul><li><b>Freddie Green</b> : un accord court sur chaque temps, accent léger sur 2 et 4.</li>
+<li><b>Charleston</b> : sur 1, puis sur le « et » de 2.</li>
+<li><b>Anticipation</b> : l’accord suivant arrive une croche en avance (sur le « et » de 4).</li></ul>` },
+
+  { cat: 'Techniques de guitaristes', id: 'tq-rootless', title: 'Voicings sans fondamentale et structures supérieures', body: `
+<p>En groupe, le bassiste joue déjà la fondamentale. Les guitaristes jazz et gospel la <b>suppriment</b> pour faire de la place aux tensions (9, 11, 13).</p>
+<h4>Formes A et B (« Bill Evans »)</h4>
+<p>Forme A : 3 – 5 – 7 – 9 ; forme B : 7 – 9 – 3 – 5. Sur un ii–V–I, on alterne A – B – A : les doigts bougent à peine.</p>
+<div class="xv" data-c="Dm9" data-f="rootless"></div>
+<h4>Structures supérieures (gospel moderne)</h4>
+<p>Sur un accord de dominante : le <b>triton</b> (3 et ♭7) en bas, et une <b>triade majeure</b> au-dessus :</p>
+<ul><li>triade sur le <b>II</b> (D sur C7) → C13♯11, brillant ;</li>
+<li>triade sur le <b>VI</b> (A sur C7) → C13♭9, LE son gospel ;</li>
+<li>triade sur le <b>♭VI</b> (A♭ sur C7) → C7♯5♯9, très tendu ;</li>
+<li>triade sur le <b>♭III</b> (E♭ sur C7) → C7♯9.</li></ul>
+<div class="xv" data-c="C7" data-f="ust"></div>` },
+
+  { cat: 'Techniques de guitaristes', id: 'tq-passages', title: 'Jouer les accords de passage à la guitare', body: `
+<p>Les accords de passage sont faciles à la guitare car <b>les formes se déplacent telles quelles</b> sur le manche.</p>
+<ol>
+<li><b>Glissé d’une case</b> : joue l’accord d’arrivée une case au-dessus ou au-dessous, puis glisse. Ex. : D♭9 → C9, B13 → C13.</li>
+<li><b>Diminué de passage</b> : la forme dim7 se répète toutes les 3 cases (C°7 = E♭°7 = F♯°7 = A°7). Une seule forme sert partout ! Place-la un demi-ton sous l’accord d’arrivée.</li>
+<li><b>Dominante avant chaque accord</b> : le V7 d’un accord est sur la même case, une corde plus grave (forme fondamentale corde 5 → corde 6).</li>
+<li><b>Substitution tritonique</b> : le ♭II7 partage la tierce et la septième du V7. Garde ces deux notes et change seulement la basse.</li>
+<li><b>Basse qui marche</b> : garde la triade sur les cordes aiguës et fais bouger la basse avec le pouce (C – C/B – Am – Am/G…).</li>
+</ol>
+<div class="xc" data-c="C C#dim7 Dm7 G7 Db7 C"></div>
+<p>L’onglet <b>Progressions → Accords de passage</b> génère des milliers d’enchaînements pour arriver sur n’importe quel accord.</p>` },
+
+  { cat: 'Techniques de guitaristes', id: 'tq-gospel', title: 'Guitare gospel et praise', body: `
+<ul>
+<li><b>Triades sur les cordes aiguës</b>, ou accords de 3-4 notes ; on laisse le grave au bassiste et au clavier.</li>
+<li><b>Hammer-on de la sus4 vers la 3</b> (ou de la 2 vers la 3) : on pose l’accord sus et on « frappe » la tierce. Son typique des louanges.</li>
+<li><b>Sixtes en doubles cordes</b> (cordes 3 et 1, ou 4 et 2) qui glissent sur la gamme : les « church licks ».</li>
+<li><b>Glissés chromatiques</b> d’une case vers chaque accord, surtout dans les praise breaks.</li>
+<li><b>Accords de passage</b> : diminués entre les degrés, 13♭9 et 7♯9 sur les dominantes, IV/V avant le I.</li>
+<li><b>Praise break / shout</b> : double-croches très serrées, étouffements de la main gauche, accents sur les contretemps, et on monte d’un demi-ton pour relancer.</li>
+<li><b>Attaque</b> : sur les chants lents, arpèges aux doigts avec un léger trémolo ; sur les louanges rapides, médiator et coups secs.</li>
+</ul>
+<div class="xv" data-c="F" data-f="triads"></div>
+<p>Progressions à travailler : <a class="xp" data-p="gwalk">montée gospel</a> · <a class="xp" data-p="pbreak1">praise break mineur</a> · <a class="xp" data-p="pw1">I – V/7 – vi – IV</a> · <a class="xp" data-p="tgospel">turnaround gospel</a>.</p>` },
+
+  { cat: 'Techniques de guitaristes', id: 'tq-rnb', title: 'Guitare R&B et neo-soul', body: `
+<ul>
+<li><b>Doubles cordes en tierces et en sixtes</b> autour de l’accord (style Curtis Mayfield).</li>
+<li><b>Embellissements</b> : hammer-on de la 9 vers la 3, de la 4 vers la 3 ; pull-off de la 13 vers la quinte.</li>
+<li><b>Accords en quartes</b> et triades couleur sur les cordes aiguës, souvent glissées d’une case.</li>
+<li><b>Peu d’accords</b>, mais une main droite très douce (pouce ou doigts) et beaucoup d’espace.</li>
+<li>Petites <b>phrases pentatoniques</b> entre deux accords, dans la même position que la forme d’accord.</li>
+</ul>
+<div class="xv" data-c="Am11" data-f="quartal"></div>
+<p>Progressions : <a class="xp" data-p="jt2u">Imaj7 – VII7 – iii7</a> · <a class="xp" data-p="ns23">ii – iii – IV</a> · <a class="xp" data-p="rb6251">6-2-5-1</a>.</p>` },
+
+  { cat: 'Techniques de guitaristes', id: 'tq-chordmelody', title: 'Chord-melody et basse + accords', body: `
+<p>Le <b>chord-melody</b> consiste à jouer la mélodie et les accords en même temps : la mélodie est toujours la <b>note la plus aiguë</b> de l’accord.</p>
+<ol>
+<li>Repère la note de mélodie sur la corde 1 ou 2.</li>
+<li>Choisis un voicing <b>drop 2 ou drop 3</b> dont la note aiguë est cette note (l’onglet Accords montre tous les renversements).</li>
+<li>Entre deux accords, joue les notes de passage seules ou harmonisées en dim7.</li>
+</ol>
+<div class="xv" data-c="Cmaj7" data-f="drop3"></div>
+<h4>Basse + accords (« walking »)</h4>
+<p>Le pouce joue une ligne de basse sur les cordes 6 et 5 (une note par temps), les doigts piquent un shell ou une triade sur les contretemps. C’est la façon de jouer seul sans bassiste.</p>` },
 ];
 const LESSON_CATS = [...new Set(LESSONS.map((l) => l.cat))];

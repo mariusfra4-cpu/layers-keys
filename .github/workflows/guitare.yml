@@ -18,6 +18,7 @@ jobs:
           node dsp_test.js | tee /tmp/tests.txt
           grep -q "échecs 0/" /tmp/tests.txt
           node voicing_test.js | tee -a /tmp/tests.txt
+          node melody_test.js | tee -a /tmp/tests.txt
       - name: Construction de l'APK
         run: |
           VERSION_CODE=${{ github.run_number }} VERSION_NAME=1.0.${{ github.run_number }} ./guitare-app/build.sh 2>&1 | tee /tmp/build.txt

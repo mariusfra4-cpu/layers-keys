@@ -70,6 +70,16 @@
             <div class="nextbox"><span class="muted small">ensuite</span><div id="fileNext" class="nextchord">—</div></div>
           </div>
           <div class="livediag" id="fileDiag"></div>
+          <button class="btn small" id="passNext">🎯 Accords de passage vers le suivant</button>
+        </div>
+        <div class="card scorecard">
+          <div class="seg" id="viewMode"><button data-v="score" class="on">🎼 Partition + tablature</button><button data-v="grid">▦ Grille</button></div>
+          <div id="scorePane">
+            <div class="row between"><div class="seg mini" id="scoreMode"><button data-v="melody" class="on">Mélodie</button><button data-v="chords">Accords</button></div>
+              <span class="muted small">touche la partition pour aller à cet endroit</span></div>
+            <div id="scoreBox"></div>
+            <p class="muted small" id="scoreNote">Mélodie principale détectée automatiquement (la voix ou l’instrument le plus fort) : c’est une base de travail, à vérifier à l’oreille. Le mode « Accords » écrit la tablature des accords temps par temps.</p>
+          </div>
         </div>
         <div class="card">
           <div class="infos" id="fileInfos"></div>
@@ -83,7 +93,7 @@
             <button class="btn small" id="fileCopy">📋 Copier</button>
           </div>
           <p class="muted small" id="capoHint"></p>
-          <div class="grid" id="fileGrid"></div>
+          <div class="grid hidden" id="fileGrid"></div>
         </div>
       </div>
     </div>
@@ -99,7 +109,9 @@
         <div class="types" id="typePick"></div>
       </div>
       <div class="card" id="chordInfo"></div>
-      <div class="diags" id="chordDiags"></div>
+      <div class="chips" id="voicFam"></div>
+      <p class="muted small" id="voicDesc"></p>
+      <div id="chordDiags"></div>
     </div>
     <div id="chords-find" class="hidden">
       <div class="card">
@@ -113,9 +125,22 @@
 
   <!-- ======================= PROGRESSIONS ======================= -->
   <section id="tab-progs" class="tab">
+    <div class="seg" id="progMode"><button data-v="list" class="on">Progressions</button><button data-v="pass">Accords de passage</button></div>
+    <div id="passView" class="hidden">
+      <div class="card">
+        <h3>Arriver sur un accord</h3>
+        <p class="muted small" id="passCount"></p>
+        <div class="row wrap"><label class="muted small">Accord d’arrivée</label><select id="passRoot"></select><select id="passType"></select>
+          <label class="muted small">Tempo <input type="number" id="passBpm" value="80" min="40" max="200" style="width:60px" class="search"></label></div>
+        <div class="chips" id="passStyles"></div>
+      </div>
+      <div id="passList"></div>
+    </div>
+    <div id="progListWrap">
     <div class="chips" id="styleChips"></div>
     <div id="progList"></div>
     <div id="progDetail" class="hidden"></div>
+    </div>
   </section>
 
   <!-- ======================= THÉORIE ======================= -->
@@ -190,8 +215,12 @@
 <script src="js/lessons.js"></script>
 <script src="js/exercises.js"></script>
 <script src="js/app.js"></script>
+<script src="js/score.js"></script>
 <script src="js/analyse.js"></script>
+<script src="js/voicings.js"></script>
 <script src="js/library.js"></script>
+<script src="js/passing.js"></script>
+<script src="js/passing-ui.js"></script>
 <script src="js/practice.js"></script>
 <script src="js/tools.js"></script>
 </body>
