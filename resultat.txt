@@ -1,0 +1,2 @@
+error: closed
+error: device 'emulator-5554' not found
