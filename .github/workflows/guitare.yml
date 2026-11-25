@@ -51,6 +51,7 @@ jobs:
           path: /tmp/art
       - name: Vidéo de test
         run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg >/dev/null
           node guitare-app/test/gen_wav.js /tmp/test.wav "Dm9 G13 Cmaj9 A7b9 Dm7 G7 Cmaj7 C6"
           ffmpeg -loglevel error -f lavfi -i color=c=black:s=320x240:r=10 -i /tmp/test.wav -shortest -c:v libx264 -pix_fmt yuv420p -c:a aac -b:a 128k /tmp/test.mp4
           ls -la /tmp/test.mp4
