@@ -1,0 +1,133 @@
+MSBuild version 18.12.2-1.26514.2+04f6ca984 for .NET Framework
+
+  Checking File Globs
+  1>Checking Build System
+  Generating Spacepad_artefacts/JuceLibraryCode/Spacepad_resources.rc
+  Building Custom Rule D:/a/layers-keys/layers-keys/spacepad/CMakeLists.txt
+  Spacepad_rc_lib.vcxproj -> D:\a\layers-keys\layers-keys\build\Spacepad_rc_lib.dir\Release\Spacepad_rc_lib.lib
+  Generating juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData1.cpp, juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData2.cpp, juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData3.cpp, juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData4.cpp, juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData5.cpp, juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData6.cpp, juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData.h
+  Building Custom Rule D:/a/layers-keys/layers-keys/spacepad/CMakeLists.txt
+  BinaryData1.cpp
+  BinaryData2.cpp
+  BinaryData3.cpp
+  BinaryData4.cpp
+  BinaryData5.cpp
+  BinaryData6.cpp
+  Generating Code...
+  SpacepadData.vcxproj -> D:\a\layers-keys\layers-keys\build\Release\SpacepadData.lib
+  Building Custom Rule D:/a/layers-keys/layers-keys/spacepad/CMakeLists.txt
+  KeyDetect.cpp
+  Lang.cpp
+  Setlist.cpp
+  Library.cpp
+D:\a\layers-keys\layers-keys\spacepad\Source\Lang.cpp(112,15): warning C4456: declaration of 'v' hides previous local declaration [D:\a\layers-keys\layers-keys\build\Spacepad.vcxproj]
+      D:\a\layers-keys\layers-keys\spacepad\Source\Lang.cpp(88,10):
+      see declaration of 'v'
+  
+  PadEngine.cpp
+  Effects.cpp
+  AudioOpen.cpp
+  Modulation.cpp
+D:\a\layers-keys\layers-keys\spacepad\Source\Effects.cpp(97,85): warning C4244: 'argument': conversion from 'Type' to 'NumericType', possible loss of data [D:\a\layers-keys\layers-keys\build\Spacepad.vcxproj]
+D:\a\layers-keys\layers-keys\spacepad\Source\Effects.cpp(97,85): warning C4244:         with [D:\a\layers-keys\layers-keys\build\Spacepad.vcxproj]
+D:\a\layers-keys\layers-keys\spacepad\Source\Effects.cpp(97,85): warning C4244:         [ [D:\a\layers-keys\layers-keys\build\Spacepad.vcxproj]
+D:\a\layers-keys\layers-keys\spacepad\Source\Effects.cpp(97,85): warning C4244:             Type=double [D:\a\layers-keys\layers-keys\build\Spacepad.vcxproj]
+D:\a\layers-keys\layers-keys\spacepad\Source\Effects.cpp(97,85): warning C4244:         ] [D:\a\layers-keys\layers-keys\build\Spacepad.vcxproj]
+D:\a\layers-keys\layers-keys\spacepad\Source\Effects.cpp(97,85): warning C4244:         and [D:\a\layers-keys\layers-keys\build\Spacepad.vcxproj]
+D:\a\layers-keys\layers-keys\spacepad\Source\Effects.cpp(97,85): warning C4244:         [ [D:\a\layers-keys\layers-keys\build\Spacepad.vcxproj]
+D:\a\layers-keys\layers-keys\spacepad\Source\Effects.cpp(97,85): warning C4244:             NumericType=float [D:\a\layers-keys\layers-keys\build\Spacepad.vcxproj]
+D:\a\layers-keys\layers-keys\spacepad\Source\Effects.cpp(97,85): warning C4244:         ] [D:\a\layers-keys\layers-keys\build\Spacepad.vcxproj]
+  CrowdPrefs.cpp
+  Licence.cpp
+  PluginProcessor.cpp
+  PluginEditor.cpp
+  UI.cpp
+D:\a\layers-keys\layers-keys\spacepad\Source\Licence.cpp(233,30): error C2440: 'return': cannot convert from 'initializer list' to 'spacepad::Licence::Status' [D:\a\layers-keys\layers-keys\build\Spacepad.vcxproj]
+      D:\a\layers-keys\layers-keys\spacepad\Source\Licence.cpp(233,23):
+      Invalid aggregate initialization
+          D:\a\layers-keys\layers-keys\spacepad\Source\Licence.cpp(233,49):
+          'juce::RelativeTime': no appropriate default constructor available
+              D:\a\layers-keys\layers-keys\spacepad\Source\Licence.cpp(233,49):
+              Constructor for class 'juce::RelativeTime' is declared 'explicit'
+  
+  UISpace.cpp
+D:\a\layers-keys\layers-keys\spacepad\Source\UI.h(216,24): warning C4458: declaration of 'crowdTab' hides class member [D:\a\layers-keys\layers-keys\build\Spacepad.vcxproj]
+  (compiling source file '../spacepad/Source/PluginProcessor.cpp')
+      D:\a\layers-keys\layers-keys\spacepad\Source\UI.h(234,41):
+      see declaration of 'spacepad::LibraryPanel::crowdTab'
+  
+D:\a\layers-keys\layers-keys\spacepad\Source\PluginProcessor.cpp(691,20): warning C4458: declaration of 'wasPlaying' hides class member [D:\a\layers-keys\layers-keys\build\Spacepad.vcxproj]
+      D:\a\layers-keys\layers-keys\spacepad\Source\PluginProcessor.h(177,10):
+      see declaration of 'spacepad::SpacepadProcessor::wasPlaying'
+  
+D:\a\layers-keys\layers-keys\spacepad\Source\UI.h(216,24): warning C4458: declaration of 'crowdTab' hides class member [D:\a\layers-keys\layers-keys\build\Spacepad.vcxproj]
+  (compiling source file '../spacepad/Source/PluginEditor.cpp')
+      D:\a\layers-keys\layers-keys\spacepad\Source\UI.h(234,41):
+      see declaration of 'spacepad::LibraryPanel::crowdTab'
+  
+  UIPanels.cpp
+  UIExtra.cpp
+D:\a\layers-keys\layers-keys\spacepad\Source\UI.h(216,24): warning C4458: declaration of 'crowdTab' hides class member [D:\a\layers-keys\layers-keys\build\Spacepad.vcxproj]
+  (compiling source file '../spacepad/Source/UI.cpp')
+      D:\a\layers-keys\layers-keys\spacepad\Source\UI.h(234,41):
+      see declaration of 'spacepad::LibraryPanel::crowdTab'
+  
+D:\a\layers-keys\layers-keys\spacepad\Source\UI.h(216,24): warning C4458: declaration of 'crowdTab' hides class member [D:\a\layers-keys\layers-keys\build\Spacepad.vcxproj]
+  (compiling source file '../spacepad/Source/UISpace.cpp')
+      D:\a\layers-keys\layers-keys\spacepad\Source\UI.h(234,41):
+      see declaration of 'spacepad::LibraryPanel::crowdTab'
+  
+D:\a\layers-keys\layers-keys\spacepad\Source\UI.cpp(569,61): warning C4244: 'argument': conversion from 'int' to 'ValueType', possible loss of data [D:\a\layers-keys\layers-keys\build\Spacepad.vcxproj]
+D:\a\layers-keys\layers-keys\spacepad\Source\UI.cpp(569,61): warning C4244:         with [D:\a\layers-keys\layers-keys\build\Spacepad.vcxproj]
+D:\a\layers-keys\layers-keys\spacepad\Source\UI.cpp(569,61): warning C4244:         [ [D:\a\layers-keys\layers-keys\build\Spacepad.vcxproj]
+D:\a\layers-keys\layers-keys\spacepad\Source\UI.cpp(569,61): warning C4244:             ValueType=float [D:\a\layers-keys\layers-keys\build\Spacepad.vcxproj]
+D:\a\layers-keys\layers-keys\spacepad\Source\UI.cpp(569,61): warning C4244:         ] [D:\a\layers-keys\layers-keys\build\Spacepad.vcxproj]
+  UICrowd.cpp
+  UIMain.cpp
+D:\a\layers-keys\layers-keys\spacepad\Source\UI.h(216,24): warning C4458: declaration of 'crowdTab' hides class member [D:\a\layers-keys\layers-keys\build\Spacepad.vcxproj]
+  (compiling source file '../spacepad/Source/UIPanels.cpp')
+      D:\a\layers-keys\layers-keys\spacepad\Source\UI.h(234,41):
+      see declaration of 'spacepad::LibraryPanel::crowdTab'
+  
+D:\a\layers-keys\layers-keys\spacepad\Source\UI.h(216,24): warning C4458: declaration of 'crowdTab' hides class member [D:\a\layers-keys\layers-keys\build\Spacepad.vcxproj]
+  (compiling source file '../spacepad/Source/UIExtra.cpp')
+      D:\a\layers-keys\layers-keys\spacepad\Source\UI.h(234,41):
+      see declaration of 'spacepad::LibraryPanel::crowdTab'
+  
+  juce_audio_processors.cpp
+  juce_audio_processors_ara.cpp
+  juce_audio_processors_lv2_libs.cpp
+D:\a\layers-keys\layers-keys\spacepad\Source\UI.h(216,24): warning C4458: declaration of 'crowdTab' hides class member [D:\a\layers-keys\layers-keys\build\Spacepad.vcxproj]
+  (compiling source file '../spacepad/Source/UICrowd.cpp')
+      D:\a\layers-keys\layers-keys\spacepad\Source\UI.h(234,41):
+      see declaration of 'spacepad::LibraryPanel::crowdTab'
+  
+  juce_gui_extra.cpp
+D:\a\layers-keys\layers-keys\spacepad\Source\UICrowd.cpp(392,21): warning C4458: declaration of 't' hides class member [D:\a\layers-keys\layers-keys\build\Spacepad.vcxproj]
+      D:\a\layers-keys\layers-keys\spacepad\Source\UI.h(498,37):
+      see declaration of 'spacepad::HallView::t'
+  
+D:\a\layers-keys\layers-keys\spacepad\Source\UI.h(216,24): warning C4458: declaration of 'crowdTab' hides class member [D:\a\layers-keys\layers-keys\build\Spacepad.vcxproj]
+  (compiling source file '../spacepad/Source/UIMain.cpp')
+      D:\a\layers-keys\layers-keys\spacepad\Source\UI.h(234,41):
+      see declaration of 'spacepad::LibraryPanel::crowdTab'
+  
+D:\a\layers-keys\layers-keys\spacepad\Source\UICrowd.cpp(687,68): warning C4244: 'argument': conversion from 'int' to 'ValueType', possible loss of data [D:\a\layers-keys\layers-keys\build\Spacepad.vcxproj]
+D:\a\layers-keys\layers-keys\spacepad\Source\UICrowd.cpp(687,68): warning C4244:         with [D:\a\layers-keys\layers-keys\build\Spacepad.vcxproj]
+D:\a\layers-keys\layers-keys\spacepad\Source\UICrowd.cpp(687,68): warning C4244:         [ [D:\a\layers-keys\layers-keys\build\Spacepad.vcxproj]
+D:\a\layers-keys\layers-keys\spacepad\Source\UICrowd.cpp(687,68): warning C4244:             ValueType=float [D:\a\layers-keys\layers-keys\build\Spacepad.vcxproj]
+D:\a\layers-keys\layers-keys\spacepad\Source\UICrowd.cpp(687,68): warning C4244:         ] [D:\a\layers-keys\layers-keys\build\Spacepad.vcxproj]
+  juce_gui_basics.cpp
+  juce_graphics.cpp
+D:\a\layers-keys\layers-keys\build\_deps\juce-src\modules\juce_gui_basics\juce_gui_basics.cpp(61): warning : This version of JUCE does not use the splash screen, the flag JUCE_DISPLAY_SPLASH_SCREEN is ignored [D:\a\layers-keys\layers-keys\build\Spacepad.vcxproj]
+  juce_graphics_Harfbuzz.cpp
+  juce_events.cpp
+  juce_core.cpp
+  juce_core_CompilationTime.cpp
+  juce_data_structures.cpp
+  juce_audio_basics.cpp
+  juce_cryptography.cpp
+  juce_audio_utils.cpp
+  juce_audio_formats.cpp
+  juce_audio_devices.cpp
+  juce_dsp.cpp
