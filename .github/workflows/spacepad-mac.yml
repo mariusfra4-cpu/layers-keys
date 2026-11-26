@@ -50,7 +50,26 @@ jobs:
           grep -q "AU VALIDATION SUCCEEDED" /tmp/splogs/03_auval.txt
           [ "$(uname -m)" = arm64 ] && { arch -x86_64 auval -v aumu Spcp JBPr > /tmp/splogs/03b_auval_intel.txt 2>&1 || true; } || echo "machine Intel : auval ci-dessus = version Intel" > /tmp/splogs/03b_auval_intel.txt
           tail -5 /tmp/splogs/03b_auval_intel.txt
+      - name: Test « faux Logic Pro » et gardien Logic Pro 13
+        shell: bash {0}
+        run: |
+          # comme pour Layers Keys : le plugin est chargé comme Logic le fait (notes décalées, état du projet, fenêtre
+          # ouverte / fermée / rouverte comme Logic 13) ; le gardien compte les signaux pendant 12 s de jeu
+          # (Logic Pro 13 prend tout signal pour un plantage : il ne doit y en avoir AUCUN)
+          clang -fobjc-arc -arch arm64 -arch x86_64 spacepad/tools/au_logic_test.m -o /tmp/au_logic_test \
+            -framework AudioToolbox -framework AppKit -framework CoreAudioKit -framework CoreMIDI 2>&1 | tail -5
+          HOSTA=$(uname -m)
+          echo "=== test Logic ($HOSTA)" > /tmp/splogs/03c_logic.txt
+          /tmp/au_logic_test >> /tmp/splogs/03c_logic.txt 2>&1; echo "EXIT $?" >> /tmp/splogs/03c_logic.txt
+          echo "=== gardien Logic Pro 13 ($HOSTA)" > /tmp/splogs/03d_gardien.txt
+          /tmp/au_logic_test --gardien >> /tmp/splogs/03d_gardien.txt 2>&1; G=$?; echo "EXIT $G" >> /tmp/splogs/03d_gardien.txt
+          if [ "$HOSTA" = arm64 ]; then
+            echo "=== gardien Intel (Rosetta)" >> /tmp/splogs/03d_gardien.txt
+            arch -x86_64 /tmp/au_logic_test --gardien >> /tmp/splogs/03d_gardien.txt 2>&1; echo "EXIT $?" >> /tmp/splogs/03d_gardien.txt
+          fi
+          cat /tmp/splogs/03c_logic.txt /tmp/splogs/03d_gardien.txt
           rm -rf ~/Library/Audio/Plug-Ins/Components/Spacepad.component
+          [ $G -eq 0 ]
       - name: Test de démarrage de l'application (Apple et Intel)
         shell: bash {0}
         run: |
@@ -99,4 +118,7 @@ jobs:
           cp -R /tmp/o/* . 2>/dev/null || true
           echo "run $GITHUB_RUN_ID" > run.txt
           git add -A && git commit -qm "spacepad mac $GITHUB_RUN_ID"
-          git push -f origin HEAD:refs/heads/ci-spacepad-mac
+          # sans installateur (un test a échoué) : seulement les journaux, le lien de téléchargement reste intact
+          target=ci-spacepad-mac
+          ls Spacepad-*.pkg >/dev/null 2>&1 || target=ci-spacepad-mac-echec
+          git push -f origin HEAD:refs/heads/$target
