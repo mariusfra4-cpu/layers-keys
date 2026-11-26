@@ -92,6 +92,7 @@ type overlay struct {
 	custom     func(c *Canvas, r rect) // contenu dessiné à la place de la liste
 	wide       bool                    // grande fenêtre (bibliothèque de sons, pads)
 	live       bool                    // redessiné en continu (molette en direct)
+	follow     bool                    // la sélection a bougé au clavier : la liste défile jusqu'à elle
 }
 
 type UI struct {
@@ -646,6 +647,7 @@ func (o *overlay) clampScroll(vis []int) {
 }
 
 func (o *overlay) move(d int) {
+	o.follow = true
 	vis := o.visible()
 	if len(vis) == 0 {
 		return

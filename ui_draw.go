@@ -951,8 +951,9 @@ func (u *UI) drawOverlay(c *Canvas) {
 	}
 	vis := o.visible()
 	rowh := 28
-	if o.sel >= 0 {
+	if o.sel >= 0 && o.follow { // la liste suit la sélection seulement après les flèches du clavier
 		o.clampScroll(vis)
+		o.follow = false
 	}
 	if len(vis) == 0 {
 		c.Text(x+20, top+10, w-40, 20, "Aucun son ne correspond.", fontMd, colText2, 0)
@@ -993,14 +994,36 @@ func (u *UI) drawOverlay(c *Canvas) {
 		by := float64(top) + (float64(th)-bh)*float64(o.scroll)/float64(len(vis)-ovRows)
 		c.RRect(float64(x+w-20), by, 6, bh, 3, colGoldDim, 1)
 	}
-	u.reg(region{r: rect{x, top, w, ovRows * rowh}, id: "ovwheel", wheel: func(d int) {
-		o.scroll -= 3 * int(sgn(d))
-		maxS := len(vis) - ovRows
-		if maxS < 0 {
-			maxS = 0
+	maxS := len(vis) - ovRows
+	if maxS < 0 {
+		maxS = 0
+	}
+	wheel := func(d int) {
+		o.scroll = clamp(o.scroll-3*int(sgn(d)), 0, maxS)
+	}
+	u.reg(region{r: rect{x, top, w, ovRows * rowh}, id: "ovwheel", wheel: wheel})
+	if maxS > 0 {
+		// barre de défilement : on l'attrape et on la fait glisser, ou on clique dessus pour sauter
+		th := ovRows * rowh
+		bh := int(math.Max(24, float64(th)*float64(ovRows)/float64(len(vis))))
+		grab := 0
+		place := func(py int) {
+			f := float64(py-top-grab) / float64(th-bh)
+			o.scroll = clamp(int(math.Round(f*float64(maxS))), 0, maxS)
+			u.host.Invalidate()
 		}
-		o.scroll = clamp(o.scroll, 0, maxS)
-	}})
+		u.reg(region{r: rect{x + w - 30, top, 26, th}, id: "ovscroll", wheel: wheel,
+			down: func(px, py int) {
+				by := top + (th-bh)*o.scroll/maxS
+				if py >= by && py < by+bh {
+					grab = py - by // on garde la barre sous la souris
+				} else {
+					grab = bh / 2
+				}
+				place(py)
+			},
+			drag: func(px, py int) { place(py) }})
+	}
 	c.Text(x+20, y+h-30, w-40, 16, o.hint, fontXs, colText2, 0)
 }
 
