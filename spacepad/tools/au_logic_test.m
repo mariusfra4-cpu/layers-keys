@@ -64,6 +64,28 @@ static NSView *openEditor(AudioUnit au, NSWindow **outWin) {
     return v;
 }
 
+
+/* « photo » de la vue du plugin (ce qu'elle dessine vraiment, quelle que soit sa façon de dessiner) :
+   renvoie la part de pixels non vides et une empreinte pour comparer deux images */
+static double viewInk(NSView *v, unsigned long long *hash) {
+    NSRect r = v.bounds;
+    NSBitmapImageRep *rep = [v bitmapImageRepForCachingDisplayInRect:r];
+    if (!rep) return 0;
+    [v cacheDisplayInRect:r toBitmapImageRep:rep];
+    NSInteger w = rep.pixelsWide, h = rep.pixelsHigh, n = 0, lit = 0;
+    unsigned long long hh = 1469598103934665603ULL;
+    for (NSInteger y = 0; y < h; y += 4)
+        for (NSInteger x = 0; x < w; x += 4) {
+            NSUInteger px[4] = {0, 0, 0, 0};
+            [rep getPixel:px atX:x y:y];
+            if (px[0] + px[1] + px[2] > 24) lit++;
+            n++;
+            hh = (hh ^ (px[0] | (px[1] << 8) | (px[2] << 16))) * 1099511628211ULL;
+        }
+    if (hash) *hash = hh;
+    return n ? (double)lit / (double)n : 0;
+}
+
 static int render(AudioUnit au, UInt32 n, int withBuffers, float *peak) {
     static float L[4096], R[4096];
     struct { AudioBufferList l; AudioBuffer extra; } abl;
@@ -252,12 +274,13 @@ int main(int argc, char **argv) {
             if (v) {
                 for (int i = 0; i < 30; i++) { render(au, 512, 1, NULL); spin(0.02); }
                 CHECK(v.window == win, "ouverture %d : la vue est dans la fenêtre", round);
-                CHECK(v.layer != nil && v.layer.contents != nil, "ouverture %d : l'interface est dessinée (image présente)", round);
-                /* l'image doit continuer d'être redessinée (minuterie en marche) : on compare deux images successives */
-                id img1 = v.layer.contents;
+                unsigned long long h1 = 0, h2 = 0;
+                double ink = viewInk(v, &h1);
+                CHECK(ink > 0.2, "ouverture %d : l'interface est dessinée (%.0f %% de l'image)", round, ink * 100);
+                /* l'image doit continuer d'être redessinée (animation en marche) : on compare deux images successives */
                 spin(0.5);
-                CHECK(v.layer.contents != nil, "ouverture %d : l'interface est toujours dessinée après 0,5 s", round);
-                (void)img1;
+                double ink2 = viewInk(v, &h2);
+                CHECK(ink2 > 0.2 && h1 != h2, "ouverture %d : l'interface vit (image différente après 0,5 s)", round);
                 /* vrais clics de souris dans la fenêtre, en bas (boutons de lecture) : l'interface doit répondre */
                 NSDate *t0 = [NSDate date];
                 for (int k = 0; k < 6; k++) {
@@ -299,9 +322,10 @@ int main(int argc, char **argv) {
                 w2.releasedWhenClosed = NO;
                 [w2 setContentView:kept]; /* réouverture : la même vue revient */
                 [w2 orderFront:nil];
-                id before = kept.layer.contents;
                 spin(0.6);
-                CHECK(kept.window == w2 && kept.layer.contents != nil, "Logic 13 : la même vue est de nouveau affichée et dessinée");
+                unsigned long long hb = 0, ha = 0;
+                double inkB = viewInk(kept, &hb);
+                CHECK(kept.window == w2 && inkB > 0.2, "Logic 13 : la même vue est de nouveau affichée et dessinée (%.0f %%)", inkB * 100);
                 /* clics dans la vue revenue : doivent être traités, sans blocage ni plantage */
                 NSDate *t1 = [NSDate date];
                 for (int k = 0; k < 6; k++) {
@@ -319,7 +343,8 @@ int main(int argc, char **argv) {
                 double dt1 = -[t1 timeIntervalSinceNow];
                 CHECK(dt1 < 5.0, "Logic 13 : 6 clics dans la vue revenue, sans blocage (%.2f s)", dt1);
                 spin(0.5);
-                CHECK(kept.layer.contents != nil && kept.layer.contents != before, "Logic 13 : l'image se met à jour après les clics");
+                viewInk(kept, &ha);
+                CHECK(ha != hb, "Logic 13 : l'image se met à jour après les clics");
                 [w2 close];
                 spin(0.5);
             }
