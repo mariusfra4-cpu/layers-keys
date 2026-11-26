@@ -94,3 +94,19 @@ func TestWheelSettings(t *testing.T) {
 		shotPNG(t, dir, "molette_page", u)
 	}
 }
+
+// jouer le lead (piste sélectionnée) ne doit pas changer la vitesse du Leslie de l'orgue sur une autre piste
+func TestWheelLeadDoesNotTouchOrgan(t *testing.T) {
+	u, _, e := newTestUI(t, "")
+	u.fxSetAt(2, func(c *FXCfg) { c.Leslie.On = true }) // orgue sur la piste 3
+	u.sel = 3                                            // le lead
+	u.Tick()
+	e.Control(1, 127)
+	if e.LeslieFast() {
+		t.Fatal("la molette du lead a changé la vitesse du Leslie de l'orgue")
+	}
+	e.modS = 1
+	if e.vibWheel(e.ch[3]) == 0 || e.vibWheel(e.ch[0]) != 0 || e.vibWheel(e.ch[2]) != 0 {
+		t.Fatal("la molette doit agir sur le lead seulement")
+	}
+}

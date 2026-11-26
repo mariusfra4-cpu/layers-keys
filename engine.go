@@ -303,6 +303,18 @@ func (e *Engine) SetWheelMode(mode int, les bool) {
 
 func (e *Engine) wheelLeslie() bool { return atomic.LoadInt32(&e.wheelNoLes) == 0 }
 
+// leslieUnderWheel : la molette règle le Leslie seulement si elle « tient » une piste avec LESLIE
+// (piste sélectionnée seulement : jouer le lead ne doit pas changer la vitesse de l'orgue)
+func (e *Engine) leslieUnderWheel() bool {
+	switch atomic.LoadInt32(&e.wheelMode) {
+	case 1:
+		return e.anyLeslie()
+	case 2:
+		return false
+	}
+	return e.hasLeslie(e.WheelTrack())
+}
+
 // wheelOn : la molette agit sur cette piste (selon le réglage, sauf si son Leslie l'utilise pour la vitesse)
 func (e *Engine) wheelOn(ch int) bool {
 	if e.wheelLeslie() && e.hasLeslie(ch) {
@@ -619,7 +631,7 @@ func (e *Engine) Control(cc, val int) {
 	case 1:
 		e.mod = float64(val) / 127
 		// orgue : sur les pistes avec LESLIE, la molette règle la vitesse (en haut rapide, en bas lent)
-		if e.wheelLeslie() && e.anyLeslie() {
+		if e.wheelLeslie() && e.leslieUnderWheel() {
 			if fast := e.LeslieFast(); !fast && val >= 80 {
 				e.SetLeslieFast(true)
 			} else if fast && val <= 47 {

@@ -20,23 +20,7 @@ import (
 )
 
 const (
-	catPiano = iota
-	catOrgan
-	catSynth
-	catPad
-	catStrings
-	catBass
-	catOther
-	nCat
-)
-
-var catNames = [nCat]string{"PIANO", "ORGUE", "SYNTHÉ", "PAD", "STRINGS", "BASSE", "AUTRES"}
-
-// icône représentative de chaque famille (titres des colonnes)
-var catIcons = [nCat]int{icKeys, icOrgan, icWave, icCloud, icStrings, icBass, icLayers}
-
-const (
-	libVersion  = 2    // 2 : colonne BASSE ajoutée
+	libVersion  = 3    // 2 : colonne BASSE ; 3 : 14 familles (LEAD, SYNTHÉ, GUITARE, CHŒURS…)
 	libMaxFiles = 4000 // garde-fou : un dossier énorme (disque entier) ne doit pas bloquer le logiciel
 	libMaxDepth = 8
 )
@@ -79,8 +63,8 @@ func loadLibrary(path string) *Library {
 	if b, err := os.ReadFile(path); err == nil {
 		var x Library
 		x.Pads = defaultPadCfg()
-		if json.Unmarshal(b, &x) == nil && (x.Version == libVersion || x.Version == 1) {
-			if x.Version == 1 { // ancienne liste (sans colonne BASSE) : on range à nouveau chaque son, sans relire le dossier
+		if json.Unmarshal(b, &x) == nil && x.Version >= 1 && x.Version <= libVersion {
+			if x.Version != libVersion { // ancienne liste : on range à nouveau chaque son, sans relire le dossier
 				x.relabel()
 				x.Version = libVersion
 			}
@@ -124,58 +108,6 @@ func saveLibrary(path string, l *Library) error {
 		return err
 	}
 	return os.Rename(tmp, path)
-}
-
-// famille d'un son d'après son icône (soundkind.go)
-func catFromIcon(ic int) int {
-	switch ic {
-	case icKeys, icUpright:
-		return catPiano
-	case icOrgan:
-		return catOrgan
-	case icWave, icSquare:
-		return catSynth
-	case icCloud, icPad:
-		return catPad
-	case icStrings:
-		return catStrings
-	case icBass:
-		return catBass
-	}
-	return catOther
-}
-
-// famille d'un son : nom du son, puis nom du fichier, puis nom des dossiers (« Pianos/… », « Pads/… »),
-// et pour un SoundFont le numéro de programme General MIDI.
-func libCat(name, file string, isSF bool, bank, prog int, dirs []string) int {
-	if isSF && bank == 128 {
-		return catOther // batteries
-	}
-	if k := iconFromName(name); k >= 0 {
-		return catFromIcon(k)
-	}
-	if isSF && bank == 0 && !genericName(name) {
-		if k := iconFromGM(prog); k >= 0 {
-			return catFromIcon(k)
-		}
-	}
-	if k := iconFromName(baseNoExt(file)); k >= 0 {
-		return catFromIcon(k)
-	}
-	for i := len(dirs) - 1; i >= 0; i-- { // du dossier le plus proche au plus lointain
-		if k := iconFromName(dirs[i]); k >= 0 {
-			return catFromIcon(k)
-		}
-	}
-	if isSF && bank == 0 {
-		if k := iconFromGM(prog); k >= 0 {
-			return catFromIcon(k)
-		}
-	}
-	if isSF {
-		return catPiano // un SoundFont sans indice est le plus souvent un piano
-	}
-	return catOther
 }
 
 func isLibFile(name string) (sf, audio bool) {
@@ -303,6 +235,7 @@ type libState struct {
 	scanning bool
 	files    int // fichiers lus pendant l'analyse
 	scroll   [nCat]int
+	colOff   int // première famille affichée (les rangées glissent)
 }
 
 func (u *UI) libLoad() {

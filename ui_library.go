@@ -14,12 +14,14 @@ import (
 func (u *UI) openSoundMenu(ch int) {
 	u.libTrack = ch
 	u.ov = &overlay{title: Tf("Choisir le son de la piste %d", ch+1), wide: true, sel: -1,
-		hint: T("Clique sur un son pour le charger · molette = faire défiler une colonne · Échap pour fermer")}
+		hint: T("Clique sur un son pour le charger · molette = faire défiler une rangée · ◀ ▶ = autres familles · Échap pour fermer")}
 	u.ov.custom = u.drawLibrary
 	u.host.Invalidate()
 }
 
 const libRowH = 26
+
+const libVisCols = 6 // familles visibles à la fois dans la fenêtre des sons
 
 // libPickFile : bouton « Ouvrir un fichier… » (un son hors du dossier de sons)
 func (u *UI) libPickFile(ch int) {
@@ -63,7 +65,7 @@ func (u *UI) drawLibrary(c *Canvas, r rect) {
 	case dir != "":
 		info = Tf("%d sons · %s", sounds, dir)
 	}
-	c.Text(bx, r.y-6, r.x+r.w-bx, 28, info, fontXs, colText2, 0)
+	c.Text(bx, r.y-6, r.x+r.w-bx-96, 28, info, fontXs, colText2, 0)
 
 	top := r.y + 32
 	if dir == "" && sounds == 0 {
@@ -77,15 +79,49 @@ func (u *UI) drawLibrary(c *Canvas, r rect) {
 		return
 	}
 
-	// colonnes : une par famille
+	// rangées : une par famille trouvée (les familles vides sont cachées), 6 à l'écran, on fait glisser pour voir les autres
+	var shown []int
+	for k := 0; k < nCat; k++ {
+		if len(cats[k]) > 0 {
+			shown = append(shown, k)
+		}
+	}
+	if len(shown) == 0 {
+		for k := 0; k < nCat; k++ {
+			shown = append(shown, k)
+		}
+	}
+	nVis := len(shown)
+	if nVis > libVisCols {
+		nVis = libVisCols
+	}
+	u.libs.mu.Lock()
+	off := clamp(u.libs.colOff, 0, len(shown)-nVis)
+	u.libs.colOff = off
+	u.libs.mu.Unlock()
+	slide := func(d int) {
+		u.libs.mu.Lock()
+		u.libs.colOff = clamp(u.libs.colOff+d, 0, len(shown)-nVis)
+		u.libs.mu.Unlock()
+		u.host.Invalidate()
+	}
+	if len(shown) > nVis {
+		ax := r.x + r.w - 88
+		u.button(c, "libPrev", rect{ax, r.y - 6, 42, 28}, "◀", false, fontSm, func() { slide(-1) })
+		u.button(c, "libNext", rect{ax + 46, r.y - 6, 42, 28}, "▶", false, fontSm, func() { slide(1) })
+		// petite réglette : quelles familles sont à l'écran
+		c.Text(r.x+r.w-300, r.y-6, 206, 28, Tf("familles %d-%d sur %d", off+1, off+nVis, len(shown)), fontXs, colText2, 2)
+	}
 	gap := 10
-	cw := (r.w - gap*(nCat-1)) / nCat
+	cw := (r.w - gap*(nVis-1)) / nVis
 	listTop := top + 40
 	rows := (r.y + r.h - 6 - listTop) / libRowH
 	cur := u.srcCfg[ch]
-	for k := 0; k < nCat; k++ {
-		k := k
-		x := r.x + k*(cw+gap)
+	// la molette sur les titres fait glisser les familles
+	u.reg(region{r: rect{r.x, top, r.w, 32}, id: "libheads", wheel: func(d int) { slide(-int(sgn(d))) }})
+	for vi := 0; vi < nVis; vi++ {
+		k := shown[off+vi]
+		x := r.x + vi*(cw+gap)
 		list := cats[k]
 		// titre de la colonne
 		c.RRect(float64(x), float64(top), float64(cw), 32, 8, 0x162238, 1)
