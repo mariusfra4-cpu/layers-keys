@@ -230,7 +230,7 @@ Licence::Status Licence::status()
     {
         const juce::ScopedLock sl (lock);
         if (! checked || ! licensed) { licensed = readLicence(); checked = true; }
-        if (licensed) return { State::Licensed, {}, false, false };
+        if (licensed) { Status st; st.state = State::Licensed; return st; }
     }
     Status st;
     juce::int64 start = 0, last = 0;
