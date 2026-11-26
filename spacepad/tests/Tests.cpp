@@ -8,6 +8,11 @@
 #include "PluginEditor.h"
 #include "Lang.h"
 #include "AudioOpen.h"
+#include "Licence.h"
+extern "C"
+{
+#include "monocypher-ed25519.h"
+}
 #include <map>
 
 using namespace spacepad;
@@ -507,6 +512,15 @@ static void snapshot (const juce::File& outDir, const juce::File& root)
                 so->showPage (4); shot ("spacepad_param_enregistrement.png");
                 so->setVisible (false);
             }
+        // licence : écran d'activation, puis bandeau de démo
+        p.forceLicenceStateForTests (Licence::State::Locked);
+        v.openLicence();
+        shot ("spacepad_licence.png");
+        for (auto* c : v.getChildren()) if (auto* lo = dynamic_cast<LicenceOverlay*> (c)) lo->setVisible (false);
+        p.forceLicenceStateForTests (Licence::State::Demo, 2 * 86400 + 14 * 3600 + 120);
+        v.repaint();
+        shot ("spacepad_demo.png");
+        p.forceLicenceStateForTests (Licence::State::Licensed);
         // mode scène
         v.openStage();
         shot ("spacepad_scene.png");
@@ -1734,6 +1748,100 @@ static void testDawRecording()
     p.stopAll();
 }
 
+static juce::String b32test (const juce::uint8* d, int n)
+{
+    const char* a = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+    juce::String out; int buf = 0, bits = 0;
+    for (int i = 0; i < n; ++i) { buf = (buf << 8) | d[i]; bits += 8; while (bits >= 5) { out << a[(buf >> (bits - 5)) & 31]; bits -= 5; } }
+    if (bits > 0) out << a[(buf << (5 - bits)) & 31];
+    juce::StringArray parts; for (int i = 0; i < out.length(); i += 8) parts.add (out.substring (i, i + 8));
+    return parts.joinIntoString ("-");
+}
+
+static void testLicence (const juce::File& tmp)
+{
+    section ("Licence (une cle par ordinateur, demo de 3 jours)");
+    // 1. même cryptographie que le générateur JB Clés : l'exemple officiel de son test (graine 00..1f) est reconnu
+    juce::uint8 seed[32], pub[32], priv[64];
+    for (int i = 0; i < 32; ++i) seed[i] = (juce::uint8) i;
+    juce::uint8 seedCopy[32]; memcpy (seedCopy, seed, 32);
+    crypto_ed25519_key_pair (priv, pub, seedCopy);
+    {
+        const juce::String vec = "BIBB67FT-U5AOFOQQ-EJRTD5S3-ZOOQ7ZBW-ZKCCYMUX-STXPDKG3-3EL2DAT4-PY5XNHOU-DCAXCE52-6KSQXBIW-FXDEK5F5-JLYASQKQ-JVWJIBY";
+        const juce::String msg = "LayersKeys|JBK-1A2B-3C4D-5E6F-7A8B";
+        const char* a = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+        juce::MemoryBlock sig; int buf = 0, bits = 0;
+        for (auto c : vec.removeCharacters ("-")) { buf = (buf << 5) | (int) (std::strchr (a, (char) c) - a); bits += 5; if (bits >= 8) { juce::uint8 v = (juce::uint8) ((buf >> (bits - 8)) & 255); sig.append (&v, 1); bits -= 8; } }
+        const bool ok = sig.getSize() == 64 && crypto_ed25519_check (static_cast<const juce::uint8*> (sig.getData()), pub, reinterpret_cast<const juce::uint8*> (msg.toRawUTF8()), msg.getNumBytesAsUTF8()) == 0;
+        CHECK (ok, "meme signature Ed25519 que le generateur JB Cles (exemple officiel reconnu)");
+    }
+    std::array<juce::uint8, 32> testPub; memcpy (testPub.data(), pub, 32);
+    auto makeLicence = [&] (const juce::String& machine, juce::int64* clock)
+    {
+        auto l = std::make_unique<Licence>();
+        l->machineId = [machine] { return machine; };
+        auto d1 = tmp.getChildFile ("lic_commun"), d2 = tmp.getChildFile ("lic_utilisateur");
+        l->dirs = [d1, d2] { return juce::Array<juce::File> { d1, d2 }; };
+        l->now = [clock] { return *clock; };
+        l->publicKey = testPub;
+        return l;
+    };
+    tmp.getChildFile ("lic_commun").deleteRecursively(); tmp.getChildFile ("lic_utilisateur").deleteRecursively();
+    juce::int64 clock = 1800000000;
+    auto lic = makeLicence ("mac|AAAA-1111", &clock);
+    const auto code = lic->code();
+    CHECK (code.startsWith ("JBS-") && code.length() == 23 && Licence::normaliseCode (code) == code, "code de l'ordinateur : " << code);
+    CHECK (makeLicence ("mac|AAAA-1111", &clock)->code() == code && makeLicence ("mac|BBBB-2222", &clock)->code() != code, "le code depend de l'ordinateur (et lui seul)");
+    CHECK (Licence::normaliseCode (code.replace ("0", "O").toLowerCase().removeCharacters ("-")) == code, "code retape avec des O a la place des 0 : accepte");
+    CHECK (lic->status().state == Licence::State::Locked, "au depart : verrouille");
+    // démo
+    lic->startDemo();
+    auto st = lic->status();
+    CHECK (st.state == Licence::State::Demo && st.demoLeft.inHours() > 71.9, "demo lancee : 3 jours (" << Licence::formatDemoLeft (st.demoLeft) << ")");
+    clock += 10 * 3600; lic->status();                 // 10 h plus tard
+    clock -= 9 * 3600;                                 // horloge remise en arrière
+    st = lic->status();
+    CHECK (st.state == Licence::State::Demo && st.demoLeft.inHours() < 62.1, "horloge remise en arriere : reperee (" << Licence::formatDemoLeft (st.demoLeft) << ")");
+    lic->startDemo();
+    CHECK (lic->status().demoLeft.inHours() < 62.1, "relancer la demo ne la remet pas a zero");
+    clock += 80 * 3600;
+    st = lic->status();
+    CHECK (st.state == Licence::State::Locked && st.demoUsed, "apres 3 jours : verrouille");
+    // fichier de démo modifié à la main
+    clock -= 80 * 3600;
+    auto f = tmp.getChildFile ("lic_commun/demo.dat");
+    f.replaceWithText (f.loadFileAsString().replace ("1800000000", "1900000000"));
+    CHECK (lic->status().tamper && lic->status().state == Licence::State::Locked, "demo modifiee a la main : reperee, verrouille");
+    // activation
+    CHECK (lic->activate ("AAAA-BBBB").isNotEmpty(), "une fausse cle est refusee");
+    const auto msg = "Spacepad|" + code;
+    juce::uint8 sig[64];
+    crypto_ed25519_sign (sig, priv, reinterpret_cast<const juce::uint8*> (msg.toRawUTF8()), msg.getNumBytesAsUTF8());
+    const auto key = b32test (sig, 64);
+    const auto otherMsg = juce::String ("LayersKeys|JBK-") + code.substring (4);
+    juce::uint8 sig2[64];
+    crypto_ed25519_sign (sig2, priv, reinterpret_cast<const juce::uint8*> (otherMsg.toRawUTF8()), otherMsg.getNumBytesAsUTF8());
+    CHECK (lic->activate (b32test (sig2, 64)).isNotEmpty(), "une cle Layers Keys n'active pas Spacepad");
+    CHECK (makeLicence ("mac|BBBB-2222", &clock)->activate (key).isNotEmpty(), "la cle d'un autre ordinateur est refusee");
+    CHECK (lic->activate ("  " + key.toLowerCase() + "\n").isEmpty() && lic->status().state == Licence::State::Licensed, "la bonne cle active Spacepad (meme collee en minuscules avec des espaces)");
+    CHECK (makeLicence ("mac|AAAA-1111", &clock)->status().state == Licence::State::Licensed, "licence gardee : l'application et les plugins la voient");
+    // le moteur se tait tant que ce n'est pas activé
+    {
+        SpacepadProcessor p;
+        p.setPlayConfigDetails (0, 2, 48000, 256);
+        p.prepareToPlay (48000, 256);
+        for (auto& l : p.libraries().snapshot()) if (l.name == "Warm Pad") { p.selectPadLibrary (l.id, 0); p.selectPadLibrary (l.id, 1); }
+        p.pressKey (4); p.waitIdleForTests (3000);
+        const float on = runFor (p, 1.5);
+        p.forceLicenceStateForTests (Licence::State::Locked);
+        const float off = runFor (p, 0.5);
+        p.forceLicenceStateForTests (Licence::State::Demo);
+        const float demo = runFor (p, 0.5);
+        CHECK (on > 0.005f && off == 0.0f && demo > 0.005f, "sans licence ni demo : silence ; en demo : le son sort (" << on << " / " << off << " / " << demo << ")");
+        p.stopAll();
+    }
+}
+
 int main (int argc, char** argv)
 {
     juce::ScopedJuceInitialiser_GUI gui;
@@ -1762,6 +1870,7 @@ int main (int argc, char** argv)
     testAutomation (root);
     testInstantPlay();
     testDawRecording();
+    testLicence (tmp);
     if (argc > 1) snapshot (juce::File (juce::String (argv[1])), root);
     if (juce::SystemStats::getEnvironmentVariable ("SPACEPAD_BENCH", {}).isNotEmpty()) benchPaint (root);
    #if ! JUCE_WINDOWS

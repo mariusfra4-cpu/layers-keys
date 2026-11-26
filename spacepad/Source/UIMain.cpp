@@ -30,6 +30,7 @@ MainView::MainView (SpacepadProcessor& p) : proc (p)
     library.onChooseFolder = [this] (bool crowdTab) { chooseFolder (crowdTab); };
     library.onChooseFiles = [this] (bool crowdTab) { chooseFiles (crowdTab); };
     gear.onClick = [this] { openSettings(); };
+    header.onLicence = [this] { showLicence (true); };
     hook.onClick = [this] { proc.setMode (proc.currentMode() == 1 ? 0 : 1); };
 
     playBtn.getProperties().set ("icon", "play");
@@ -70,6 +71,7 @@ MainView::~MainView()
 {
     stopTimer();
     if (screenSaverOff) juce::Desktop::setScreenSaverEnabled (true);
+    licenceView.reset();
     task.reset();
     stage.reset();
     scan.reset();
@@ -223,6 +225,17 @@ void MainView::runTask (const juce::String& title, std::function<bool (ProgressF
     task->setBounds (getLocalBounds());
 }
 
+void MainView::showLicence (bool show)
+{
+    if (! show) { licenceView.reset(); repaint(); return; }
+    if (licenceView != nullptr) return;
+    licenceView = std::make_unique<LicenceOverlay> (proc);
+    licenceView->onClose = [this] { juce::MessageManager::callAsync ([this] { if (proc.licenceState() != Licence::State::Locked) showLicence (false); }); };
+    addAndMakeVisible (*licenceView);
+    licenceView->setBounds (getLocalBounds());
+    licenceView->toFront (true);
+}
+
 void MainView::openStage()
 {
     stage = std::make_unique<StageOverlay> (proc);
@@ -330,6 +343,8 @@ void MainView::timerCallback()
     if (settingsVersion() != lastSettings) applySettings();
     if (proc.libraries().changeCount() != lastChanges) { lastChanges = proc.libraries().changeCount(); library.refresh(); }
     if (proc.midiActivity()) midiFlashUntil = now + 150;
+    // pas encore activé (ni démo) : l'écran d'activation s'affiche tout seul
+    if (tick % 10 == 0 && proc.licenceState() == Licence::State::Locked && licenceView == nullptr) showLicence (true);
     library.updateState();
     // garder l'écran allumé pendant le jeu (réglage)
     const bool wantAwake = uiSettings().keepAwake && proc.padActive() && proc.wrapperType == juce::AudioProcessor::wrapperType_Standalone;   // dans un DAW, l'écran est géré par lui
@@ -392,6 +407,7 @@ void MainView::resized()
     if (scan) scan->setBounds (getLocalBounds());
     if (stage) stage->setBounds (getLocalBounds());
     if (task) task->setBounds (getLocalBounds());
+    if (licenceView) licenceView->setBounds (getLocalBounds());
     if (settings) settings->setBounds (getLocalBounds());
 }
 
@@ -437,7 +453,7 @@ void MainView::paintOverChildren (juce::Graphics& g)
                     b.withSizeKeepingCentre (b.getWidth(), 30).translated (0, 30), juce::Justification::centred);
         return;
     }
-    if (scan || settings || stage || task) return;
+    if (scan || settings || stage || task || licenceView) return;
     auto ft = juce::Rectangle<float> (40, (float) getHeight() - 12 - 38, (float) getWidth() - 80, 38);
     const bool midi = juce::Time::getMillisecondCounter() < midiFlashUntil;
     auto dot = juce::Rectangle<float> (ft.getX(), ft.getCentreY() - 4, 8, 8);

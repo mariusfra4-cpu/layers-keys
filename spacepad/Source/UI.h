@@ -161,7 +161,10 @@ public:
     explicit Header (SpacepadProcessor& p) : proc (p) {}
     void paint (juce::Graphics&) override;
     void invalidate() { logoImg = {}; nameImg = {}; }
+    void mouseUp (const juce::MouseEvent& e) override { if (demoPill.contains (e.position) && onLicence) onLicence(); }
+    std::function<void()> onLicence;          // le bandeau de démo ouvre l'écran d'activation
 private:
+    juce::Rectangle<float> demoPill;
     SpacepadProcessor& proc;
     juce::Image logoImg, nameImg;            // lueurs préparées une fois
     float logoScale = 0, nameScale = 0;
@@ -411,6 +414,24 @@ private:
     juce::String icon;
 };
 
+// Écran « Autoriser Spacepad sur cet ordinateur » : code de l'ordinateur, clé de licence, démo de 3 jours
+class LicenceOverlay : public juce::Component
+{
+public:
+    explicit LicenceOverlay (SpacepadProcessor&);
+    void paint (juce::Graphics&) override;
+    void resized() override;
+    std::function<void()> onClose;            // seulement possible en démo ou une fois activé
+private:
+    juce::Rectangle<int> card() const;
+    void refresh();
+    SpacepadProcessor& proc;
+    juce::TextEditor keyEdit;
+    juce::TextButton copyBtn, activateBtn, demoBtn, closeBtn;
+    juce::String error;
+    juce::Rectangle<int> codeArea;
+};
+
 // Travail long (copie, export, import) avec sa barre de progression
 class TaskOverlay : public juce::Component, private juce::Timer, private juce::Thread
 {
@@ -520,6 +541,7 @@ public:
     void fileDragExit (const juce::StringArray&) override { dragOver = false; repaint(); }
     void openSettings();
     void openStage();
+    void openLicence() { showLicence (true); }
     void retranslate();                         // textes dans la langue choisie (FR, EN, ES)
     void applySettings();                       // couleurs, thème, taille… depuis les Paramètres
     void animateForTests (float seconds);       // fait avancer l'animation sans attendre (tests, captures)
@@ -549,6 +571,8 @@ private:
     IconButton stageBtn { "stage" };
     std::unique_ptr<StageOverlay> stage;
     std::unique_ptr<TaskOverlay> task;
+    std::unique_ptr<LicenceOverlay> licenceView;
+    void showLicence (bool show);
     void runTask (const juce::String& title, std::function<bool (ProgressFn)> work, std::function<void (bool)> done);
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> loopAtt;
     std::unique_ptr<ScanOverlay> scan;

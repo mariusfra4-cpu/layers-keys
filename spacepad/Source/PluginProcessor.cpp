@@ -101,6 +101,9 @@ SpacepadProcessor::SpacepadProcessor()
 {
     for (auto& m : midiMap) m = -1;
     prefs.load();
+   #if ! SPACEPAD_TESTS
+    refreshLicence();
+   #endif
     ccLast.fill (0);
     autoSelectLibraries();
     refreshMidiSettings();
@@ -426,6 +429,8 @@ void SpacepadProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
     }
     for (int ch = mainOut.getNumChannels() + (auxOn ? 2 : 0); ch < buffer.getNumChannels(); ++ch) buffer.clear (ch, 0, total);
     lastMaster = masterGain;
+    // pas encore activé (ni démo) : rien ne sort
+    if (licState.load() == (int) Licence::State::Locked) { buffer.clear(); peak = 0; }
     level = juce::jmax (peak, level.load() * 0.85f);
     for (int s = 0; s < 2; ++s) crowdLvl[s] = juce::jmax (cpk[s], crowdLvl[s].load() * 0.85f);
 }
@@ -962,6 +967,13 @@ juce::String SpacepadProcessor::describeEvent (const RecEvent& e, const Setlist&
     }
 }
 
+void SpacepadProcessor::refreshLicence()
+{
+    const auto st = lic.status();
+    demoLeft = st.demoLeft.inSeconds();
+    licState = (int) st.state;
+}
+
 void SpacepadProcessor::waitIdleForTests (int ms)
 {
     auto end = juce::Time::getMillisecondCounter() + (juce::uint32) ms;
@@ -1045,6 +1057,9 @@ void SpacepadProcessor::run()
             if (store.reloadIfChanged()) autoSelectLibraries();
             songs.reloadIfChanged();
             prefs.reloadIfChanged();
+           #if ! SPACEPAD_TESTS
+            refreshLicence();     // activée dans l'application : le plugin le voit aussi
+           #endif
         }
     }
 }

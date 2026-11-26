@@ -70,7 +70,10 @@ set(SPACEPAD_CORE_SOURCES
   Source/Effects.cpp
   Source/AudioOpen.cpp
   Source/Modulation.cpp
-  Source/CrowdPrefs.cpp)
+  Source/CrowdPrefs.cpp
+  Source/Licence.cpp
+  Source/third_party/monocypher/monocypher.c
+  Source/third_party/monocypher/monocypher-ed25519.c)
 
 target_sources(Spacepad PRIVATE
   ${SPACEPAD_CORE_SOURCES}
@@ -96,8 +99,13 @@ target_compile_definitions(Spacepad PUBLIC
   JUCE_APPLICATION_NAME_STRING="$<TARGET_PROPERTY:Spacepad,JUCE_PRODUCT_NAME>"
   JUCE_APPLICATION_VERSION_STRING="$<TARGET_PROPERTY:Spacepad,JUCE_VERSION>")
 
+target_include_directories(Spacepad PRIVATE Source/third_party/monocypher)
+if(APPLE)
+  target_link_libraries(Spacepad PRIVATE "-framework IOKit")
+endif()
 target_link_libraries(Spacepad
   PRIVATE
+    juce::juce_cryptography
     SpacepadData
     juce::juce_audio_utils
     juce::juce_audio_formats
@@ -120,7 +128,10 @@ target_sources(SpacepadTests PRIVATE
   Source/UICrowd.cpp
   Source/UIMain.cpp
   tests/Tests.cpp)
-target_include_directories(SpacepadTests PRIVATE Source)
+target_include_directories(SpacepadTests PRIVATE Source Source/third_party/monocypher)
+if(APPLE)
+  target_link_libraries(SpacepadTests PRIVATE "-framework IOKit")
+endif()
 target_compile_definitions(SpacepadTests PRIVATE
   SPACEPAD_TESTS=1
   JUCE_MODAL_LOOPS_PERMITTED=1
@@ -139,6 +150,7 @@ target_compile_definitions(SpacepadTests PRIVATE
   JUCE_USE_OGGVORBIS=1)
 target_link_libraries(SpacepadTests
   PRIVATE
+    juce::juce_cryptography
     SpacepadData
     juce::juce_audio_utils
     juce::juce_audio_formats

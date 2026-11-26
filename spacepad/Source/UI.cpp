@@ -368,6 +368,25 @@ void Header::paint (juce::Graphics& g)
     g.setColour (loop ? juce::Colour (0xffffcf8a) : theme::muted);
     g.setFont (theme::ui (13.0f, 1));
     g.drawText (loop ? "LOOP ON" : "LOOP OFF", lcd.withTrimmedRight (20).removeFromRight (100), juce::Justification::centredRight);
+    // démo en cours : temps restant (toucher ouvre l'écran d'activation)
+    float pillRight = lcd.getRight() - 130;
+    demoPill = {};
+    if (proc.licenceState() == Licence::State::Demo)
+    {
+        auto f = theme::ui (11.0f, 2);
+        const juce::String txt = L ("D\xc3\xa9mo : ", "Demo: ", "Demo: ") + Licence::formatDemoLeft (juce::RelativeTime::seconds (proc.demoSecondsLeft())) + U (" \xc2\xb7 ") + L ("Activer", "Activate", "Activar");
+        const float tw = juce::GlyphArrangement::getStringWidth (f, txt) + 32;
+        demoPill = juce::Rectangle<float> (pillRight - tw, lcd.getCentreY() - 13, tw, 26);
+        g.setColour (theme::amber.withAlpha (0.15f));
+        g.fillRoundedRectangle (demoPill, 13.0f);
+        g.setColour (theme::amber.withAlpha (0.8f));
+        g.drawRoundedRectangle (demoPill.reduced (0.5f), 13.0f, 1.0f);
+        g.fillEllipse (demoPill.getX() + 12, demoPill.getCentreY() - 4, 8, 8);
+        g.setFont (f);
+        g.setColour (juce::Colour (0xffffe0c0));
+        g.drawText (txt, demoPill.withTrimmedLeft (26), juce::Justification::centredLeft);
+        pillRight = demoPill.getX() - 8;
+    }
     // voyant d'enregistrement avec le logiciel de musique (rouge : il garde tes actions ; vert : il les rejoue)
     if (proc.dawRecordingNow() || proc.dawReplayingNow())
     {
@@ -377,7 +396,7 @@ void Header::paint (juce::Graphics& g)
         const juce::String txt = rec ? L ("ENREG. \xc2\xb7 ", "REC \xc2\xb7 ", "GRAB. \xc2\xb7 ") + juce::String (juce::jmax (0, proc.takeCount() - 5)) + L (" ACTIONS", " ACTIONS", " ACCIONES")
                                      : L ("LECTURE", "PLAYBACK", "REPRODUCCI\xc3\x93N");
         const float tw = juce::GlyphArrangement::getStringWidth (f, txt) + 34;
-        auto pill = juce::Rectangle<float> (lcd.getRight() - 130 - tw, lcd.getCentreY() - 13, tw, 26);
+        auto pill = juce::Rectangle<float> (pillRight - tw, lcd.getCentreY() - 13, tw, 26);
         g.setColour (col.withAlpha (0.15f));
         g.fillRoundedRectangle (pill, 13.0f);
         g.setColour (col);

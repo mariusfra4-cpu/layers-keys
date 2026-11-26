@@ -73,6 +73,142 @@ void MasterBar::paint (juce::Graphics& g)
 }
 
 // ============================================================================================
+// LicenceOverlay : « Autoriser Spacepad sur cet ordinateur »
+// ============================================================================================
+LicenceOverlay::LicenceOverlay (SpacepadProcessor& p) : proc (p)
+{
+    keyEdit.setFont (juce::FontOptions (juce::Font::getDefaultMonospacedFontName(), 15.0f, juce::Font::plain));
+    keyEdit.setTextToShowWhenEmpty (L ("Collez la cl\xc3\xa9 ici", "Paste the key here", "Pega la clave aqu\xc3\xad"), theme::muted);
+    keyEdit.setIndents (18, 0);
+    keyEdit.setJustification (juce::Justification::centredLeft);
+    for (auto id : { juce::TextEditor::backgroundColourId, juce::TextEditor::outlineColourId, juce::TextEditor::focusedOutlineColourId, juce::TextEditor::shadowColourId })
+        keyEdit.setColour (id, juce::Colours::transparentBlack);
+    keyEdit.setColour (juce::TextEditor::textColourId, juce::Colour (0xffbdf1ff));
+    keyEdit.onReturnKey = [this] { activateBtn.triggerClick(); };
+    addAndMakeVisible (keyEdit);
+    copyBtn.setButtonText (L ("Copier", "Copy", "Copiar"));
+    copyBtn.onClick = [this] { juce::SystemClipboard::copyTextToClipboard (proc.licence().code()); copyBtn.setButtonText (L ("Copi\xc3\xa9 \xe2\x9c\x93", "Copied \xe2\x9c\x93", "Copiado \xe2\x9c\x93")); };
+    activateBtn.setButtonText (L ("ACTIVER", "ACTIVATE", "ACTIVAR"));
+    activateBtn.setToggleState (true, juce::dontSendNotification);
+    activateBtn.onClick = [this]
+    {
+        error = proc.licence().activate (keyEdit.getText());
+        proc.refreshLicence();
+        if (error.isEmpty() && onClose) { onClose(); return; }
+        repaint();
+    };
+    demoBtn.setButtonText (L ("ESSAYER 3 JOURS", "TRY FOR 3 DAYS", "PROBAR 3 D\xc3\x8d""AS"));
+    demoBtn.setToggleState (true, juce::dontSendNotification);
+    demoBtn.setColour (juce::TextButton::buttonOnColourId, theme::amber);
+    demoBtn.setColour (juce::TextButton::textColourOnId, juce::Colour (0xff2a1300));
+    demoBtn.onClick = [this]
+    {
+        proc.licence().startDemo();
+        proc.refreshLicence();
+        if (proc.licenceState() == Licence::State::Demo && onClose) { onClose(); return; }
+        refresh();
+    };
+    closeBtn.setButtonText (U ("\xc3\x97"));
+    closeBtn.onClick = [this] { if (onClose) onClose(); };
+    for (auto* b : { &activateBtn, &demoBtn }) { b->getProperties().set ("weight", 2); b->getProperties().set ("kerning", 0.08f); b->getProperties().set ("fontSize", 15.0f); }
+    for (auto* b : { &copyBtn, &activateBtn, &demoBtn }) addAndMakeVisible (*b);
+    addChildComponent (closeBtn);
+    refresh();
+}
+
+void LicenceOverlay::refresh()
+{
+    const auto st = proc.licence().status();
+    demoBtn.setEnabled (! st.demoUsed);
+    if (st.demoUsed && st.state != Licence::State::Demo)
+        demoBtn.setButtonText (L ("D\xc3\x89MO TERMIN\xc3\x89""E", "DEMO OVER", "DEMO TERMINADA"));
+    closeBtn.setVisible (st.state != Licence::State::Locked);
+    repaint();
+}
+
+juce::Rectangle<int> LicenceOverlay::card() const { return getLocalBounds().withSizeKeepingCentre (760, 560); }
+
+void LicenceOverlay::resized()
+{
+    auto c = card().reduced (46, 40);
+    closeBtn.setBounds (card().getRight() - 64, card().getY() + 20, 44, 44);
+    c.removeFromTop (150);
+    c.removeFromTop (24);
+    auto codeRow = c.removeFromTop (58);
+    copyBtn.setBounds (codeRow.removeFromRight (130).withSizeKeepingCentre (130, 50));
+    codeRow.removeFromRight (12);
+    codeArea = codeRow;
+    c.removeFromTop (44);
+    keyEdit.setBounds (c.removeFromTop (58).reduced (2, 6));
+    c.removeFromTop (18);
+    auto row = c.removeFromTop (54);
+    activateBtn.setBounds (row.removeFromLeft (row.getWidth() / 2 - 6));
+    row.removeFromLeft (12);
+    demoBtn.setBounds (row);
+}
+
+void LicenceOverlay::paint (juce::Graphics& g)
+{
+    g.fillAll (juce::Colour (0xe604060c));
+    auto c = card().toFloat();
+    for (int i = 1; i <= 6; ++i) { g.setColour (juce::Colours::black.withAlpha (0.12f)); g.fillRoundedRectangle (c.expanded ((float) i * 4).translated (0, (float) i * 2), 30.0f + i * 4); }
+    g.setGradientFill (juce::ColourGradient (juce::Colour (0xff141b2e), 0, c.getY(), juce::Colour (0xff0d1322), 0, c.getBottom(), false));
+    g.fillRoundedRectangle (c, 30.0f);
+    g.setColour (juce::Colours::white.withAlpha (0.12f));
+    g.drawRoundedRectangle (c.reduced (0.5f), 30.0f, 1.0f);
+    auto r = c.reduced (46, 40);
+    auto tf = theme::title (28.0f); tf.setExtraKerningFactor (0.26f);
+    g.setFont (tf); g.setColour (juce::Colours::white);
+    g.drawText ("SPACEPAD", r.removeFromTop (36), juce::Justification::centredLeft);
+    auto by = theme::ui (11.5f, 2); by.setExtraKerningFactor (0.4f);
+    g.setFont (by); g.setColour (juce::Colour (0xff8b97ad));
+    g.drawText ("BY JB PRAISE", r.removeFromTop (20), juce::Justification::centredLeft);
+    r.removeFromTop (18);
+    g.setColour (juce::Colours::white);
+    g.setFont (theme::ui (22.0f, 2));
+    g.drawText (L ("Autoriser Spacepad sur cet ordinateur", "Authorise Spacepad on this computer", "Autorizar Spacepad en este ordenador"), r.removeFromTop (30), juce::Justification::centredLeft);
+    g.setColour (juce::Colour (0xffaab5ca));
+    g.setFont (theme::ui (14.0f));
+    g.drawFittedText (L ("1. Envoyez ce code \xc3\xa0 JB Praise (WhatsApp, e-mail\xe2\x80\xa6).\n2. Collez ici la cl\xc3\xa9 de licence re\xc3\xa7ue, puis touchez \xc2\xab Activer \xc2\xbb.",
+                         "1. Send this code to JB Praise (WhatsApp, e-mail\xe2\x80\xa6).\n2. Paste the licence key you receive here, then tap \xe2\x80\x9c""Activate\xe2\x80\x9d.",
+                         "1. Env\xc3\xad""a este c\xc3\xb3""digo a JB Praise (WhatsApp, e-mail\xe2\x80\xa6).\n2. Pega aqu\xc3\xad la clave recibida y toca \xc2\xab""Activar\xc2\xbb."),
+                      r.removeFromTop (46).toNearestInt(), juce::Justification::topLeft, 2);
+    auto lab = [&] (juce::Rectangle<int> above, const juce::String& t)
+    {
+        auto f = theme::ui (11.0f, 2); f.setExtraKerningFactor (0.18f);
+        g.setFont (f); g.setColour (juce::Colour (0xff8b97ad));
+        g.drawText (t, above.withHeight (18).translated (0, -24), juce::Justification::centredLeft);
+    };
+    lab (codeArea, L ("CODE DE CET ORDINATEUR", "THIS COMPUTER'S CODE", "C\xc3\x93""DIGO DE ESTE ORDENADOR"));
+    auto cb = codeArea.toFloat();
+    g.setColour (juce::Colour (0xff05080f)); g.fillRoundedRectangle (cb, cb.getHeight() * 0.5f);
+    g.setColour (theme::accent.withAlpha (0.4f)); g.drawRoundedRectangle (cb.reduced (0.5f), cb.getHeight() * 0.5f, 1.0f);
+    g.setColour (juce::Colour (0xffbdf1ff));
+    g.setFont (juce::FontOptions (juce::Font::getDefaultMonospacedFontName(), 24.0f, juce::Font::plain));
+    g.drawText (proc.licence().code(), cb, juce::Justification::centred);
+    lab (keyEdit.getBounds().expanded (0, 6), L ("CL\xc3\x89 DE LICENCE", "LICENCE KEY", "CLAVE DE LICENCIA"));
+    auto kb = keyEdit.getBounds().expanded (2, 6).toFloat();
+    g.setColour (juce::Colour (0xff05080f)); g.fillRoundedRectangle (kb, kb.getHeight() * 0.5f);
+    g.setColour (juce::Colours::white.withAlpha (keyEdit.hasKeyboardFocus (true) ? 0.3f : 0.14f)); g.drawRoundedRectangle (kb.reduced (0.5f), kb.getHeight() * 0.5f, 1.0f);
+    auto foot = juce::Rectangle<float> (r.getX(), (float) demoBtn.getBottom() + 14, r.getWidth(), 40);
+    if (error.isNotEmpty())
+    {
+        g.setColour (juce::Colour (0xffff8a8a));
+        g.setFont (theme::ui (13.0f, 1));
+        g.drawFittedText (error, foot.toNearestInt(), juce::Justification::topLeft, 2);
+    }
+    else
+    {
+        g.setColour (juce::Colour (0xff8b97ad));
+        g.setFont (theme::ui (12.5f));
+        g.drawFittedText (L ("Une cl\xc3\xa9 = un ordinateur. Sans Internet. L'application et les plugins (VST3, AU) sont activ\xc3\xa9s ensemble.",
+                             "One key = one computer. No Internet needed. The app and the plugins (VST3, AU) are activated together.",
+                             "Una clave = un ordenador. Sin Internet. La aplicaci\xc3\xb3n y los plugins (VST3, AU) se activan juntos."),
+                          foot.toNearestInt(), juce::Justification::topLeft, 2);
+    }
+}
+
+// ============================================================================================
 // IconButton
 // ============================================================================================
 void IconButton::paintButton (juce::Graphics& g, bool over, bool down)

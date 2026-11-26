@@ -7,6 +7,7 @@
 #include "Setlist.h"
 #include "CrowdPrefs.h"
 #include "Modulation.h"
+#include "Licence.h"
 #include "Lang.h"
 
 namespace spacepad
@@ -70,6 +71,13 @@ public:
     void setCrowdTarget (int s) { target = s & 1; }
     float crowdLevel (int slot) const { return crowdLvl[slot & 1].load(); }
     float delaySeconds (int divisionIndex) const;
+
+    // --- licence ---
+    Licence& licence() { return lic; }
+    Licence::State licenceState() const { return (Licence::State) licState.load(); }
+    double demoSecondsLeft() const { return demoLeft.load(); }
+    void refreshLicence();                   // relit l'état (après activation, démo…)
+    void forceLicenceStateForTests (Licence::State s, double demoSecs = 0) { licState = (int) s; demoLeft = demoSecs; }
 
     // --- setlist ---
     Setlist& setlist() { return songs; }
@@ -189,6 +197,13 @@ private:
     FxChain fx;
     CrowdFx crowdFx[2];
     CrowdPrefs prefs;
+    Licence lic;
+   #if SPACEPAD_TESTS
+    std::atomic<int> licState { (int) Licence::State::Licensed };   // programme de tests : déjà activé (sauf tests de licence)
+   #else
+    std::atomic<int> licState { (int) Licence::State::Locked };
+   #endif
+    std::atomic<double> demoLeft { 0 };
     std::atomic<bool> soloOn { false };
     std::atomic<double> hostBpm { 0 };
     std::atomic<float> crowdLvl[2] { { 0 }, { 0 } };
