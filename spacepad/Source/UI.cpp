@@ -368,6 +368,27 @@ void Header::paint (juce::Graphics& g)
     g.setColour (loop ? juce::Colour (0xffffcf8a) : theme::muted);
     g.setFont (theme::ui (13.0f, 1));
     g.drawText (loop ? "LOOP ON" : "LOOP OFF", lcd.withTrimmedRight (20).removeFromRight (100), juce::Justification::centredRight);
+    // voyant d'enregistrement avec le logiciel de musique (rouge : il garde tes actions ; vert : il les rejoue)
+    if (proc.dawRecordingNow() || proc.dawReplayingNow())
+    {
+        const bool rec = proc.dawRecordingNow();
+        const auto col = rec ? juce::Colour (0xffff4d4d) : theme::green;
+        auto f = theme::ui (11.0f, 2); f.setExtraKerningFactor (0.1f);
+        const juce::String txt = rec ? L ("ENREG. \xc2\xb7 ", "REC \xc2\xb7 ", "GRAB. \xc2\xb7 ") + juce::String (juce::jmax (0, proc.takeCount() - 5)) + L (" ACTIONS", " ACTIONS", " ACCIONES")
+                                     : L ("LECTURE", "PLAYBACK", "REPRODUCCI\xc3\x93N");
+        const float tw = juce::GlyphArrangement::getStringWidth (f, txt) + 34;
+        auto pill = juce::Rectangle<float> (lcd.getRight() - 130 - tw, lcd.getCentreY() - 13, tw, 26);
+        g.setColour (col.withAlpha (0.15f));
+        g.fillRoundedRectangle (pill, 13.0f);
+        g.setColour (col);
+        g.drawRoundedRectangle (pill.reduced (0.5f), 13.0f, 1.0f);
+        auto ic = juce::Rectangle<float> (pill.getX() + 12, pill.getCentreY() - 4, 8, 8);
+        if (rec) { softGlow (g, ic.getCentre(), 3, 9, col.withAlpha (0.6f)); g.fillEllipse (ic); }
+        else { juce::Path tri; tri.addTriangle (ic.getX(), ic.getY() - 1, ic.getX(), ic.getBottom() + 1, ic.getRight() + 1, ic.getCentreY()); g.fillPath (tri); }
+        g.setFont (f);
+        g.setColour (rec ? juce::Colour (0xffffc0c0) : juce::Colour (0xffc8ffe4));
+        g.drawText (txt, pill.withTrimmedLeft (26), juce::Justification::centredLeft);
+    }
 
     // niveau de sortie
     const float db = juce::Decibels::gainToDecibels (proc.outputLevel(), -60.0f);

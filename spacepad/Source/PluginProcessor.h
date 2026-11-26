@@ -119,6 +119,20 @@ public:
 
     // Enregistrement dans le logiciel de musique : chaque action (tonalité, mode, jouer, chant, crowds) est aussi un
     // paramètre automatisable. Pendant l'enregistrement, Ableton garde les clics ; à la lecture, il les rejoue.
+    // Enregistrement automatique avec le logiciel de musique : pendant que le DAW enregistre, chaque action est
+    // gardée à sa place dans le morceau (position en noires) ; quand le DAW joue, Spacepad la rejoue au bon moment.
+    struct RecEvent { double ppq = 0; int type = 0, a = 0, b = 0; juce::String lib; };   // type : 0 tonalité, 1 mode, 2 pad, 3 chant, 4 crowd
+    enum { evKey = 0, evMode, evPlay, evSong, evCrowd };
+    std::vector<RecEvent> recording() const;
+    int recordingCount() const;
+    int takeCount() const;                   // actions de la prise en cours
+    void clearRecording (bool keepKeysOnly = false);
+    bool dawRecordingNow() const { return recActive.load(); }
+    bool dawReplayingNow() const { return replayActive.load(); }
+    double beatsPerBar() const { return hostBeatsPerBar.load(); }
+    static juce::String describeEvent (const RecEvent&, const Setlist&, const LibraryStore&);
+    void setHostPositionForTests (bool playing, bool recording, double ppq) { testHost = true; hostPlaying = playing; hostRecording = recording; hostPpq = ppq; }
+
     struct AutoScope
     {
         explicit AutoScope (SpacepadProcessor& pp) : p (pp), sl (pp.autoLock) { ++p.autoDepth; }
@@ -144,7 +158,18 @@ private:
     void trackCrowdFx();
     void preloadLikelySounds();              // charge d'avance les sons de la tonalité en cours (Play instantané)
     juce::String lastPreloadSig;
-    void pushAuto();                         // l'état actuel → paramètres (le logiciel de musique l'enregistre)
+    void pushAuto();
+    void dawFollow();                        // fil de commande : début/fin d'enregistrement, lecture des actions
+    void recordEvent (int type, int a, int b = 0, const juce::String& lib = {});
+    void applyEvent (const RecEvent&);
+    void snapshotEvents (double ppq, std::vector<RecEvent>& out);
+    mutable juce::CriticalSection recLock;
+    std::vector<RecEvent> recEvents, takeEvents;
+    double takeStart = 0, lastPlayPpq = -1;
+    bool wasPlaying = false, wasRecording = false;
+    std::atomic<bool> recActive { false }, replayActive { false }, testHost { false };
+    std::atomic<bool> hostPlaying { false }, hostRecording { false }, replaying { false };
+    std::atomic<double> hostPpq { 0 }, hostBeatsPerBar { 4 };                         // l'état actuel → paramètres (le logiciel de musique l'enregistre)
     void pullAuto();                         // paramètres changés par le logiciel de musique (lecture de l'automation) → actions
     void setAuto (const char* id, float realValue);
     juce::CriticalSection autoLock;

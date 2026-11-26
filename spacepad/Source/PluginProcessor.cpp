@@ -284,7 +284,16 @@ void SpacepadProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
         double bpm = 0;
         if (auto* ph = getPlayHead())
             if (auto pos = ph->getPosition())
+            {
                 if (auto b = pos->getBpm()) bpm = *b;
+                if (! testHost.load())
+                {
+                    hostPlaying = pos->getIsPlaying();
+                    hostRecording = pos->getIsRecording();
+                    if (auto q = pos->getPpqPosition()) hostPpq = *q;
+                    if (auto ts = pos->getTimeSignature()) if (ts->denominator > 0) hostBeatsPerBar = ts->numerator * 4.0 / ts->denominator;
+                }
+            }
         hostBpm = bpm;
     }
     // MIDI : pédales et boutons assignés, puis notes qui choisissent la tonalité (selon le réglage)
@@ -719,20 +728,25 @@ void SpacepadProcessor::pushAuto()
     auto send = [this] (const char* id, int& sent, int now)
     {
         if (now == sent) return false;
+        const bool first = sent == -999;
         sent = now;
         setAuto (id, (float) now);
-        return true;
+        return ! first;
     };
-    send ("a_key", sentKey, keyNow.load());
-    send ("a_mode", sentMode, modeNow.load());
-    send ("a_play", sentPlay, padOn.load() ? 1 : 0);
-    if (send ("a_song", sentSong, songs.current() + 1)) lastSongParam = songs.current() + 1;
+    // chaque changement fait par Spacepad est aussi gardé dans l'enregistrement du DAW (s'il enregistre)
+    if (send ("a_key", sentKey, keyNow.load())) recordEvent (evKey, keyNow.load());
+    if (send ("a_mode", sentMode, modeNow.load())) recordEvent (evMode, modeNow.load());
+    if (send ("a_play", sentPlay, padOn.load() ? 1 : 0)) recordEvent (evPlay, padOn.load() ? 1 : 0);
+    const bool songChanged = send ("a_song", sentSong, songs.current() + 1);
+    lastSongParam = sentSong;                      // y compris au premier envoi : ce n'est pas une demande du DAW
+    if (songChanged && songs.current() >= 0) recordEvent (evSong, songs.current());
     for (int s = 0; s < 2; ++s)
     {
         const auto id = "a_c" + juce::String (s + 1);
         const int idx = crowdIdx[s].load();
-        send (id.toRawUTF8(), sentOn[s], idx >= 0 ? 1 : 0);
-        if (idx >= 0) send ((id + "snd").toRawUTF8(), sentSnd[s], idx + 1);
+        const bool onChanged = send (id.toRawUTF8(), sentOn[s], idx >= 0 ? 1 : 0);
+        const bool sndChanged = idx >= 0 && send ((id + "snd").toRawUTF8(), sentSnd[s], idx + 1);
+        if (onChanged || sndChanged) recordEvent (evCrowd, s, idx, crowdLibraryId (s));
     }
 }
 
@@ -807,6 +821,147 @@ void SpacepadProcessor::preloadLikelySounds()
     sampleLoader.preload (paths);
 }
 
+// ---------------------------------------------------------------------------------------------
+// Enregistrement automatique avec le logiciel de musique
+// ---------------------------------------------------------------------------------------------
+void SpacepadProcessor::recordEvent (int type, int a, int b, const juce::String& lib)
+{
+    if (! recActive.load() || replaying.load()) return;
+    RecEvent e;
+    e.ppq = hostPpq.load(); e.type = type; e.a = a; e.b = b; e.lib = lib;
+    const juce::ScopedLock sl (recLock);
+    // deux actions du même genre au même instant : on garde la dernière
+    takeEvents.erase (std::remove_if (takeEvents.begin(), takeEvents.end(), [&] (const RecEvent& x)
+                      { return x.type == type && (type != evCrowd || x.a == a) && std::abs (x.ppq - e.ppq) < 1e-6; }), takeEvents.end());
+    takeEvents.push_back (e);
+}
+
+void SpacepadProcessor::snapshotEvents (double ppq, std::vector<RecEvent>& out)
+{
+    // l'état au début de la prise : ainsi la lecture repart toujours du bon son
+    out.push_back ({ ppq, evMode, modeNow.load(), 0, {} });
+    out.push_back ({ ppq, evKey, keyNow.load(), 0, {} });
+    for (int s = 0; s < 2; ++s) out.push_back ({ ppq, evCrowd, s, crowdIdx[s].load(), crowdLibraryId (s) });
+    out.push_back ({ ppq, evPlay, padOn.load() ? 1 : 0, 0, {} });
+}
+
+void SpacepadProcessor::applyEvent (const RecEvent& e)
+{
+    replaying = true;
+    switch (e.type)
+    {
+        case evKey:
+            if (e.a != keyNow.load())
+            {
+                keyNow = juce::jlimit (0, 11, e.a);
+                if (padOn) startPadKey (keyNow, modeNow, false); else retransposeCrowds();
+            }
+            break;
+        case evMode: setMode (e.a); break;
+        case evPlay: if (e.a && ! padOn.load()) playPad(); else if (! e.a && padOn.load()) stopPad(); break;
+        case evSong: if (e.a != songs.current()) gotoSong (e.a); break;
+        case evCrowd:
+            if (e.b < 0) { if (crowdIdx[e.a & 1].load() >= 0) stopCrowd (e.a & 1); }
+            else if (e.b != crowdIdx[e.a & 1].load() || e.lib != crowdLibraryId (e.a & 1)) playCrowd (e.lib, e.b, e.a & 1);
+            break;
+        default: break;
+    }
+    replaying = false;
+}
+
+void SpacepadProcessor::dawFollow()
+{
+    if (uiSettings().dawRecord == 1) { recActive = replayActive = false; return; }
+    const bool playing = hostPlaying.load(), recNow = hostRecording.load() && playing;
+    const double ppq = hostPpq.load();
+    AutoScope automation (*this);
+    // début d'une prise
+    if (recNow && ! wasRecording)
+    {
+        const juce::ScopedLock sl (recLock);
+        takeEvents.clear();
+        takeStart = ppq;
+        snapshotEvents (ppq, takeEvents);
+        recActive = true;
+    }
+    // fin d'une prise : elle remplace ce qui était enregistré au même endroit
+    if (! recNow && wasRecording)
+    {
+        recActive = false;
+        const juce::ScopedLock sl (recLock);
+        const double takeEnd = juce::jmax (lastPlayPpq, takeStart);
+        recEvents.erase (std::remove_if (recEvents.begin(), recEvents.end(), [&] (const RecEvent& x) { return x.ppq >= takeStart - 1e-9 && x.ppq <= takeEnd + 1e-9; }), recEvents.end());
+        for (auto& e : takeEvents) recEvents.push_back (e);
+        std::stable_sort (recEvents.begin(), recEvents.end(), [] (const RecEvent& x, const RecEvent& y) { return x.ppq < y.ppq; });
+        takeEvents.clear();
+    }
+    wasRecording = recNow;
+    // lecture : les actions enregistrées entre la position précédente et la position actuelle sont rejouées
+    const bool replay = playing && ! recNow;
+    replayActive = replay && recordingCount() > 0;
+    if (replay)
+    {
+        std::vector<RecEvent> todo;
+        {
+            const juce::ScopedLock sl (recLock);
+            const bool jumped = ! wasPlaying || lastPlayPpq < 0 || ppq < lastPlayPpq - 1e-6 || ppq > lastPlayPpq + 64;
+            if (jumped)
+            {
+                // départ ou saut dans le morceau : on se met dans l'état enregistré à cet endroit
+                RecEvent last[5]; bool have[5] {}; RecEvent lastCrowd[2]; bool haveCrowd[2] {};
+                for (auto& e : recEvents)
+                {
+                    if (e.ppq > ppq + 1e-9) break;
+                    if (e.type == evCrowd) { lastCrowd[e.a & 1] = e; haveCrowd[e.a & 1] = true; }
+                    else { last[e.type] = e; have[e.type] = true; }
+                }
+                for (int t : { (int) evSong, (int) evMode, (int) evKey }) if (have[t]) todo.push_back (last[t]);
+                for (int c = 0; c < 2; ++c) if (haveCrowd[c]) todo.push_back (lastCrowd[c]);
+                if (have[evPlay]) todo.push_back (last[evPlay]);
+            }
+            else
+                for (auto& e : recEvents) if (e.ppq > lastPlayPpq + 1e-9 && e.ppq <= ppq + 1e-9) todo.push_back (e);
+        }
+        for (auto& e : todo) applyEvent (e);
+    }
+    if (playing) lastPlayPpq = ppq; else lastPlayPpq = -1;
+    wasPlaying = playing;
+}
+
+std::vector<SpacepadProcessor::RecEvent> SpacepadProcessor::recording() const { const juce::ScopedLock sl (recLock); return recEvents; }
+int SpacepadProcessor::recordingCount() const { const juce::ScopedLock sl (recLock); return (int) recEvents.size(); }
+int SpacepadProcessor::takeCount() const { const juce::ScopedLock sl (recLock); return (int) takeEvents.size(); }
+
+void SpacepadProcessor::clearRecording (bool keepKeysOnly)
+{
+    const juce::ScopedLock sl (recLock);
+    if (keepKeysOnly) recEvents.erase (std::remove_if (recEvents.begin(), recEvents.end(), [] (const RecEvent& e) { return e.type != evKey && e.type != evMode; }), recEvents.end());
+    else recEvents.clear();
+}
+
+juce::String SpacepadProcessor::describeEvent (const RecEvent& e, const Setlist& sl, const LibraryStore& st)
+{
+    static const char* n[] = { "C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B" };
+    switch (e.type)
+    {
+        case evKey: return L ("Tonalit\xc3\xa9 ", "Key ", "Tonalidad ") + n[juce::jlimit (0, 11, e.a)];
+        case evMode: return e.a == 1 ? L ("Mineur", "Minor", "Menor") : L ("Majeur", "Major", "Mayor");
+        case evPlay: return e.a ? L ("Pad joue", "Pad plays", "Pad suena") : L ("Pad arr\xc3\xaat\xc3\xa9", "Pad stopped", "Pad detenido");
+        case evSong:
+        {
+            auto list = sl.songs();
+            return L ("Chant ", "Song ", "Canci\xc3\xb3n ") + juce::String (e.a + 1) + (e.a >= 0 && e.a < (int) list.size() ? juce::String::fromUTF8 (" \xc2\xab ") + list[(size_t) e.a].name + juce::String::fromUTF8 (" \xc2\xbb") : juce::String());
+        }
+        case evCrowd:
+        {
+            juce::String name;
+            if (auto lib = st.find (e.lib)) if (auto* snd = lib->sound (e.b)) name = snd->name;
+            return "Crowd " + juce::String (e.a + 1) + " : " + (e.b < 0 ? L ("arr\xc3\xaat", "stop", "parado") : name);
+        }
+        default: return {};
+    }
+}
+
 void SpacepadProcessor::waitIdleForTests (int ms)
 {
     auto end = juce::Time::getMillisecondCounter() + (juce::uint32) ms;
@@ -814,7 +969,7 @@ void SpacepadProcessor::waitIdleForTests (int ms)
         juce::Thread::sleep (5);
 }
 
-void SpacepadProcessor::runControlForTests() { controlStep(); trackCrowdFx(); }
+void SpacepadProcessor::runControlForTests() { controlStep(); dawFollow(); trackCrowdFx(); }
 
 void SpacepadProcessor::controlStep()
 {
@@ -881,6 +1036,7 @@ void SpacepadProcessor::run()
     {
         wait (5);
         controlStep();
+        dawFollow();
         if (tick % 40 == 0) trackCrowdFx();
         if (tick % 20 == 0) preloadLikelySounds();
         if (tick % 100 == 0) prefs.saveIfDirty();
@@ -910,6 +1066,19 @@ void SpacepadProcessor::getStateInformation (juce::MemoryBlock& dest)
     state.setProperty ("key", keyNow.load(), nullptr);
     state.setProperty ("mode", modeNow.load(), nullptr);
     state.setProperty ("attackV2", true, nullptr);
+    {
+        // les actions enregistrées avec le DAW sont gardées dans le projet
+        juce::ValueTree rec ("DawRecording");
+        for (auto& e : recording())
+        {
+            juce::ValueTree ev ("Ev");
+            ev.setProperty ("q", e.ppq, nullptr); ev.setProperty ("t", e.type, nullptr); ev.setProperty ("a", e.a, nullptr);
+            ev.setProperty ("b", e.b, nullptr); ev.setProperty ("l", e.lib, nullptr);
+            rec.appendChild (ev, nullptr);
+        }
+        state.removeChild (state.getChildWithName ("DawRecording"), nullptr);
+        state.appendChild (rec, nullptr);
+    }
     if (auto xml = state.createXml()) copyXmlToBinary (*xml, dest);
 }
 
@@ -921,6 +1090,13 @@ void SpacepadProcessor::setStateInformation (const void* data, int size)
         if (! state.isValid() || ! state.hasType (params.state.getType())) return;
         AutoScope automation (*this);     // après chargement : les paramètres reprennent l'état réel (le pad ne part pas tout seul)
         params.replaceState (state);
+        {
+            const juce::ScopedLock rl (recLock);
+            recEvents.clear();
+            auto rec = state.getChildWithName ("DawRecording");
+            for (auto ev : rec)
+                recEvents.push_back ({ (double) ev.getProperty ("q"), (int) ev.getProperty ("t"), (int) ev.getProperty ("a"), (int) ev.getProperty ("b"), ev.getProperty ("l").toString() });
+        }
         if (! state.hasProperty ("attackV2") && std::abs (p ("attack") - 2.0f) < 0.01f) setParam ("attack", 0.8f);   // ancien réglage d'usine (2 s) : départ plus rapide
         sentKey = sentMode = sentPlay = sentSong = sentOn[0] = sentOn[1] = sentSnd[0] = sentSnd[1] = -999;   // tout renvoyer
         {

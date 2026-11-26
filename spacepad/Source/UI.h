@@ -318,6 +318,7 @@ private:
     {
         if (page == 1) { refreshMidiButtons(); repaint(); }
         if (page == 3 && proc.libraries().changeCount() != lastLibChanges) rebuildLibList();
+        if (page == 4) { clearRecBtn.setEnabled (proc.recordingCount() > 0); keepKeysBtn.setEnabled (proc.recordingCount() > 0); repaint (recListArea); }
     }
     void rebuildLibList();
     juce::Viewport libView;
@@ -337,7 +338,9 @@ private:
     UiSettings s;
     int page = 0;
     int accent = 0, themeIdx = 0, bgIdx = 0, vizIdx = 0, namesIdx = 0, sizeIdx = 1, langIdx = 0, animIdx = 1, awakeIdx = 1;
-    int keyModeIdx = 0, fadeIdx = 1, copyIdx = 0, crowdBgIdx = 0;
+    int keyModeIdx = 0, fadeIdx = 1, copyIdx = 0, crowdBgIdx = 0, dawRecIdx = 0;
+    juce::TextButton clearRecBtn, keepKeysBtn;
+    juce::Rectangle<int> recListArea, recInfoArea;
     std::vector<Group> groups;
     std::vector<juce::Rectangle<int>> swatches, tiles, pageTabs;
     juce::Rectangle<int> accentArea, bgArea, midiListArea, zoneArea, infoArea;

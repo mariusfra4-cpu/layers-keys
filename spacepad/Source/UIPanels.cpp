@@ -1237,6 +1237,19 @@ SettingsOverlay::SettingsOverlay (SpacepadProcessor& p, std::function<void()> c)
             }));
     };
     addChildComponent (deleteAllBtn);
+    // enregistrement avec le logiciel de musique
+    clearRecBtn.setButtonText (L ("Effacer cet enregistrement\xe2\x80\xa6", "Clear this recording\xe2\x80\xa6", "Borrar esta grabaci\xc3\xb3n\xe2\x80\xa6"));
+    keepKeysBtn.setButtonText (L ("Ne garder que les tonalit\xc3\xa9s", "Keep only the keys", "Conservar solo las tonalidades"));
+    for (auto* b : { &clearRecBtn, &keepKeysBtn }) { b->getProperties().set ("fontSize", 12.5f); addChildComponent (*b); }
+    clearRecBtn.onClick = [this]
+    {
+        juce::Component::SafePointer<SettingsOverlay> safe (this);
+        juce::AlertWindow::showOkCancelBox (juce::MessageBoxIconType::QuestionIcon, "Spacepad",
+            L ("Effacer toutes les actions enregistr\xc3\xa9""es avec le logiciel de musique dans ce projet ?", "Clear every action recorded with the music software in this project?", "\xc2\xbf""Borrar todas las acciones grabadas con el programa de m\xc3\xbasica en este proyecto?"),
+            L ("Effacer", "Clear", "Borrar"), L ("Annuler", "Cancel", "Cancelar"), nullptr,
+            juce::ModalCallbackFunction::create ([safe] (int r) { if (r == 1 && safe != nullptr) { safe->proc.clearRecording(); safe->repaint(); } }));
+    };
+    keepKeysBtn.onClick = [this] { proc.clearRecording (true); repaint(); };
     showPage (0);
     startTimerHz (8);
 }
@@ -1252,6 +1265,7 @@ void SettingsOverlay::load()
     for (int i = 0; i < 4; ++i) if (std::abs (fadeChoices[i] - s.fadeSeconds) < 0.5f) fadeIdx = i;
     copyIdx = s.copySounds ? 1 : 0;
     crowdBgIdx = s.crowdBg;
+    dawRecIdx = s.dawRecord;
 }
 
 void SettingsOverlay::save()
@@ -1264,6 +1278,7 @@ void SettingsOverlay::save()
     s.brightness = (float) brightness.getValue(); s.speed = (float) speed.getValue();
     s.midiKeyMode = keyModeIdx; s.fadeSeconds = fadeChoices[juce::jlimit (0, 3, fadeIdx)]; s.copySounds = copyIdx == 1;
     s.crowdBg = crowdBgIdx;
+    s.dawRecord = dawRecIdx;
     setUiSettings (s);
     if ((int) lang() != langIdx) setLang ((Lang) langIdx);
     brightness.setColour (juce::Slider::trackColourId, theme::accentChoice (accent));
@@ -1275,7 +1290,9 @@ void SettingsOverlay::save()
 
 void SettingsOverlay::showPage (int p)
 {
-    page = juce::jlimit (0, 3, p);
+    page = juce::jlimit (0, 4, p);
+    clearRecBtn.setVisible (page == 4);
+    keepKeysBtn.setVisible (page == 4);
     libView.setVisible (page == 3);
     deleteAllBtn.setVisible (page == 3);
     if (page == 3) { resized(); rebuildLibList(); }
@@ -1321,8 +1338,9 @@ void SettingsOverlay::resized()
     c.removeFromTop (44);
     // onglets de pages
     pageTabs.clear();
-    auto pt = c.removeFromTop (40).withWidth (720);
-    for (int i = 0; i < 4; ++i) pageTabs.push_back (juce::Rectangle<int> (pt.getX() + 4 + i * 178, pt.getY() + 3, 174, 34));
+    auto pt = c.removeFromTop (40);
+    const int tabW = (pt.getWidth() - 8) / 5;
+    for (int i = 0; i < 5; ++i) pageTabs.push_back (juce::Rectangle<int> (pt.getX() + 4 + i * tabW, pt.getY() + 3, tabW - 4, 34));
     c.removeFromTop (14);
     groups.clear(); swatches.clear(); tiles.clear();
     const int colW = (c.getWidth() - 32) / 2;
@@ -1388,6 +1406,20 @@ void SettingsOverlay::resized()
         importBtn.setBounds (ex.withTrimmedTop (24).withTrimmedLeft (272).withWidth (150).withHeight (40));
         infoArea = c.withY (ex.getBottom() + 20).withHeight (220);
     }
+    if (page == 4)
+    {
+        seg ({ L ("ENREGISTRER AVEC LE LOGICIEL DE MUSIQUE", "RECORD WITH THE MUSIC SOFTWARE", "GRABAR CON EL PROGRAMA DE M\xc3\x9aSICA"),
+               { { L ("Automatique", "Automatic", "Autom\xc3\xa1tico"), {} }, { L ("D\xc3\xa9sactiv\xc3\xa9", "Off", "Desactivado"), {} } }, &dawRecIdx, c.removeFromTop (60).withWidth (420) });
+        c.removeFromTop (8);
+        recInfoArea = c.removeFromTop (40);
+        c.removeFromTop (8);
+        auto side = c.removeFromRight (270);
+        clearRecBtn.setBounds (side.removeFromTop (40));
+        side.removeFromTop (10);
+        keepKeysBtn.setBounds (side.removeFromTop (40));
+        c.removeFromRight (24);
+        recListArea = c;
+    }
     if (page == 3)
     {
         libHeadArea = c.removeFromTop (40);
@@ -1446,8 +1478,9 @@ void SettingsOverlay::paint (juce::Graphics& g)
         auto all = pageTabs.front().getUnion (pageTabs.back()).toFloat().expanded (4, 3);
         g.setColour (theme::ink.withAlpha (0.06f));
         g.fillRoundedRectangle (all, all.getHeight() * 0.5f);
-        const juce::String names[] = { L ("Apparence", "Appearance", "Apariencia"), L ("MIDI & p\xc3\xa9""dales", "MIDI & pedals", "MIDI y pedales"), L ("Sons & sorties", "Sounds & outputs", "Sonidos y salidas"), L ("Librairies", "Libraries", "Librer\xc3\xad""as") };
-        for (int i = 0; i < 4; ++i)
+        const juce::String names[] = { L ("Apparence", "Appearance", "Apariencia"), L ("MIDI & p\xc3\xa9""dales", "MIDI & pedals", "MIDI y pedales"), L ("Sons & sorties", "Sounds & outputs", "Sonidos y salidas"),
+                                       L ("Librairies", "Libraries", "Librer\xc3\xad""as"), L ("Enregistrement", "Recording", "Grabaci\xc3\xb3n") };
+        for (int i = 0; i < 5; ++i)
         {
             auto tr = pageTabs[(size_t) i].toFloat();
             if (i == page) { g.setColour (acc); g.fillRoundedRectangle (tr, tr.getHeight() * 0.5f); }
@@ -1523,6 +1556,50 @@ void SettingsOverlay::paint (juce::Graphics& g)
             g.setColour (code >= 0 ? theme::green.darker (theme::light ? 0.7f : 0.0f) : theme::muted);
             g.setFont (theme::ui (13.0f, 1));
             g.drawText (midiCodeName (code), row.withX (row.getX() + 300).withWidth (240), juce::Justification::centredLeft);
+        }
+    }
+    else if (page == 4)
+    {
+        g.setColour (theme::text.withAlpha (0.85f));
+        g.setFont (theme::ui (12.5f));
+        g.drawFittedText (L ("Quand le logiciel de musique enregistre, Spacepad garde tes actions (tonalit\xc3\xa9, Play/Stop, majeur/mineur, chants, crowds) \xc3\xa0 leur place dans le morceau. Quand il joue, Spacepad les rejoue. C'est gard\xc3\xa9 dans le projet.",
+                             "When the music software records, Spacepad keeps your actions (key, Play/Stop, major/minor, songs, crowds) at their place in the song. When it plays, Spacepad replays them. Saved in the project.",
+                             "Cuando el programa de m\xc3\xbasica graba, Spacepad guarda tus acciones (tonalidad, Play/Stop, mayor/menor, canciones, crowds) en su lugar en la canci\xc3\xb3n. Al reproducir, Spacepad las repite. Se guarda en el proyecto."),
+                          recInfoArea, juce::Justification::topLeft, 2);
+        const auto ev = proc.recording();
+        auto lr = recListArea.toFloat();
+        auto f = theme::ui (11.0f, 2); f.setExtraKerningFactor (0.16f);
+        g.setFont (f);
+        g.setColour (theme::muted);
+        g.drawText (L ("ACTIONS ENREGISTR\xc3\x89""ES DANS CE PROJET \xc2\xb7 ", "ACTIONS RECORDED IN THIS PROJECT \xc2\xb7 ", "ACCIONES GRABADAS EN ESTE PROYECTO \xc2\xb7 ") + juce::String ((int) ev.size()), lr.removeFromTop (22), juce::Justification::centredLeft);
+        if (ev.empty())
+        {
+            g.setFont (theme::ui (13.0f));
+            g.drawFittedText (inPlugin ? L ("Rien pour l'instant : lance l'enregistrement dans ton logiciel de musique et joue sur Spacepad.", "Nothing yet: start recording in your music software and play Spacepad.", "Nada todav\xc3\xad""a: graba en tu programa de m\xc3\xbasica y toca Spacepad.")
+                                       : L ("Cette fonction marche dans le plugin (Ableton, Logic\xe2\x80\xa6), pas dans l'application seule.", "This works in the plugin (Ableton, Logic\xe2\x80\xa6), not in the standalone app.", "Funciona en el plugin (Ableton, Logic\xe2\x80\xa6), no en la aplicaci\xc3\xb3n sola."),
+                              lr.removeFromTop (40).toNearestInt(), juce::Justification::topLeft, 2);
+        }
+        const double bpb = juce::jmax (1.0, proc.beatsPerBar());
+        const int rowsMax = (int) (lr.getHeight() / 30) - 1;
+        for (int i = 0; i < (int) ev.size() && i < rowsMax; ++i)
+        {
+            auto row = lr.removeFromTop (30);
+            const int bar = (int) std::floor (ev[(size_t) i].ppq / bpb) + 1;
+            const double beat = std::fmod (ev[(size_t) i].ppq, bpb) + 1.0;
+            g.setColour (theme::light ? juce::Colour (0xffb86a14) : juce::Colour (0xffffcf8a));
+            g.setFont (theme::ui (13.0f, 2));
+            g.drawText (L ("Mesure ", "Bar ", "Comp\xc3\xa1s ") + juce::String (bar) + (beat > 1.05 ? "." + juce::String ((int) beat) : juce::String()), row.removeFromLeft (140), juce::Justification::centredLeft);
+            g.setColour (theme::text);
+            g.setFont (theme::ui (13.0f));
+            g.drawText (SpacepadProcessor::describeEvent (ev[(size_t) i], proc.setlist(), proc.libraries()), row, juce::Justification::centredLeft, true);
+            g.setColour (theme::ink.withAlpha (0.06f));
+            g.drawLine (row.getX() - 140, row.getBottom(), row.getRight(), row.getBottom());
+        }
+        if ((int) ev.size() > rowsMax && rowsMax > 0)
+        {
+            g.setColour (theme::muted);
+            g.setFont (theme::ui (12.5f));
+            g.drawText (U ("\xe2\x80\xa6 ") + L ("et ", "and ", "y ") + juce::String ((int) ev.size() - rowsMax) + L (" autres", " more", " m\xc3\xa1s"), lr.removeFromTop (26), juce::Justification::centredLeft);
         }
     }
     else if (page == 3)

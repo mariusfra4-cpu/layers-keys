@@ -38,6 +38,7 @@ struct UiSettings
     bool copySounds = false;  // copier les sons dans Spacepad à l'enregistrement
     int centerView = 0;       // centre de l'écran : 0 PAD (galaxie et tonalités), 1 CROWD (grande salle et crowds)
     int fxPage = 0;           // panneau des effets : 0 PAD, 1 CROWD
+    int dawRecord = 0;        // enregistrer avec le logiciel de musique : 0 automatique, 1 désactivé
     int crowdBg = 0;          // fond du mode CROWD : 0 photo douce, 1 photo naturelle, 2 photo teinte Spacepad, 3 salle dessinée
 };
 

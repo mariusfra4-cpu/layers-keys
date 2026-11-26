@@ -504,6 +504,7 @@ static void snapshot (const juce::File& outDir, const juce::File& root)
                 so->showPage (1); shot ("spacepad_param_midi.png");
                 so->showPage (2); shot ("spacepad_param_sons.png");
                 so->showPage (3); shot ("spacepad_param_librairies.png");
+                so->showPage (4); shot ("spacepad_param_enregistrement.png");
                 so->setVisible (false);
             }
         // mode scène
@@ -1091,7 +1092,7 @@ static void testNewFeatures (const juce::File& root, const juce::File& tmp)
         q.waitIdleForTests (3000);
         float mainR = 0, auxR = 0;
         runFor (q, 1.0, 4, &mainR, &auxR);
-        CHECK (auxR > 1e-3f && mainR < 1e-5f, "crowds seuls sur la sortie Crowds (principale " << mainR << ", crowds " << auxR << ")");
+        CHECK (auxR > 1e-3f && mainR < 1e-5f, "crowds seuls sur la sortie Crowds (principale " << mainR << ", crowds " << auxR << ", joue " << (int) q.crowdSounding (0) << ", son " << q.crowdSoundIndex (0) << ", master " << q.params.getRawParameterValue ("master")->load() << ", mix " << q.params.getRawParameterValue ("mix")->load() << ", vol " << q.params.getRawParameterValue ("crowdvol")->load() << ")");
     }
 
     // --- copie, export, import ---
@@ -1671,6 +1672,68 @@ static void testInstantPlay()
     p.stopAll();
 }
 
+static void testDawRecording()
+{
+    section ("Enregistrement automatique avec le logiciel de musique");
+    setUiSettings (UiSettings());
+    SpacepadProcessor p;
+    p.setPlayConfigDetails (0, 2, 48000, 256);
+    p.prepareToPlay (48000, 256);
+    juce::String warm, crowdId;
+    for (auto& l : p.libraries().snapshot()) { if (l.name == "Warm Pad") warm = l.id; if (l.type == LibType::Crowd && l.name == "Mes Crowds") crowdId = l.id; }
+    p.selectPadLibrary (warm, 0); p.selectPadLibrary (warm, 1);
+    p.setMode (0); p.pressKey (4); p.stopPad();          // départ : E majeur, pad arrêté
+    p.stopCrowd();
+    p.runControlForTests();
+    auto at = [&] (bool play, bool rec, double ppq) { p.setHostPositionForTests (play, rec, ppq); p.runControlForTests(); };
+    // le DAW enregistre : on joue sur Spacepad
+    at (true, true, 0.0);
+    CHECK (p.dawRecordingNow(), "le DAW enregistre : Spacepad le voit tout seul (voyant ENREG.)");
+    at (true, true, 4.0);  p.pressKey (7);                 // mesure 2 : G, le pad joue
+    at (true, true, 8.0);  p.setMode (1);                  // mesure 3 : mineur
+    at (true, true, 12.0); p.playCrowd (crowdId, 1, 0);    // mesure 4 : crowd 1
+    at (true, true, 16.0); p.stopPad();                    // mesure 5 : arrêt
+    at (true, true, 20.0);
+    at (false, false, 20.0);
+    const auto ev = p.recording();
+    CHECK (! p.dawRecordingNow() && ev.size() >= 9, "fin de l'enregistrement : " << (int) ev.size() << " actions gardees");
+    // le DAW rejoue depuis le début : Spacepad refait tout au bon moment
+    p.stopAll(); p.setMode (0); p.pressKey (2); p.stopPad();   // on dérange tout
+    at (true, false, 0.0);
+    CHECK (p.dawReplayingNow() && p.currentKey() == 4 && p.currentMode() == 0 && ! p.padActive(), "lecture : au debut, E majeur et pad arrete (comme enregistre)");
+    at (true, false, 3.5);
+    CHECK (! p.padActive(), "lecture : rien ne change avant la mesure 2");
+    at (true, false, 4.2);
+    CHECK (p.padActive() && p.currentKey() == 7, "lecture : mesure 2, le pad joue en G");
+    at (true, false, 8.2);
+    CHECK (p.currentMode() == 1, "lecture : mesure 3, passage en mineur");
+    at (true, false, 12.2);
+    CHECK (p.crowdSoundIndex (0) == 1 && p.crowdLibraryId (0) == crowdId, "lecture : mesure 4, le crowd 1 joue");
+    at (true, false, 16.2);
+    CHECK (! p.padActive(), "lecture : mesure 5, le pad s'arrete");
+    // saut dans le morceau (on clique au milieu) : l'état de cet endroit revient
+    at (false, false, 16.2);
+    at (true, false, 9.0);
+    CHECK (p.padActive() && p.currentKey() == 7 && p.currentMode() == 1, "saut a la mesure 3 : G mineur, le pad joue");
+    at (false, false, 9.0);
+    // gardé dans le projet
+    juce::MemoryBlock st;
+    p.getStateInformation (st);
+    SpacepadProcessor q;
+    q.setStateInformation (st.getData(), (int) st.getSize());
+    CHECK (q.recordingCount() == (int) ev.size(), "projet rouvert : les " << q.recordingCount() << " actions sont toujours la");
+    p.clearRecording (true);
+    bool onlyKeys = true; for (auto& e : p.recording()) onlyKeys &= e.type == SpacepadProcessor::evKey || e.type == SpacepadProcessor::evMode;
+    CHECK (onlyKeys && p.recordingCount() > 0, "ne garder que les tonalites");
+    // désactivé : rien n'est enregistré
+    p.clearRecording();
+    auto u = uiSettings(); u.dawRecord = 1; setUiSettings (u);
+    at (true, true, 0.0); p.pressKey (9); at (true, true, 4.0); at (false, false, 4.0);
+    CHECK (p.recordingCount() == 0, "reglage Desactive : rien n'est enregistre");
+    setUiSettings (UiSettings());
+    p.stopAll();
+}
+
 int main (int argc, char** argv)
 {
     juce::ScopedJuceInitialiser_GUI gui;
@@ -1698,6 +1761,7 @@ int main (int argc, char** argv)
     testWavFormats (tmp);
     testAutomation (root);
     testInstantPlay();
+    testDawRecording();
     if (argc > 1) snapshot (juce::File (juce::String (argv[1])), root);
     if (juce::SystemStats::getEnvironmentVariable ("SPACEPAD_BENCH", {}).isNotEmpty()) benchPaint (root);
    #if ! JUCE_WINDOWS
