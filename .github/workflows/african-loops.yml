@@ -56,7 +56,7 @@ jobs:
           "Générateur : OK"
       - name: Tests du plugin (son + interface)
         run: |
-          mkdir captures
+          New-Item -ItemType Directory -Force captures | Out-Null
           $env:AL_TEST_MP3 = "african-loops/plugin/tests/mp3"
           build/AfricanLoopsPluginTests_artefacts/Release/AfricanLoopsPluginTests.exe captures
       - name: Le VST3 dans un hôte
