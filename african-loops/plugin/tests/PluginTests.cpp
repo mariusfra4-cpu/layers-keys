@@ -349,7 +349,8 @@ int main(int argc, char** argv) {
         }
 
         proc->loadLoopAsync(dir.getChildFile("I Love/Soft Groove 96bpm.wav"));
-        waitFor([&] { return !proc->isLoading(); }, 10000);
+        CHECK(waitFor([&] { return !proc->isLoading() && proc->current() && proc->current()->file.getFileName() == "Soft Groove 96bpm.wav"; }, 10000),
+              "la loop Soft Groove ne se charge pas");
 
         // 6. glisser vers le logiciel de musique
         setParam(*proc, ids::bpm, 120);
