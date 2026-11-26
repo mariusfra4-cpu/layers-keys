@@ -13,7 +13,13 @@ import javax.crypto.spec.SecretKeySpec;
 public final class KeyCore {
     private KeyCore() {}
 
-    static final String MSG_PREFIX = "LayersKeys|";
+    static final String MSG_PREFIX = "LayersKeys|";          // codes JBK (Layers Keys)
+    static final String MSG_PREFIX_SPACEPAD = "Spacepad|";   // codes JBS (Spacepad)
+
+    /** Le logiciel du code : « Layers Keys » (JBK) ou « Spacepad » (JBS). */
+    public static String productOf(String code) {
+        return code != null && code.startsWith("JBS") ? "Spacepad" : "Layers Keys";
+    }
 
     // ---------------------------------------------------------------- Ed25519
     private static final BigInteger TWO = BigInteger.valueOf(2);
@@ -109,15 +115,15 @@ public final class KeyCore {
     }
 
     // ---------------------------------------------------------------- codes et clés (même format que le générateur Windows)
-    /** Renvoie le code au format JBK-XXXX-XXXX-XXXX-XXXX, ou null s'il n'est pas valide. */
+    /** Renvoie le code au format JBK-XXXX-XXXX-XXXX-XXXX (Layers Keys) ou JBS-XXXX-… (Spacepad), ou null s'il n'est pas valide. */
     public static String normalizeCode(String s) {
         if (s == null) return null;
         s = s.toUpperCase().replaceAll("[\\s-]", "");
-        // un message WhatsApp peut contenir du texte autour : on cherche le code dedans
-        java.util.regex.Matcher m = java.util.regex.Pattern.compile("JBK([0-9A-F]{16})").matcher(s);
+        // un message WhatsApp peut contenir du texte autour : on cherche le code dedans (la lettre O lue à la place du zéro est acceptée)
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("JB([KS])([0-9A-FO]{16})").matcher(s);
         if (!m.find()) return null;
-        String h = m.group(1);
-        return "JBK-" + h.substring(0, 4) + "-" + h.substring(4, 8) + "-" + h.substring(8, 12) + "-" + h.substring(12, 16);
+        String h = m.group(2).replace('O', '0');
+        return "JB" + m.group(1) + "-" + h.substring(0, 4) + "-" + h.substring(4, 8) + "-" + h.substring(8, 12) + "-" + h.substring(12, 16);
     }
 
     private static final String B32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
@@ -140,7 +146,8 @@ public final class KeyCore {
 
     /** Clé de licence pour un code client déjà normalisé. */
     public static String makeKey(byte[] seed, String code) throws Exception {
-        String s = base32(sign(seed, (MSG_PREFIX + code).getBytes(StandardCharsets.UTF_8)));
+        String prefix = code.startsWith("JBS") ? MSG_PREFIX_SPACEPAD : MSG_PREFIX;   // une clé Spacepad n'active jamais Layers Keys (et inversement)
+        String s = base32(sign(seed, (prefix + code).getBytes(StandardCharsets.UTF_8)));
         StringBuilder out = new StringBuilder();
         while (s.length() > 8) {
             out.append(s, 0, 8).append('-');

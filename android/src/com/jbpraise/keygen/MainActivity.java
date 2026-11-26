@@ -146,7 +146,7 @@ public class MainActivity extends Activity {
 
     void header(LinearLayout col) {
         col.addView(text("JB Générateur de clés", 24, GOLD_HI, true));
-        col.addView(text("Layers Keys · By JB Praise", 14, GREY, false), lp(-2, -2, 2));
+        col.addView(text("Layers Keys · Spacepad · By JB Praise", 14, GREY, false), lp(-2, -2, 2));
     }
 
     // ---------------------------------------------------------------- écran de déverrouillage
@@ -200,7 +200,7 @@ public class MainActivity extends Activity {
         LinearLayout col = page();
         header(col);
         col.addView(text("Code du client (Windows ou Mac)", 14, GOLD, true), lp(-1, -2, 24));
-        codeEdit = edit("JBK-XXXX-XXXX-XXXX-XXXX", true);
+        codeEdit = edit("JBK-… (Layers Keys) ou JBS-… (Spacepad)", true);
         codeEdit.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
         col.addView(codeEdit, lp(-1, -2, 6));
         LinearLayout row = new LinearLayout(this);
@@ -255,7 +255,7 @@ public class MainActivity extends Activity {
                 CharSequence t = null;
                 if (cm != null && cm.hasPrimaryClip() && cm.getPrimaryClip().getItemCount() > 0) t = cm.getPrimaryClip().getItemAt(0).coerceToText(MainActivity.this);
                 String c = KeyCore.normalizeCode(t == null ? null : t.toString());
-                if (c == null) toast("Aucun code JBK… dans le presse-papiers.");
+                if (c == null) toast("Aucun code JBK… ou JBS… dans le presse-papiers.");
                 else {
                     codeEdit.setText(c);
                     generate();
@@ -286,7 +286,8 @@ public class MainActivity extends Activity {
         send.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 if (lastKey.length() == 0) return;
-                share("Voici votre clé de licence Layers Keys :\n\n" + lastKey + "\n\nOuvrez Layers Keys, allez dans l'écran « Autoriser le logiciel », collez la clé et validez.\nMerci pour votre confiance !\n— JB Praise");
+                String prod = KeyCore.productOf(lastCode);
+                share("Voici votre clé de licence " + prod + " :\n\n" + lastKey + "\n\nOuvrez " + prod + ", allez dans l'écran « Autoriser " + (prod.equals("Spacepad") ? "Spacepad" : "le logiciel") + " », collez la clé et validez.\nMerci pour votre confiance !\n— JB Praise");
             }
         });
         exp.setOnClickListener(new View.OnClickListener() {
@@ -325,7 +326,7 @@ public class MainActivity extends Activity {
         String code = KeyCore.normalizeCode(codeEdit.getText().toString());
         if (code == null) {
             statusView.setTextColor(RED);
-            statusView.setText("Ce code n'est pas valide. Il doit ressembler à JBK-1A2B-3C4D-5E6F-7A8B.");
+            statusView.setText("Ce code n'est pas valide. Il doit ressembler à JBK-1A2B-3C4D-5E6F-7A8B (Layers Keys) ou JBS-1A2B-3C4D-5E6F-7A8B (Spacepad).");
             resultCard.setVisibility(View.GONE);
             return;
         }
@@ -336,10 +337,10 @@ public class MainActivity extends Activity {
             lastKey = key;
             lastCode = code;
             keyView.setText(key);
-            keyLabel.setText("CLÉ DE LICENCE · " + code);
+            keyLabel.setText("CLÉ DE LICENCE " + KeyCore.productOf(code).toUpperCase() + " · " + code);
             resultCard.setVisibility(View.VISIBLE);
             statusView.setTextColor(GREEN);
-            statusView.setText(again ? "Ce code avait déjà reçu une clé : voici la même." : "Clé générée et enregistrée dans l'historique.");
+            statusView.setText("✓ Logiciel reconnu : " + KeyCore.productOf(code).toUpperCase() + "\n" + (again ? "Ce code avait déjà reçu une clé : voici la même." : "Clé générée et enregistrée dans l'historique."));
             if (!again) addHistory(code, nameEdit.getText().toString().trim(), key);
             refreshHistory();
         } catch (Exception e) {
