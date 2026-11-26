@@ -794,6 +794,19 @@ AfricanLoopsEditor::AfricanLoopsEditor(AfricanLoopsProcessor& p)
     fade.onClick = [this] { openFx(FxPage::Fade); };
     fxPage.onClose = [this] { closeFx(); };
     face.addChildComponent(fxPage);
+    face.addChildComponent(demoBadge);
+    face.addChildComponent(activateBtn);
+    activateBtn.setTooltip(juce::String::fromUTF8("Entrer la clé de licence"));
+    activateBtn.setToggleState(true, juce::dontSendNotification);  // toujours allumé
+    activateBtn.onClick = [this] {
+        licenceOpenedByUser = true;
+        updateLicence();
+    };
+    face.addChildComponent(licencePanel);
+    licencePanel.onDone = [this] {
+        licenceOpenedByUser = false;
+        updateLicence();
+    };
     setupSave.setTooltip(juce::String::fromUTF8("Enregistrer tout : la loop, le tempo, le mixer et les effets"));
     setupSave.onClick = [this] { saveSetupDialog(); };
     setupList.setTooltip(juce::String::fromUTF8("Rappeler un setup enregistré"));
@@ -843,6 +856,9 @@ void AfricanLoopsEditor::layout() {
     hp.setBounds(X0 + 624, 246, 50, 50);
     warmth.setBounds(X0 + 624, 310, 50, 50);
     fxPage.setBounds(X0 + 6, 384, 782, 328);
+    licencePanel.setBounds(0, 0, kW, kH);
+    demoBadge.setBounds(X0 + 40, 14, 172, 30);
+    activateBtn.setBounds(X0 + 218, 14, 84, 30);
     setupSave.setBounds(kW - X0 - 330, 17, 150, 26);
     setupList.setBounds(kW - X0 - 172, 17, 110, 26);
     settings.setBounds(kW - X0 - 56, 17, 32, 26);
@@ -999,8 +1015,30 @@ void AfricanLoopsEditor::setupsMenu() {
     });
 }
 
+void AfricanLoopsEditor::updateLicence() {
+    const auto st = Licence::get().status();
+    const bool demo = st.state == Licence::State::Demo, locked = st.state == Licence::State::Locked;
+    demoBadge.setVisible(demo);
+    if (demo) demoBadge.setLeft(st.demoLeftSeconds);
+    activateBtn.setVisible(demo);
+    const bool show = locked || (licenceOpenedByUser && st.state != Licence::State::Licensed);
+    if (show) {
+        licencePanel.refresh(st);
+        if (!licencePanel.isVisible()) {
+            licencePanel.setVisible(true);
+            licencePanel.toFront(true);
+        }
+    } else {
+        licencePanel.setVisible(false);
+    }
+}
+
 void AfricanLoopsEditor::timerCallback() {
     if (shownLang != lang::current()) languageChanged();  // changée dans une autre fenêtre du plugin
+    if (--licenceTicks <= 0) {  // toutes les 2 secondes
+        licenceTicks = 60;
+        updateLicence();
+    }
     if (proc.libraryCounter() != lastLibs) {
         lastLibs = proc.libraryCounter();
         browser.refreshLibrary();
@@ -1263,6 +1301,7 @@ void AfricanLoopsEditor::Face::paintStatic(juce::Graphics& g) {
 }
 
 void AfricanLoopsEditor::Face::paintOverChildren(juce::Graphics& g) {
+    if (ed.licencePanel.isVisible()) return;  // l'écran d'activation est par-dessus tout
     // vumètres de sortie
     auto mr = juce::Rectangle<float>(X0 + 830.f, 92, 300, 280);
     float l, r;

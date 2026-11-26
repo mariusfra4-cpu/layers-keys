@@ -14,6 +14,10 @@ public final class KeyCore {
     private KeyCore() {}
 
     static final String MSG_PREFIX = "LayersKeys|";
+    // logiciels : 0 = Layers Keys, 1 = African Loops Pro
+    static final String[] NAMES = {"Layers Keys", "African Loops Pro"};
+    static final String[] CODE_PREFIX = {"JBK", "JBA"};
+    static final String[] MSG_PREFIXES = {"LayersKeys|", "AfricanLoopsPro|"};
 
     // ---------------------------------------------------------------- Ed25519
     private static final BigInteger TWO = BigInteger.valueOf(2);
@@ -111,13 +115,18 @@ public final class KeyCore {
     // ---------------------------------------------------------------- codes et clés (même format que le générateur Windows)
     /** Renvoie le code au format JBK-XXXX-XXXX-XXXX-XXXX, ou null s'il n'est pas valide. */
     public static String normalizeCode(String s) {
+        return normalizeCode(s, "JBK");
+    }
+
+    /** Code d'un logiciel (préfixe JBK ou JBA), ou null. */
+    public static String normalizeCode(String s, String prefix) {
         if (s == null) return null;
         s = s.toUpperCase().replaceAll("[\\s-]", "");
         // un message WhatsApp peut contenir du texte autour : on cherche le code dedans
-        java.util.regex.Matcher m = java.util.regex.Pattern.compile("JBK([0-9A-F]{16})").matcher(s);
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile(prefix + "([0-9A-FO]{16})").matcher(s);
         if (!m.find()) return null;
-        String h = m.group(1);
-        return "JBK-" + h.substring(0, 4) + "-" + h.substring(4, 8) + "-" + h.substring(8, 12) + "-" + h.substring(12, 16);
+        String h = m.group(1).replace('O', '0');  // la lettre O lue à la place du zéro
+        return prefix + "-" + h.substring(0, 4) + "-" + h.substring(4, 8) + "-" + h.substring(8, 12) + "-" + h.substring(12, 16);
     }
 
     private static final String B32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
@@ -140,7 +149,11 @@ public final class KeyCore {
 
     /** Clé de licence pour un code client déjà normalisé. */
     public static String makeKey(byte[] seed, String code) throws Exception {
-        String s = base32(sign(seed, (MSG_PREFIX + code).getBytes(StandardCharsets.UTF_8)));
+        return makeKey(seed, code, MSG_PREFIX);
+    }
+
+    public static String makeKey(byte[] seed, String code, String msgPrefix) throws Exception {
+        String s = base32(sign(seed, (msgPrefix + code).getBytes(StandardCharsets.UTF_8)));
         StringBuilder out = new StringBuilder();
         while (s.length() > 8) {
             out.append(s, 0, 8).append('-');

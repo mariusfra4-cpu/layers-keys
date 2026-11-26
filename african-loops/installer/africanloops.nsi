@@ -111,6 +111,13 @@ Section "African Loops Pro" SecApp
   File "/oname=Lisez-moi.txt" "${PAYLOAD}\INSTALLER.txt"
   WriteUninstaller "$INSTDIR\Desinstaller.exe"
 
+  ; dossier commun de la licence (le logiciel et le VST3 partagent la même licence ; elle est gardée à la désinstallation)
+  ReadEnvStr $1 "ProgramData"
+  StrCmp $1 "" +4
+    CreateDirectory "$1\JB Praise\African Loops"
+    nsExec::Exec 'icacls "$1\JB Praise" /grant *S-1-5-32-545:(OI)(CI)M /T /C /Q'
+    Pop $2
+
   ; raccourcis
   CreateDirectory "$SMPROGRAMS\African Loops Pro"
   CreateShortcut "$SMPROGRAMS\African Loops Pro\African Loops Pro.lnk" "$INSTDIR\${EXENAME}" "" "$INSTDIR\africanloops.ico" 0

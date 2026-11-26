@@ -1,5 +1,6 @@
 #include "PluginProcessor.h"
 #include "Lang.h"
+#include "Licence.h"
 
 #include "PluginEditor.h"
 
@@ -148,10 +149,16 @@ AfricanLoopsProcessor::AfricanLoopsProcessor()
     raw.echo = r(ids::echo); raw.echoDiv = r(ids::echoDiv); raw.echoFb = r(ids::echoFb); raw.echoMix = r(ids::echoMix);
     raw.echoPing = r(ids::echoPing); raw.echoLowCut = r(ids::echoLowCut);
     raw.fadeIn = r(ids::fadeIn); raw.fadeOut = r(ids::fadeOut); raw.xfade = r(ids::xfade); raw.xfadeLen = r(ids::xfadeLen);
+    Licence::get();  // lit la licence dès le chargement
     startTimerHz(5);
 }
 
 void AfricanLoopsProcessor::timerCallback() {
+    // licence / démo : relue toutes les 10 secondes (la fin de la démo coupe le son)
+    if (++licenceTicks >= 50) {
+        licenceTicks = 0;
+        Licence::get().status();
+    }
     const bool want = raw.link->load() > 0.5f;
     link.setEnabled(want);
     const bool on = want && link.isEnabled();
@@ -211,6 +218,7 @@ void AfricanLoopsProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
     const int n = buffer.getNumSamples();
     buffer.clear();
     if (n == 0 || !looper) return;
+    if (!Licence::get().canPlay()) return;  // ni licence ni démo en cours : silence
     if (n > work.getNumSamples()) work.setSize(2, n, false, false, true);  // hôte qui dépasse la taille annoncée
 
 

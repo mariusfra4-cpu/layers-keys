@@ -3,6 +3,7 @@
 // pendant la lecture, la sauvegarde du projet, le glisser-déposer…
 #include "TestLoops.h"
 #include "../Lang.h"
+#include "../Licence.h"
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
@@ -72,6 +73,7 @@ static void snapshot(juce::Component& c, const juce::File& out) {
 
 int main(int argc, char** argv) {
     juce::ScopedJuceInitialiser_GUI gui;
+    Licence::get().forceForTests(true);  // les tests du son tournent comme avec une licence
     const juce::File shots = argc > 1 ? juce::File(argv[1]) : juce::File::getCurrentWorkingDirectory();
     auto dir = juce::File::getSpecialLocation(juce::File::tempDirectory).getChildFile("al-plugin-test-" + juce::String(juce::Random::getSystemRandom().nextInt(1 << 30)));
     writeLoop(dir.getChildFile("Worship/Praise Drums.wav"), 72, 4, 1);
@@ -454,6 +456,93 @@ int main(int argc, char** argv) {
         setParam(*proc3, ids::link, 0);
         CHECK(waitFor([&] { return !proc3->isLinkActive(); }, 3000), "Link ne se désactive pas");
         audio3.reset();
+    }
+
+    // licence : démo de 3 jours, horloge remise en arrière, fichiers modifiés, mauvaise clé, son coupé
+    {
+        auto ld = juce::File::getSpecialLocation(juce::File::tempDirectory).getChildFile("al-licence-" + juce::String(juce::Random::getSystemRandom().nextInt(1 << 30)));
+        juce::int64 clock = 1800000000;
+        auto& L = Licence::get();
+        L.useFolderForTests(ld, "windows|0000-test", [&] { return clock; });
+        CHECK(L.code().startsWith("JBA-") && L.code().length() == 23, "code : %s", L.code().toRawUTF8());
+        auto st = L.status();
+        CHECK(st.state == Licence::State::Locked && !st.demoUsed && !L.canPlay(), "au départ : verrouillé");
+        {
+            auto p = std::make_unique<AfricanLoopsProcessor>();
+            p->setPlayConfigDetails(0, 2, 44100, 512);
+            p->prepareToPlay(44100, 512);
+            p->loadLoopAsync(dir.getChildFile("Afrobeats/Lagos Street.wav"));
+            waitFor([&] { return !p->isLoading() && p->current(); }, 10000);
+            p->setPlaying(true);
+            juce::AudioBuffer<float> buf(2, 512);
+            juce::MidiBuffer midi;
+            float mx = 0;
+            for (int b = 0; b < 100; ++b) {
+                p->processBlock(buf, midi);
+                mx = std::max(mx, buf.getMagnitude(0, 512));
+            }
+            CHECK(mx == 0, "sans licence ni démo : du son sort (%.3f)", mx);
+            L.startDemo();
+            mx = 0;
+            for (int b = 0; b < 100; ++b) {
+                p->processBlock(buf, midi);
+                mx = std::max(mx, buf.getMagnitude(0, 512));
+            }
+            CHECK(mx > 0.01f, "pendant la démo : pas de son");
+        }
+        st = L.status();
+        CHECK(st.state == Licence::State::Demo && st.demoLeftSeconds == Licence::kDemoSeconds, "démo lancée : %lld s", (long long)st.demoLeftSeconds);
+        {
+            auto p = std::make_unique<AfricanLoopsProcessor>();
+            std::unique_ptr<juce::AudioProcessorEditor> e(p->createEditor());
+            e->setSize(AfricanLoopsEditor::kW, AfricanLoopsEditor::kH);
+            waitFor([] { return false; }, 300);
+            snapshot(*e, shots.getChildFile("15_demo.png"));
+        }
+        clock += 2 * 24 * 3600;
+        st = L.status();
+        CHECK(st.state == Licence::State::Demo && st.demoLeftSeconds == 24 * 3600, "après 2 jours : %lld s", (long long)st.demoLeftSeconds);
+        CHECK(Licence::formatLeft(st.demoLeftSeconds) == "1 J 0 H" || lang::current() != lang::Fr, "affichage : %s", Licence::formatLeft(st.demoLeftSeconds).toRawUTF8());
+        clock -= 5 * 24 * 3600;  // horloge remise en arrière
+        st = L.status();
+        CHECK(st.state == Licence::State::Demo && st.demoLeftSeconds <= 24 * 3600, "horloge en arrière : la démo repart (%lld s)", (long long)st.demoLeftSeconds);
+        L.startDemo();  // relancer ne remet pas à zéro
+        CHECK(L.status().demoLeftSeconds <= 24 * 3600, "la démo a été relancée à zéro");
+        clock += 10 * 24 * 3600;
+        st = L.status();
+        CHECK(st.state == Licence::State::Locked && st.demoUsed && !L.canPlay(), "démo finie : toujours ouverte");
+        CHECK(L.activate("").isNotEmpty(), "clé vide acceptée");
+        CHECK(L.activate("AAAAAAAA-BBBBBBBB-CCCCCCCC").isNotEmpty(), "fausse clé acceptée");
+        CHECK(L.activate("2PVJM63G-KRRHQHXJ-34HS3UFF-YI4CXY7G-N5YXNCWH-CJBRLSRV-QUL4RNX6-V77XRIAN-5RHL435L-NPMVW7WT-SPNXRRYP-LXPQYXP5-CH4TICY").isNotEmpty(),
+              "clé signée avec une autre clé secrète acceptée");
+        // fichiers de démo modifiés à la main : verrouillé
+        L.useFolderForTests(ld.getSiblingFile(ld.getFileName() + "-b"), "windows|0000-test-b", [&] { return clock; });
+        L.startDemo();
+        auto f = ld.getSiblingFile(ld.getFileName() + "-b").getChildFile("commun/demo.dat");
+        CHECK(f.existsAsFile(), "fichier de démo absent");
+        f.replaceWithText(f.loadFileAsString().replace(juce::String(clock), juce::String(clock + 9 * 24 * 3600)));
+        st = L.status();
+        CHECK(st.state == Licence::State::Locked && st.tamper, "démo modifiée à la main acceptée");
+        // l'écran d'activation s'affiche quand c'est verrouillé
+        {
+            auto p = std::make_unique<AfricanLoopsProcessor>();
+            std::unique_ptr<juce::AudioProcessorEditor> e(p->createEditor());
+            e->setSize(AfricanLoopsEditor::kW, AfricanLoopsEditor::kH);
+            waitFor([] { return false; }, 300);
+            LicencePanel* panel = nullptr;
+            std::function<void(juce::Component&)> find = [&](juce::Component& c) {
+                for (auto* ch : c.getChildren()) {
+                    if (auto* lp = dynamic_cast<LicencePanel*>(ch)) panel = lp;
+                    find(*ch);
+                }
+            };
+            find(*e);
+            CHECK(panel && panel->isVisible(), "écran d'activation absent alors que c'est verrouillé");
+            snapshot(*e, shots.getChildFile("14_licence.png"));
+        }
+        ld.deleteRecursively();
+        ld.getSiblingFile(ld.getFileName() + "-b").deleteRecursively();
+        Licence::get().forceForTests(true);
     }
 
     // fichiers abîmés (si fournis) : jamais de plantage, juste « illisible » ou un son partiel

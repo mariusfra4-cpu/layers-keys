@@ -31,13 +31,24 @@ import java.util.Locale;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-/** JB Générateur de clés — Layers Keys. Outil PRIVÉ de JB Praise. */
+/** JB Générateur de clés — Layers Keys et African Loops Pro. Outil PRIVÉ de JB Praise. */
 public class MainActivity extends Activity {
     static final int BG = 0xFF0A101B, PANEL = 0xFF131D31, GOLD = 0xFFF2B705, GOLD_HI = 0xFFFFD23A, TEXT = 0xFFEEF2FA, GREY = 0xFF8D9AB2, RED = 0xFFFF6B5E, GREEN = 0xFF54D18C;
 
     SharedPreferences prefs;
-    byte[] seed;
+    byte[] seed;              // graine du logiciel choisi (null = verrouillé)
+    byte[][] seeds = new byte[2][];
+    int product = 0;          // 0 = Layers Keys, 1 = African Loops Pro
+    static final String[] SEED_KEYS = {"seed", "seedAL"};
     String pendingCode; // code reçu par « Partager vers… »
+    int pendingProduct = -1;
+
+    /** Affiche l'écran du logiciel choisi : principal s'il est déverrouillé, sinon mot de passe. */
+    void showProduct() {
+        seed = seeds[product];
+        prefs.edit().putInt("product", product).apply();
+        if (seed != null) showMain(); else showUnlock("");
+    }
     EditText codeEdit, nameEdit;
     TextView keyView, keyLabel, statusView;
     LinearLayout resultCard, histBox;
@@ -49,21 +60,30 @@ public class MainActivity extends Activity {
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         prefs = getSharedPreferences("jbk", MODE_PRIVATE);
         readIncoming(getIntent());
-        String hs = prefs.getString("seed", "");
-        if (hs.length() == 64) {
-            try {
-                seed = fromHex(hs);
-            } catch (Exception e) {
-                seed = null;
+        for (int i = 0; i < 2; i++) {
+            String hs = prefs.getString(SEED_KEYS[i], "");
+            if (hs.length() == 64) {
+                try {
+                    seeds[i] = fromHex(hs);
+                } catch (Exception e) {
+                    seeds[i] = null;
+                }
             }
         }
-        if (seed != null) showMain(); else showUnlock("");
+        if (pendingProduct >= 0) product = pendingProduct;
+        else product = prefs.getInt("product", 0);
+        showProduct();
     }
 
     @Override
     protected void onNewIntent(Intent i) {
         super.onNewIntent(i);
         readIncoming(i);
+        if (pendingProduct >= 0 && pendingProduct != product) {
+            product = pendingProduct;
+            showProduct();
+            return;
+        }
         if (seed != null && codeEdit != null && pendingCode != null) {
             codeEdit.setText(pendingCode);
             pendingCode = null;
@@ -73,8 +93,13 @@ public class MainActivity extends Activity {
     void readIncoming(Intent i) {
         if (i != null && Intent.ACTION_SEND.equals(i.getAction())) {
             String t = i.getStringExtra(Intent.EXTRA_TEXT);
-            String c = KeyCore.normalizeCode(t);
-            if (c != null) pendingCode = c;
+            for (int p = 0; p < 2; p++) {
+                String c = KeyCore.normalizeCode(t, KeyCore.CODE_PREFIX[p]);
+                if (c != null) {
+                    pendingCode = c;
+                    pendingProduct = p;
+                }
+            }
         }
     }
 
@@ -146,15 +171,34 @@ public class MainActivity extends Activity {
 
     void header(LinearLayout col) {
         col.addView(text("JB Générateur de clés", 24, GOLD_HI, true));
-        col.addView(text("Layers Keys · By JB Praise", 14, GREY, false), lp(-2, -2, 2));
+        col.addView(text("By JB Praise", 14, GREY, false), lp(-2, -2, 2));
+        // choix du logiciel
+        LinearLayout seg = new LinearLayout(this);
+        seg.setOrientation(LinearLayout.HORIZONTAL);
+        for (int i = 0; i < 2; i++) {
+            final int p = i;
+            Button b = button(KeyCore.NAMES[i], i == product);
+            LinearLayout.LayoutParams bp = new LinearLayout.LayoutParams(0, -2, 1);
+            if (i == 1) bp.leftMargin = dp(8);
+            seg.addView(b, bp);
+            b.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    if (p == product) return;
+                    product = p;
+                    showProduct();
+                }
+            });
+        }
+        col.addView(seg, lp(-1, -2, 16));
     }
 
     // ---------------------------------------------------------------- écran de déverrouillage
     void showUnlock(String error) {
         LinearLayout col = page();
         header(col);
-        col.addView(text("Entre ton mot de passe pour déverrouiller le générateur. Il n'est demandé qu'une fois sur ce téléphone.", 15, TEXT, false), lp(-1, -2, 28));
-        final EditText pass = edit("Mot de passe (XXXX-XXXX-XXXX)", true);
+        col.addView(text("Entre le mot de passe de " + KeyCore.NAMES[product] + " pour déverrouiller le générateur. Il n'est demandé qu'une fois sur ce téléphone.", 15, TEXT, false), lp(-1, -2, 28));
+        final EditText pass = edit(product == 0 ? "Mot de passe (XXXX-XXXX-XXXX)" : "Mot de passe (XXXX-XXXX-XXXX-XXXX)", true);
+        final int prod = product;
         pass.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
         col.addView(pass, lp(-1, -2, 18));
         final CheckBox keep = new CheckBox(this);
@@ -175,7 +219,7 @@ public class MainActivity extends Activity {
                 err.setText("Vérification…");
                 new Thread(new Runnable() {
                     public void run() {
-                        final byte[] s = KeyCore.unlock(fromHex(Secret.BLOB), p);
+                        final byte[] s = KeyCore.unlock(fromHex(prod == 0 ? Secret.BLOB : Secret.BLOB_AL), p);
                         runOnUiThread(new Runnable() {
                             public void run() {
                                 if (s == null) {
@@ -184,9 +228,9 @@ public class MainActivity extends Activity {
                                     err.setText("Mot de passe incorrect.");
                                     return;
                                 }
-                                seed = s;
-                                if (keep.isChecked()) prefs.edit().putString("seed", toHex(s)).apply();
-                                showMain();
+                                seeds[prod] = s;
+                                if (keep.isChecked()) prefs.edit().putString(SEED_KEYS[prod], toHex(s)).apply();
+                                if (prod == product) showProduct();
                             }
                         });
                     }
@@ -200,7 +244,7 @@ public class MainActivity extends Activity {
         LinearLayout col = page();
         header(col);
         col.addView(text("Code du client (Windows ou Mac)", 14, GOLD, true), lp(-1, -2, 24));
-        codeEdit = edit("JBK-XXXX-XXXX-XXXX-XXXX", true);
+        codeEdit = edit(KeyCore.CODE_PREFIX[product] + "-XXXX-XXXX-XXXX-XXXX", true);
         codeEdit.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
         col.addView(codeEdit, lp(-1, -2, 6));
         LinearLayout row = new LinearLayout(this);
@@ -254,8 +298,8 @@ public class MainActivity extends Activity {
                 ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
                 CharSequence t = null;
                 if (cm != null && cm.hasPrimaryClip() && cm.getPrimaryClip().getItemCount() > 0) t = cm.getPrimaryClip().getItemAt(0).coerceToText(MainActivity.this);
-                String c = KeyCore.normalizeCode(t == null ? null : t.toString());
-                if (c == null) toast("Aucun code JBK… dans le presse-papiers.");
+                String c = KeyCore.normalizeCode(t == null ? null : t.toString(), KeyCore.CODE_PREFIX[product]);
+                if (c == null) toast("Aucun code " + KeyCore.CODE_PREFIX[product] + "… dans le presse-papiers.");
                 else {
                     codeEdit.setText(c);
                     generate();
@@ -286,7 +330,8 @@ public class MainActivity extends Activity {
         send.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 if (lastKey.length() == 0) return;
-                share("Voici votre clé de licence Layers Keys :\n\n" + lastKey + "\n\nOuvrez Layers Keys, allez dans l'écran « Autoriser le logiciel », collez la clé et validez.\nMerci pour votre confiance !\n— JB Praise");
+                String nm = KeyCore.NAMES[product];
+                share("Voici votre clé de licence " + nm + " :\n\n" + lastKey + "\n\nOuvrez " + nm + ", allez dans l'écran « Autoriser le logiciel », collez la clé et validez.\nMerci pour votre confiance !\n— JB Praise");
             }
         });
         exp.setOnClickListener(new View.OnClickListener() {
@@ -296,9 +341,9 @@ public class MainActivity extends Activity {
         });
         lock.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                prefs.edit().remove("seed").apply();
-                seed = null;
-                showUnlock("");
+                prefs.edit().remove(SEED_KEYS[product]).apply();
+                seeds[product] = null;
+                showProduct();
             }
         });
         refreshHistory();
@@ -322,15 +367,15 @@ public class MainActivity extends Activity {
 
     // ---------------------------------------------------------------- génération
     void generate() {
-        String code = KeyCore.normalizeCode(codeEdit.getText().toString());
+        String code = KeyCore.normalizeCode(codeEdit.getText().toString(), KeyCore.CODE_PREFIX[product]);
         if (code == null) {
             statusView.setTextColor(RED);
-            statusView.setText("Ce code n'est pas valide. Il doit ressembler à JBK-1A2B-3C4D-5E6F-7A8B.");
+            statusView.setText("Ce code n'est pas valide. Il doit ressembler à " + KeyCore.CODE_PREFIX[product] + "-1A2B-3C4D-5E6F-7A8B.");
             resultCard.setVisibility(View.GONE);
             return;
         }
         try {
-            String key = KeyCore.makeKey(seed, code);
+            String key = KeyCore.makeKey(seed, code, KeyCore.MSG_PREFIXES[product]);
             boolean again = findInHistory(code) != null;
             codeEdit.setText(code);
             lastKey = key;
@@ -385,13 +430,11 @@ public class MainActivity extends Activity {
     void refreshHistory() {
         histBox.removeAllViews();
         final JSONArray a = hist();
-        if (a.length() == 0) {
-            histBox.addView(text("Aucune clé générée pour l'instant.", 14, GREY, false));
-            return;
-        }
-        for (int i = 0; i < a.length() && i < 60; i++) {
+        int shown = 0;
+        for (int i = 0; i < a.length() && shown < 60; i++) {
             final JSONObject o = a.optJSONObject(i);
-            if (o == null) continue;
+            if (o == null || !o.optString("code").startsWith(KeyCore.CODE_PREFIX[product])) continue;  // seulement ce logiciel
+            shown++;
             String nm = o.optString("name");
             TextView t = text((nm.length() > 0 ? nm + "\n" : "") + o.optString("code") + "\n" + o.optString("date"), 14, TEXT, false);
             t.setBackground(box(PANEL, 0xFF2B3B57, 10));
@@ -410,6 +453,7 @@ public class MainActivity extends Activity {
             });
             histBox.addView(t, lp(-1, -2, 8));
         }
+        if (shown == 0) histBox.addView(text("Aucune clé générée pour l'instant.", 14, GREY, false));
     }
 
     String csv() {

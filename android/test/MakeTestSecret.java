@@ -9,6 +9,6 @@ public class MakeTestSecret {
         byte[] blob = KeyCore.lock(seed, "TEST-TEST-TEST", new byte[16], new byte[12]);
         StringBuilder hx = new StringBuilder();
         for (byte b : blob) hx.append(String.format("%02x", b));
-        Files.write(Paths.get(a[0]), ("package com.jbpraise.keygen;\nfinal class Secret {\n    private Secret() {}\n    static final String BLOB = \"" + hx + "\";\n}\n").getBytes());
+        Files.write(Paths.get(a[0]), ("package com.jbpraise.keygen;\nfinal class Secret {\n    private Secret() {}\n    static final String BLOB = \"" + hx + "\";\n    static final String BLOB_AL = \"" + hx + "\";\n}\n").getBytes());
     }
 }

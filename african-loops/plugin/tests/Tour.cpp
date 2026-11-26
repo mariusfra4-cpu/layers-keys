@@ -1,6 +1,7 @@
 // Visite guidée : pilote la vraie application étape par étape et photographie
 // chaque écran (interface vide, analyse d'un dossier, loops rangées, lecture…).
 #include "TestLoops.h"
+#include "../Licence.h"
 
 #include <atomic>
 #include <cstdio>
@@ -37,6 +38,7 @@ void pause(int ms) { waitFor([] { return false; }, ms); }
 
 int main(int argc, char** argv) {
     juce::ScopedJuceInitialiser_GUI gui;
+    Licence::get().forceForTests(true);
     const juce::File shots = argc > 1 ? juce::File(argv[1]) : juce::File::getCurrentWorkingDirectory();
     shots.createDirectory();
 

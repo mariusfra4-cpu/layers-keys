@@ -41,9 +41,19 @@ jobs:
       - name: Construction
         run: |
           cmake -S african-loops -B build -A x64 -DAFRICANLOOPS_PLUGIN_TESTS=ON
-          cmake --build build --config Release --parallel 4 --target AfricanLoopsTests AfricanLoopsPluginTests AfricanLoopsHostTest AfricanLoopsPro_VST3 AfricanLoopsPro_Standalone
+          cmake --build build --config Release --parallel 4 --target AfricanLoopsTests AfricanLoopsLicenceTests AfricanLoopsPluginTests AfricanLoopsHostTest AfricanLoopsPro_VST3 AfricanLoopsPro_Standalone JBKeygen
       - name: Tests du moteur
         run: build/Release/AfricanLoopsTests.exe
+      - name: Tests des licences
+        run: build/Release/AfricanLoopsLicenceTests.exe
+      - name: Test du générateur de clés
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force captures | Out-Null
+          $p = Start-Process -FilePath "build/JBKeygen_artefacts/Release/JB Generateur de cles.exe" -ArgumentList "--test", "$PWD\captures" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "le générateur de clés a échoué ($($p.ExitCode))" }
+          if (-not (Test-Path captures/generateur.png)) { throw "pas de capture du générateur" }
+          "Générateur : OK"
       - name: Tests du plugin (son + interface)
         run: |
           mkdir captures
@@ -123,43 +133,16 @@ jobs:
         shell: bash
         run: |
           7z a -tzip /tmp/African-Loops-Pro-Windows.zip ./paquet/* > /dev/null
+          mkdir -p gen && cp "build/JBKeygen_artefacts/Release/JB Generateur de cles.exe" gen/
+          7z a -tzip /tmp/JB-Generateur-de-cles-Windows.zip ./gen/* > /dev/null
           cp african-loops/installer/African-Loops-Pro-Setup-1.0.0.exe /tmp/
           git config user.name ci; git config user.email ci@users.noreply.github.com
           git checkout --orphan ci-african-loops-tmp
           git rm -rf . > /dev/null 2>&1 || true
           git clean -fdxq
-          cp /tmp/African-Loops-Pro-Windows.zip /tmp/African-Loops-Pro-Setup-1.0.0.exe .
+          cp /tmp/African-Loops-Pro-Windows.zip /tmp/African-Loops-Pro-Setup-1.0.0.exe /tmp/JB-Generateur-de-cles-Windows.zip .
           echo "run $GITHUB_RUN_ID - $GITHUB_SHA" > run.txt
-          git add African-Loops-Pro-Windows.zip African-Loops-Pro-Setup-1.0.0.exe run.txt
+          git add African-Loops-Pro-Windows.zip African-Loops-Pro-Setup-1.0.0.exe JB-Generateur-de-cles-Windows.zip run.txt
           git commit -qm "African Loops Pro Windows $GITHUB_RUN_ID"
           git push -f origin HEAD:refs/heads/ci-african-loops
 
-  macos:
-    runs-on: macos-15
-    steps:
-      - uses: actions/checkout@v4
-      - name: Construction (Mac Intel + Apple Silicon)
-        run: |
-          cmake -S african-loops -B build -DCMAKE_BUILD_TYPE=Release -DAFRICANLOOPS_PLUGIN_TESTS=ON \
-            -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15
-          cmake --build build --parallel 4 --target AfricanLoopsTests AfricanLoopsPluginTests AfricanLoopsHostTest AfricanLoopsPro_VST3 AfricanLoopsPro_AU AfricanLoopsPro_Standalone
-      - name: Tests du moteur
-        run: build/AfricanLoopsTests
-      - name: Tests du plugin (son + interface)
-        run: |
-          mkdir -p captures
-          AL_TEST_MP3=african-loops/plugin/tests/mp3 build/AfricanLoopsPluginTests_artefacts/Release/AfricanLoopsPluginTests captures
-      - name: Le VST3 dans un hôte
-        run: build/AfricanLoopsHostTest_artefacts/Release/AfricanLoopsHostTest "build/AfricanLoopsPro_artefacts/Release/VST3/African Loops Pro.vst3"
-      - name: Préparer le paquet
-        run: |
-          mkdir -p paquet
-          cp -R "build/AfricanLoopsPro_artefacts/Release/VST3/African Loops Pro.vst3" paquet/
-          cp -R "build/AfricanLoopsPro_artefacts/Release/AU/African Loops Pro.component" paquet/
-          cp -R "build/AfricanLoopsPro_artefacts/Release/Standalone/African Loops Pro.app" paquet/
-          cp african-loops/INSTALLER.txt paquet/
-          ditto -c -k --keepParent paquet African-Loops-Pro-Mac.zip
-      - uses: actions/upload-artifact@v4
-        with:
-          name: African-Loops-Pro-Mac
-          path: African-Loops-Pro-Mac.zip

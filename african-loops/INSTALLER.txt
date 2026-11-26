@@ -22,6 +22,17 @@ MAC
        xattr -cr ~/Library/Audio/Plug-Ins/Components/"African Loops Pro.component"
        xattr -cr /Applications/"African Loops Pro.app"
 
+LICENCE
+-------
+- Au premier lancement, l'écran « Autoriser le logiciel » affiche le code de
+  l'ordinateur (JBA-XXXX-XXXX-XXXX-XXXX). Envoyez-le à JB Praise : vous
+  recevez une clé de licence. Collez-la et cliquez sur ACTIVER.
+- Une clé = un ordinateur. Pas besoin d'Internet. La même clé active la
+  version seule et les plugins.
+- ESSAYER 3 JOURS : tout le logiciel fonctionne pendant 3 jours (une seule
+  fois par ordinateur). Le temps restant est affiché en haut à gauche, avec
+  le bouton ACTIVER.
+
 UTILISATION
 -----------
 - DOSSIER : choisissez le dossier de vos loops (WAV ou MP3). Elles sont toutes

@@ -163,6 +163,7 @@ private:
                                   .withDesiredThreadPriority(juce::Thread::Priority::low)};
     // Ableton Link : activé depuis la minuterie (jamais depuis le fil audio)
     void timerCallback() override;
+    int licenceTicks = 0;
     LinkSync link;
     std::atomic<bool> linkOn{false};
     std::atomic<int> peerCount{0};

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "FxPage.h"
+#include "LicencePanel.h"
 #include "LookAndFeel.h"
 #include "PluginProcessor.h"
 
@@ -208,6 +209,13 @@ private:
     void languageChanged();
     int shownLang = -1;
     FxPage fxPage{proc};
+    // licence : écran d'activation, temps de démo restant
+    LicencePanel licencePanel;
+    DemoBadge demoBadge;
+    ui::HwButton activateBtn{"ACTIVER", ui::HwButton::Style::Amber};
+    bool licenceOpenedByUser = false;
+    int licenceTicks = 0;
+    void updateLicence();
     void openFx(FxPage::Tab t);
     void closeFx();
     void saveSetupDialog();

@@ -34,6 +34,25 @@ endif()
 enable_testing()
 add_test(NAME moteur COMMAND AfricanLoopsTests)
 
+# licences : signature Ed25519 (Monocypher), codes et clés ; partagé avec « JB Générateur de clés »
+set(AL_MAC_LIBS "")
+if(APPLE)
+  set(AL_MAC_LIBS "-framework IOKit")  # identifiant du Mac pour la licence
+endif()
+add_library(AfricanLoopsLicence STATIC
+  licence/KeyCrypto.cpp
+  licence/LicenceCore.cpp
+  plugin/third_party/monocypher/monocypher.c)
+target_include_directories(AfricanLoopsLicence PUBLIC licence)
+set_target_properties(AfricanLoopsLicence PROPERTIES POSITION_INDEPENDENT_CODE ON)
+add_executable(AfricanLoopsLicenceTests licence/tests.cpp)
+target_link_libraries(AfricanLoopsLicenceTests PRIVATE AfricanLoopsLicence)
+add_test(NAME licence COMMAND AfricanLoopsLicenceTests)
+if(MSVC)
+  target_compile_options(AfricanLoopsLicenceTests PRIVATE /utf-8)
+  target_compile_options(AfricanLoopsLicence PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/utf-8>)
+endif()
+
 # Outil en ligne de commande : analyser un dossier, séparer une loop
 add_executable(africanloops-analyse tools/analyse.cpp)
 target_link_libraries(africanloops-analyse PRIVATE AfricanLoopsCore)
@@ -101,7 +120,7 @@ if(AFRICANLOOPS_PLUGIN)
     plugin/PluginEditor.cpp
     plugin/LookAndFeel.cpp
     plugin/LinkSync.cpp
-    plugin/Effects.cpp plugin/FxPage.cpp plugin/Lang.cpp)
+    plugin/Effects.cpp plugin/FxPage.cpp plugin/Lang.cpp plugin/Licence.cpp plugin/LicencePanel.cpp)
 
   target_compile_definitions(AfricanLoopsPro PUBLIC
     JUCE_WEB_BROWSER=0
@@ -115,6 +134,8 @@ if(AFRICANLOOPS_PLUGIN)
   target_link_libraries(AfricanLoopsPro
     PRIVATE
       AfricanLoopsCore
+      AfricanLoopsLicence
+      ${AL_MAC_LIBS}
       Ableton::Link
       juce::juce_audio_utils
       juce::juce_dsp
@@ -137,12 +158,12 @@ if(AFRICANLOOPS_PLUGIN AND AFRICANLOOPS_PLUGIN_TESTS)
     plugin/PluginEditor.cpp
     plugin/LookAndFeel.cpp
     plugin/LinkSync.cpp
-    plugin/Effects.cpp plugin/FxPage.cpp plugin/Lang.cpp)
+    plugin/Effects.cpp plugin/FxPage.cpp plugin/Lang.cpp plugin/Licence.cpp plugin/LicencePanel.cpp)
   target_compile_definitions(AfricanLoopsPluginTests PRIVATE
     JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0 JUCE_USE_MP3AUDIOFORMAT=1 JUCE_MODAL_LOOPS_PERMITTED=1
     JUCE_STANDALONE_APPLICATION=1)
   target_link_libraries(AfricanLoopsPluginTests PRIVATE
-    AfricanLoopsCore Ableton::Link juce::juce_audio_utils juce::juce_dsp juce::juce_recommended_config_flags)
+    AfricanLoopsCore AfricanLoopsLicence ${AL_MAC_LIBS} Ableton::Link juce::juce_audio_utils juce::juce_dsp juce::juce_recommended_config_flags)
 endif()
 if(AFRICANLOOPS_PLUGIN AND AFRICANLOOPS_PLUGIN_TESTS)
   # petit hôte qui ouvre le vrai fichier VST3 construit
@@ -159,9 +180,28 @@ if(AFRICANLOOPS_PLUGIN AND AFRICANLOOPS_PLUGIN_TESTS)
     target_compile_options(AfricanLoopsTour PRIVATE /utf-8)
   endif()
   target_sources(AfricanLoopsTour PRIVATE
-    plugin/tests/Tour.cpp plugin/PluginProcessor.cpp plugin/PluginEditor.cpp plugin/LookAndFeel.cpp plugin/LinkSync.cpp plugin/Effects.cpp plugin/FxPage.cpp plugin/Lang.cpp)
+    plugin/tests/Tour.cpp plugin/PluginProcessor.cpp plugin/PluginEditor.cpp plugin/LookAndFeel.cpp plugin/LinkSync.cpp plugin/Effects.cpp plugin/FxPage.cpp plugin/Lang.cpp plugin/Licence.cpp plugin/LicencePanel.cpp)
   target_compile_definitions(AfricanLoopsTour PRIVATE
     JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0 JUCE_USE_MP3AUDIOFORMAT=1 JUCE_MODAL_LOOPS_PERMITTED=1 JUCE_STANDALONE_APPLICATION=1)
   target_link_libraries(AfricanLoopsTour PRIVATE
-    AfricanLoopsCore Ableton::Link juce::juce_audio_utils juce::juce_dsp juce::juce_recommended_config_flags)
+    AfricanLoopsCore AfricanLoopsLicence ${AL_MAC_LIBS} Ableton::Link juce::juce_audio_utils juce::juce_dsp juce::juce_recommended_config_flags)
 endif()
+
+# « JB Générateur de clés » (Windows, Mac) : clés de Layers Keys et d'African Loops Pro
+option(AFRICANLOOPS_KEYGEN "Construire JB Générateur de clés" ON)
+if(AFRICANLOOPS_PLUGIN AND AFRICANLOOPS_KEYGEN)
+  juce_add_gui_app(JBKeygen
+    PRODUCT_NAME "JB Generateur de cles"
+    COMPANY_NAME "JB Praise"
+    BUNDLE_ID com.jbpraise.keygen
+    ICON_BIG installer/africanloops_icon.png
+    VERSION 1.0.0)
+  target_sources(JBKeygen PRIVATE keygen/KeygenApp.cpp plugin/LookAndFeel.cpp plugin/Lang.cpp)
+  target_compile_definitions(JBKeygen PRIVATE JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0 JUCE_DISPLAY_SPLASH_SCREEN=0)
+  if(MSVC)
+    target_compile_options(JBKeygen PRIVATE /utf-8)
+  endif()
+  target_link_libraries(JBKeygen PRIVATE AfricanLoopsLicence juce::juce_gui_extra juce::juce_audio_basics
+    PUBLIC juce::juce_recommended_config_flags juce::juce_recommended_warning_flags)
+endif()
+

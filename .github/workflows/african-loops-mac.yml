@@ -1,0 +1,154 @@
+# African Loops Pro pour Mac : logiciel, plugins VST3 et Audio Unit (Intel + Apple Silicon),
+# « JB Générateur de clés » pour Mac, et l'installateur .pkg. Tests puis publication dans la branche
+# « ci-african-loops-mac ». Lancer aussi à la main : onglet « Actions » > « African Loops Pro Mac » > « Run workflow ».
+name: African Loops Pro Mac
+on:
+  push:
+    paths: ['african-loops/**', '.github/workflows/african-loops-mac.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  mac:
+    runs-on: macos-15
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: bash -eo pipefail {0}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Construction (Intel + Apple Silicon)
+        run: |
+          cmake -S african-loops -B build -DCMAKE_BUILD_TYPE=Release -DAFRICANLOOPS_PLUGIN_TESTS=ON \
+            -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15
+          cmake --build build --parallel 4 --target AfricanLoopsTests AfricanLoopsLicenceTests AfricanLoopsPluginTests \
+            AfricanLoopsHostTest AfricanLoopsPro_VST3 AfricanLoopsPro_AU AfricanLoopsPro_Standalone JBKeygen
+      - name: Tests du moteur et des licences
+        run: |
+          build/AfricanLoopsTests
+          build/AfricanLoopsLicenceTests
+      - name: Tests du plugin (son + interface)
+        run: |
+          mkdir -p captures
+          AL_TEST_MP3=african-loops/plugin/tests/mp3 build/AfricanLoopsPluginTests_artefacts/Release/AfricanLoopsPluginTests captures
+      - name: Le VST3 dans un hôte
+        run: build/AfricanLoopsHostTest_artefacts/Release/AfricanLoopsHostTest "build/AfricanLoopsPro_artefacts/Release/VST3/African Loops Pro.vst3"
+      - name: Test du générateur de clés
+        run: |
+          "build/JBKeygen_artefacts/Release/JB Generateur de cles.app/Contents/MacOS/JB Generateur de cles" --test "$PWD/captures"
+          test -f captures/generateur.png
+      - name: Signature ad hoc (obligatoire sur Apple Silicon)
+        run: |
+          R=build/AfricanLoopsPro_artefacts/Release
+          for b in "$R/Standalone/African Loops Pro.app" "$R/VST3/African Loops Pro.vst3" "$R/AU/African Loops Pro.component" \
+                   "build/JBKeygen_artefacts/Release/JB Generateur de cles.app"; do
+            codesign --force --deep -s - "$b"
+            codesign --verify --deep "$b"
+            lipo -info "$(find "$b/Contents/MacOS" -type f | head -1)"
+          done
+      - name: Audio Unit (auval)
+        continue-on-error: true
+        run: |
+          mkdir -p ~/Library/Audio/Plug-Ins/Components
+          cp -R "build/AfricanLoopsPro_artefacts/Release/AU/African Loops Pro.component" ~/Library/Audio/Plug-Ins/Components/
+          killall -9 AudioComponentRegistrar 2>/dev/null || true
+          sleep 3
+          auval -a | grep -i "african" || true
+      - name: Installateur .pkg
+        run: |
+          R=build/AfricanLoopsPro_artefacts/Release
+          P=$PWD/pkgroot && rm -rf "$P" && mkdir -p "$P/app/Applications" "$P/vst3/Library/Audio/Plug-Ins/VST3" "$P/au/Library/Audio/Plug-Ins/Components"
+          cp -R "$R/Standalone/African Loops Pro.app" "$P/app/Applications/"
+          cp -R "$R/VST3/African Loops Pro.vst3" "$P/vst3/Library/Audio/Plug-Ins/VST3/"
+          cp -R "$R/AU/African Loops Pro.component" "$P/au/Library/Audio/Plug-Ins/Components/"
+          S=$PWD/pkgscripts && rm -rf "$S"
+          for part in app vst3 au; do
+            mkdir -p "$S/$part"
+            {
+              echo '#!/bin/bash'
+              echo '# enlève la « quarantaine » de macOS et prépare le dossier commun de la licence'
+              echo 'for p in "/Applications/African Loops Pro.app" "/Library/Audio/Plug-Ins/VST3/African Loops Pro.vst3" "/Library/Audio/Plug-Ins/Components/African Loops Pro.component"; do'
+              echo '  [ -e "$p" ] && xattr -cr "$p" 2>/dev/null'
+              echo 'done'
+              echo 'mkdir -p "/Library/Application Support/JB Praise/African Loops" 2>/dev/null'
+              echo 'chmod 777 "/Library/Application Support/JB Praise" "/Library/Application Support/JB Praise/African Loops" 2>/dev/null'
+              [ "$part" = au ] && echo 'killall -9 AudioComponentRegistrar 2>/dev/null'
+              echo 'exit 0'
+            } > "$S/$part/postinstall"
+            chmod +x "$S/$part/postinstall"
+          done
+          VER=1.0.0
+          for part in app vst3 au; do
+            pkgbuild --analyze --root "$P/$part" "$P/$part.plist" >/dev/null
+            # pas de déplacement des bundles : toujours installés au bon endroit
+            plutil -replace 0.BundleIsRelocatable -bool NO "$P/$part.plist" || true
+            pkgbuild --root "$P/$part" --component-plist "$P/$part.plist" --identifier "com.jbpraise.africanloops.$part" --version "$VER" \
+              --install-location / --scripts "$S/$part" "$P/AfricanLoops_$part.pkg"
+          done
+          mkdir -p res
+          cat > res/welcome.html <<'HTML'
+          <html><body style="font-family:-apple-system,Helvetica;font-size:13px">
+          <h2>African Loops Pro</h2><p><b>For church musicians and producers.</b></p>
+          <p>African Loops Pro joue vos loops africaines (WAV et MP3) en boucle sur 8 pistes : tempo trouvé automatiquement,
+          percussions reconnues et séparées, bibliothèque classée par style, effets, setups.</p>
+          <p>Cet assistant installe le logiciel dans Applications, et les plugins VST3 (Ableton Live et autres) et Audio Unit (Logic Pro, GarageBand).</p>
+          <p>By JB Praise.</p></body></html>
+          HTML
+          cat > distribution.xml <<'XML'
+          <?xml version="1.0" encoding="utf-8"?>
+          <installer-gui-script minSpecVersion="2">
+            <title>African Loops Pro</title>
+            <welcome file="welcome.html"/>
+            <options customize="always" require-scripts="false" hostArchitectures="arm64,x86_64"/>
+            <domains enable_localSystem="true"/>
+            <choices-outline><line choice="app"/><line choice="vst3"/><line choice="au"/></choices-outline>
+            <choice id="app" title="African Loops Pro (obligatoire)" description="Le logiciel African Loops Pro, dans le dossier Applications." enabled="false" selected="true"><pkg-ref id="com.jbpraise.africanloops.app"/></choice>
+            <choice id="vst3" title="Plugin VST3 (Ableton Live et autres)" description="Installé dans /Library/Audio/Plug-Ins/VST3." start_selected="true"><pkg-ref id="com.jbpraise.africanloops.vst3"/></choice>
+            <choice id="au" title="Plugin Audio Unit (Logic Pro, GarageBand)" description="Installé dans /Library/Audio/Plug-Ins/Components." start_selected="true"><pkg-ref id="com.jbpraise.africanloops.au"/></choice>
+            <pkg-ref id="com.jbpraise.africanloops.app">AfricanLoops_app.pkg</pkg-ref>
+            <pkg-ref id="com.jbpraise.africanloops.vst3">AfricanLoops_vst3.pkg</pkg-ref>
+            <pkg-ref id="com.jbpraise.africanloops.au">AfricanLoops_au.pkg</pkg-ref>
+          </installer-gui-script>
+          XML
+          sed -i '' 's/^          //' res/welcome.html distribution.xml
+          productbuild --distribution distribution.xml --resources res --package-path "$P" "African-Loops-Pro-$VER.pkg"
+          pkgutil --check-signature "African-Loops-Pro-$VER.pkg" || true
+          ls -la *.pkg
+      - name: Test de l'installateur
+        run: |
+          sudo installer -pkg African-Loops-Pro-1.0.0.pkg -target /
+          for f in "/Applications/African Loops Pro.app" "/Library/Audio/Plug-Ins/VST3/African Loops Pro.vst3" \
+                   "/Library/Audio/Plug-Ins/Components/African Loops Pro.component" "/Library/Application Support/JB Praise/African Loops"; do
+            [ -e "$f" ] || { echo "absent après installation : $f"; exit 1; }
+          done
+          build/AfricanLoopsHostTest_artefacts/Release/AfricanLoopsHostTest "/Library/Audio/Plug-Ins/VST3/African Loops Pro.vst3"
+          echo "Installé : OK"
+      - name: Paquets
+        run: |
+          ditto -c -k --keepParent "build/JBKeygen_artefacts/Release/JB Generateur de cles.app" JB-Generateur-de-cles-Mac.zip
+          mkdir -p paquet
+          cp -R "build/AfricanLoopsPro_artefacts/Release/Standalone/African Loops Pro.app" paquet/
+          cp -R "build/AfricanLoopsPro_artefacts/Release/VST3/African Loops Pro.vst3" paquet/
+          cp -R "build/AfricanLoopsPro_artefacts/Release/AU/African Loops Pro.component" paquet/
+          cp african-loops/INSTALLER.txt paquet/
+          ditto -c -k --keepParent paquet African-Loops-Pro-Mac.zip
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: African-Loops-Pro-Mac
+          path: |
+            African-Loops-Pro-1.0.0.pkg
+            African-Loops-Pro-Mac.zip
+            JB-Generateur-de-cles-Mac.zip
+            captures
+      - name: Publier (branche ci-african-loops-mac)
+        run: |
+          mkdir -p /tmp/o && cp African-Loops-Pro-1.0.0.pkg African-Loops-Pro-Mac.zip JB-Generateur-de-cles-Mac.zip /tmp/o/
+          git config user.name ci; git config user.email ci@users.noreply.github.com
+          git checkout --orphan ci-african-loops-mac-tmp
+          git rm -rf . > /dev/null 2>&1 || true
+          git clean -fdxq
+          cp /tmp/o/* .
+          echo "run $GITHUB_RUN_ID - $GITHUB_SHA" > run.txt
+          git add -A && git commit -qm "African Loops Pro Mac $GITHUB_RUN_ID"
+          git push -f origin HEAD:refs/heads/ci-african-loops-mac
