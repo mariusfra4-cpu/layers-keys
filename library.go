@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	libVersion  = 3    // 2 : colonne BASSE ; 3 : 14 familles (LEAD, SYNTHÉ, GUITARE, CHŒURS…)
+	libVersion  = 4    // 2 : colonne BASSE ; 3 : 14 familles ; 4 : SoundFont d'un seul son rangés d'après leur fichier
 	libMaxFiles = 4000 // garde-fou : un dossier énorme (disque entier) ne doit pas bloquer le logiciel
 	libMaxDepth = 8
 )
@@ -170,16 +170,17 @@ func scanLibrary(dir string, progress func(files int)) ([]LibSound, error) {
 		}
 		if audio {
 			name := baseNoExt(p)
-			out = append(out, LibSound{Name: name, File: p, Kind: "audio", Cat: libCat(name, p, false, 0, 0, dirs)})
+			out = append(out, LibSound{Name: name, File: p, Kind: "audio", Cat: libCat(name, p, false, 0, 0, 1, dirs)})
 			return nil
 		}
 		s, err := OpenSF2(p)
 		if err != nil {
 			return nil // fichier abîmé : on l'ignore
 		}
-		for _, pr := range s.Presets() {
+		prs := s.Presets()
+		for _, pr := range prs {
 			out = append(out, LibSound{Name: pr.Name, File: p, Kind: "sf2", Bank: pr.Bank, Prog: pr.Num,
-				Cat: libCat(pr.Name, p, true, pr.Bank, pr.Num, dirs)})
+				Cat: libCat(pr.Name, p, true, pr.Bank, pr.Num, len(prs), dirs)})
 		}
 		s.Close()
 		return nil
@@ -203,6 +204,12 @@ func sortLib(s []LibSound) {
 
 // relabel recalcule la famille de chaque son (nom, fichier, dossiers) : sert quand les familles changent
 func (l *Library) relabel() {
+	perFile := map[string]int{} // nombre de sons dans chaque SoundFont
+	for _, s := range l.Sounds {
+		if s.Kind == "sf2" {
+			perFile[s.File]++
+		}
+	}
 	for i := range l.Sounds {
 		s := &l.Sounds[i]
 		var dirs []string
@@ -211,7 +218,7 @@ func (l *Library) relabel() {
 				dirs = strings.Split(rel, string(filepath.Separator))
 			}
 		}
-		s.Cat = libCat(s.Name, s.File, s.Kind == "sf2", s.Bank, s.Prog, dirs)
+		s.Cat = libCat(s.Name, s.File, s.Kind == "sf2", s.Bank, s.Prog, perFile[s.File], dirs)
 	}
 	sortLib(l.Sounds)
 }

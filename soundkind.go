@@ -20,7 +20,7 @@ type kindRule struct {
 
 // l'ordre compte : « bass drum » = batterie, « pad de cordes » = pad, « lead guitar » = lead…
 var kindRules = []kindRule{
-	{icDrum, []string{"drum", "batterie", " kit ", "percu", "perc ", "kick", "snare", "caisse claire", " tom ", "cymbal", "hihat", "hi hat", "conga", "bongo", "tambour", "timbal", "cajon"}},
+	{icDrum, []string{"drum", "batterie", " kit ", "kick", "snare", "caisse claire", " tom ", "cymbal", "hihat", "hi hat", "conga", "bongo", "tambour", "timbal", "cajon"}},
 	{icSquare, []string{"square lead", "sq lead", "square wave", "onde carree", "chiptune", " 8bit", "8 bit"}},
 	{icWave, []string{" lead", "squash", "solo synth", "sawtooth", "saw wave", "sync ", "mono synth", "synth solo", "portamento"}},
 	{icCloud, []string{" pad", " nappe", "atmos", "ambien", "ambiance", "halo", "sweep", "evolv", "drone", "soundscape", "texture", "celestial", "angelic", "ethereal", "worship"}},
@@ -35,6 +35,7 @@ var kindRules = []kindRule{
 	{icUpright, []string{"upright", "piano droit", "honky", "rhodes", "wurli", "e piano", " ep ", "epiano", "electric piano", "piano electrique", "piano elec", " dx ", "fm piano", "clav", "harpsichord", "clavecin", " tine"}},
 	{icKeys, []string{"piano", "grand", "steinway", "bosendorfer", "yamaha c", " c7", " c3", "concert", "klavier"}},
 	{icLayers, []string{" fx", "effect", "effet", "noise", "bruit", "riser", "impact", "sfx", "scratch", "sweeper", "foley"}},
+	{icDrum, []string{"percu", "perc "}}, // en dernier : « Percussive Organ » est un orgue, « Perc Kit » une batterie
 }
 
 // icône d'après un texte (nom du son, nom du fichier…) ; -1 si rien ne correspond

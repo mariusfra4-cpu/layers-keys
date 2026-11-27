@@ -56,7 +56,7 @@ type catRule struct {
 // l'ordre compte : « synth pad » = pad, « synth lead » = lead, « synth bass » = basse, « bass drum » = batterie,
 // « electric piano » = piano électrique avant piano…
 var catRules = []catRule{
-	{catDrums, []string{"drum", "batterie", " kit ", "percu", "perc ", "kick", "snare", "caisse claire", " tom ", "cymbal",
+	{catDrums, []string{"drum", "batterie", " kit ", "kick", "snare", "caisse claire", " tom ", "cymbal",
 		"hihat", "hi hat", "conga", "bongo", "tambour", "timbal", "timpani", "cajon", "grosse caisse", "shaker", "tambourine", "clap"}},
 	{catLead, []string{" lead", "square lead", "sq lead", "solo synth", "synth solo", "mono synth", "monosynth", "squash",
 		"chiptune", " 8bit", "8 bit", "portamento", " glide", "whistle synth"}},
@@ -85,6 +85,7 @@ var catRules = []catRule{
 	{catPiano, []string{"piano", "grand", "steinway", "bosendorfer", "yamaha", "kawai", "fazioli", "bechstein", "bluthner",
 		"salamander", "concert", "klavier", "upright", "piano droit", "honky", " cfx", "harpsichord", "clavecin", " c7 ", " c3 "}},
 	{catOther, []string{" fx", "effect", "effet", "noise", "bruit", "riser", "impact", "sfx", "scratch", "sweeper", "foley"}},
+	{catDrums, []string{"percu", "perc "}}, // en dernier : « Percussive Organ » est un orgue, « Perc Kit » une batterie
 }
 
 // famille d'après un texte (nom du son, du fichier, d'un dossier) ; -1 si rien ne correspond
@@ -94,6 +95,8 @@ func catFromName(name string) int {
 		for _, k := range r.keys {
 			if strings.Contains(n, k) {
 				switch {
+				case r.cat == catDrums && strings.Contains(n, "steel drum"):
+					return catBells
 				case r.cat == catBass && (strings.Contains(n, "bass drum") || strings.Contains(n, "grosse caisse")):
 					return catDrums
 				case r.cat == catBass && (strings.Contains(n, "bassoon") || strings.Contains(n, "basson")):
@@ -149,29 +152,50 @@ func catFromGM(prog int) int {
 	return catOther
 }
 
-// famille d'un son : nom du son, puis nom du fichier, puis dossiers (« Leads/… », « Pads/… »), puis General MIDI.
-// Un son sans aucun indice va dans AUTRES (plus jamais rangé au hasard dans PIANO).
-func libCat(name, file string, isSF bool, bank, prog int, dirs []string) int {
+// famille d'un son.
+// presets = nombre de sons dans le SoundFont : un SoundFont « General MIDI » en a beaucoup (le numéro de programme
+// y a un sens), un SoundFont d'un seul son en a 1 et son numéro (souvent 0 = « piano ») ne veut rien dire.
+//   - SoundFont d'un seul son (ou fichier audio) : nom du fichier, puis dossiers, puis nom du son ;
+//   - grand SoundFont : nom du son, puis numéro General MIDI, puis nom du fichier et dossiers.
+//
+// Un son sans aucun indice va dans AUTRES (jamais rangé au hasard dans PIANO).
+func libCat(name, file string, isSF bool, bank, prog, presets int, dirs []string) int {
 	if isSF && bank == 128 {
 		return catDrums
+	}
+	fromFile := func() int {
+		if k := catFromName(baseNoExt(file)); k >= 0 {
+			return k
+		}
+		for i := len(dirs) - 1; i >= 0; i-- { // du dossier le plus proche au plus lointain
+			if k := catFromName(dirs[i]); k >= 0 {
+				return k
+			}
+		}
+		return -1
+	}
+	gmBank := isSF && bank == 0 && presets >= 8
+	if !isSF || presets < 8 {
+		if k := fromFile(); k >= 0 {
+			return k
+		}
+		if k := catFromName(name); k >= 0 {
+			return k
+		}
+		return catOther
 	}
 	if k := catFromName(name); k >= 0 {
 		return k
 	}
-	if isSF && bank == 0 && !genericName(name) {
+	if gmBank && !genericName(name) {
 		if k := catFromGM(prog); k >= 0 {
 			return k
 		}
 	}
-	if k := catFromName(baseNoExt(file)); k >= 0 {
+	if k := fromFile(); k >= 0 {
 		return k
 	}
-	for i := len(dirs) - 1; i >= 0; i-- { // du dossier le plus proche au plus lointain
-		if k := catFromName(dirs[i]); k >= 0 {
-			return k
-		}
-	}
-	if isSF && bank == 0 {
+	if gmBank {
 		if k := catFromGM(prog); k >= 0 {
 			return k
 		}

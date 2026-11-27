@@ -965,7 +965,7 @@ func (u *UI) drawOverlay(c *Canvas) {
 		}
 		ii := vis[idx]
 		it := o.items[ii]
-		r := rect{x + 14, top + k*rowh, w - 40, rowh - 2}
+		r := rect{x + 14, top + k*rowh, w - 52, rowh - 2}
 		if it.header {
 			c.Text(r.x+6, r.y+6, r.w, 16, strings.ToUpper(it.text), fontXs, colGold, 0)
 			continue
@@ -989,10 +989,16 @@ func (u *UI) drawOverlay(c *Canvas) {
 	}
 	if len(vis) > ovRows {
 		th := ovRows * rowh
-		c.RRect(float64(x+w-20), float64(top), 6, float64(th), 3, 0x0c0e11, 1)
-		bh := math.Max(24, float64(th)*float64(ovRows)/float64(len(vis)))
+		hot := rect{x + w - 38, top, 34, th}.has(u.mx, u.my) || (u.active != nil && u.active.id == "ovscroll")
+		bw, col := 10.0, uint32(colGoldDim)
+		if hot {
+			bw, col = 18, colGold // sous la souris : la barre grossit
+		}
+		bx := float64(x+w-21) - bw/2
+		c.RRect(bx, float64(top), bw, float64(th), bw/2, 0x0c0e11, 1)
+		bh := math.Max(40, float64(th)*float64(ovRows)/float64(len(vis)))
 		by := float64(top) + (float64(th)-bh)*float64(o.scroll)/float64(len(vis)-ovRows)
-		c.RRect(float64(x+w-20), by, 6, bh, 3, colGoldDim, 1)
+		c.RRect(bx, by, bw, bh, bw/2, col, 1)
 	}
 	maxS := len(vis) - ovRows
 	if maxS < 0 {
@@ -1005,14 +1011,14 @@ func (u *UI) drawOverlay(c *Canvas) {
 	if maxS > 0 {
 		// barre de défilement : on l'attrape et on la fait glisser, ou on clique dessus pour sauter
 		th := ovRows * rowh
-		bh := int(math.Max(24, float64(th)*float64(ovRows)/float64(len(vis))))
+		bh := int(math.Max(40, float64(th)*float64(ovRows)/float64(len(vis))))
 		grab := 0
 		place := func(py int) {
 			f := float64(py-top-grab) / float64(th-bh)
 			o.scroll = clamp(int(math.Round(f*float64(maxS))), 0, maxS)
 			u.host.Invalidate()
 		}
-		u.reg(region{r: rect{x + w - 30, top, 26, th}, id: "ovscroll", wheel: wheel,
+		u.reg(region{r: rect{x + w - 38, top, 34, th}, id: "ovscroll", wheel: wheel,
 			down: func(px, py int) {
 				by := top + (th-bh)*o.scroll/maxS
 				if py >= by && py < by+bh {

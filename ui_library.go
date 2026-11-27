@@ -171,11 +171,43 @@ func (u *UI) drawLibrary(c *Canvas, r rect) {
 				u.closeOverlay()
 			}})
 		}
-		// petite barre de défilement
+		// barre de défilement de la rangée : on l'attrape et on la fait glisser ; elle grossit sous la souris
 		if len(list) > rows {
-			th := math.Max(20, float64(rows*libRowH)*float64(rows)/float64(len(list)))
-			ty := float64(listTop) + (float64(rows*libRowH)-th)*float64(sc)/float64(len(list)-rows)
-			c.RRect(float64(x+cw-5), ty, 3, th, 1.5, colGoldDim, 0.9)
+			trackH := rows * libRowH
+			maxS := len(list) - rows
+			id := fmt.Sprintf("libbar%d", k)
+			hit := rect{x + cw - 22, listTop, 22, trackH}
+			hot := hit.has(u.mx, u.my) || (u.active != nil && u.active.id == id)
+			bw, col := 8.0, uint32(colGoldDim)
+			if hot {
+				bw, col = 14, colGold
+			}
+			bx := float64(x+cw-4) - bw
+			th := math.Max(36, float64(trackH)*float64(rows)/float64(len(list)))
+			ty := float64(listTop) + (float64(trackH)-th)*float64(sc)/float64(maxS)
+			c.RRect(bx, float64(listTop), bw, float64(trackH), bw/2, 0x05080e, 0.9)
+			c.RRect(bx, ty, bw, th, bw/2, col, 1)
+			grab := 0
+			place := func(py int) {
+				f := float64(py-listTop-grab) / (float64(trackH) - th)
+				u.libs.mu.Lock()
+				u.libs.scroll[k] = clamp(int(math.Round(f*float64(maxS))), 0, maxS)
+				u.libs.mu.Unlock()
+				u.host.Invalidate()
+			}
+			u.reg(region{r: hit, id: id, wheel: func(d int) {
+				u.libs.mu.Lock()
+				u.libs.scroll[k] -= d / 40
+				u.libs.mu.Unlock()
+				u.host.Invalidate()
+			}, down: func(px, py int) {
+				if py >= int(ty) && py < int(ty+th) {
+					grab = py - int(ty)
+				} else {
+					grab = int(th / 2)
+				}
+				place(py)
+			}, drag: func(px, py int) { place(py) }})
 		}
 	}
 }
