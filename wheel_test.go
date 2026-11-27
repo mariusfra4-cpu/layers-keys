@@ -99,7 +99,7 @@ func TestWheelSettings(t *testing.T) {
 func TestWheelLeadDoesNotTouchOrgan(t *testing.T) {
 	u, _, e := newTestUI(t, "")
 	u.fxSetAt(2, func(c *FXCfg) { c.Leslie.On = true }) // orgue sur la piste 3
-	u.sel = 3                                            // le lead
+	u.sel = 3                                           // le lead
 	u.Tick()
 	e.Control(1, 127)
 	if e.LeslieFast() {
