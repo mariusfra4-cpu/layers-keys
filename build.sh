@@ -11,8 +11,11 @@ done
 # plugin VST3 : compilé depuis une copie sans l'icône (.syso) qui fait planter l'éditeur de liens
 rm -rf /tmp/vstbuild && mkdir /tmp/vstbuild
 tar --exclude=.git --exclude=dist --exclude='*.syso' --exclude=installer --exclude='*_test.go' -cf - . | tar -xf - -C /tmp/vstbuild
+# comme l'Audio Unit du Mac : le moteur Go n'interrompt jamais le fil audio du logiciel hôte (asyncpreemptoff=1)
+VSTGODEBUG="$(cd /tmp/vstbuild && GOOS=windows GOARCH=amd64 CGO_ENABLED=1 go list -buildvcs=false -tags vst3 -f '{{.DefaultGODEBUG}}' .)"
+VSTGODEBUG="${VSTGODEBUG:+$VSTGODEBUG,}asyncpreemptoff=1"
 (cd /tmp/vstbuild && PATH=$TC:$PATH CGO_ENABLED=1 CC=x86_64-w64-mingw32-gcc GOOS=windows GOARCH=amd64 \
-  go build -buildvcs=false -tags vst3 -buildmode=c-shared -trimpath -ldflags "-s -w" -o "$OLDPWD/dist/LayersKeys.vst3" .)
+  go build -buildvcs=false -tags vst3 -buildmode=c-shared -trimpath -ldflags "-s -w -X=runtime.godebugDefault=$VSTGODEBUG" -o "$OLDPWD/dist/LayersKeys.vst3" .)
 rm -f dist/LayersKeys.h
 cp dist/LayersKeys64.exe dist/LayersKeys32.exe dist/LayersKeys.vst3 installer/payload/
 rm -f installer/payload/LayersKeys_vst3.dll

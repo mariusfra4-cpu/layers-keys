@@ -10,9 +10,12 @@ cd "$(dirname "$0")"
 OUT=dist/mac
 PLUG="$OUT/LayersKeys.vst3"
 rm -rf "$PLUG" "$OUT/vst" && mkdir -p "$PLUG/Contents/MacOS" "$OUT/vst"
+# comme l'Audio Unit : aucune interruption du fil audio du logiciel hôte par le moteur Go (asyncpreemptoff=1)
+VSTGODEBUG="$(go list -tags vst3 -f '{{.DefaultGODEBUG}}' .)"
+VSTGODEBUG="${VSTGODEBUG:+$VSTGODEBUG,}asyncpreemptoff=1"
 for a in arm64 amd64; do
   CGO_ENABLED=1 GOOS=darwin GOARCH=$a CC=clang go build -tags vst3 -buildmode=c-shared -trimpath \
-    -o "$OUT/vst/LayersKeys_$a.dylib" .
+    -ldflags="-X=runtime.godebugDefault=$VSTGODEBUG" -o "$OUT/vst/LayersKeys_$a.dylib" .
 done
 lipo -create "$OUT/vst/LayersKeys_arm64.dylib" "$OUT/vst/LayersKeys_amd64.dylib" -output "$PLUG/Contents/MacOS/LayersKeys"
 cp mac/vst3_Info.plist "$PLUG/Contents/Info.plist"
