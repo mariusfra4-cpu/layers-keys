@@ -232,6 +232,9 @@ func TestPadPlayerCrossfadeAndLoop(t *testing.T) {
 }
 
 func TestPadFollowChords(t *testing.T) {
+	if !featExtras {
+		t.Skip("lecteur audio et pads retirés de cette version")
+	}
 	dir := t.TempDir()
 	wav := makeWAV(220, 44100, 2, 16, false, 0.5, false, 57)
 	mkFile(t, filepath.Join(dir, "C.wav"), wav)

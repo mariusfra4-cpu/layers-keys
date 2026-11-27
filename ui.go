@@ -18,9 +18,9 @@ const (
 	WinH = 744
 
 	kbX      = 150
-	kbY      = 556
+	kbY      = 568 // un espace sous le panneau de droite (volume, réverbération)
 	whiteW   = 28
-	whiteH   = 124
+	whiteH   = 118
 	blackW   = 17
 	blackH   = 78
 	lowNote  = 36
@@ -1142,7 +1142,9 @@ func (u *UI) Tick() {
 		}
 	}
 	u.updateChord() // (aussi quand rien n'est redessiné : les pads suivent les accords)
-	u.padTick()
+	if featExtras {
+		u.padTick()
+	}
 	u.splitTick()
 	u.pcTick()
 	if u.dirty && u.now().Sub(u.lastSave) > 1500*time.Millisecond {

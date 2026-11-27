@@ -8,6 +8,9 @@ import (
 )
 
 func TestPlayer(t *testing.T) {
+	if !featExtras {
+		t.Skip("lecteur audio et pads retirés de cette version")
+	}
 	// WAV mono 16 bits, 8 000 Hz, 1 s de sinus
 	n := 8000
 	b := make([]byte, 44+2*n)

@@ -45,8 +45,8 @@ const (
 	leslieHornDown  = 0.9
 	leslieDrumUp    = 2.6
 	leslieDrumDown  = 3.6
-	leslieDopplerMs = 0.62 // excursion du Doppler du pavillon (± ms) : rayon du pavillon / vitesse du son
-	leslieMicAngle  = 2.6  // angle entre les deux micros (radians, ~150°) : large, mais pas « ping-pong »
+	leslieDopplerMs = 0.3 // excursion du Doppler du pavillon (± ms) : ±20 cents environ en rapide, les notes restent justes
+	leslieMicAngle  = 2.6 // angle entre les deux micros (radians, ~150°) : large, mais pas « ping-pong »
 )
 
 // filtre du second ordre (Butterworth) pour la séparation graves / aigus et la couleur de la cabine

@@ -744,15 +744,17 @@ func (u *UI) drawKeyboard(c *Canvas) {
 		}})
 	u.drawWheels(c)
 	hint := "Espace = sustain  ·  Échap = tout arrêter"
-	c.Text(kbX-8, kbY+whiteH+10, 250, 14, hint, fontXs, colText2, 0)
-	u.drawPlayer(c, 410, kbY+whiteH+9)
-	u.drawPadButton(c, 812, kbY+whiteH+9)
+	c.Text(kbX-8, kbY+whiteH+6, 250, 14, hint, fontXs, colText2, 0)
+	if featExtras { // lecteur audio et pads continus : retirés de cette version
+		u.drawPlayer(c, 410, kbY+whiteH+9)
+		u.drawPadButton(c, 812, kbY+whiteH+9)
+	}
 	pc, pt := uint32(0x2a3039), uint32(colText2)
 	if u.eng.sustain {
 		pc, pt = colGold, colDark
 	}
-	c.RRect(1090, float64(kbY+whiteH+8), 94, 18, 9, pc, 1)
-	c.Text(1090, kbY+whiteH+8, 94, 18, "PÉDALE", fontXs, pt, 1)
+	c.RRect(1090, float64(kbY+whiteH+4), 94, 16, 8, pc, 1)
+	c.Text(1090, kbY+whiteH+4, 94, 16, "PÉDALE", fontXs, pt, 1)
 }
 
 // ---------------------------------------------------------------- lecteur audio

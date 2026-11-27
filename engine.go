@@ -975,9 +975,14 @@ func (e *Engine) mixBlock(B int) {
 		}
 		e.rev.process(mixL, mixR, sd, e.revAmt, 0.9)
 	}
-	e.Player.mix(mixL, mixR)
-	e.Pads.mix(mixL, mixR)
+	if featExtras {
+		e.Player.mix(mixL, mixR)
+		e.Pads.mix(mixL, mixR)
+	}
 }
+
+// featExtras : lecteur audio et pads continus. Retirés de cette version : le moteur reste entièrement libre pour jouer.
+const featExtras = false
 
 // SetSampleRate change la fréquence de travail (44100, 48000, 96000…). Toutes les notes sont coupées.
 // À appeler pendant que la sortie audio est arrêtée.

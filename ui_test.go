@@ -43,7 +43,7 @@ func (h *fakeHost) KeyLabel(sc uint32, fallback string) string { return fallback
 func (h *fakeHost) ClipGet() string  { return h.clip }
 func (h *fakeHost) ClipSet(s string) { h.clip = s }
 
-func newTestUI(t *testing.T, cfgPath string) (*UI, *fakeHost, *Engine) {
+func newTestUI(t testing.TB, cfgPath string) (*UI, *fakeHost, *Engine) {
 	e := NewEngine()
 	e.revAmt = 0
 	h := &fakeHost{}

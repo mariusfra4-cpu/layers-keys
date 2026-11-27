@@ -346,6 +346,9 @@ func (u *UI) libSettingsItems() []olItem {
 			u.OpenSettings()
 		}})
 	}
+	if !featExtras {
+		return items
+	}
 	items = append(items, olItem{text: T("Pads continus"), header: true})
 	padTxt := T("Dossier des pads : aucun")
 	padSub := T("un pad par tonalité, majeur et mineur")
