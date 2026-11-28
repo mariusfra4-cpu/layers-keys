@@ -31,6 +31,7 @@ public:
     void preload (const juce::StringArray& paths);                 // à charger d'avance, quand le fil est libre (remplace la liste précédente)
     bool isCached (const juce::String& path) const;
     void clearCache();
+    void shutdown();   // arrête le chargement et oublie les demandes (fermeture du plugin : rien ne rappelle un objet détruit)
 
 private:
     void run() override;
@@ -58,6 +59,8 @@ struct LoopReader
 class PadChannel
 {
 public:
+    PadChannel() { cmds.reserve (64); audioCmds.reserve (64); }
+    ~PadChannel() = default;
     void prepare (double hostRate);
     // démarre un son : l'ancien s'efface en "crossfadeSec", le nouveau monte en "fadeInSec"
     // fromFullPart : commencer directement dans la partie « pleine » du son (pads : pas de montée intégrée au fichier)
@@ -70,6 +73,8 @@ public:
     bool isPlaying() const { return playing.load(); }
     float position() const { return pos01.load(); }                  // 0..1 (affichage)
     std::shared_ptr<const SampleData> current() const;
+    // libère les sons qui ne jouent plus (à appeler hors du fil audio : la mémoire n'est jamais rendue pendant le son)
+    void releaseRetired();
 
 private:
     struct Voice
@@ -78,7 +83,7 @@ private:
         LoopReader main, sub, shim;
         double rate = 1;
         float gain = 0, target = 0, step = 0;
-        bool loop = true, active = false;
+        bool loop = true, active = false, soft = false;   // soft : entrée depuis le silence (départ tout en douceur)
     };
     struct Cmd
     {
@@ -89,8 +94,14 @@ private:
         float fadeIn = 1, xfade = 1;
     };
     void applyCommands();
-    std::vector<Cmd> cmds;
+    void retire (std::shared_ptr<const SampleData>& s);   // fil audio : met de côté au lieu de libérer
+    void flushRetired();
+    std::vector<Cmd> cmds, audioCmds;   // deux files échangées : aucune allocation dans le fil audio
     juce::SpinLock cmdLock;
+    static constexpr size_t trashSize = 64;
+    std::array<std::shared_ptr<const SampleData>, trashSize> pendingTrash, trash;   // pendingTrash : fil audio seul
+    size_t pendingCount = 0, trashCount = 0;
+    juce::SpinLock trashLock;
 
     static constexpr int maxVoices = 6;
     std::array<Voice, maxVoices> voices;

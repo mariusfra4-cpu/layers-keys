@@ -1,5 +1,6 @@
 // Spacepad by JB Praise — tests automatiques.
 // Lancer : SpacepadTests [dossier_de_sortie]   (capture de l'interface en PNG dans ce dossier)
+#include <thread>
 #include <juce_audio_utils/juce_audio_utils.h>
 #include "KeyDetect.h"
 #include "Library.h"
@@ -1603,6 +1604,31 @@ static void testAutomation (const juce::File& root)
 {
     section ("Enregistrement dans le logiciel de musique (automation)");
     juce::ignoreUnused (root);
+    {
+        // le logiciel de musique demande du son avant de préparer le plugin : silence, pas de plantage
+        SpacepadProcessor q;
+        juce::AudioBuffer<float> b (2, 1024); juce::MidiBuffer m;
+        b.clear(); b.setSample (0, 0, 0.5f);
+        q.pressKey (3);
+        q.processBlock (b, m);
+        CHECK (b.getMagnitude (0, 1024) == 0.0f, "son demande avant la preparation : silence, sans plantage");
+        q.prepareToPlay (0.0, 0);   // valeurs absurdes
+        b.clear(); q.processBlock (b, m);
+        CHECK (std::isfinite (b.getSample (0, 0)), "preparation avec des valeurs absurdes : le plugin reste sur");
+    }
+    {
+        // projet fermé pendant qu'un son se charge : 30 fois de suite, sans plantage
+        for (int i = 0; i < 30; ++i)
+        {
+            SpacepadProcessor q;
+            q.prepareToPlay (48000, 256);
+            q.loader().clearCache();
+            q.setMode (i % 2); q.pressKey (i % 12);
+            q.runControlForTests();
+            juce::Thread::sleep (i % 4);
+        }
+        CHECK (true, "fermeture pendant le chargement d'un son : aucun plantage (30 fois)");
+    }
     SpacepadProcessor p;
     p.setPlayConfigDetails (0, 2, 48000, 256);
     p.prepareToPlay (48000, 256);
@@ -1676,13 +1702,157 @@ static void testInstantPlay()
     CHECK (p.loader().isCached (path), "le son de la tonalite en cours est prepare d'avance");
     CHECK (p.loader().isCached (other) && p.loader().isCached (next), "majeur/mineur et la tonalite voisine aussi");
     runFor (p, 1.0);
-    // Play : le son doit s'entendre en moins de 0,1 s (réglage d'Attack par défaut)
+    // Play : le pad arrive en douceur pendant 1 seconde (réglage d'usine), il part tout doucement puis monte
+    CHECK (std::abs (p.params.getRawParameterValue ("attack")->load() - 1.0f) < 0.001f, "Attack par defaut : 1 seconde");
     p.playPad();
-    juce::AudioBuffer<float> buf (2, 256); juce::MidiBuffer midi;
-    float level = 0;
-    for (int i = 0; i < 48000 / 10 / 256; ++i) { buf.clear(); p.processBlock (buf, midi); level = juce::jmax (level, buf.getRMSLevel (0, 0, 256)); }
-    std::cout << "  niveau 0,1 s apres Play : " << level << " (attack " << p.params.getRawParameterValue ("attack")->load() << " s)\n";
-    CHECK (level > 0.002f, "Play : le pad s'entend tout de suite");
+    juce::AudioBuffer<float> buf (2, 240); juce::MidiBuffer midi;
+    std::vector<float> win;   // niveau par tranche de 50 ms
+    for (int w = 0; w < 30; ++w)
+    {
+        float e = 0;
+        for (int b = 0; b < 10; ++b) { buf.clear(); p.processBlock (buf, midi); e += buf.getRMSLevel (0, 0, 240) * buf.getRMSLevel (0, 0, 240); }
+        win.push_back (std::sqrt (e / 10));
+    }
+    const float full = *std::max_element (win.begin() + 22, win.end());
+    std::cout << "  montee (50 ms) :";
+    for (int w = 0; w < 24; w += 2) std::cout << " " << juce::String (win[(size_t) w] / juce::jmax (1e-6f, full), 2);
+    std::cout << "\n";
+    CHECK (win[1] > 0.0f, "Play : le son commence tout de suite (des les premieres millisecondes)");
+    CHECK (win[1] < 0.08f * full && win[3] < 0.2f * full, "il commence en douceur (" << win[1] / full << " a 0,1 s, " << win[3] / full << " a 0,2 s)");
+    CHECK (win[9] > 0.3f * full && win[9] < 0.75f * full, "il monte : environ a moitie a 0,5 s (" << win[9] / full << ")");
+    CHECK (win[19] > 0.8f * full, "plein volume au bout d'1 seconde (" << win[19] / full << ")");
+    bool smooth = true;
+    for (int w = 1; w < 20; ++w) if (win[(size_t) w] + 0.02f * full < win[(size_t) w - 1] || win[(size_t) w] - win[(size_t) w - 1] > 0.2f * full) smooth = false;
+    CHECK (smooth, "la montee est reguliere : aucun saut, aucun creux");
+    p.stopAll();
+    // anciens projets (attaque d'usine 2 s ou 0,8 s) : passent à 1 s ; un réglage personnel est gardé
+    for (float old : { 2.0f, 0.8f, 3.0f })
+    {
+        SpacepadProcessor q;
+        auto* prm = q.params.getParameter ("attack");
+        prm->setValueNotifyingHost (prm->convertTo0to1 (old));
+        auto st = q.params.copyState();
+        st.removeProperty ("attackV3", nullptr); st.removeProperty ("attackV2", nullptr);
+        juce::MemoryBlock mb; q.copyXmlToBinary (*st.createXml(), mb);
+        SpacepadProcessor r;
+        r.setStateInformation (mb.getData(), (int) mb.getSize());
+        const float got = r.params.getRawParameterValue ("attack")->load();
+        CHECK (std::abs (got - (old == 3.0f ? 3.0f : 1.0f)) < 0.01f, "projet ancien (attack " << old << " s) : " << got << " s");
+    }
+}
+
+// Stabilité : le son tourne pendant qu'on appuie partout très vite (comme sur scène), que le logiciel de musique
+// sauvegarde / recharge le projet et change la taille des blocs. Jamais de plantage, de NaN ni de saturation.
+static void testStress (const juce::File& root)
+{
+    section ("Stabilite : son + actions rapides en meme temps");
+    juce::ignoreUnused (root);
+    {
+        // le logiciel de musique demande du son avant de préparer le plugin : silence, pas de plantage
+        SpacepadProcessor q;
+        juce::AudioBuffer<float> b (2, 1024); juce::MidiBuffer m;
+        b.clear(); b.setSample (0, 0, 0.5f);
+        q.pressKey (3);
+        q.processBlock (b, m);
+        CHECK (b.getMagnitude (0, 1024) == 0.0f, "son demande avant la preparation : silence, sans plantage");
+        q.prepareToPlay (0.0, 0);   // valeurs absurdes
+        b.clear(); q.processBlock (b, m);
+        CHECK (std::isfinite (b.getSample (0, 0)), "preparation avec des valeurs absurdes : le plugin reste sur");
+    }
+    {
+        // projet fermé pendant qu'un son se charge : 30 fois de suite, sans plantage
+        for (int i = 0; i < 30; ++i)
+        {
+            SpacepadProcessor q;
+            q.prepareToPlay (48000, 256);
+            q.loader().clearCache();
+            q.setMode (i % 2); q.pressKey (i % 12);
+            q.runControlForTests();
+            juce::Thread::sleep (i % 4);
+        }
+        CHECK (true, "fermeture pendant le chargement d'un son : aucun plantage (30 fois)");
+    }
+    SpacepadProcessor p;
+    p.setPlayConfigDetails (0, 2, 48000, 512);
+    p.prepareToPlay (48000, 512);
+    std::vector<juce::String> pads, crowds;
+    for (auto& l : p.libraries().snapshot()) (l.type == LibType::Pad ? pads : crowds).push_back (l.id);
+    std::atomic<bool> stop { false };
+    std::atomic<int> bad { 0 }, blocks { 0 };
+    std::atomic<float> worst { 0 };
+    std::thread audio ([&]
+    {
+        juce::Random r (7);
+        juce::AudioBuffer<float> buf (2, 4096); juce::MidiBuffer midi;
+        const int sizes[] = { 512, 256, 64, 1, 0, 2048, 4096, 333, 128, 1024 };   // plus grand que prévu, 1 échantillon, vide
+        while (! stop.load())
+        {
+            const int n = sizes[r.nextInt (10)];
+            juce::AudioBuffer<float> b (buf.getArrayOfWritePointers(), 2, n);
+            b.clear();
+            if (r.nextInt (8) == 0) midi.addEvent (juce::MidiMessage::noteOn (1, 36 + r.nextInt (24), (juce::uint8) 100), 0);
+            p.processBlock (b, midi);
+            midi.clear();
+            for (int ch = 0; ch < 2; ++ch)
+                for (int i = 0; i < n; ++i)
+                {
+                    const float x = b.getSample (ch, i);
+                    if (! std::isfinite (x)) ++bad;
+                    else if (std::abs (x) > worst.load()) worst = std::abs (x);
+                }
+            ++blocks;
+        }
+    });
+    std::thread host ([&]
+    {
+        // le logiciel de musique : sauvegarde et rechargement du projet, lecture des voyants
+        juce::Random r (11);
+        while (! stop.load())
+        {
+            juce::MemoryBlock mb; p.getStateInformation (mb);
+            if (r.nextInt (6) == 0) p.setStateInformation (mb.getData(), (int) mb.getSize());
+            float sc[256]; p.copyScope (sc, 256);
+            juce::Thread::sleep (3);
+        }
+    });
+    juce::Random r (3);
+    const auto t0 = juce::Time::getMillisecondCounter();
+    int actions = 0;
+    while (juce::Time::getMillisecondCounter() - t0 < 6000)
+    {
+        switch (r.nextInt (14))
+        {
+            case 0: case 1: case 2: p.pressKey (r.nextInt (12)); break;
+            case 3: p.playPad(); break;
+            case 4: p.stopPad(); break;
+            case 5: p.setMode (r.nextInt (2)); break;
+            case 6: if (! crowds.empty()) p.playCrowd (crowds[(size_t) r.nextInt ((int) crowds.size())], r.nextInt (6), r.nextInt (2)); break;
+            case 7: p.stopCrowd (r.nextInt (2)); break;
+            case 8: if (! pads.empty()) p.selectPadLibrary (pads[(size_t) r.nextInt ((int) pads.size())], r.nextInt (2)); break;
+            case 9: { auto* prm = p.getParameters()[r.nextInt (p.getParameters().size())]; prm->setValueNotifyingHost (r.nextFloat()); break; }
+            case 10: p.setSolo (r.nextBool()); break;
+            case 11: p.tapTempo(); break;
+            case 12: if (r.nextInt (20) == 0) p.stopAll(); break;
+            default: if (! pads.empty()) p.selectPadLibraryB (r.nextBool() ? pads[(size_t) r.nextInt ((int) pads.size())] : juce::String(), r.nextInt (2)); break;
+        }
+        ++actions;
+        juce::Thread::sleep (r.nextInt (4));
+    }
+    stop = true;
+    audio.join(); host.join();
+    std::cout << "  " << actions << " actions, " << blocks.load() << " blocs audio, crete max " << worst.load() << "\n";
+    CHECK (bad.load() == 0, "aucune valeur invalide (NaN) dans le son : " << bad.load());
+    CHECK (p.safetyResets.load() == 0, "le filet de securite n'a jamais servi : " << p.safetyResets.load());
+    CHECK (worst.load() <= 1.0f, "jamais de saturation : crete " << worst.load());
+    CHECK (blocks.load() > 1000, "le son n'a jamais ete bloque (" << blocks.load() << " blocs)");
+    // après tout ça : le pad rejoue normalement
+    for (auto* prm : p.getParameters()) prm->setValueNotifyingHost (prm->getDefaultValue());
+    p.setSolo (false); p.stopAll();
+    if (! pads.empty()) { p.selectPadLibrary (pads[0], 0); p.selectPadLibrary (pads[0], 1); }
+    p.setMode (0); p.pressKey (0);
+    if (! p.padActive()) p.playPad();
+    const float lvl = runFor (p, 2.0);
+    CHECK (lvl > 0.01f, "apres le test, le pad joue normalement (" << lvl << ")");
     p.stopAll();
 }
 
@@ -1869,6 +2039,7 @@ int main (int argc, char** argv)
     testWavFormats (tmp);
     testAutomation (root);
     testInstantPlay();
+    testStress (root);
     testDawRecording();
     testLicence (tmp);
     if (argc > 1) snapshot (juce::File (juce::String (argv[1])), root);

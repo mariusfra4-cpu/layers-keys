@@ -186,6 +186,15 @@ private:
     // pour ne jamais écraser une valeur que le logiciel de musique vient d'écrire (lecture de l'automation)
     int sentKey = -999, sentMode = -999, sentPlay = -999, sentSong = -999, sentOn[2] { -999, -999 }, sentSnd[2] { -999, -999 };
     float p (const char* id) const { return params.getRawParameterValue (id)->load(); }
+    // pointeurs directs vers les valeurs, pour le fil audio : aucune recherche par nom, aucune allocation
+    struct Raw
+    {
+        std::atomic<float>* padvol = nullptr, *crowdvol = nullptr, *crowdvol2 = nullptr, *mix = nullptr, *master = nullptr, *blend = nullptr, *loop = nullptr, *tempo = nullptr;
+        std::atomic<float>* shimmer = nullptr, *warm = nullptr, *air = nullptr, *reverb = nullptr, *motion = nullptr, *width = nullptr, *sub = nullptr, *lowcut = nullptr;
+        std::atomic<float>* freeze = nullptr, *swell = nullptr, *chorus = nullptr, *delay = nullptr, *dtime = nullptr;
+        struct Crowd { std::atomic<float>* chorus = nullptr, *delay = nullptr, *dtime = nullptr, *dfb = nullptr, *reverb = nullptr, *width = nullptr, *dist = nullptr, *move = nullptr, *lowcut = nullptr; } c[2];
+    } raw;
+    static float rv (const std::atomic<float>* a) { return a->load (std::memory_order_relaxed); }
     float p (const juce::String& id) const { return params.getRawParameterValue (id)->load(); }
     void setParam (const char* id, float realValue);
     void setParam (const juce::String& id, float realValue) { setParam (id.toRawUTF8(), realValue); }
@@ -214,6 +223,9 @@ private:
     int taps = 0;
     juce::AudioBuffer<float> mainBuf, subBuf, shimBuf, bBuf, bSub, bShim, crowdBuf, crowdBuf2;
     int maxBlock = 512;
+public:
+    std::atomic<int> safetyResets { 0 };   // nombre de fois où le filet de sécurité a servi (tests)
+private:
     float lastGA = 1, lastGB = 0, lastMaster = 1;
 
     mutable juce::CriticalSection stateLock;

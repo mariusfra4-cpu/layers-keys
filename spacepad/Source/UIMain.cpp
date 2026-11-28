@@ -64,7 +64,8 @@ MainView::MainView (SpacepadProcessor& p) : proc (p)
     retranslate();
     setSize (W, H);
     lastMs = juce::Time::getMillisecondCounter();
-    startTimerHz (30);
+    // dans un logiciel de musique, l'écran est partagé avec lui : un peu moins d'images, le DAW reste fluide
+    startTimerHz (proc.wrapperType == juce::AudioProcessor::wrapperType_Standalone ? 30 : 24);
 }
 
 MainView::~MainView()
@@ -349,6 +350,11 @@ void MainView::timerCallback()
     // garder l'écran allumé pendant le jeu (réglage)
     const bool wantAwake = uiSettings().keepAwake && proc.padActive() && proc.wrapperType == juce::AudioProcessor::wrapperType_Standalone;   // dans un DAW, l'écran est géré par lui
     if (wantAwake != screenSaverOff) { screenSaverOff = wantAwake; juce::Desktop::setScreenSaverEnabled (! wantAwake); }
+    // fenêtre cachée ou réduite : rien à dessiner
+    if (! isShowing() || (getPeer() != nullptr && getPeer()->isMinimised())) return;
+    // rien ne joue : l'espace tourne doucement, une image sur deux suffit
+    const bool idle = ! proc.padActive() && ! proc.crowdSounding() && anim.env < 0.01f && anim.surge < 0.01f;
+    if (idle && (tick & 1)) return;
     if (scan == nullptr && settings == nullptr && stage == nullptr && task == nullptr)
     {
         if (uiSettings().centerView == 1)

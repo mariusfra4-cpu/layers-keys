@@ -44,7 +44,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout SpacepadProcessor::createLay
     add ("crowdvol2", "Volume Crowd 2", 0.80f);
     add ("blend", "Melange A/B", 0.5f);
     add ("mix", "Dosage Pad/Crowd", 0.5f);
-    l.add (std::make_unique<APF> (juce::ParameterID { "attack", 1 }, "Attack", juce::NormalisableRange<float> (0.05f, 8.0f, 0.0f, 0.5f), 0.8f, secs));
+    l.add (std::make_unique<APF> (juce::ParameterID { "attack", 1 }, "Attack", juce::NormalisableRange<float> (0.05f, 8.0f, 0.0f, 0.5f), 1.0f, secs));
     l.add (std::make_unique<APF> (juce::ParameterID { "xfade", 1 }, "Fondu", juce::NormalisableRange<float> (0.1f, 10.0f, 0.0f, 0.5f), 4.0f, secs));
     l.add (std::make_unique<APB> (juce::ParameterID { "loop", 1 }, "Loop", true));
     l.add (std::make_unique<APB> (juce::ParameterID { "freeze", 1 }, "Freeze", false));
@@ -100,6 +100,21 @@ SpacepadProcessor::SpacepadProcessor()
       params (*this, nullptr, "SPACEPAD", createLayout())
 {
     for (auto& m : midiMap) m = -1;
+    {
+        auto g = [this] (const juce::String& id) { auto* a = params.getRawParameterValue (id); jassert (a != nullptr); return a; };
+        raw.padvol = g ("padvol"); raw.crowdvol = g ("crowdvol"); raw.crowdvol2 = g ("crowdvol2"); raw.mix = g ("mix"); raw.master = g ("master");
+        raw.blend = g ("blend"); raw.loop = g ("loop"); raw.tempo = g ("tempo");
+        raw.shimmer = g ("shimmer"); raw.warm = g ("warm"); raw.air = g ("air"); raw.reverb = g ("reverb"); raw.motion = g ("motion");
+        raw.width = g ("width"); raw.sub = g ("sub"); raw.lowcut = g ("lowcut"); raw.freeze = g ("freeze"); raw.swell = g ("swell");
+        raw.chorus = g ("chorus"); raw.delay = g ("delay"); raw.dtime = g ("dtime");
+        for (int s = 0; s < 2; ++s)
+        {
+            auto& r = raw.c[s];
+            r.chorus = g (crowdParam (s, "chorus")); r.delay = g (crowdParam (s, "delay")); r.dtime = g (crowdParam (s, "dtime"));
+            r.dfb = g (crowdParam (s, "dfb")); r.reverb = g (crowdParam (s, "reverb")); r.width = g (crowdParam (s, "width"));
+            r.dist = g (crowdParam (s, "dist")); r.move = g (crowdParam (s, "move")); r.lowcut = g (crowdParam (s, "lowcut"));
+        }
+    }
     prefs.load();
    #if ! SPACEPAD_TESTS
     refreshLicence();
@@ -112,7 +127,8 @@ SpacepadProcessor::SpacepadProcessor()
 
 SpacepadProcessor::~SpacepadProcessor()
 {
-    stopThread (3000);
+    stopThread (5000);
+    sampleLoader.shutdown();   // avant tout le reste : aucun son ne doit arriver dans un plugin en train de se fermer
     prefs.saveIfDirty();
 }
 
@@ -131,7 +147,8 @@ bool SpacepadProcessor::isBusesLayoutSupported (const BusesLayout& layouts) cons
 
 void SpacepadProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    maxBlock = juce::jmax (64, samplesPerBlock);
+    if (! (sampleRate > 0)) sampleRate = 48000;   // valeur absurde donnée par le logiciel de musique : on reste sûr
+    maxBlock = juce::jlimit (64, 8192, samplesPerBlock);
     for (auto* b : { &mainBuf, &subBuf, &shimBuf, &bBuf, &bSub, &bShim, &crowdBuf, &crowdBuf2 }) b->setSize (2, maxBlock);
     pad.prepare (sampleRate);
     padB.prepare (sampleRate);
@@ -175,17 +192,17 @@ void SpacepadProcessor::copyScope (float* dest, int n) const
 FxParams SpacepadProcessor::readFx() const
 {
     FxParams f;
-    f.shimmer = p ("shimmer"); f.warm = p ("warm"); f.air = p ("air"); f.reverb = p ("reverb");
-    f.motion = p ("motion"); f.width = p ("width"); f.sub = p ("sub"); f.lowCut = p ("lowcut");
-    f.freeze = p ("freeze") > 0.5f; f.swell = p ("swell") > 0.5f;
-    f.chorus = p ("chorus"); f.delay = p ("delay"); f.delaySeconds = delaySeconds ((int) p ("dtime"));
+    f.shimmer = rv (raw.shimmer); f.warm = rv (raw.warm); f.air = rv (raw.air); f.reverb = rv (raw.reverb);
+    f.motion = rv (raw.motion); f.width = rv (raw.width); f.sub = rv (raw.sub); f.lowCut = rv (raw.lowcut);
+    f.freeze = rv (raw.freeze) > 0.5f; f.swell = rv (raw.swell) > 0.5f;
+    f.chorus = rv (raw.chorus); f.delay = rv (raw.delay); f.delaySeconds = delaySeconds ((int) rv (raw.dtime));
     return f;
 }
 
 double SpacepadProcessor::tempoBpm() const
 {
     const double h = hostBpm.load();
-    return h > 0 ? juce::jlimit (30.0, 300.0, h) : (double) p ("tempo");
+    return h > 0 ? juce::jlimit (30.0, 300.0, h) : (double) rv (raw.tempo);
 }
 
 float SpacepadProcessor::delaySeconds (int division) const { return (float) (60.0 / tempoBpm()) * delayDivision (division); }
@@ -193,10 +210,11 @@ float SpacepadProcessor::delaySeconds (int division) const { return (float) (60.
 CrowdFxParams SpacepadProcessor::readCrowdFx (int s) const
 {
     CrowdFxParams c;
-    c.chorus = p (crowdParam (s, "chorus")); c.delay = p (crowdParam (s, "delay"));
-    c.delaySeconds = delaySeconds ((int) p (crowdParam (s, "dtime"))); c.feedback = p (crowdParam (s, "dfb")) * 0.85f;
-    c.reverb = p (crowdParam (s, "reverb")); c.width = p (crowdParam (s, "width")); c.distance = p (crowdParam (s, "dist"));
-    c.movement = p (crowdParam (s, "move")); c.lowCut = p (crowdParam (s, "lowcut"));
+    const auto& r = raw.c[s & 1];
+    c.chorus = rv (r.chorus); c.delay = rv (r.delay);
+    c.delaySeconds = delaySeconds ((int) rv (r.dtime)); c.feedback = rv (r.dfb) * 0.85f;
+    c.reverb = rv (r.reverb); c.width = rv (r.width); c.distance = rv (r.dist);
+    c.movement = rv (r.move); c.lowCut = rv (r.lowcut);
     return c;
 }
 
@@ -270,7 +288,7 @@ void SpacepadProcessor::trackCrowdFx()
     }
 }
 
-bool SpacepadProcessor::loopOn() const { return p ("loop") > 0.5f; }
+bool SpacepadProcessor::loopOn() const { return rv (raw.loop) > 0.5f; }
 
 void SpacepadProcessor::setParam (const char* id, float v)
 {
@@ -283,6 +301,8 @@ void SpacepadProcessor::setParam (const char* id, float v)
 void SpacepadProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi)
 {
     juce::ScopedNoDenormals noDenormals;
+    // appelé avant la préparation (certains logiciels de musique le font au chargement) : silence, jamais de plantage
+    if (mainBuf.getNumSamples() < maxBlock || buffer.getNumChannels() == 0) { buffer.clear(); midi.clear(); return; }
     {
         double bpm = 0;
         if (auto* ph = getPlayHead())
@@ -345,9 +365,9 @@ void SpacepadProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
     juce::AudioBuffer<float> auxOut;
     if (auxOn) auxOut = getBusBuffer (buffer, false, 1);
     const auto fxp = readFx();
-    const float padVol = p ("padvol"), cv1 = p ("crowdvol"), cv2 = p ("crowdvol2");
-    const float mix = p ("mix");
-    const float masterDb = p ("master");
+    const float padVol = rv (raw.padvol), cv1 = rv (raw.crowdvol), cv2 = rv (raw.crowdvol2);
+    const float mix = rv (raw.mix);
+    const float masterDb = rv (raw.master);
     const float masterGain = masterDb <= -59.9f ? 0.0f : juce::Decibels::decibelsToGain (masterDb);
     const float m0 = lastMaster;
     const float padMix = soloOn.load() ? 0.0f : juce::jmin (1.0f, 2.0f * (1.0f - mix)), crowdMix = juce::jmin (1.0f, 2.0f * mix);
@@ -355,10 +375,10 @@ void SpacepadProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
     float cpk[2] = { 0, 0 };
     // mélange A/B à puissance constante (B absent : A seul)
     const bool hasB = padB.isPlaying();
-    const float blend = p ("blend");
+    const float blend = rv (raw.blend);
     const float gA = hasB ? std::cos (blend * juce::MathConstants<float>::halfPi) * 1.41421356f : 1.0f;
     const float gB = hasB ? std::sin (blend * juce::MathConstants<float>::halfPi) * 1.41421356f : 0.0f;
-    float peak = 0;
+    float peak = 0, guard = 0;
     for (int start = 0; start < total; start += maxBlock)
     {
         const int n = juce::jmin (maxBlock, total - start);
@@ -381,8 +401,8 @@ void SpacepadProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
         crowd[1].render (crowdBuf2, nullptr, nullptr, 0, n);
         crowdFx[0].process (crowdBuf, n, cfx[0]);
         crowdFx[1].process (crowdBuf2, n, cfx[1]);
-        cpk[0] = juce::jmax (cpk[0], crowdBuf.getMagnitude (0, n) * p ("crowdvol") * crowdMix);
-        cpk[1] = juce::jmax (cpk[1], crowdBuf2.getMagnitude (0, n) * p ("crowdvol2") * crowdMix);
+        cpk[0] = juce::jmax (cpk[0], crowdBuf.getMagnitude (0, n) * cv1 * crowdMix);
+        cpk[1] = juce::jmax (cpk[1], crowdBuf2.getMagnitude (0, n) * cv2 * crowdMix);
         for (int ch = 0; ch < 2; ++ch)
         {
             float* d = mainBuf.getWritePointer (ch);
@@ -399,7 +419,16 @@ void SpacepadProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
                 if (auxOn) { d[i] = limit (pv); c[i] = limit (cr); }
                 else { d[i] = limit (pv + cr); c[i] = 0; }
                 peak = juce::jmax (peak, std::abs (d[i]), std::abs (c[i]));
+                guard += d[i] + c[i];
             }
+        }
+        // filet de sécurité : une valeur invalide (NaN / infini) ne sort jamais ; les effets repartent à zéro
+        if (! std::isfinite (guard))
+        {
+            mainBuf.clear (0, n); crowdBuf.clear (0, n);
+            fx.reset(); crowdFx[0].reset(); crowdFx[1].reset();
+            guard = 0; peak = 0;
+            ++safetyResets;
         }
         // copie pour le visualiseur (tout ce qui sonne)
         {
@@ -985,6 +1014,8 @@ void SpacepadProcessor::runControlForTests() { controlStep(); dawFollow(); track
 
 void SpacepadProcessor::controlStep()
 {
+    // sons qui ne jouent plus : leur mémoire est rendue ici, jamais pendant le calcul du son
+    pad.releaseRetired(); padB.releaseRetired(); crowd[0].releaseRetired(); crowd[1].releaseRetired();
     AutoScope automation (*this);
     pullAuto();
     if (settingsVersion() != lastSettingsVersion) refreshMidiSettings();
@@ -1047,20 +1078,24 @@ void SpacepadProcessor::run()
     while (! threadShouldExit())
     {
         wait (5);
-        controlStep();
-        dawFollow();
-        if (tick % 40 == 0) trackCrowdFx();
-        if (tick % 20 == 0) preloadLikelySounds();
-        if (tick % 100 == 0) prefs.saveIfDirty();
-        if (++tick % 200 == 0) // environ 1 fois par seconde : bibliothèques ou setlist changées ailleurs
+        try
         {
-            if (store.reloadIfChanged()) autoSelectLibraries();
-            songs.reloadIfChanged();
-            prefs.reloadIfChanged();
-           #if ! SPACEPAD_TESTS
-            refreshLicence();     // activée dans l'application : le plugin le voit aussi
-           #endif
+            controlStep();
+            dawFollow();
+            if (tick % 40 == 0) trackCrowdFx();
+            if (tick % 20 == 0) preloadLikelySounds();
+            if (tick % 100 == 0) prefs.saveIfDirty();
+            if (++tick % 200 == 0) // environ 1 fois par seconde : bibliothèques ou setlist changées ailleurs
+            {
+                if (store.reloadIfChanged()) autoSelectLibraries();
+                songs.reloadIfChanged();
+                prefs.reloadIfChanged();
+               #if ! SPACEPAD_TESTS
+                refreshLicence();     // activée dans l'application : le plugin le voit aussi
+               #endif
+            }
         }
+        catch (...) {}   // une erreur inattendue (fichier abîmé, disque plein…) ne doit jamais faire tomber le logiciel de musique
     }
 }
 
@@ -1081,6 +1116,7 @@ void SpacepadProcessor::getStateInformation (juce::MemoryBlock& dest)
     state.setProperty ("key", keyNow.load(), nullptr);
     state.setProperty ("mode", modeNow.load(), nullptr);
     state.setProperty ("attackV2", true, nullptr);
+    state.setProperty ("attackV3", true, nullptr);
     {
         // les actions enregistrées avec le DAW sont gardées dans le projet
         juce::ValueTree rec ("DawRecording");
@@ -1112,7 +1148,8 @@ void SpacepadProcessor::setStateInformation (const void* data, int size)
             for (auto ev : rec)
                 recEvents.push_back ({ (double) ev.getProperty ("q"), (int) ev.getProperty ("t"), (int) ev.getProperty ("a"), (int) ev.getProperty ("b"), ev.getProperty ("l").toString() });
         }
-        if (! state.hasProperty ("attackV2") && std::abs (p ("attack") - 2.0f) < 0.01f) setParam ("attack", 0.8f);   // ancien réglage d'usine (2 s) : départ plus rapide
+        // anciens réglages d'usine (2 s, puis 0,8 s) : entrée douce d'1 seconde
+        if (! state.hasProperty ("attackV3") && (std::abs (p ("attack") - 2.0f) < 0.01f || std::abs (p ("attack") - 0.8f) < 0.01f)) setParam ("attack", 1.0f);
         sentKey = sentMode = sentPlay = sentSong = sentOn[0] = sentOn[1] = sentSnd[0] = sentSnd[1] = -999;   // tout renvoyer
         {
             const juce::ScopedLock sl (stateLock);
