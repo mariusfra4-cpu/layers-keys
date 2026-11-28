@@ -43,7 +43,7 @@ t = alltext(r)
 check(expect in t, "la clé affichée est la bonne : " + expect)
 check("JBK-1A2B-3C4D-5E6F-7A8B" in t, "code normalisé")
 # African Loops Pro : choix du logiciel, déverrouillage, clé JBA
-r = dump(); tap(r, text="African Loops Pro"); time.sleep(2)
+r = dump(); tap(r, text="African Loops"); time.sleep(2)
 r = dump(); shot(out + "/5_african_verrouille.png")
 check("DÉVERROUILLER" in alltext(r), "African Loops : écran de déverrouillage")
 tap(r, cls="EditText"); adb("shell", "input", "text", "TESTTESTTEST")
