@@ -1,0 +1,76 @@
+
+== Tonalite dans les noms de fichiers
+
+== Tonalite a l'ecoute
+  accords reconnus : 24 / 24
+  bruit (foule/ambiance) : force tonale 0
+
+== Analyse d'un dossier complet
+  - Mes Crowds [CROWD] 4 sounds · 2 categories
+  - Pad Mystere [PAD] 2 sounds · 2/24 keys
+  - Warm Pad [PAD] 18 sounds · 18/24 keys
+
+== Enregistrement commun (application + VST3 + AU)
+
+== Boucle sans clic
+  plus grand saut entre deux echantillons : 0.0232415 (sinus seul : ~0.019)
+  crowd : boucle de 1.25 s a 6.60 s, fondu 1.78 s
+  crowd en boucle : niveau mini / maxi = 0.98
+
+== Moteur complet (comme dans Logic / Ableton)
+  niveau apres 2 s : 0.0385804, crete 0.123787
+
+== Pads et crowds separes, majeur / mineur independants
+
+== Chaque effet, mesure
+  Low cut : basses x0.005
+  Air : aigus x5.91
+  Warm : aigus x0.14
+  Sub oct. : octave grave x84171120.7
+  Shimmer : octave aigue x206884453.5
+  Reverb : queue apres l'arret 0.00491 (sans : 0.00000)
+  Freeze : son tenu 3,5 s apres l'arret 0.01256 (sans : 0.00000)
+  Swell : ecart de volume x2.30 (sans : x1.20)
+  Motion : variation des aigus 1.00 (sans : 0.04)
+  Width : stereo 0.000 (mono) / 1.012 (normal) / 2.024 (large)
+  Attack : niveau a 1 s = 14.4161 % (lent) / 99.4323 % (rapide)
+  Fondu : note de depart a mi-fondu 33.6662 %, a la fin 0.1 %
+  Vol. Pad : 40 % / 80 % = 0.50
+  Vol. Crowd : 40 % / 80 % = 0.50
+
+== Setlist, pedales MIDI, 2 pads, 2 crowds, combinaison, fin du chant, sorties
+  Master : 0 dB 0.0780964 / -6 dB 0.0398979 (x0.51) / muet 0
+
+== Chorus, delay au tempo et effets des crowds, mesures
+  Chorus : largeur 0 (sans) / 0.36443 (avec)
+  Delay 250 ms : echo 1 a 12000 (gauche 0.85), echo 2 a 24000 (droite 0.189187), echo 3 0.0467274
+  Distance : aigus x0.001
+  Mouvement : gauche/droite de 0.278956 a 3.57011
+  Chorus du pad : difference 0.5823, Delay du pad : difference 0.283051
+
+== Tous les WAV acceptes (en-tetes inhabituels, formats speciaux)
+  10 / 10 WAV difficiles lus
+
+== Enregistrement dans le logiciel de musique (automation)
+
+== Play instantane (sons prepares d'avance)
+  montee (50 ms) : 0.00 0.03 0.09 0.19 0.32 0.47 0.63 0.78 0.85 0.87 0.87 0.86
+
+== Stabilite : son + actions rapides en meme temps
+  3104 actions, 5985 blocs audio, crete max 0.351319
+
+== Enregistrement automatique avec le logiciel de musique
+
+== Licence (une cle par ordinateur, demo de 3 jours)
+
+== Capture de l'interface
+  images : C:\splogs\captures
+
+== Vitesse de dessin (ms par image)
+  fond Galaxie : 14.53 ms par image  (entete 2.88  espace 4.29  anneau+orbe 4.87  crochet 1.84  visualiseur 2.08  )
+  fond Tourbillon : 14.60 ms par image  (entete 2.69  espace 4.75  anneau+orbe 4.60  crochet 1.86  visualiseur 2.04  )
+  fond Aucun : 11.67 ms par image  (entete 2.76  espace 1.70  anneau+orbe 4.66  crochet 1.85  visualiseur 2.09  )
+  mode CROWD (salle + crowds + visualiseur) : 8.21 ms par image
+
+316 / 316 verifications reussies
+TOUT EST BON

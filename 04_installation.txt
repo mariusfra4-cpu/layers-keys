@@ -1,0 +1,22 @@
+code installation: 0
+C:\Program Files\Spacepad\Spacepad.exe : True
+C:\Program Files\Spacepad\Desinstaller.exe : True
+C:\Program Files\Common Files\VST3\Spacepad.vst3\Contents\x86_64-win\Spacepad.vst3 : True
+C:\Users\Public\Desktop\Spacepad.lnk : True
+C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Spacepad\Spacepad.lnk : True
+C:\ProgramData\JB Praise\Spacepad : True
+
+DisplayName    : Spacepad
+DisplayVersion : 1.0.0
+Publisher      : JB Praise
+
+
+application en marche après 6 s : True
+code mise à jour: 0
+application fermée par la mise à jour : True
+librairies conservées après mise à jour : True
+code désinstallation: 0
+C:\Program Files\Spacepad\Spacepad.exe encore présent : False
+C:\Program Files\Common Files\VST3\Spacepad.vst3 encore présent : False
+C:\Users\Public\Desktop\Spacepad.lnk encore présent : False
+librairies conservées après désinstallation (attendu True) : True

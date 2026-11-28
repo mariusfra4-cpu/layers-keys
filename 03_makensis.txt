@@ -1,0 +1,25 @@
+MakeNSIS v3.13 - Copyright 1999-2026 Contributors
+See the file COPYING for license details.
+Credits can be found in the Users Manual.
+
+Command line defined: "APPVER=1.0.0"
+Processing config: C:\Program Files (x86)\NSIS\nsisconf.nsh
+Processing script file: "spacepad.nsi" (UTF8)
+
+Processed 1 file, writing output (x86-unicode):
+
+Output: "D:\a\layers-keys\layers-keys\spacepad\installer\windows\Spacepad-Setup-1.0.0.exe"
+Install: 5 pages (320 bytes), 2 sections (1 required) (4144 bytes), 762 instructions (21336 bytes), 447 strings (22298 bytes), 3 language tables (1098 bytes).
+Uninstall: 3 pages (256 bytes), 1 section (2072 bytes), 396 instructions (11088 bytes), 294 strings (13790 bytes), 3 language tables (834 bytes).
+Datablock optimizer saved 160182 bytes (~0.7%).
+
+Using lzma (compress whole) compression.
+
+EXE header size:              130560 / 38912 bytes
+Install code:                          (49660 bytes)
+Install data:                          (19869708 bytes)
+Uninstall code+data:                   (333569 bytes)
+Compressed data:             6717504 / 20252937 bytes
+CRC (0x5E2360FD):                  4 / 4 bytes
+
+Total size:                  6848068 / 20291853 bytes (33.7%)
