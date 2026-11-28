@@ -1,0 +1,26 @@
+code installation: 0
+C:\Program Files\Layers Keys\LayersKeys.exe : True
+C:\Program Files\Layers Keys\LayersKeys.ico : True
+C:\Program Files\Layers Keys\Desinstaller.exe : True
+C:\Program Files\Common Files\VST3\Layers Keys.vst3\Contents\x86_64-win\Layers Keys.vst3 : True
+C:\Users\Public\Desktop\Layers Keys.lnk : True
+C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Layers Keys\Layers Keys.lnk : True
+C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Layers Keys\Désinstaller Layers Keys.lnk : True
+
+DisplayName     : Layers Keys
+DisplayVersion  : 1.1.0
+Publisher       : JB Praise
+DisplayIcon     : C:\Program Files\Layers Keys\LayersKeys.ico
+UninstallString : "C:\Program Files\Layers Keys\Desinstaller.exe"
+InstallLocation : C:\Program Files\Layers Keys
+
+
+ecran de licence present dans l'exe installe : True
+moteur audio corrige (limiteur) dans l'exe installe : True
+EQ et effets dans l'exe installe : True
+ecran de licence + limiteur dans le VST3 installe : True
+application en marche après 5 s : True
+code mise à jour: 0
+application fermée par la mise à jour : True
+données conservées après mise à jour : True
+fichier exe présent après mise à jour : True

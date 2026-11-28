@@ -1,0 +1,24 @@
+telechargement direct : no
+telechargement direct : no
+Chocolatey v2.7.5
+Installing the following packages:
+nsis
+By installing, you accept licenses for the packages.
+Downloading package from source 'https://community.chocolatey.org/api/v2/'
+
+nsis.install v3.13.0 (forced) [Approved]
+nsis.install package files install completed. Performing other installation steps.
+Installing nsis.install...
+nsis.install has been installed.
+  nsis.install can be automatically uninstalled.
+ The install of nsis.install was successful.
+  Deployed to 'C:\Program Files (x86)\NSIS'
+Downloading package from source 'https://community.chocolatey.org/api/v2/'
+
+nsis v3.13.0 (forced) [Approved]
+nsis package files install completed. Performing other installation steps.
+ The install of nsis was successful.
+  Deployed to 'C:\ProgramData\chocolatey\lib\nsis'
+
+Chocolatey installed 2/2 packages. 
+ See the log for details (C:\ProgramData\chocolatey\logs\chocolatey.log).
