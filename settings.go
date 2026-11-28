@@ -230,6 +230,7 @@ func (u *UI) touchAudio() {
 // ---------------------------------------------------------------- fenêtre principale des paramètres
 
 func (u *UI) OpenSettings() {
+	u.libRefresh()
 	langs := []struct {
 		l    int
 		name string

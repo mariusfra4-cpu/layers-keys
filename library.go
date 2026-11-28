@@ -51,11 +51,29 @@ type Library struct {
 	Pads    PadCfg     `json:"pads"`
 }
 
+// Le logiciel et les plugins partagent le même fichier : une bibliothèque analysée dans l'un est dans l'autre.
 func libraryPath(cfgPath string) string {
 	if cfgPath != "" {
 		return filepath.Join(filepath.Dir(cfgPath), "bibliotheque.json")
 	}
-	return filepath.Join(filepath.Dir(configPath()), "bibliotheque.json")
+	p := filepath.Join(filepath.Dir(configPath()), "bibliotheque.json")
+	// Mac : un logiciel « bac à sable » (GarageBand…) donne au plugin un dossier à part ; on lit d'abord le vrai dossier
+	// de l'utilisateur, celui du logiciel autonome, quand le système le permet
+	if i := strings.Index(p, "/Library/Containers/"); i > 0 {
+		real := filepath.Join(p[:i], "Library", "Application Support", "LayersKeys", "bibliotheque.json")
+		if f, err := os.Open(real); err == nil {
+			f.Close()
+			return real
+		}
+	}
+	return p
+}
+
+func fileModTime(p string) time.Time {
+	if st, err := os.Stat(p); err == nil {
+		return st.ModTime()
+	}
+	return time.Time{}
 }
 
 func loadLibrary(path string) *Library {
@@ -242,7 +260,8 @@ type libState struct {
 	scanning bool
 	files    int // fichiers lus pendant l'analyse
 	scroll   [nCat]int
-	colOff   int // première famille affichée (les rangées glissent)
+	colOff   int       // première famille affichée (les rangées glissent)
+	mod      time.Time // date du fichier lu : s'il change (analyse faite dans le logiciel autonome), on le relit
 }
 
 func (u *UI) libLoad() {
@@ -250,7 +269,29 @@ func (u *UI) libLoad() {
 	u.libs.path = libraryPath(u.cfgPath)
 	u.libs.lib = loadLibrary(u.libs.path)
 	u.libs.lib.Pads.On = false // au démarrage, les pads attendent qu'on les rallume (pas de son surprise)
+	u.libs.mod = fileModTime(u.libs.path)
 	u.libs.mu.Unlock()
+}
+
+// libRefresh : relit la bibliothèque si le fichier a changé depuis (analyse faite dans le logiciel autonome
+// pendant que le plugin était ouvert dans le DAW, ou l'inverse)
+func (u *UI) libRefresh() {
+	u.libs.mu.Lock()
+	p, mod, busy := u.libs.path, u.libs.mod, u.libs.scanning
+	u.libs.mu.Unlock()
+	if p == "" || busy {
+		return
+	}
+	if m := fileModTime(p); !m.IsZero() && m.After(mod) {
+		l := loadLibrary(p)
+		u.libs.mu.Lock()
+		if u.libs.lib != nil {
+			l.Pads.On = u.libs.lib.Pads.On
+		}
+		u.libs.lib, u.libs.mod = l, m
+		u.libs.mu.Unlock()
+		lklog("bibliothèque relue (%d sons) : %s", len(l.Sounds), p)
+	}
 }
 
 // library renvoie la bibliothèque (jamais nil)
@@ -272,7 +313,11 @@ func (u *UI) libSave() {
 	}
 	if err := saveLibrary(p, l); err != nil {
 		lklog("bibliothèque : enregistrement impossible : %v", err)
+		return
 	}
+	u.libs.mu.Lock()
+	u.libs.mod = fileModTime(p)
+	u.libs.mu.Unlock()
 }
 
 func (u *UI) libScanning() (bool, int) {

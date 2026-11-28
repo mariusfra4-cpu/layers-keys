@@ -12,6 +12,7 @@ import (
 // ---------------------------------------------------------------- « Charger un son » : les sons du dossier, rangés en colonnes
 
 func (u *UI) openSoundMenu(ch int) {
+	u.libRefresh() // bibliothèque partagée avec le logiciel autonome : toujours la dernière
 	u.libTrack = ch
 	u.ov = &overlay{title: Tf("Choisir le son de la piste %d", ch+1), wide: true, sel: -1,
 		hint: T("Clique sur un son pour le charger · molette = faire défiler une rangée · ◀ ▶ = autres familles · Échap pour fermer")}

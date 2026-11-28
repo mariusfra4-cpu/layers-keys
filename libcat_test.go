@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"testing"
+	"time"
 )
 
 // chaque son à sa place : les leads ne vont plus dans les pianos
@@ -184,5 +185,29 @@ func TestLibraryBars(t *testing.T) {
 			}
 		}
 		shotPNG(t, dir, "barre_parametres_souris_dessus", u)
+	}
+}
+
+// la bibliothèque analysée dans le logiciel autonome apparaît dans le plugin déjà ouvert (même fichier, relu)
+func TestLibrarySharedWithPlugin(t *testing.T) {
+	dir := t.TempDir()
+	cfg := dir + "/config.json"
+	plug, _, _ := newTestUI(t, cfg) // le « plugin », ouvert avant l'analyse
+	plug.Plugin = true
+	if n := len(plug.library().Sounds); n != 0 {
+		t.Fatalf("bibliothèque vide attendue au départ (%d sons)", n)
+	}
+	// le « logiciel autonome » analyse et enregistre
+	l := &Library{Version: libVersion, Dir: "/sons", Pads: defaultPadCfg(),
+		Sounds: []LibSound{{Name: "Saw Lead", File: "/sons/Saw Lead.wav", Kind: "audio", Cat: catLead}}}
+	time.Sleep(20 * time.Millisecond)
+	if err := saveLibrary(libraryPath(cfg), l); err != nil {
+		t.Fatal(err)
+	}
+	future := time.Now().Add(2 * time.Second)
+	os.Chtimes(libraryPath(cfg), future, future)
+	plug.openSoundMenu(0)
+	if n := len(plug.library().Sounds); n != 1 || plug.library().Sounds[0].Cat != catLead {
+		t.Fatalf("le plugin n'a pas relu la bibliothèque du logiciel (%d sons)", n)
 	}
 }
