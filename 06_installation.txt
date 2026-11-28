@@ -1,0 +1,17 @@
+installer: Package name is Spacepad
+installer: Installing at base path /
+installer: The install was successful.
+présent : /Applications/Spacepad.app/Contents/MacOS/Spacepad
+présent : /Applications/Désinstaller Spacepad.app/Contents/Resources/desinstaller.sh
+présent : /Library/Audio/Plug-Ins/VST3/Spacepad.vst3/Contents/MacOS/Spacepad
+présent : /Library/Audio/Plug-Ins/Components/Spacepad.component/Contents/MacOS/Spacepad
+présent : /Library/Application Support/JB Praise/Spacepad
+drwxrwxrwx  2 root  admin  64 Nov 28 00:35 /Library/Application Support/JB Praise/Spacepad
+com.jbpraise.spacepad.vst3
+com.jbpraise.spacepad.au
+com.jbpraise.spacepad.app
+--------------------------------------------------
+AU VALIDATION SUCCEEDED.
+--------------------------------------------------
+Spacepad désinstallé.
+désinstallation : OK

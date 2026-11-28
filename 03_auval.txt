@@ -1,0 +1,584 @@
+
+    AU Validation Tool
+    Version: 1.10.0 
+    Copyright 2003-2019, Apple Inc. All Rights Reserved.
+    Specify -h (-help) for command options
+
+--------------------------------------------------
+VALIDATING AUDIO UNIT: 'aumu' - 'Spcp' - 'JBPr'
+--------------------------------------------------
+Manufacturer String: JB Praise
+AudioUnit Name: Spacepad
+Component Version: 1.0.0 (0x10000)
+
+* * PASS
+--------------------------------------------------
+TESTING OPEN TIMES:
+COLD:
+Time to open AudioUnit:         365.318 ms
+WARM:
+Time to open AudioUnit:         21.019  ms
+This AudioUnit is a version 2 implementation.
+FIRST TIME:
+Time for initialization:        1.366 ms
+
+* * PASS
+--------------------------------------------------
+VERIFYING DEFAULT SCOPE FORMATS:
+Input Scope Bus Configuration:
+ Default Bus Count:0
+
+Output Scope Bus Configuration:
+ Default Bus Count:2
+    Bus Name: Sortie
+    Format Bus 0: AudioStreamBasicDescription:  2 ch,  44100 Hz, Float32, deinterleaved
+    Bus Name: Crowds
+    Format Bus 1: AudioStreamBasicDescription:  2 ch,  44100 Hz, Float32, deinterleaved
+    Bus 0, Has Channel Layouts: 0x640001 0x650002 0x660002 0x670002 0x6A0002 
+    Default Layout (bus 0):
+	Tag=0x650002, Num Chan Descs=0
+    Bus 1, Has Channel Layouts: 0x650002 0x660002 0x670002 0x6A0002 0x930000 
+    Default Layout (bus 1):
+	Tag=0x650002, Num Chan Descs=0
+
+* * PASS
+--------------------------------------------------
+VERIFYING REQUIRED PROPERTIES:
+
+* * PASS
+--------------------------------------------------
+VERIFYING RECOMMENDED PROPERTIES:
+  VERIFYING PROPERTY: Latency
+    PASS
+
+* * PASS
+--------------------------------------------------
+VERIFYING OPTIONAL PROPERTIES:
+  VERIFYING PROPERTY: Tail Time
+    PASS
+  VERIFYING PROPERTY: Bypass Effect
+    PASS
+
+* * PASS
+--------------------------------------------------
+VERIFYING SPECIAL PROPERTIES:
+
+VERIFYING CUSTOM UI
+Cocoa Views Available: 1
+  JUCE_AUCocoaViewClass_b67fbf5157bb146a
+    PASS
+
+HAS FACTORY PRESETS
+    ID:   0    Name: Spacepad
+
+VERIFYING CLASS INFO
+    PASS
+
+TESTING HOST CALLBACKS
+    PASS
+
+* * PASS
+--------------------------------------------------
+PUBLISHED PARAMETER INFO:
+
+# # # 55 Global Scope Parameters:
+Parameter ID:96586
+Name: Air
+Parameter Type: Generic
+Values: Minimum = 0 %, Default = 25 %, Maximum = 100 %
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:108124
+Name: Dosage Pad/Crowd
+Parameter Type: Generic
+Values: Minimum = 0 %, Default = 50 %, Maximum = 100 %
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:114240
+Name: Sub
+Parameter Type: Generic
+Values: Minimum = 0 %, Default = 0 %, Maximum = 100 %
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:2984140
+Name: Crowd 1 joue
+Parameter Type: Boolean
+Values: Minimum = Off, Default = Off, Maximum = On
+Flags: Values Have Strings, High Resolution, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:2984141
+Name: Crowd 2 joue
+Parameter Type: Boolean
+Values: Minimum = Off, Default = Off, Maximum = On
+Flags: Values Have Strings, High Resolution, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:3327652
+Name: Loop
+Parameter Type: Boolean
+Values: Minimum = Off, Default = On, Maximum = On
+Flags: Values Have Strings, High Resolution, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:3641989
+Name: Warm
+Parameter Type: Generic
+Values: Minimum = 0 %, Default = 30 %, Maximum = 100 %
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:92517761
+Name: Tonalite
+Parameter Type: Indexed
+Values: Minimum = C, Default = E, Maximum = B
+Flags: Values Have Strings, High Resolution, Readable, Writable 
+Parameter has Value Strings
+Num Strings = 12
+Value: 0,  String: C
+Value: 1,  String: C#
+Value: 2,  String: D
+Value: 3,  String: Eb
+Value: 4,  String: E
+Value: 5,  String: F
+Value: 6,  String: F#
+Value: 7,  String: G
+Value: 8,  String: Ab
+Value: 9,  String: A
+Value: 10,  String: Bb
+Value: 11,  String: B
+  -parameter PASS
+
+Parameter ID:92987698
+Name: Crowd 1 Repetitions
+Parameter Type: Generic
+Values: Minimum = 0 %, Default = 35 %, Maximum = 100 %
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:93017489
+Name: Crowd 2 Repetitions
+Parameter Type: Generic
+Values: Minimum = 0 %, Default = 35 %, Maximum = 100 %
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:93823057
+Name: Melange A/B
+Parameter Type: Generic
+Values: Minimum = 0 %, Default = 50 %, Maximum = 100 %
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:95467907
+Name: Delay
+Parameter Type: Generic
+Values: Minimum = 0 %, Default = 0 %, Maximum = 100 %
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:95912241
+Name: Temps du delay
+Parameter Type: Indexed
+Values: Minimum = 1/2, Default = 1/4, Maximum = 1/16
+Flags: Values Have Strings, High Resolution, Readable, Writable 
+Parameter has Value Strings
+Num Strings = 6
+Value: 0,  String: 1/2
+Value: 1,  String: 1/4
+Value: 2,  String: 1/8 .
+Value: 3,  String: 1/8
+Value: 4,  String: 1/4 T
+Value: 5,  String: 1/16
+  -parameter PASS
+
+Parameter ID:109850561
+Name: Swell
+Parameter Type: Boolean
+Values: Minimum = Off, Default = Off, Maximum = On
+Flags: Values Have Strings, High Resolution, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:110245659
+Name: Tempo
+Parameter Type: Generic
+Values: Minimum = 40 bpm, Default = 72 bpm, Maximum = 200 bpm
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:113126854
+Name: Width
+Parameter Type: Generic
+Values: Minimum = 0 %, Default = 60 %, Maximum = 100 %
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:113957620
+Name: Fondu
+Parameter Type: Generic
+Values: Minimum = 0.1 s, Default = 4.0 s, Maximum = 10.0 s
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:180674588
+Name: Crowd 1 Low cut
+Parameter Type: Generic
+Values: Minimum = 0 %, Default = 10 %, Maximum = 100 %
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:343186304
+Name: Crowd 1 Reverb
+Parameter Type: Generic
+Values: Minimum = 0 %, Default = 30 %, Maximum = 100 %
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:720635585
+Name: Majeur / mineur
+Parameter Type: Indexed
+Values: Minimum = Majeur, Default = Mineur, Maximum = Mineur
+Flags: Values Have Strings, High Resolution, Readable, Writable 
+Parameter has Value Strings
+Num Strings = 2
+Value: 0,  String: Majeur
+Value: 1,  String: Mineur
+  -parameter PASS
+
+Parameter ID:720722002
+Name: Pad joue
+Parameter Type: Boolean
+Values: Minimum = Off, Default = Off, Maximum = On
+Flags: Values Have Strings, High Resolution, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:720814643
+Name: Chant de la setlist
+Parameter Type: Generic
+Values: Minimum = 0, Default = 0, Maximum = 200
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:735138516
+Name: Crowd 1 Distance
+Parameter Type: Generic
+Values: Minimum = 0 %, Default = 0 %, Maximum = 100 %
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:735189930
+Name: Crowd 1 Fondu
+Parameter Type: Generic
+Values: Minimum = 0.1 s, Default = 1.0 s, Maximum = 10.0 s
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:735412479
+Name: Crowd 1 Mouvement
+Parameter Type: Generic
+Values: Minimum = 0 %, Default = 0 %, Maximum = 100 %
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:736062037
+Name: Crowd 2 Distance
+Parameter Type: Generic
+Values: Minimum = 0 %, Default = 0 %, Maximum = 100 %
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:736113451
+Name: Crowd 2 Fondu
+Parameter Type: Generic
+Values: Minimum = 0.1 s, Default = 1.0 s, Maximum = 10.0 s
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:736336000
+Name: Crowd 2 Mouvement
+Parameter Type: Generic
+Values: Minimum = 0 %, Default = 0 %, Maximum = 100 %
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:740224584
+Name: Attack
+Parameter Type: Generic
+Values: Minimum = 0.1 s, Default = 1.0 s, Maximum = 8.0 s
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+WARNING: retrievedValue = 0.345683 (was 0.345683), Parameter did not retain default value when set
+  -parameter PASS
+
+Parameter ID:757783351
+Name: Crowd 2 Attack
+Parameter Type: Generic
+Values: Minimum = 0.0 s, Default = 0.3 s, Maximum = 8.0 s
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:786268582
+Name: Chorus
+Parameter Type: Generic
+Values: Minimum = 0 %, Default = 0 %, Maximum = 100 %
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:803827349
+Name: Crowd 2 Chorus
+Parameter Type: Generic
+Values: Minimum = 0 %, Default = 0 %, Maximum = 100 %
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:853799197
+Name: Crowd 1 son
+Parameter Type: Generic
+Values: Minimum = 0, Default = 0, Maximum = 999
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:853828988
+Name: Crowd 2 son
+Parameter Type: Generic
+Values: Minimum = 0, Default = 0, Maximum = 999
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:881080983
+Name: Freeze
+Parameter Type: Boolean
+Values: Minimum = Off, Default = Off, Maximum = On
+Flags: Values Have Strings, High Resolution, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:1050619502
+Name: Low cut
+Parameter Type: Generic
+Values: Minimum = 0 %, Default = 15 %, Maximum = 100 %
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:1066216034
+Name: Master
+Parameter Type: Generic
+Values: Minimum = −∞, Default = 0.0 dB, Maximum = +6.0 dB
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:1068178269
+Name: Crowd 2 Low cut
+Parameter Type: Generic
+Values: Minimum = 0 %, Default = 10 %, Maximum = 100 %
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:1079164854
+Name: Motion
+Parameter Type: Generic
+Values: Minimum = 0 %, Default = 15 %, Maximum = 100 %
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:1151658848
+Name: Volume Pad
+Parameter Type: Generic
+Values: Minimum = 0 %, Default = 80 %, Maximum = 100 %
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:1213131218
+Name: Reverb
+Parameter Type: Generic
+Values: Minimum = 0 %, Default = 55 %, Maximum = 100 %
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:1230689985
+Name: Crowd 2 Reverb
+Parameter Type: Generic
+Values: Minimum = 0 %, Default = 30 %, Maximum = 100 %
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:1314331157
+Name: Crowd 1 Delay
+Parameter Type: Generic
+Values: Minimum = 0 %, Default = 0 %, Maximum = 100 %
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:1314775491
+Name: Crowd 1 Temps du delay
+Parameter Type: Indexed
+Values: Minimum = 1/2, Default = 1/4, Maximum = 1/16
+Flags: Values Have Strings, High Resolution, Readable, Writable 
+Parameter has Value Strings
+Num Strings = 6
+Value: 0,  String: 1/2
+Value: 1,  String: 1/4
+Value: 2,  String: 1/8 .
+Value: 3,  String: 1/8
+Value: 4,  String: 1/4 T
+Value: 5,  String: 1/16
+  -parameter PASS
+
+Parameter ID:1321852574
+Name: Crowd suit la tonalite
+Parameter Type: Boolean
+Values: Minimum = Off, Default = On, Maximum = On
+Flags: Values Have Strings, High Resolution, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:1331990104
+Name: Crowd 1 Width
+Parameter Type: Generic
+Values: Minimum = 0 %, Default = 50 %, Maximum = 100 %
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:1342960308
+Name: Crowd 2 Delay
+Parameter Type: Generic
+Values: Minimum = 0 %, Default = 0 %, Maximum = 100 %
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:1343404642
+Name: Crowd 2 Temps du delay
+Parameter Type: Indexed
+Values: Minimum = 1/2, Default = 1/4, Maximum = 1/16
+Flags: Values Have Strings, High Resolution, Readable, Writable 
+Parameter has Value Strings
+Num Strings = 6
+Value: 0,  String: 1/2
+Value: 1,  String: 1/4
+Value: 2,  String: 1/8 .
+Value: 3,  String: 1/8
+Value: 4,  String: 1/4 T
+Value: 5,  String: 1/16
+  -parameter PASS
+
+Parameter ID:1360619255
+Name: Crowd 2 Width
+Parameter Type: Generic
+Values: Minimum = 0 %, Default = 50 %, Maximum = 100 %
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:1498753575
+Name: Crowd lie au pad
+Parameter Type: Boolean
+Values: Minimum = Off, Default = Off, Maximum = On
+Flags: Values Have Strings, High Resolution, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:1499057132
+Name: Volume Crowd 2
+Parameter Type: Generic
+Values: Minimum = 0 %, Default = 80 %, Maximum = 100 %
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:2017763318
+Name: Crowd 1 Attack
+Parameter Type: Generic
+Values: Minimum = 0.0 s, Default = 0.3 s, Maximum = 8.0 s
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:2061464833
+Name: Shimmer
+Parameter Type: Generic
+Values: Minimum = 0 %, Default = 45 %, Maximum = 100 %
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:2063807316
+Name: Crowd 1 Chorus
+Parameter Type: Generic
+Values: Minimum = 0 %, Default = 0 %, Maximum = 100 %
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+  -parameter PASS
+
+Parameter ID:2126566662
+Name: Volume Crowd 1
+Parameter Type: Generic
+Values: Minimum = 0 %, Default = 80 %, Maximum = 100 %
+Flags: Values Have Strings, High Resolution, Can Ramp, Readable, Writable 
+  -parameter PASS
+
+Testing that parameters retain value across reset and initialization
+  PASS
+
+* * PASS
+--------------------------------------------------
+FORMAT TESTS:
+
+Reported Channel Capabilities (explicit):
+      [0, 1]  [0, 2]  
+
+No Input, Output Chans:
+0-1   0-2   0-4   0-5   0-6   0-7   0-8
+X     X                                   
+
+# # AudioChannelLayouts (5), Output Scope:
+ChannelLayout is Writable: T
+The Unit publishes the following Channel Layouts:
+  0x640001, 0x650002, 0x660002, 0x670002, 0x6A0002, 
+
+Is Audio Channel Layout Available:
+Mono    Stereo  Binau.  AU_4    Ambi.   AU_5    AU_5_0  AU_6    AU_6_0  AU_7_0  AU_7_0F AU_8    AU_5_1  AU_6_1  AU_7_1  AU_7_1F 
+X       X       X                                                                                                               
+
+Current Format:AudioStreamBasicDescription:  2 ch,  44100 Hz, Float32, deinterleaved
+Current Format Tag = 0x650002, New Format Tag = 0x640001, Success - did not reset format with mis-matched layout
+
+Current Format:AudioStreamBasicDescription:  2 ch,  44100 Hz, Float32, deinterleaved
+Current Format Tag = 0x650002, New Format Tag = 0x650002, Successsful
+
+Current Format:AudioStreamBasicDescription:  2 ch,  44100 Hz, Float32, deinterleaved
+Current Format Tag = 0x650002, New Format Tag = 0x6A0002, Successsful
+
+* * PASS
+--------------------------------------------------
+RENDER TESTS:
+
+Output Format: AudioStreamBasicDescription:  2 ch,  44100 Hz, Float32, deinterleaved
+Render Test at 512 frames
+Slicing Render Test at 64 frames
+  PASS
+
+
+Render Test at 64 frames, sample rate: 22050 Hz
+Render Test at 137 frames, sample rate: 96000 Hz
+Render Test at 4096 frames, sample rate: 48000 Hz
+Render Test at 4096 frames, sample rate: 192000 Hz
+Render Test at 4096 frames, sample rate: 11025 Hz
+Render Test at 512 frames, sample rate: 44100 Hz
+  PASS
+
+1 Channel Test:
+Render Test at 512 frames
+  PASS
+
+Bad Max Frames - Render should fail
+  PASS
+
+Checking parameter setting
+Using AudioUnitSetParameter
+Using AudioUnitScheduleParameter
+  PASS
+
+Checking ramped parameter scheduling
+  PASS
+
+Test MIDI
+  PASS
+
+* * PASS
+--------------------------------------------------
+AU VALIDATION SUCCEEDED.
+--------------------------------------------------
