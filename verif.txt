@@ -1,0 +1,15 @@
+contenu vérifié
+Archive:  android-app/build/layerskeys.apk
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+     4020  1980-01-01 00:00   AndroidManifest.xml
+    29488  1980-01-01 00:00   res/drawable/ic_launcher.png
+      588  1980-01-01 00:00   resources.arsc
+    27412  2026-11-28 01:15   classes.dex
+  8302384  2026-11-28 01:15   lib/arm64-v8a/liblk.so
+  8563536  2026-11-28 01:15   lib/x86_64/liblk.so
+      697  2026-11-28 01:15   META-INF/JBKEYS.SF
+     1184  2026-11-28 01:15   META-INF/JBKEYS.RSA
+      570  2026-11-28 01:15   META-INF/MANIFEST.MF
+---------                     -------
+ 16929879                     9 files
