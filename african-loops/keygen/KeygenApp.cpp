@@ -13,8 +13,9 @@ using namespace ui;
 
 namespace {
 
-const licence::Product& productAt(int i) { return i == 0 ? licence::layersKeys() : licence::africanLoops(); }
-const char* blobAt(int i) { return i == 0 ? secrets::kLayersKeys : secrets::kAfricanLoops; }
+constexpr int kProducts = 3;  // Layers Keys, African Loops Pro, Spacepad
+const licence::Product& productAt(int i) { return i == 0 ? licence::layersKeys() : i == 1 ? licence::africanLoops() : licence::spacepad(); }
+const char* blobAt(int i) { return i == 0 ? secrets::kLayersKeys : i == 1 ? secrets::kAfricanLoops : secrets::kSpacepad; }
 
 juce::File dataFolder() {
     return juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory).getChildFile("JB Praise").getChildFile("Generateur de cles");
@@ -58,7 +59,7 @@ class KeygenComponent : public juce::Component, private juce::ListBoxModel {
 public:
     explicit KeygenComponent(const juce::File& folder, bool testMode = false) : store(folder.getChildFile("etat.json")), test(testMode) {
         setLookAndFeel(&lnf);
-        for (int i = 0; i < 2; ++i) {
+        for (int i = 0; i < kProducts; ++i) {
             auto* b = products.add(new HwButton(productAt(i).name, HwButton::Style::Amber));
             b->setClickingTogglesState(false);
             b->onClick = [this, i] { selectProduct(i); };
@@ -152,7 +153,7 @@ public:
     juce::String statusText() const { return status; }
     void selectProduct(int p) {
         product = p;
-        for (int i = 0; i < 2; ++i) products[i]->setToggleState(i == p, juce::dontSendNotification);
+        for (int i = 0; i < kProducts; ++i) products[i]->setToggleState(i == p, juce::dontSendNotification);
         const bool open = unlocked[(size_t)p];
         for (auto* c : std::initializer_list<juce::Component*>{&password, &keep, &unlockButton}) c->setVisible(!open);
         for (auto* c : std::initializer_list<juce::Component*>{&code, &paste, &clear, &name, &generate, &keyView, &copyKey, &copyMessage,
@@ -208,8 +209,7 @@ public:
 
     void resized() override {
         const int L = 30;
-        products[0]->setBounds(L, 108, 190, 40);
-        products[1]->setBounds(L + 196, 108, 190, 40);
+        for (int i = 0; i < kProducts; ++i) products[i]->setBounds(L + i * 162, 108, 156, 40);
         password.setBounds(L, 194, 380, 42);
         unlockButton.setBounds(L + 392, 194, 180, 42);
         keep.setBounds(L, 292, 400, 26);
@@ -336,7 +336,7 @@ private:
                                  for (int i = store.history().size(); --i >= 0;) {
                                      const auto& o = store.history().getReference(i);
                                      csv << o["date"].toString() << ";"
-                                         << (o["product"].toString() == "JBA" ? "African Loops Pro" : "Layers Keys") << ";"
+                                         << (o["product"].toString() == "JBA" ? "African Loops Pro" : o["product"].toString() == "JBS" ? "Spacepad" : "Layers Keys") << ";"
                                          << o["name"].toString().replaceCharacter(';', ',') << ";" << o["code"].toString() << ";"
                                          << o["key"].toString() << "\n";
                                  }
@@ -349,8 +349,8 @@ private:
     Store store;
     bool test;
     int product = 1;
-    std::array<std::array<uint8_t, 32>, 2> seeds{};
-    std::array<bool, 2> unlocked{};
+    std::array<std::array<uint8_t, 32>, kProducts> seeds{};
+    std::array<bool, kProducts> unlocked{};
     juce::OwnedArray<HwButton> products;
     Field password{"XXXX-XXXX-XXXX-XXXX", true};
     juce::ToggleButton keep;
@@ -410,6 +410,13 @@ private:
                 std::printf("ÉCHEC : clé African Loops %s\n", al.toRawUTF8());
                 ++fails;
             }
+            k.unlockForTests(2, seed);
+            const auto sp = k.generateForTests("JBS-1234-ABCD-5678-EF90", "Studio");
+            if (sp != "NKIBGX2A-QB7R4NJP-4G7AFYOJ-F4WA5CUL-UWWV5IES-6LBIZLCD-7QSTC4IV-SHTE7BFN-SNYPRSLV-4AT7HKBT-NTOXKAKT-UJ4KXFUD-AJEZEAQ") {
+                std::printf("ÉCHEC : clé Spacepad %s\n", sp.toRawUTF8());
+                ++fails;
+            }
+            k.unlockForTests(1, seed);
             if (k.generateForTests("JBK-1A2B-3C4D-5E6F-7A8B", "").isNotEmpty()) {
                 std::printf("ÉCHEC : code Layers Keys accepté pour African Loops\n");
                 ++fails;

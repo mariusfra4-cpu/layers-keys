@@ -56,6 +56,18 @@ r = dump(); shot(out + "/6_african_cle.png")
 t = alltext(r)
 check("2PVJM63G-KRRHQHXJ-34HS3UFF-YI4CXY7G-N5YXNCWH-CJBRLSRV-QUL4RNX6-V77XRIAN-5RHL435L-NPMVW7WT-SPNXRRYP-LXPQYXP5-CH4TICY" in t,
       "African Loops : la clé affichée est la bonne")
+# Spacepad
+r = dump(); tap(r, text="Spacepad"); time.sleep(2)
+r = dump(); shot(out + "/7_spacepad_verrouille.png")
+tap(r, cls="EditText"); adb("shell", "input", "text", "TESTTESTTEST")
+adb("shell", "input", "keyevent", "KEYCODE_BACK"); time.sleep(1)
+r = dump(); tap(r, text="DÉVERROUILLER"); time.sleep(8)
+r = dump(); tap(r, cls="EditText"); adb("shell", "input", "text", "JBS1234ABCD5678EF90")
+adb("shell", "input", "keyevent", "KEYCODE_BACK"); time.sleep(1)
+r = dump(); tap(r, text="GÉNÉRER LA CLÉ"); time.sleep(3)
+r = dump(); shot(out + "/8_spacepad_cle.png")
+check("NKIBGX2A-QB7R4NJP-4G7AFYOJ-F4WA5CUL-UWWV5IES-6LBIZLCD-7QSTC4IV-SHTE7BFN-SNYPRSLV-4AT7HKBT-NTOXKAKT-UJ4KXFUD-AJEZEAQ" in alltext(r),
+      "Spacepad : la clé affichée est la bonne")
 sys.exit(0 if ok else 1)
 PY
 RES=$?

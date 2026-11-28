@@ -23,9 +23,12 @@ struct Product {
 
 const Product& africanLoops();
 const Product& layersKeys();
+const Product& spacepad();
 
 // clé publique d'African Loops Pro
 extern const std::array<uint8_t, 32> kAfricanLoopsPublicKey;
+// clé publique de Spacepad (à mettre dans le logiciel Spacepad pour vérifier ses clés)
+extern const std::array<uint8_t, 32> kSpacepadPublicKey;
 
 // Code de l'ordinateur à partir de son identifiant brut.
 std::string formatCode(const Product& p, const std::string& machineId);

@@ -14,10 +14,11 @@ public final class KeyCore {
     private KeyCore() {}
 
     static final String MSG_PREFIX = "LayersKeys|";
-    // logiciels : 0 = Layers Keys, 1 = African Loops Pro
-    static final String[] NAMES = {"Layers Keys", "African Loops Pro"};
-    static final String[] CODE_PREFIX = {"JBK", "JBA"};
-    static final String[] MSG_PREFIXES = {"LayersKeys|", "AfricanLoopsPro|"};
+    // logiciels : 0 = Layers Keys, 1 = African Loops Pro, 2 = Spacepad
+    static final String[] NAMES = {"Layers Keys", "African Loops Pro", "Spacepad"};
+    static final String[] SHORT = {"Layers Keys", "African Loops", "Spacepad"};
+    static final String[] CODE_PREFIX = {"JBK", "JBA", "JBS"};
+    static final String[] MSG_PREFIXES = {"LayersKeys|", "AfricanLoopsPro|", "Spacepad|"};
 
     // ---------------------------------------------------------------- Ed25519
     private static final BigInteger TWO = BigInteger.valueOf(2);

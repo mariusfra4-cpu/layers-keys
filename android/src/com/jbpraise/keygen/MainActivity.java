@@ -31,15 +31,15 @@ import java.util.Locale;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-/** JB Générateur de clés — Layers Keys et African Loops Pro. Outil PRIVÉ de JB Praise. */
+/** JB Générateur de clés — Layers Keys, African Loops Pro et Spacepad. Outil PRIVÉ de JB Praise. */
 public class MainActivity extends Activity {
     static final int BG = 0xFF0A101B, PANEL = 0xFF131D31, GOLD = 0xFFF2B705, GOLD_HI = 0xFFFFD23A, TEXT = 0xFFEEF2FA, GREY = 0xFF8D9AB2, RED = 0xFFFF6B5E, GREEN = 0xFF54D18C;
 
     SharedPreferences prefs;
     byte[] seed;              // graine du logiciel choisi (null = verrouillé)
-    byte[][] seeds = new byte[2][];
+    byte[][] seeds = new byte[3][];
     int product = 0;          // 0 = Layers Keys, 1 = African Loops Pro
-    static final String[] SEED_KEYS = {"seed", "seedAL"};
+    static final String[] SEED_KEYS = {"seed", "seedAL", "seedSP"};
     String pendingCode; // code reçu par « Partager vers… »
     int pendingProduct = -1;
 
@@ -60,7 +60,7 @@ public class MainActivity extends Activity {
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         prefs = getSharedPreferences("jbk", MODE_PRIVATE);
         readIncoming(getIntent());
-        for (int i = 0; i < 2; i++) {
+        for (int i = 0; i < 3; i++) {
             String hs = prefs.getString(SEED_KEYS[i], "");
             if (hs.length() == 64) {
                 try {
@@ -93,7 +93,7 @@ public class MainActivity extends Activity {
     void readIncoming(Intent i) {
         if (i != null && Intent.ACTION_SEND.equals(i.getAction())) {
             String t = i.getStringExtra(Intent.EXTRA_TEXT);
-            for (int p = 0; p < 2; p++) {
+            for (int p = 0; p < 3; p++) {
                 String c = KeyCore.normalizeCode(t, KeyCore.CODE_PREFIX[p]);
                 if (c != null) {
                     pendingCode = c;
@@ -175,11 +175,12 @@ public class MainActivity extends Activity {
         // choix du logiciel
         LinearLayout seg = new LinearLayout(this);
         seg.setOrientation(LinearLayout.HORIZONTAL);
-        for (int i = 0; i < 2; i++) {
+        for (int i = 0; i < 3; i++) {
             final int p = i;
-            Button b = button(KeyCore.NAMES[i], i == product);
+            Button b = button(KeyCore.SHORT[i], i == product);
+            b.setTextSize(13);
             LinearLayout.LayoutParams bp = new LinearLayout.LayoutParams(0, -2, 1);
-            if (i == 1) bp.leftMargin = dp(8);
+            if (i > 0) bp.leftMargin = dp(6);
             seg.addView(b, bp);
             b.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
@@ -219,7 +220,7 @@ public class MainActivity extends Activity {
                 err.setText("Vérification…");
                 new Thread(new Runnable() {
                     public void run() {
-                        final byte[] s = KeyCore.unlock(fromHex(prod == 0 ? Secret.BLOB : Secret.BLOB_AL), p);
+                        final byte[] s = KeyCore.unlock(fromHex(prod == 0 ? Secret.BLOB : prod == 1 ? Secret.BLOB_AL : Secret.BLOB_SP), p);
                         runOnUiThread(new Runnable() {
                             public void run() {
                                 if (s == null) {
