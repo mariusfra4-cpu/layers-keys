@@ -1,0 +1,423 @@
+[0/2] Re-checking globbed directories...
+[1/133] Copying OS X Content Spacepad_artefacts/Release/Standalone/Spacepad.app/Contents/Resources/Icon.icns
+[2/133] Copying OS X Content Spacepad_artefacts/Release/Standalone/Spacepad.app/Contents/Resources/RecentFilesMenuTemplate.nib
+[3/133] Copying OS X Content Spacepad_artefacts/Release/AU/Spacepad.component/Contents/Resources/Icon.icns
+[4/133] Copying OS X Content Spacepad_artefacts/Release/VST3/Spacepad.vst3/Contents/Resources/Icon.icns
+[5/133] Generating juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData1.cpp, juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData2.cpp, juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData3.cpp, juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData4.cpp, juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData5.cpp, juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData6.cpp, juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData.h
+[6/133] Building CXX object CMakeFiles/SpacepadData.dir/juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData5.cpp.o
+[7/133] Building CXX object CMakeFiles/SpacepadData.dir/juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData1.cpp.o
+[8/133] Building CXX object CMakeFiles/SpacepadData.dir/juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData6.cpp.o
+[9/133] Building CXX object CMakeFiles/SpacepadData.dir/juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData2.cpp.o
+[10/133] Building CXX object CMakeFiles/SpacepadData.dir/juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData4.cpp.o
+[11/133] Building CXX object CMakeFiles/SpacepadData.dir/juce_binarydata_SpacepadData/JuceLibraryCode/BinaryData3.cpp.o
+[12/133] Linking CXX static library libSpacepadData.a
+[13/133] Building CXX object CMakeFiles/Spacepad.dir/Source/Lang.cpp.o
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/Lang.cpp:112:15: warning: declaration shadows a local variable [-Wshadow]
+  112 |     for (auto v : ui.midiMap) mm.add (v);
+      |               ^
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/Lang.cpp:88:10: note: previous declaration is here
+   88 |     auto v = f.existsAsFile() ? juce::JSON::parse (f.loadFileAsString()) : juce::var();
+      |          ^
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/Lang.cpp:162:13: warning: enumeration value 'FR' not explicitly handled in switch [-Wswitch-enum]
+  162 |     switch (lang())
+      |             ^~~~~~
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/Lang.cpp:162:13: note: add missing switch cases
+  162 |     switch (lang())
+      |             ^
+  163 |     {
+  164 |         case Lang::EN: return juce::String::fromUTF8 (en);
+2 warnings generated.
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/Lang.cpp:112:15: warning: declaration shadows a local variable [-Wshadow]
+  112 |     for (auto v : ui.midiMap) mm.add (v);
+      |               ^
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/Lang.cpp:88:10: note: previous declaration is here
+   88 |     auto v = f.existsAsFile() ? juce::JSON::parse (f.loadFileAsString()) : juce::var();
+      |          ^
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/Lang.cpp:162:13: warning: enumeration value 'FR' not explicitly handled in switch [-Wswitch-enum]
+  162 |     switch (lang())
+      |             ^~~~~~
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/Lang.cpp:162:13: note: add missing switch cases
+  162 |     switch (lang())
+      |             ^
+  163 |     {
+  164 |         case Lang::EN: return juce::String::fromUTF8 (en);
+2 warnings generated.
+[14/133] Building CXX object CMakeFiles/Spacepad.dir/Source/KeyDetect.cpp.o
+[15/133] Building CXX object CMakeFiles/Spacepad.dir/Source/Setlist.cpp.o
+[16/133] Building CXX object CMakeFiles/Spacepad.dir/Source/Library.cpp.o
+[17/133] Building CXX object CMakeFiles/Spacepad.dir/Source/PadEngine.cpp.o
+[18/133] Building CXX object CMakeFiles/Spacepad.dir/Source/AudioOpen.cpp.o
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/AudioOpen.cpp:174:72: warning: implicit conversion changes signedness: 'const int' to 'size_t' (aka 'unsigned long') [-Wsign-conversion]
+  174 |                 const auto* s = p + (size_t) i * frame + (size_t) ch * bps;
+      |                                                                      ~ ^~~
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/AudioOpen.cpp:174:50: warning: implicit conversion changes signedness: 'const int' to 'size_t' (aka 'unsigned long') [-Wsign-conversion]
+  174 |                 const auto* s = p + (size_t) i * frame + (size_t) ch * bps;
+      |                                                ~ ^~~~~
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/AudioOpen.cpp:199:48: warning: implicit conversion changes signedness: 'int' to 'size_t' (aka 'unsigned long') [-Wsign-conversion]
+  199 |             const auto* blk = p + (size_t) b * blockAlign;
+      |                                              ~ ^~~~~~~~~~
+3 warnings generated.
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/AudioOpen.cpp:174:72: warning: implicit conversion changes signedness: 'const int' to 'size_t' (aka 'unsigned long') [-Wsign-conversion]
+  174 |                 const auto* s = p + (size_t) i * frame + (size_t) ch * bps;
+      |                                                                      ~ ^~~
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/AudioOpen.cpp:174:50: warning: implicit conversion changes signedness: 'const int' to 'size_t' (aka 'unsigned long') [-Wsign-conversion]
+  174 |                 const auto* s = p + (size_t) i * frame + (size_t) ch * bps;
+      |                                                ~ ^~~~~
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/AudioOpen.cpp:199:48: warning: implicit conversion changes signedness: 'int' to 'size_t' (aka 'unsigned long') [-Wsign-conversion]
+  199 |             const auto* blk = p + (size_t) b * blockAlign;
+      |                                              ~ ^~~~~~~~~~
+3 warnings generated.
+[19/133] Building CXX object CMakeFiles/Spacepad.dir/Source/Effects.cpp.o
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/Effects.cpp:97:74: warning: implicit conversion loses floating-point precision: 'double' to 'float' [-Wimplicit-float-conversion]
+   97 |         auto c = juce::dsp::IIR::Coefficients<float>::makeHighShelf (sr, juce::jmin (8000.0, sr * 0.4), 0.7f, juce::Decibels::decibelsToGain (airDb));
+      |                  ~~~~                                                    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1 warning generated.
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/Effects.cpp:97:74: warning: implicit conversion loses floating-point precision: 'double' to 'float' [-Wimplicit-float-conversion]
+   97 |         auto c = juce::dsp::IIR::Coefficients<float>::makeHighShelf (sr, juce::jmin (8000.0, sr * 0.4), 0.7f, juce::Decibels::decibelsToGain (airDb));
+      |                  ~~~~                                                    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1 warning generated.
+[20/133] Building C object CMakeFiles/Spacepad.dir/Source/third_party/monocypher/monocypher-ed25519.c.o
+[21/133] Building CXX object CMakeFiles/Spacepad.dir/Source/Modulation.cpp.o
+[22/133] Building C object CMakeFiles/Spacepad.dir/Source/third_party/monocypher/monocypher.c.o
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/third_party/monocypher/monocypher.c:881:40: warning: implicit conversion loses integer precision: 'u64' (aka 'unsigned long long') to 'u32' (aka 'unsigned int') [-Wshorten-64-to-32]
+  881 |                                         u32  index     = lane * lane_size + (u32)ref;
+      |                                              ~~~~~       ~~~~~~~~~~~~~~~~~^~~~~~~~~~
+1 warning generated.
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/third_party/monocypher/monocypher.c:881:40: warning: implicit conversion loses integer precision: 'u64' (aka 'unsigned long long') to 'u32' (aka 'unsigned int') [-Wshorten-64-to-32]
+  881 |                                         u32  index     = lane * lane_size + (u32)ref;
+      |                                              ~~~~~       ~~~~~~~~~~~~~~~~~^~~~~~~~~~
+1 warning generated.
+[23/133] Building CXX object CMakeFiles/juce_vst3_helper.dir/_deps/juce-src/modules/juce_audio_plugin_client/VST3/juce_VST3ManifestHelper.mm.o
+[24/133] Building CXX object CMakeFiles/Spacepad.dir/Source/CrowdPrefs.cpp.o
+[25/133] Building CXX object CMakeFiles/Spacepad.dir/Source/Licence.cpp.o
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/Licence.cpp:57:21: warning: unused function 'base32' [-Wunused-function]
+   57 | static juce::String base32 (const juce::uint8* d, int n)
+      |                     ^~~~~~
+1 warning generated.
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/Licence.cpp:57:21: warning: unused function 'base32' [-Wunused-function]
+   57 | static juce::String base32 (const juce::uint8* d, int n)
+      |                     ^~~~~~
+1 warning generated.
+[26/133] Building CXX object CMakeFiles/Spacepad.dir/Source/PluginEditor.cpp.o
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/PluginEditor.cpp:1:
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/PluginEditor.h:3:
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:216:24: warning: declaration shadows a field of 'spacepad::LibraryPanel' [-Wshadow]
+  216 |     void showTab (bool crowdTab) { showTabIndex (crowdTab ? 1 : 0); }
+      |                        ^
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:234:41: note: previous declaration is here
+  234 |     juce::TextButton padTab { "PADS" }, crowdTab { "CROWDS" }, setTab { "SETLIST" };
+      |                                         ^
+1 warning generated.
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/PluginEditor.cpp:1:
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/PluginEditor.h:3:
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:216:24: warning: declaration shadows a field of 'spacepad::LibraryPanel' [-Wshadow]
+  216 |     void showTab (bool crowdTab) { showTabIndex (crowdTab ? 1 : 0); }
+      |                        ^
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:234:41: note: previous declaration is here
+  234 |     juce::TextButton padTab { "PADS" }, crowdTab { "CROWDS" }, setTab { "SETLIST" };
+      |                                         ^
+1 warning generated.
+[27/133] Building CXX object CMakeFiles/Spacepad.dir/Source/UI.cpp.o
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.cpp:2:
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h:3:
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:216:24: warning: declaration shadows a field of 'spacepad::LibraryPanel' [-Wshadow]
+  216 |     void showTab (bool crowdTab) { showTabIndex (crowdTab ? 1 : 0); }
+      |                        ^
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:234:41: note: previous declaration is here
+  234 |     juce::TextButton padTab { "PADS" }, crowdTab { "CROWDS" }, setTab { "SETLIST" };
+      |                                         ^
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.cpp:2:
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h:12:17: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+   12 |     if (kerning != 0) f.setExtraKerningFactor (kerning);
+      |         ~~~~~~~ ^  ~
+2 warnings generated.
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.cpp:2:
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h:3:
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:216:24: warning: declaration shadows a field of 'spacepad::LibraryPanel' [-Wshadow]
+  216 |     void showTab (bool crowdTab) { showTabIndex (crowdTab ? 1 : 0); }
+      |                        ^
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:234:41: note: previous declaration is here
+  234 |     juce::TextButton padTab { "PADS" }, crowdTab { "CROWDS" }, setTab { "SETLIST" };
+      |                                         ^
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.cpp:2:
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h:12:17: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+   12 |     if (kerning != 0) f.setExtraKerningFactor (kerning);
+      |         ~~~~~~~ ^  ~
+2 warnings generated.
+[28/133] Building CXX object CMakeFiles/Spacepad.dir/Source/UISpace.cpp.o
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UISpace.cpp:5:
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h:3:
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:216:24: warning: declaration shadows a field of 'spacepad::LibraryPanel' [-Wshadow]
+  216 |     void showTab (bool crowdTab) { showTabIndex (crowdTab ? 1 : 0); }
+      |                        ^
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:234:41: note: previous declaration is here
+  234 |     juce::TextButton padTab { "PADS" }, crowdTab { "CROWDS" }, setTab { "SETLIST" };
+      |                                         ^
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UISpace.cpp:5:
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h:12:17: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+   12 |     if (kerning != 0) f.setExtraKerningFactor (kerning);
+      |         ~~~~~~~ ^  ~
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UISpace.cpp:5:
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h:3:
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:92:24: warning: private field 'proc' is not used [-Wunused-private-field]
+   92 |     SpacepadProcessor& proc;
+      |                        ^
+3 warnings generated.
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UISpace.cpp:5:
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h:3:
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:216:24: warning: declaration shadows a field of 'spacepad::LibraryPanel' [-Wshadow]
+  216 |     void showTab (bool crowdTab) { showTabIndex (crowdTab ? 1 : 0); }
+      |                        ^
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:234:41: note: previous declaration is here
+  234 |     juce::TextButton padTab { "PADS" }, crowdTab { "CROWDS" }, setTab { "SETLIST" };
+      |                                         ^
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UISpace.cpp:5:
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h:12:17: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+   12 |     if (kerning != 0) f.setExtraKerningFactor (kerning);
+      |         ~~~~~~~ ^  ~
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UISpace.cpp:5:
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h:3:
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:92:24: warning: private field 'proc' is not used [-Wunused-private-field]
+   92 |     SpacepadProcessor& proc;
+      |                        ^
+3 warnings generated.
+[29/133] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_ara.cpp.o
+[30/133] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_lv2_libs.cpp.o
+[31/133] Building CXX object CMakeFiles/Spacepad.dir/Source/PluginProcessor.cpp.o
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/PluginProcessor.cpp:2:
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/PluginEditor.h:3:
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:216:24: warning: declaration shadows a field of 'spacepad::LibraryPanel' [-Wshadow]
+  216 |     void showTab (bool crowdTab) { showTabIndex (crowdTab ? 1 : 0); }
+      |                        ^
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:234:41: note: previous declaration is here
+  234 |     juce::TextButton padTab { "PADS" }, crowdTab { "CROWDS" }, setTab { "SETLIST" };
+      |                                         ^
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/PluginProcessor.cpp:720:20: warning: declaration shadows a field of 'spacepad::SpacepadProcessor' [-Wshadow]
+  720 |         const bool wasPlaying = crowd[c].isPlaying();
+      |                    ^
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/PluginProcessor.h:177:10: note: previous declaration is here
+  177 |     bool wasPlaying = false, wasRecording = false;
+      |          ^
+2 warnings generated.
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/PluginProcessor.cpp:2:
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/PluginEditor.h:3:
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:216:24: warning: declaration shadows a field of 'spacepad::LibraryPanel' [-Wshadow]
+  216 |     void showTab (bool crowdTab) { showTabIndex (crowdTab ? 1 : 0); }
+      |                        ^
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:234:41: note: previous declaration is here
+  234 |     juce::TextButton padTab { "PADS" }, crowdTab { "CROWDS" }, setTab { "SETLIST" };
+      |                                         ^
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/PluginProcessor.cpp:720:20: warning: declaration shadows a field of 'spacepad::SpacepadProcessor' [-Wshadow]
+  720 |         const bool wasPlaying = crowd[c].isPlaying();
+      |                    ^
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/PluginProcessor.h:177:10: note: previous declaration is here
+  177 |     bool wasPlaying = false, wasRecording = false;
+      |          ^
+2 warnings generated.
+[32/133] Building CXX object CMakeFiles/Spacepad.dir/Source/UIExtra.cpp.o
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIExtra.cpp:2:
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h:3:
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:216:24: warning: declaration shadows a field of 'spacepad::LibraryPanel' [-Wshadow]
+  216 |     void showTab (bool crowdTab) { showTabIndex (crowdTab ? 1 : 0); }
+      |                        ^
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:234:41: note: previous declaration is here
+  234 |     juce::TextButton padTab { "PADS" }, crowdTab { "CROWDS" }, setTab { "SETLIST" };
+      |                                         ^
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIExtra.cpp:2:
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h:12:17: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+   12 |     if (kerning != 0) f.setExtraKerningFactor (kerning);
+      |         ~~~~~~~ ^  ~
+2 warnings generated.
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIExtra.cpp:2:
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h:3:
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:216:24: warning: declaration shadows a field of 'spacepad::LibraryPanel' [-Wshadow]
+  216 |     void showTab (bool crowdTab) { showTabIndex (crowdTab ? 1 : 0); }
+      |                        ^
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:234:41: note: previous declaration is here
+  234 |     juce::TextButton padTab { "PADS" }, crowdTab { "CROWDS" }, setTab { "SETLIST" };
+      |                                         ^
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIExtra.cpp:2:
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h:12:17: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+   12 |     if (kerning != 0) f.setExtraKerningFactor (kerning);
+      |         ~~~~~~~ ^  ~
+2 warnings generated.
+[33/133] Building CXX object CMakeFiles/Spacepad.dir/Source/UICrowd.cpp.o
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UICrowd.cpp:3:
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h:3:
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:216:24: warning: declaration shadows a field of 'spacepad::LibraryPanel' [-Wshadow]
+  216 |     void showTab (bool crowdTab) { showTabIndex (crowdTab ? 1 : 0); }
+      |                        ^
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:234:41: note: previous declaration is here
+  234 |     juce::TextButton padTab { "PADS" }, crowdTab { "CROWDS" }, setTab { "SETLIST" };
+      |                                         ^
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UICrowd.cpp:3:
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h:12:17: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+   12 |     if (kerning != 0) f.setExtraKerningFactor (kerning);
+      |         ~~~~~~~ ^  ~
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UICrowd.cpp:23:23: warning: declaration shadows a local variable [-Wshadow-uncaptured-local]
+   23 |         return [this, id = juce::String (id)]
+      |                       ^
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UICrowd.cpp:21:42: note: previous declaration is here
+   21 |     auto tempoText = [this] (const char* id)
+      |                                          ^
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UICrowd.cpp:392:21: warning: declaration shadows a field of 'spacepad::HallView' [-Wshadow]
+  392 |         const float t = std::pow (0.72f, (float) i), half = 400 * t, top = vy - 430 * t, bot = vy + 60 + (H - vy) * t * 0.95f, cw = 26 * t + 3;
+      |                     ^
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:498:37: note: previous declaration is here
+  498 |     float imageScale = 0, glow = 0, t = 0;
+      |                                     ^
+4 warnings generated.
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UICrowd.cpp:3:
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h:3:
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:216:24: warning: declaration shadows a field of 'spacepad::LibraryPanel' [-Wshadow]
+  216 |     void showTab (bool crowdTab) { showTabIndex (crowdTab ? 1 : 0); }
+      |                        ^
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:234:41: note: previous declaration is here
+  234 |     juce::TextButton padTab { "PADS" }, crowdTab { "CROWDS" }, setTab { "SETLIST" };
+      |                                         ^
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UICrowd.cpp:3:
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h:12:17: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+   12 |     if (kerning != 0) f.setExtraKerningFactor (kerning);
+      |         ~~~~~~~ ^  ~
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UICrowd.cpp:23:23: warning: declaration shadows a local variable [-Wshadow-uncaptured-local]
+   23 |         return [this, id = juce::String (id)]
+      |                       ^
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UICrowd.cpp:21:42: note: previous declaration is here
+   21 |     auto tempoText = [this] (const char* id)
+      |                                          ^
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UICrowd.cpp:392:21: warning: declaration shadows a field of 'spacepad::HallView' [-Wshadow]
+  392 |         const float t = std::pow (0.72f, (float) i), half = 400 * t, top = vy - 430 * t, bot = vy + 60 + (H - vy) * t * 0.95f, cw = 26 * t + 3;
+      |                     ^
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:498:37: note: previous declaration is here
+  498 |     float imageScale = 0, glow = 0, t = 0;
+      |                                     ^
+4 warnings generated.
+[34/133] Building CXX object CMakeFiles/Spacepad.dir/Source/UIPanels.cpp.o
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIPanels.cpp:2:
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h:3:
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:216:24: warning: declaration shadows a field of 'spacepad::LibraryPanel' [-Wshadow]
+  216 |     void showTab (bool crowdTab) { showTabIndex (crowdTab ? 1 : 0); }
+      |                        ^
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:234:41: note: previous declaration is here
+  234 |     juce::TextButton padTab { "PADS" }, crowdTab { "CROWDS" }, setTab { "SETLIST" };
+      |                                         ^
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIPanels.cpp:2:
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h:12:17: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+   12 |     if (kerning != 0) f.setExtraKerningFactor (kerning);
+      |         ~~~~~~~ ^  ~
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIPanels.cpp:2:
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h:3:
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:249:9: warning: private field 'targetSlot' is not used [-Wunused-private-field]
+  249 |     int targetSlot = 0;
+      |         ^
+3 warnings generated.
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIPanels.cpp:2:
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h:3:
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:216:24: warning: declaration shadows a field of 'spacepad::LibraryPanel' [-Wshadow]
+  216 |     void showTab (bool crowdTab) { showTabIndex (crowdTab ? 1 : 0); }
+      |                        ^
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:234:41: note: previous declaration is here
+  234 |     juce::TextButton padTab { "PADS" }, crowdTab { "CROWDS" }, setTab { "SETLIST" };
+      |                                         ^
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIPanels.cpp:2:
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h:12:17: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+   12 |     if (kerning != 0) f.setExtraKerningFactor (kerning);
+      |         ~~~~~~~ ^  ~
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIPanels.cpp:2:
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h:3:
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:249:9: warning: private field 'targetSlot' is not used [-Wunused-private-field]
+  249 |     int targetSlot = 0;
+      |         ^
+3 warnings generated.
+[35/133] Building C object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_graphics/juce_graphics_Sheenbidi.c.o
+[36/133] Building CXX object CMakeFiles/Spacepad.dir/Source/UIMain.cpp.o
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIMain.cpp:3:
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h:3:
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:216:24: warning: declaration shadows a field of 'spacepad::LibraryPanel' [-Wshadow]
+  216 |     void showTab (bool crowdTab) { showTabIndex (crowdTab ? 1 : 0); }
+      |                        ^
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:234:41: note: previous declaration is here
+  234 |     juce::TextButton padTab { "PADS" }, crowdTab { "CROWDS" }, setTab { "SETLIST" };
+      |                                         ^
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIMain.cpp:3:
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h:12:17: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+   12 |     if (kerning != 0) f.setExtraKerningFactor (kerning);
+      |         ~~~~~~~ ^  ~
+2 warnings generated.
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIMain.cpp:3:
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h:3:
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:216:24: warning: declaration shadows a field of 'spacepad::LibraryPanel' [-Wshadow]
+  216 |     void showTab (bool crowdTab) { showTabIndex (crowdTab ? 1 : 0); }
+      |                        ^
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UI.h:234:41: note: previous declaration is here
+  234 |     juce::TextButton padTab { "PADS" }, crowdTab { "CROWDS" }, setTab { "SETLIST" };
+      |                                         ^
+In file included from /Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIMain.cpp:3:
+/Users/runner/work/layers-keys/layers-keys/spacepad/Source/UIHelpers.h:12:17: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+   12 |     if (kerning != 0) f.setExtraKerningFactor (kerning);
+      |         ~~~~~~~ ^  ~
+2 warnings generated.
+[37/133] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_gui_extra/juce_gui_extra.mm.o
+[38/133] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_core/juce_core_CompilationTime.cpp.o
+[39/133] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_events/juce_events.mm.o
+[40/133] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.mm.o
+[41/133] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_data_structures/juce_data_structures.mm.o
+[42/133] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_cryptography/juce_cryptography.mm.o
+[43/133] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_audio_basics/juce_audio_basics.mm.o
+[44/133] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_core/juce_core.mm.o
+[45/133] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_audio_utils/juce_audio_utils.mm.o
+[46/133] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_graphics/juce_graphics.mm.o
+[47/133] Linking CXX executable juce_vst3_helper
+[48/133] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_graphics/juce_graphics_Harfbuzz.cpp.o
+[49/133] Building CXX object CMakeFiles/SpacepadTests.dir/Source/KeyDetect.cpp.o
+[50/133] Building CXX object CMakeFiles/SpacepadTests.dir/Source/Lang.cpp.o
+[51/133] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_audio_devices/juce_audio_devices.mm.o
+[52/133] Building CXX object CMakeFiles/SpacepadTests.dir/Source/Setlist.cpp.o
+[53/133] Building CXX object CMakeFiles/SpacepadTests.dir/Source/PadEngine.cpp.o
+[54/133] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_audio_formats/juce_audio_formats.mm.o
+[55/133] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_dsp/juce_dsp.mm.o
+[56/133] Building CXX object CMakeFiles/SpacepadTests.dir/Source/Library.cpp.o
+[57/133] Building CXX object CMakeFiles/SpacepadTests.dir/Source/Effects.cpp.o
+[58/133] Building CXX object CMakeFiles/SpacepadTests.dir/Source/AudioOpen.cpp.o
+[59/133] Building C object CMakeFiles/SpacepadTests.dir/Source/third_party/monocypher/monocypher-ed25519.c.o
+[60/133] Building C object CMakeFiles/SpacepadTests.dir/Source/third_party/monocypher/monocypher.c.o
+[61/133] Building CXX object CMakeFiles/SpacepadTests.dir/Source/Modulation.cpp.o
+[62/133] Building CXX object CMakeFiles/SpacepadTests.dir/Source/CrowdPrefs.cpp.o
+[63/133] Building CXX object CMakeFiles/SpacepadTests.dir/Source/Licence.cpp.o
+[64/133] Building CXX object CMakeFiles/SpacepadTests.dir/Source/PluginEditor.cpp.o
+[65/133] Building CXX object CMakeFiles/SpacepadTests.dir/Source/UISpace.cpp.o
+[66/133] Building CXX object CMakeFiles/SpacepadTests.dir/Source/UI.cpp.o
+[67/133] Building CXX object CMakeFiles/SpacepadTests.dir/Source/PluginProcessor.cpp.o
+[68/133] Building CXX object CMakeFiles/Spacepad.dir/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.mm.o
+In file included from /Users/runner/work/layers-keys/layers-keys/build/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.mm:35:
+/Users/runner/work/layers-keys/layers-keys/build/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.cpp:61:2: warning: This version of JUCE does not use the splash screen, the flag JUCE_DISPLAY_SPLASH_SCREEN is ignored [-W#pragma-messages]
+   61 |  JUCE_COMPILER_WARNING ("This version of JUCE does not use the splash screen, the flag JUCE_DISPLAY_SPLASH_SCREEN is ignored")
+      |  ^
+/Users/runner/work/layers-keys/layers-keys/build/_deps/juce-src/modules/juce_core/system/juce_PlatformDefs.h:286:38: note: expanded from macro 'JUCE_COMPILER_WARNING'
+  286 |  #define JUCE_COMPILER_WARNING(msg)  _Pragma (JUCE_STRINGIFY (message (msg)))
+      |                                      ^
+<scratch space>:201:2: note: expanded from here
+  201 |  message ("This version of JUCE does not use the splash screen, the flag JUCE_DISPLAY_SPLASH_SCREEN is ignored")
+      |  ^
+In file included from /Users/runner/work/layers-keys/layers-keys/build/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.mm:35:
+In file included from /Users/runner/work/layers-keys/layers-keys/build/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.cpp:187:
+/Users/runner/work/layers-keys/layers-keys/build/_deps/juce-src/modules/juce_gui_basics/native/juce_NSViewComponentPeer_mac.mm:1636:23: warning: variable 'target' set but not used [-Wunused-but-set-variable]
+ 1636 |             if (auto* target = findCurrentTextInputTarget())
+      |                       ^
+2 warnings generated.
+In file included from /Users/runner/work/layers-keys/layers-keys/build/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.mm:35:
+/Users/runner/work/layers-keys/layers-keys/build/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.cpp:61:2: warning: This version of JUCE does not use the splash screen, the flag JUCE_DISPLAY_SPLASH_SCREEN is ignored [-W#pragma-messages]
+   61 |  JUCE_COMPILER_WARNING ("This version of JUCE does not use the splash screen, the flag JUCE_DISPLAY_SPLASH_SCREEN is ignored")
+      |  ^
+/Users/runner/work/layers-keys/layers-keys/build/_deps/juce-src/modules/juce_core/system/juce_PlatformDefs.h:286:38: note: expanded from macro 'JUCE_COMPILER_WARNING'
+  286 |  #define JUCE_COMPILER_WARNING(msg)  _Pragma (JUCE_STRINGIFY (message (msg)))
+      |                                      ^
+<scratch space>:78:2: note: expanded from here
+   78 |  message ("This version of JUCE does not use the splash screen, the flag JUCE_DISPLAY_SPLASH_SCREEN is ignored")
+      |  ^
+In file included from /Users/runner/work/layers-keys/layers-keys/build/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.mm:35:
+In file included from /Users/runner/work/layers-keys/layers-keys/build/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.cpp:187:
+/Users/runner/work/layers-keys/layers-keys/build/_deps/juce-src/modules/juce_gui_basics/native/juce_NSViewComponentPeer_mac.mm:1636:23: warning: variable 'target' set but not used [-Wunused-but-set-variable]
+ 1636 |             if (auto* target = findCurrentTextInputTarget())
+      |                       ^
+2 warnings generated.
