@@ -3,7 +3,10 @@ package main
 // Reconnaissance automatique du type d'un son (lead, pad, basse, guitare, piano, orgue…) :
 // d'après son nom, le nom du fichier, et pour les SoundFont le numéro de programme General MIDI.
 
-import "strings"
+import (
+	"path/filepath"
+	"strings"
+)
 
 var accentFold = strings.NewReplacer("é", "e", "è", "e", "ê", "e", "ë", "e", "à", "a", "â", "a", "ä", "a",
 	"ô", "o", "ö", "o", "î", "i", "ï", "i", "ù", "u", "û", "u", "ü", "u", "ç", "c", "œ", "oe", "ñ", "n",
@@ -113,31 +116,22 @@ func iconFromGM(prog int) int {
 	return icLayers
 }
 
-// soundIcon : choix final. fileName = nom du fichier (SoundFont ou audio), bank/prog = numéros du preset SoundFont.
+// soundIcon : icône d'une piste. Même classement que la bibliothèque (libcat.go) : un lead a toujours l'icône d'un lead.
+// fileName = chemin ou nom du fichier (SoundFont ou audio), bank/prog = numéros du preset SoundFont.
 func soundIcon(name, fileName string, isSF bool, bank, prog int) int {
-	if isSF && bank == 128 { // banque des batteries
-		return icDrum
+	var dirs []string
+	if d := filepath.Base(filepath.Dir(fileName)); d != "." && d != "/" && d != "" {
+		dirs = []string{d}
 	}
-	if k := iconFromName(name); k >= 0 {
-		return k
-	}
-	if isSF && bank == 0 {
-		if k := iconFromGM(prog); k >= 0 && !genericName(name) {
-			return k
-		}
-	}
-	if k := iconFromName(fileName); k >= 0 {
-		return k
-	}
-	if isSF && bank == 0 {
-		if k := iconFromGM(prog); k >= 0 {
-			return k
-		}
-	}
+	presets := 1
 	if isSF {
-		return icKeys
+		presets = 8 // nombre inconnu ici : le nom du son passe d'abord, puis le fichier
 	}
-	return icBars
+	cat := libCat(name, fileName, isSF, bank, prog, presets, dirs)
+	if cat == catOther && !isSF {
+		return icBars
+	}
+	return catIcons[cat]
 }
 
 // un nom comme « Preset 5 » ou « 012 » ne dit rien : le numéro de programme décide

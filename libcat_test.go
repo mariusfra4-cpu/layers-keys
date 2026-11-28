@@ -112,9 +112,17 @@ func TestLibCatClientCases(t *testing.T) {
 		{"Organ Perc B3", "/sons/B3.sf2", true, 0, 0, 1, nil, catOrgan},
 		{"Perc Kit", "/sons/GM.sf2", true, 0, 0, 128, nil, catDrums},
 		{"Steel Drums", "/sons/GM.sf2", true, 0, 114, 128, nil, catBells},
+		// pack de leads (plusieurs sons, noms inventés, numéros 0, 1, 2…) : jamais dans PIANO
+		{"Nebula", "/sons/Leads Collection.sf2", true, 0, 0, 24, nil, catLead},
+		{"Arctic", "/sons/Leads Collection.sf2", true, 0, 1, 24, nil, catLead},
+		{"Nebula", "/sons/Mes Leads/Pack 2.sf2", true, 0, 2, 24, []string{"Mes Leads"}, catLead},
+		{"Nebula", "/sons/Pack 2.sf2", true, 0, 3, 24, nil, catOther},
+		{"Ld Saw Bright", "/sons/Pack 2.sf2", true, 0, 0, 24, nil, catLead},
+		{"Warm Pad", "/sons/Leads Collection.sf2", true, 0, 5, 24, nil, catPad}, // le nom du son reste prioritaire
 		// grand SoundFont General MIDI : le numéro de programme compte
 		{"Acoustic Grand Piano", "/sons/GM.sf2", true, 0, 0, 128, nil, catPiano},
 		{"Calliope", "/sons/GM.sf2", true, 0, 82, 128, nil, catLead},
+		{"Calliope", "/sons/FluidR3_GM.sf2", true, 0, 82, 40, nil, catLead},
 	}
 	for _, c := range cases {
 		if got := libCat(c.name, c.file, c.sf, c.bank, c.prog, c.presets, c.dirs); got != c.want {

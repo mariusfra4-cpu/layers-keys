@@ -58,7 +58,7 @@ type catRule struct {
 var catRules = []catRule{
 	{catDrums, []string{"drum", "batterie", " kit ", "kick", "snare", "caisse claire", " tom ", "cymbal",
 		"hihat", "hi hat", "conga", "bongo", "tambour", "timbal", "timpani", "cajon", "grosse caisse", "shaker", "tambourine", "clap"}},
-	{catLead, []string{" lead", "square lead", "sq lead", "solo synth", "synth solo", "mono synth", "monosynth", "squash",
+	{catLead, []string{" lead", " ld ", " ld1", " ld2", " ld3", "square lead", "sq lead", "solo synth", "synth solo", "mono synth", "monosynth", "squash",
 		"chiptune", " 8bit", "8 bit", "portamento", " glide", "whistle synth"}},
 	{catPad, []string{" pad", " nappe", "atmos", "ambien", "ambiance", "halo", "sweep", "evolv", "drone", "soundscape",
 		"texture", "celestial", "angelic", "ethereal", "worship", "warm str pad", "swell"}},
@@ -174,7 +174,9 @@ func libCat(name, file string, isSF bool, bank, prog, presets int, dirs []string
 		}
 		return -1
 	}
-	gmBank := isSF && bank == 0 && presets >= 8
+	// le numéro de programme n'a un sens que dans une vraie banque General MIDI (beaucoup de sons, ou un nom qui le dit) :
+	// dans un pack de leads, de pads… les numéros commencent à 0 (= « piano » en General MIDI) et ne veulent rien dire
+	gmBank := isSF && bank == 0 && (presets >= 64 || isGMFile(file))
 	if !isSF || presets < 8 {
 		if k := fromFile(); k >= 0 {
 			return k
@@ -187,12 +189,7 @@ func libCat(name, file string, isSF bool, bank, prog, presets int, dirs []string
 	if k := catFromName(name); k >= 0 {
 		return k
 	}
-	if gmBank && !genericName(name) {
-		if k := catFromGM(prog); k >= 0 {
-			return k
-		}
-	}
-	if k := fromFile(); k >= 0 {
+	if k := fromFile(); k >= 0 { // « Leads Collection.sf2 », dossier « Pads »… : avant le numéro
 		return k
 	}
 	if gmBank {
@@ -201,4 +198,15 @@ func libCat(name, file string, isSF bool, bank, prog, presets int, dirs []string
 		}
 	}
 	return catOther
+}
+
+// isGMFile : le nom du fichier dit que c'est une banque General MIDI
+func isGMFile(file string) bool {
+	n := foldName(baseNoExt(file))
+	for _, k := range []string{" gm ", " gm", "gm ", "general midi", "generaluser", "general user", " gs ", " xg ", "fluid", "timgm", "arachno", "sgm ", "musescore general"} {
+		if strings.Contains(n, k) {
+			return true
+		}
+	}
+	return false
 }

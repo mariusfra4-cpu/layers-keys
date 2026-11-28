@@ -47,7 +47,7 @@ func TestLibraryScanAndCategories(t *testing.T) {
 	want := map[string]int{
 		"Concert Grand": catPiano, "Rhodes Mk1": catEPiano, "Hammond B3 full": catOrgan, "Saw Lead": catLead,
 		"Warm Worship": catPad, "Strings Ensemble": catStrings, "bruit": catOther, "Finger Bass": catBass,
-		"TestA": catPiano, "Drums": catDrums, // presets du SoundFont : numéro General MIDI, banque 128 = batterie
+		"TestA": catOther, "Drums": catDrums, // presets du SoundFont : numéro General MIDI, banque 128 = batterie
 	}
 	for n, c := range want {
 		got, ok := cat[n]

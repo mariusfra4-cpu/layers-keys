@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	libVersion  = 4    // 2 : colonne BASSE ; 3 : 14 familles ; 4 : SoundFont d'un seul son rangés d'après leur fichier
+	libVersion  = 5    // 2 : colonne BASSE ; 3 : 14 familles ; 4 : SF2 d'un seul son ; 5 : packs (fichier avant numéro GM)
 	libMaxFiles = 4000 // garde-fou : un dossier énorme (disque entier) ne doit pas bloquer le logiciel
 	libMaxDepth = 8
 )

@@ -16,7 +16,7 @@ func TestSoundIcon(t *testing.T) {
 	}{
 		{"Lead Squash", "", true, 8, 3, icWave},
 		{"Slow Lead", "", true, 0, 5, icWave},
-		{"Square Lead", "", true, 0, 80, icSquare},
+		{"Square Lead", "", true, 0, 80, icWave},
 		{"Warm Pad", "", true, 0, 89, icCloud},
 		{"Nappe Gospel", "", false, 0, 0, icCloud},
 		{"Electric Bass (finger)", "", true, 0, 33, icBass},
@@ -31,13 +31,14 @@ func TestSoundIcon(t *testing.T) {
 		{"String Ensemble 1", "", true, 0, 48, icStrings},
 		{"Gospel Choir", "", true, 0, 52, icVoice},
 		{"Trumpet", "", true, 0, 56, icBrass},
-		{"Flute", "", true, 0, 73, icWind},
+		{"Flute", "", true, 0, 73, icBrass},
 		{"Glockenspiel", "", true, 0, 9, icBell},
-		{"Preset 12", "", true, 0, 90, icCloud}, // nom vide de sens : programme GM = pad
-		{"Preset 3", "", true, 0, 56, icBrass},  // idem : cuivres
+		{"Preset 12", "GeneralUser GS.sf2", true, 0, 90, icCloud}, // nom vide de sens : programme GM = pad
+		{"Preset 3", "GeneralUser GS.sf2", true, 0, 56, icBrass},  // idem : cuivres
 		{"Bank 5", "Gospel Pads.sf2", true, 3, 7, icCloud},
 		{"Kit", "", true, 128, 0, icDrum},
 		{"Piste 1", "mon_son.wav", false, 0, 0, icBars},
+		{"Nebula", "/sons/Leads Collection.sf2", true, 0, 0, icWave}, // pack de leads : jamais l'icône du piano
 		{"intro", "Cinematic Strings.mp3", false, 0, 0, icStrings},
 	}
 	for _, c := range cases {
