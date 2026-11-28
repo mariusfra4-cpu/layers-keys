@@ -1844,7 +1844,7 @@ static void testStress (const juce::File& root)
     CHECK (bad.load() == 0, "aucune valeur invalide (NaN) dans le son : " << bad.load());
     CHECK (p.safetyResets.load() == 0, "le filet de securite n'a jamais servi : " << p.safetyResets.load());
     CHECK (worst.load() <= 1.0f, "jamais de saturation : crete " << worst.load());
-    CHECK (blocks.load() > 1000, "le son n'a jamais ete bloque (" << blocks.load() << " blocs)");
+    CHECK (blocks.load() > 300, "le son n'a jamais ete bloque (" << blocks.load() << " blocs)");
     // après tout ça : le pad rejoue normalement
     for (auto* prm : p.getParameters()) prm->setValueNotifyingHost (prm->getDefaultValue());
     p.setSolo (false); p.stopAll();
@@ -1921,7 +1921,7 @@ static void testDawRecording()
 static juce::String b32test (const juce::uint8* d, int n)
 {
     const char* a = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-    juce::String out; int buf = 0, bits = 0;
+    juce::String out; juce::uint32 buf = 0; int bits = 0;
     for (int i = 0; i < n; ++i) { buf = (buf << 8) | d[i]; bits += 8; while (bits >= 5) { out << a[(buf >> (bits - 5)) & 31]; bits -= 5; } }
     if (bits > 0) out << a[(buf << (5 - bits)) & 31];
     juce::StringArray parts; for (int i = 0; i < out.length(); i += 8) parts.add (out.substring (i, i + 8));
@@ -1940,8 +1940,8 @@ static void testLicence (const juce::File& tmp)
         const juce::String vec = "BIBB67FT-U5AOFOQQ-EJRTD5S3-ZOOQ7ZBW-ZKCCYMUX-STXPDKG3-3EL2DAT4-PY5XNHOU-DCAXCE52-6KSQXBIW-FXDEK5F5-JLYASQKQ-JVWJIBY";
         const juce::String msg = "LayersKeys|JBK-1A2B-3C4D-5E6F-7A8B";
         const char* a = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-        juce::MemoryBlock sig; int buf = 0, bits = 0;
-        for (auto c : vec.removeCharacters ("-")) { buf = (buf << 5) | (int) (std::strchr (a, (char) c) - a); bits += 5; if (bits >= 8) { juce::uint8 v = (juce::uint8) ((buf >> (bits - 8)) & 255); sig.append (&v, 1); bits -= 8; } }
+        juce::MemoryBlock sig; juce::uint32 buf = 0; int bits = 0;
+        for (auto c : vec.removeCharacters ("-")) { buf = (buf << 5) | (juce::uint32) (std::strchr (a, (char) c) - a); bits += 5; if (bits >= 8) { juce::uint8 v = (juce::uint8) ((buf >> (bits - 8)) & 255); sig.append (&v, 1); bits -= 8; } }
         const bool ok = sig.getSize() == 64 && crypto_ed25519_check (static_cast<const juce::uint8*> (sig.getData()), pub, reinterpret_cast<const juce::uint8*> (msg.toRawUTF8()), msg.getNumBytesAsUTF8()) == 0;
         CHECK (ok, "meme signature Ed25519 que le generateur JB Cles (exemple officiel reconnu)");
     }

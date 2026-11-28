@@ -57,7 +57,7 @@ static const char* const b32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 static juce::String base32 (const juce::uint8* d, int n)
 {
     juce::String out;
-    int buffer = 0, bits = 0;
+    juce::uint32 buffer = 0; int bits = 0;
     for (int i = 0; i < n; ++i)
     {
         buffer = (buffer << 8) | d[i]; bits += 8;
@@ -69,13 +69,13 @@ static juce::String base32 (const juce::uint8* d, int n)
 
 static bool unbase32 (const juce::String& s, juce::MemoryBlock& out)
 {
-    int buffer = 0, bits = 0;
+    juce::uint32 buffer = 0; int bits = 0;
     out.reset();
     for (auto c : s)
     {
         const char* p = std::strchr (b32, (char) c);
         if (c == 0 || p == nullptr) return false;
-        buffer = (buffer << 5) | (int) (p - b32); bits += 5;
+        buffer = (buffer << 5) | (juce::uint32) (p - b32); bits += 5;
         if (bits >= 8) { const juce::uint8 v = (juce::uint8) ((buffer >> (bits - 8)) & 255); out.append (&v, 1); bits -= 8; }
     }
     return true;
