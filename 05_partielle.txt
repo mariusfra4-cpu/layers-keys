@@ -1,0 +1,8 @@
+installer: choices changes file '/tmp/choix.xml' applied
+installer: Installing at base path /
+installer: The install was successful.
+application installée : OUI
+VST3 non installé : OUI (attendu)
+AU non installé : OUI (attendu)
+Layers Keys désinstallé.
+données effacées avec --data : OUI

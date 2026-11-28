@@ -1,0 +1,7 @@
+Layers Keys désinstallé.
+retiré : /Applications/Layers Keys.app
+retiré : /Applications/Désinstaller Layers Keys.app
+retiré : /Library/Audio/Plug-Ins/VST3/LayersKeys.vst3
+retiré : /Library/Audio/Plug-Ins/Components/LayersKeys.component
+données conservées après désinstallation (attendu) : OUI
+plus aucun reçu d'installation
