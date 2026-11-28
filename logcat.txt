@@ -1,0 +1,386 @@
+--------- beginning of main
+11-28 01:18:18.956   804   830 I PermissionControllerServiceImpl: Updating user sensitive for uid 10126
+11-28 01:18:18.920   561   561 W binder:561_14: type=1400 audit(0.0:21): avc: denied { getopt } for scontext=u:r:system_server:s0 tcontext=u:r:shell:s0 tclass=unix_stream_socket permissive=0
+--------- beginning of system
+11-28 01:18:18.965   561   590 W VoiceInteractionManager: no available voice recognition services found for user 0
+11-28 01:18:18.973   992   992 D CarrierSvcBindHelper: onPackageUpdateFinished: com.jbpraise.layerskeys
+11-28 01:18:18.973   992   992 D CarrierSvcBindHelper: No carrier app for: 0
+11-28 01:18:18.973   992   992 D CarrierSvcBindHelper: onPackageModified: com.jbpraise.layerskeys
+11-28 01:18:18.973   992   992 D CarrierSvcBindHelper: No carrier app for: 0
+11-28 01:18:18.975   992   992 D ImsResolver: maybeAddedImsService, packageName: com.jbpraise.layerskeys
+11-28 01:18:18.976  1403  2446 W KeyChain: Creating new DB.
+11-28 01:18:18.992   561  1730 I ActivityManager: Force stopping com.jbpraise.layerskeys appid=10126 user=0: from pid 2457
+11-28 01:18:18.994   992   992 D CarrierSvcBindHelper: onHandleForceStop: [com.jbpraise.layerskeys]
+11-28 01:18:18.994   992   992 D CarrierSvcBindHelper: No carrier app for: 0
+11-28 01:18:19.023   561   575 D CompatibilityChangeReporter: Compat change id reported: 161252188; UID 10126; state: ENABLED
+11-28 01:18:19.023   561   575 I ActivityTaskManager: START u0 {flg=0x10000000 cmp=com.jbpraise.layerskeys/.MainActivity} from uid 2000
+11-28 01:18:19.024   561   575 D CompatibilityChangeReporter: Compat change id reported: 194480991; UID 10126; state: ENABLED
+11-28 01:18:19.026   561   575 D CompatibilityChangeReporter: Compat change id reported: 174042980; UID 10126; state: DISABLED
+11-28 01:18:19.026   561   575 D CompatibilityChangeReporter: Compat change id reported: 184838306; UID 10126; state: DISABLED
+11-28 01:18:19.026   561   575 D CompatibilityChangeReporter: Compat change id reported: 185004937; UID 10126; state: DISABLED
+11-28 01:18:19.026   561   575 D CompatibilityChangeReporter: Compat change id reported: 197654537; UID 10126; state: ENABLED
+11-28 01:18:19.026   561   575 D CompatibilityChangeReporter: Compat change id reported: 205907456; UID 10126; state: ENABLED
+11-28 01:18:19.038   802   853 D SplashScreenView: Build android.window.SplashScreenView{2b2a459 V.E...... ......ID 0,0-0,0}
+11-28 01:18:19.038   802   853 D SplashScreenView: Icon: view: android.widget.ImageView{9f9481e V.ED..... ......I. 0,0-0,0 #10204dc android:id/splashscreen_icon_view} drawable: com.android.wm.shell.startingsurface.SplashscreenIconDrawableFactory$ImmobileIconDrawable@85108ff size: 160
+11-28 01:18:19.038   802   853 D SplashScreenView: Branding: view: android.view.View{f78b6cc G.ED..... ......I. 0,0-0,0 #10204db android:id/splashscreen_branding_view} drawable: null size w: 0 h: 0
+11-28 01:18:19.041   561   583 D CompatibilityChangeReporter: Compat change id reported: 135634846; UID 10126; state: DISABLED
+11-28 01:18:19.041   561  2391 D CoreBackPreview: Window{1f7380f u0 Splash Screen com.jbpraise.layerskeys}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@74cce7a, mPriority=0}
+11-28 01:18:19.043   561   592 D CompatibilityChangeReporter: Compat change id reported: 143937733; UID 10126; state: ENABLED
+11-28 01:18:19.048   561   571 I system_server: Background concurrent copying GC freed 261477(14MB) AllocSpace objects, 19(376KB) LOS objects, 49% free, 13MB/26MB, paused 44us,31us total 137.138ms
+11-28 01:18:19.055   361   361 D Zygote  : Forked child process 2466
+11-28 01:18:19.055   561   592 I ActivityManager: Start proc 2466:com.jbpraise.layerskeys/u0a126 for next-top-activity {com.jbpraise.layerskeys/com.jbpraise.layerskeys.MainActivity}
+11-28 01:18:19.059   802   959 W Parcel  : Expecting binder but got null!
+11-28 01:18:19.063  2466  2466 W aise.layerskeys: Unexpected CPU variant for x86: x86_64.
+11-28 01:18:19.063  2466  2466 W aise.layerskeys: Known variants: atom, sandybridge, silvermont, kabylake, default
+11-28 01:18:19.064   451   459 I adbd    : jdwp connection from 2466
+11-28 01:18:19.066   438   438 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+11-28 01:18:19.076  2466  2466 D CompatibilityChangeReporter: Compat change id reported: 171979766; UID 10126; state: ENABLED
+11-28 01:18:19.077   561   583 I ActivityTaskManager: Config changes=20000480 {1.0 310mcc260mnc [en_US] ldltr sw320dp w640dp h320dp 160dpi nrml long land finger qwerty/v/v -nav/h winConfig={ mBounds=Rect(0, 0 - 640, 320) mAppBounds=Rect(0, 0 - 640, 320) mMaxBounds=Rect(0, 0 - 640, 320) mDisplayRotation=ROTATION_90 mWindowingMode=fullscreen mDisplayWindowingMode=fullscreen mActivityType=undefined mAlwaysOnTop=undefined mRotation=ROTATION_90} as.2 s.110 fontWeightAdjustment=0}
+11-28 01:18:19.078   561   583 W ActivityTaskManager: Current config: {1.0 310mcc260mnc [en_US] ldltr sw320dp w320dp h640dp 160dpi nrml long port finger qwerty/v/v -nav/h winConfig={ mBounds=Rect(0, 0 - 320, 640) mAppBounds=Rect(0, 0 - 320, 640) mMaxBounds=Rect(0, 0 - 320, 640) mDisplayRotation=ROTATION_0 mWindowingMode=fullscreen mDisplayWindowingMode=fullscreen mActivityType=undefined mAlwaysOnTop=undefined mRotation=ROTATION_0} as.2 s.110 fontWeightAdjustment=0} unchanged for IME proc com.android.inputmethod.latin
+11-28 01:18:19.080   561   583 I WindowManager: Override config changes=20000480 {1.0 310mcc260mnc [en_US] ldltr sw320dp w640dp h320dp 160dpi nrml long land finger qwerty/v/v -nav/h winConfig={ mBounds=Rect(0, 0 - 640, 320) mAppBounds=Rect(0, 0 - 640, 320) mMaxBounds=Rect(0, 0 - 640, 320) mDisplayRotation=ROTATION_90 mWindowingMode=fullscreen mDisplayWindowingMode=fullscreen mActivityType=undefined mAlwaysOnTop=undefined mRotation=ROTATION_90} as.2 s.110 fontWeightAdjustment=0} for displayId=0
+11-28 01:18:19.080   561   583 V ActivityTaskManager: Sending to IME proc com.android.inputmethod.latin new config {1.0 310mcc260mnc [en_US] ldltr sw320dp w640dp h320dp 160dpi nrml long land finger qwerty/v/v -nav/h winConfig={ mBounds=Rect(0, 0 - 640, 320) mAppBounds=Rect(0, 0 - 640, 320) mMaxBounds=Rect(0, 0 - 640, 320) mDisplayRotation=ROTATION_90 mWindowingMode=fullscreen mDisplayWindowingMode=fullscreen mActivityType=undefined mAlwaysOnTop=undefined mRotation=ROTATION_90} as.2 s.154 fontWeightAdjustment=0}
+11-28 01:18:19.089  2466  2466 V GraphicsEnvironment: ANGLE Developer option for 'com.jbpraise.layerskeys' set to: 'default'
+11-28 01:18:19.089  2466  2466 V GraphicsEnvironment: ANGLE GameManagerService for com.jbpraise.layerskeys: false
+11-28 01:18:19.089  2466  2466 V GraphicsEnvironment: Neither updatable production driver nor prerelease driver is supported.
+11-28 01:18:19.090  2466  2466 D NetworkSecurityConfig: No Network Security Config specified, using platform default
+11-28 01:18:19.091  2466  2466 D NetworkSecurityConfig: No Network Security Config specified, using platform default
+11-28 01:18:19.092   802   802 D CentralSurfaces: Received new disable state: enaihbcrso.qingr (unchanged)
+11-28 01:18:19.095   561   583 I InputManager-JNI: Viewport [0] to add: local:4619827259835644672, isActive: true
+11-28 01:18:19.095   561   655 I InputReader: Reconfiguring input devices, changes=DISPLAY_INFO | 
+11-28 01:18:19.095   561   655 I InputReader: Touch device 'virtio_input_multi_touch_8' could not query the properties of its associated display.  The device will be inoperable until the display size becomes available.
+11-28 01:18:19.095   561   655 I InputReader: Touch device 'virtio_input_multi_touch_5' could not query the properties of its associated display.  The device will be inoperable until the display size becomes available.
+11-28 01:18:19.095   561   655 I InputReader: Touch device 'virtio_input_multi_touch_6' could not query the properties of its associated display.  The device will be inoperable until the display size becomes available.
+11-28 01:18:19.095   561   655 I InputReader: Touch device 'virtio_input_multi_touch_7' could not query the properties of its associated display.  The device will be inoperable until the display size becomes available.
+11-28 01:18:19.095   561   655 I InputReader: Touch device 'virtio_input_multi_touch_11' could not query the properties of its associated display.  The device will be inoperable until the display size becomes available.
+11-28 01:18:19.095   561   655 I InputReader: Touch device 'virtio_input_multi_touch_9' could not query the properties of its associated display.  The device will be inoperable until the display size becomes available.
+11-28 01:18:19.095   561   655 I InputReader: Touch device 'virtio_input_multi_touch_3' could not query the properties of its associated display.  The device will be inoperable until the display size becomes available.
+11-28 01:18:19.095   561   655 I InputReader: Touch device 'virtio_input_multi_touch_4' could not query the properties of its associated display.  The device will be inoperable until the display size becomes available.
+11-28 01:18:19.095   561   655 I InputReader: Touch device 'virtio_input_multi_touch_10' could not query the properties of its associated display.  The device will be inoperable until the display size becomes available.
+11-28 01:18:19.095   561   655 I InputReader: Touch device 'virtio_input_multi_touch_2' could not query the properties of its associated display.  The device will be inoperable until the display size becomes available.
+11-28 01:18:19.101   438   450 W TransactionTracing: Could not find layer handle 0x76af88a92a90
+11-28 01:18:19.101   438   450 W TransactionTracing: Could not find layer handle 0x76af88a93f30
+11-28 01:18:19.102   802   802 V WindowManagerShell: Display changed: 0
+11-28 01:18:19.111   920   953 E SystemServiceRegistry: No service published for: ethernet
+11-28 01:18:19.111   920   953 E SystemServiceRegistry: android.os.ServiceManager$ServiceNotFoundException: No service published for: ethernet
+11-28 01:18:19.111   920   953 E SystemServiceRegistry: 	at android.os.ServiceManager.getServiceOrThrow(ServiceManager.java:166)
+11-28 01:18:19.111   920   953 E SystemServiceRegistry: 	at android.app.SystemServiceRegistry$137.createService(SystemServiceRegistry.java:1825)
+11-28 01:18:19.111   920   953 E SystemServiceRegistry: 	at android.app.SystemServiceRegistry$CachedServiceFetcher.getService(SystemServiceRegistry.java:1924)
+11-28 01:18:19.111   920   953 E SystemServiceRegistry: 	at android.app.SystemServiceRegistry.getSystemService(SystemServiceRegistry.java:1601)
+11-28 01:18:19.111   920   953 E SystemServiceRegistry: 	at android.app.ContextImpl.getSystemService(ContextImpl.java:2120)
+11-28 01:18:19.111   920   953 E SystemServiceRegistry: 	at android.content.ContextWrapper.getSystemService(ContextWrapper.java:900)
+11-28 01:18:19.111   920   953 E SystemServiceRegistry: 	at com.android.networkstack.tethering.Tethering.isEthernetSupported(Tethering.java:1550)
+11-28 01:18:19.111   920   953 E SystemServiceRegistry: 	at com.android.networkstack.tethering.Tethering.makeSupportedDownstreams(Tethering.java:2509)
+11-28 01:18:19.111   920   953 E SystemServiceRegistry: 	at com.android.networkstack.tethering.Tethering.updateSupportedDownstreams(Tethering.java:2483)
+11-28 01:18:19.111   920   953 E SystemServiceRegistry: 	at com.android.networkstack.tethering.Tethering.updateConfiguration(Tethering.java:504)
+11-28 01:18:19.111   920   953 E SystemServiceRegistry: 	at com.android.networkstack.tethering.Tethering.-$$Nest$mupdateConfiguration(Unknown Source:0)
+11-28 01:18:19.111   920   953 E SystemServiceRegistry: 	at com.android.networkstack.tethering.Tethering$StateReceiver.onReceive(Tethering.java:1141)
+11-28 01:18:19.111   920   953 E SystemServiceRegistry: 	at android.app.LoadedApk$ReceiverDispatcher$Args.lambda$getRunnable$0$android-app-LoadedApk$ReceiverDispatcher$Args(LoadedApk.java:1790)
+11-28 01:18:19.111   920   953 E SystemServiceRegistry: 	at android.app.LoadedApk$ReceiverDispatcher$Args$$ExternalSyntheticLambda0.run(Unknown Source:2)
+11-28 01:18:19.111   920   953 E SystemServiceRegistry: 	at android.os.Handler.handleCallback(Handler.java:942)
+11-28 01:18:19.111   920   953 E SystemServiceRegistry: 	at android.os.Handler.dispatchMessage(Handler.java:99)
+11-28 01:18:19.111   920   953 E SystemServiceRegistry: 	at android.os.Looper.loopOnce(Looper.java:201)
+11-28 01:18:19.111   920   953 E SystemServiceRegistry: 	at android.os.Looper.loop(Looper.java:288)
+11-28 01:18:19.111   920   953 E SystemServiceRegistry: 	at android.os.HandlerThread.run(HandlerThread.java:67)
+11-28 01:18:19.111   802   802 W View    : requestLayout() improperly called by com.android.keyguard.AlphaOptimizedLinearLayout{7a2e3af V.E...... ......ID 3,0-18,22 #7f0a0742 app:id/wifi_group} during layout: running second layout pass
+11-28 01:18:19.125  2466  2466 I AAudio  : AAudioStreamBuilder_openStream() called ----------------------------------------
+11-28 01:18:19.125  2466  2466 I AudioStreamBuilder: rate   =      0, channels  = 2, channelMask = 0x80000003, format   = 5, sharing = SH, dir = OUTPUT
+11-28 01:18:19.125  2466  2466 I AudioStreamBuilder: device =      0, sessionId = -1, perfMode = 12, callback: ON with frames = 0
+11-28 01:18:19.125  2466  2466 I AudioStreamBuilder: usage  =      0, contentType = 0, inputPreset = 0, allowedCapturePolicy = 0
+11-28 01:18:19.125  2466  2466 I AudioStreamBuilder: privacy sensitive = false, opPackageName = (null), attributionTag = (null)
+11-28 01:18:19.126  2466  2466 D aise.layerskeys: PlayerBase::PlayerBase()
+11-28 01:18:19.126  2466  2466 D AudioStreamTrack: open(), request notificationFrames = -8, frameCount = 0
+11-28 01:18:19.129   420  2432 W AudioFlinger: createTrack_l(): mismatch between requested flags (00000104) and output flags (00000002)
+11-28 01:18:19.130   420  2432 D AudioFlinger: Client defaulted notificationFrames to 960 for frameCount 2116
+11-28 01:18:19.130   420  2432 D AF::TrackHandle: OpPlayAudio: track:56 usage:1 not muted
+11-28 01:18:19.131  2466  2466 D AudioStreamTrack: open() flags changed from 0x00000104 to 0x00000000
+11-28 01:18:19.131  2466  2466 D AudioStreamTrack: open() perfMode changed from 12 to 10
+11-28 01:18:19.131  2466  2466 D AAudioStream: setState(s#1) from 0 to 2
+11-28 01:18:19.131  2466  2466 I AAudio  : AAudioStreamBuilder_openStream() returns 0 = AAUDIO_OK for s#1 ----------------
+11-28 01:18:19.131  2466  2466 D AAudio  : AAudioStream_requestStart(s#1) called --------------
+11-28 01:18:19.131  2466  2466 D AAudioStream: setState(s#1) from 2 to 3
+11-28 01:18:19.132  2466  2466 D AAudio  : AAudioStream_requestStart(s#1) returned 0 ---------
+11-28 01:18:19.132  2466  2466 I LayersKeys: audio ouvert : 48000 Hz, rafale 960, tampon 2116
+11-28 01:18:19.136   438   450 W TransactionTracing: Could not find layer handle 0x76af88a93810
+11-28 01:18:19.141  2466  2482 D AudioStreamLegacy: onAudioDeviceUpdate(deviceId = 2)
+11-28 01:18:19.142   561   575 W WindowManager: Failed looking up window session=Session{d30f5ec 2466:u0a10126} callers=com.android.server.wm.WindowManagerService.windowForClientLocked:5972 com.android.server.wm.Session.updateRequestedVisibilities:701 android.view.IWindowSession$Stub.onTransact:1075 
+11-28 01:18:19.143   561   847 D CoreBackPreview: Window{37757bb u0 com.jbpraise.layerskeys/com.jbpraise.layerskeys.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@4eb9031, mPriority=0}
+11-28 01:18:19.150  2466  2493 D AAudioStream: setState(s#1) from 3 to 4
+11-28 01:18:19.158  2466  2492 D libEGL  : loaded /vendor/lib64/egl/libEGL_emulation.so
+11-28 01:18:19.163  2466  2492 D libEGL  : loaded /vendor/lib64/egl/libGLESv1_CM_emulation.so
+11-28 01:18:19.166  2466  2492 D libEGL  : loaded /vendor/lib64/egl/libGLESv2_emulation.so
+11-28 01:18:19.188  2466  2485 D HostConnection: HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_has_shared_slots_host_memory_allocator ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_vulkan_queue_submit_with_commands ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_read_color_buffer_dma ANDROID_EMU_hwc_multi_configs ANDROID_EMU_hwc_color_transform ANDROID_EMU_hwc_display_power_mode GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0 
+11-28 01:18:19.189  2466  2485 W OpenGLRenderer: Failed to initialize 101010-2 format, error = EGL_SUCCESS
+11-28 01:18:19.190  2466  2485 D EGL_emulation: eglCreateContext: 0x7a5249c92bd0: maj 3 min 0 rcv 3
+11-28 01:18:19.190  2466  2485 D EGL_emulation: eglMakeCurrent: 0x7a5249c92bd0: ver 3 0 (tinfo 0x7a546b144100) (first time)
+11-28 01:18:19.196   210   210 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.mapper@4.0::IMapper/default in either framework or device VINTF manifest.
+11-28 01:18:19.196  2466  2485 I Gralloc4: mapper 4.x is not supported
+11-28 01:18:19.206   210   210 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.allocator@4.0::IAllocator/default in either framework or device VINTF manifest.
+11-28 01:18:19.206   209   209 I servicemanager: Could not find android.hardware.graphics.allocator.IAllocator/default in the VINTF manifest.
+11-28 01:18:19.206  2466  2485 W Gralloc4: allocator 4.x is not supported
+11-28 01:18:19.211  2466  2485 D HostConnection: HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_has_shared_slots_host_memory_allocator ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_vulkan_queue_submit_with_commands ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_read_color_buffer_dma ANDROID_EMU_hwc_multi_configs ANDROID_EMU_hwc_color_transform ANDROID_EMU_hwc_display_power_mode GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0 
+11-28 01:18:19.339   420   540 D AudioFlinger: mixer(0x70e93d25f9a0) throttle end: throttle time(24)
+11-28 01:18:19.385  2466  2485 W Parcel  : Expecting binder but got null!
+11-28 01:18:19.387   561   580 I ActivityTaskManager: Displayed com.jbpraise.layerskeys/.MainActivity: +370ms
+11-28 01:18:19.406   561   575 D CoreBackPreview: Window{1f7380f u0 Splash Screen com.jbpraise.layerskeys EXITING}: Setting back callback null
+11-28 01:18:19.406   561  2391 W InputManager-JNI: Input channel object '1f7380f Splash Screen com.jbpraise.layerskeys (client)' was disposed without first being removed with the input manager!
+11-28 01:18:19.407   561  2391 D CompatibilityChangeReporter: Compat change id reported: 214016041; UID 10126; state: ENABLED
+11-28 01:18:19.416   438   450 W TransactionTracing: Could not find layer handle 0x76af88a92850
+11-28 01:18:19.432   438   450 W TransactionTracing: Could not find layer handle 0x76af88a88ad0
+11-28 01:18:19.432   438   450 W TransactionTracing: Could not find layer handle 0x76af88a92490
+11-28 01:18:19.432   438   450 W TransactionTracing: Could not find layer handle 0x76af88a94f50
+11-28 01:18:19.432   438   450 W TransactionTracing: Could not find layer handle 0x76af88a92550
+11-28 01:18:19.432   438   450 W TransactionTracing: Could not find layer handle 0x76af88a92550
+11-28 01:18:19.432   438   450 W TransactionTracing: Could not find layer handle 0x76af88a94f50
+11-28 01:18:19.665   438   450 W TransactionTracing: Could not find layer handle 0x76af88a930f0
+11-28 01:18:22.349  2466  2466 I LayersKeys: état audio=343 frames=156292 midi=0 notes=0 images=2
+11-28 01:18:22.759   561  1947 E TaskPersister: File error accessing recents directory (directory doesn't exist?).
+11-28 01:18:25.349  2466  2466 I LayersKeys: état audio=663 frames=300480 midi=0 notes=0 images=2
+11-28 01:18:28.097  2502  2502 W ProcessState: Extra binder thread started, but 0 threads requested. Do not use *startThreadPool when zero threads are requested.
+11-28 01:18:28.102   210   210 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.mapper@4.0::IMapper/default in either framework or device VINTF manifest.
+11-28 01:18:28.102  2502  2503 I Gralloc4: mapper 4.x is not supported
+11-28 01:18:28.112  2502  2503 D HostConnection: HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_has_shared_slots_host_memory_allocator ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_vulkan_queue_submit_with_commands ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_read_color_buffer_dma ANDROID_EMU_hwc_multi_configs ANDROID_EMU_hwc_color_transform ANDROID_EMU_hwc_display_power_mode GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0 
+11-28 01:18:28.216  2466  2485 D EGL_emulation: app_time_stats: avg=4418.08ms min=11.58ms max=8824.59ms count=2
+11-28 01:18:28.350  2466  2466 I LayersKeys: état audio=982 frames=444580 midi=0 notes=1 images=9
+11-28 01:18:28.973   561   580 D OomAdjuster: Not killing cached processes
+11-28 01:18:28.979   230  2456 I keystore2: keystore2::watchdog: Watchdog thread idle -> terminating. Have a great day.
+11-28 01:18:29.237  2466  2485 D EGL_emulation: app_time_stats: avg=27.23ms min=3.50ms max=34.48ms count=36
+11-28 01:18:30.666  2522  2522 W ProcessState: Extra binder thread started, but 0 threads requested. Do not use *startThreadPool when zero threads are requested.
+11-28 01:18:30.670   210   210 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.mapper@4.0::IMapper/default in either framework or device VINTF manifest.
+11-28 01:18:30.670  2522  2523 I Gralloc4: mapper 4.x is not supported
+11-28 01:18:30.682  2522  2523 D HostConnection: HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_has_shared_slots_host_memory_allocator ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_vulkan_queue_submit_with_commands ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_read_color_buffer_dma ANDROID_EMU_hwc_multi_configs ANDROID_EMU_hwc_color_transform ANDROID_EMU_hwc_display_power_mode GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0 
+11-28 01:18:30.748   561   847 D WifiNl80211Manager: Scan result ready event
+11-28 01:18:30.748   561   847 D WifiNative: Scan result ready event
+11-28 01:18:31.349  2466  2466 I LayersKeys: état audio=1299 frames=588196 midi=0 notes=3 images=43
+--------- beginning of kernel
+11-28 01:18:34.519     0     0 I logd    : logdr: UID=2000 GID=2000 PID=2525 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns
+11-28 01:18:34.351  2466  2466 I LayersKeys: état audio=1619 frames=732480 midi=0 notes=3 images=44
+11-28 01:18:34.354  2466  2485 D EGL_emulation: app_time_stats: avg=1023.25ms min=18.65ms max=4999.95ms count=5
+11-28 01:18:34.413   561   739 E WifiHealthMonitor:  Hit PackageManager exception
+11-28 01:18:34.413   561   739 E WifiHealthMonitor: android.content.pm.PackageManager$NameNotFoundException: No module info for package: com.android.wifi
+11-28 01:18:34.413   561   739 E WifiHealthMonitor: 	at android.app.ApplicationPackageManager.getModuleInfo(ApplicationPackageManager.java:1187)
+11-28 01:18:34.413   561   739 E WifiHealthMonitor: 	at com.android.server.wifi.WifiHealthMonitor.getWifiStackVersion(WifiHealthMonitor.java:366)
+11-28 01:18:34.413   561   739 E WifiHealthMonitor: 	at com.android.server.wifi.WifiHealthMonitor.extractCurrentSoftwareBuildInfo(WifiHealthMonitor.java:587)
+11-28 01:18:34.413   561   739 E WifiHealthMonitor: 	at com.android.server.wifi.WifiHealthMonitor.postBootSwBuildCheck(WifiHealthMonitor.java:522)
+11-28 01:18:34.413   561   739 E WifiHealthMonitor: 	at com.android.server.wifi.WifiHealthMonitor.postBootDetectionHandler(WifiHealthMonitor.java:513)
+11-28 01:18:34.413   561   739 E WifiHealthMonitor: 	at com.android.server.wifi.WifiHealthMonitor.-$$Nest$mpostBootDetectionHandler(Unknown Source:0)
+11-28 01:18:34.413   561   739 E WifiHealthMonitor: 	at com.android.server.wifi.WifiHealthMonitor$2.onAlarm(WifiHealthMonitor.java:190)
+11-28 01:18:34.413   561   739 E WifiHealthMonitor: 	at android.app.AlarmManager$ListenerWrapper.run(AlarmManager.java:347)
+11-28 01:18:34.413   561   739 E WifiHealthMonitor: 	at android.os.Handler.handleCallback(Handler.java:942)
+11-28 01:18:34.413   561   739 E WifiHealthMonitor: 	at android.os.Handler.dispatchMessage(Handler.java:99)
+11-28 01:18:34.413   561   739 E WifiHealthMonitor: 	at android.os.Looper.loopOnce(Looper.java:201)
+11-28 01:18:34.413   561   739 E WifiHealthMonitor: 	at android.os.Looper.loop(Looper.java:288)
+11-28 01:18:34.413   561   739 E WifiHealthMonitor: 	at android.os.HandlerThread.run(HandlerThread.java:67)
+11-28 01:18:36.391  2535  2535 W ProcessState: Extra binder thread started, but 0 threads requested. Do not use *startThreadPool when zero threads are requested.
+11-28 01:18:36.396   210   210 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.mapper@4.0::IMapper/default in either framework or device VINTF manifest.
+11-28 01:18:36.396  2535  2536 I Gralloc4: mapper 4.x is not supported
+11-28 01:18:36.405  2535  2536 D HostConnection: HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_has_shared_slots_host_memory_allocator ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_vulkan_queue_submit_with_commands ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_read_color_buffer_dma ANDROID_EMU_hwc_multi_configs ANDROID_EMU_hwc_color_transform ANDROID_EMU_hwc_display_power_mode GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0 
+11-28 01:18:37.349  2466  2466 I LayersKeys: état audio=1938 frames=876484 midi=0 notes=3 images=44
+11-28 01:18:38.848     0     0 W healthd : battery l=100 v=5000 t=25.0 h=2 st=2 c=900000 fc=3000000 cc=10 chg=a
+11-28 01:18:40.229     0     0 I logd    : logdr: UID=2000 GID=2000 PID=2538 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns
+11-28 01:18:40.071  2466  2485 D EGL_emulation: app_time_stats: avg=5716.50ms min=5716.50ms max=5716.50ms count=1
+11-28 01:18:40.350  2466  2466 I LayersKeys: état audio=2258 frames=1020480 midi=0 notes=4 images=54
+11-28 01:18:41.087  2466  2485 D EGL_emulation: app_time_stats: avg=29.01ms min=14.37ms max=36.56ms count=35
+11-28 01:18:41.938   802   959 D EGL_emulation: app_time_stats: avg=11407.30ms min=5.30ms max=22809.29ms count=2
+11-28 01:18:42.088  2466  2485 D EGL_emulation: app_time_stats: avg=24.40ms min=9.81ms max=33.79ms count=41
+11-28 01:18:43.349  2466  2466 I LayersKeys: état audio=2577 frames=1164480 midi=0 notes=29 images=143
+11-28 01:18:43.693  2568  2568 W ProcessState: Extra binder thread started, but 0 threads requested. Do not use *startThreadPool when zero threads are requested.
+11-28 01:18:43.697   210   210 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.mapper@4.0::IMapper/default in either framework or device VINTF manifest.
+11-28 01:18:43.697  2568  2569 I Gralloc4: mapper 4.x is not supported
+11-28 01:18:43.706  2568  2569 D HostConnection: HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_has_shared_slots_host_memory_allocator ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_vulkan_queue_submit_with_commands ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_read_color_buffer_dma ANDROID_EMU_hwc_multi_configs ANDROID_EMU_hwc_color_transform ANDROID_EMU_hwc_display_power_mode GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0 
+11-28 01:18:46.349  2466  2466 I LayersKeys: état audio=2895 frames=1308388 midi=0 notes=29 images=143
+11-28 01:18:47.527     0     0 I logd    : logdr: UID=2000 GID=2000 PID=2571 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns
+11-28 01:18:47.352   561   581 D AutofillManagerService: onBackKeyPressed()
+11-28 01:18:47.352   561   581 D AutofillManagerServiceImpl: Reset component for user 0:
+11-28 01:18:47.352   561   581 D AutofillUI: destroySaveUiUiThread(): already destroyed
+11-28 01:18:47.356   561   561 D OomAdjuster: Not killing cached processes
+11-28 01:18:47.372  2466  2485 D EGL_emulation: app_time_stats: avg=229.70ms min=13.65ms max=4686.97ms count=23
+11-28 01:18:48.317   804   830 I PermissionControllerServiceImpl: Updating user sensitive for user 0
+11-28 01:18:48.908  2581  2581 W ProcessState: Extra binder thread started, but 0 threads requested. Do not use *startThreadPool when zero threads are requested.
+11-28 01:18:48.912   210   210 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.mapper@4.0::IMapper/default in either framework or device VINTF manifest.
+11-28 01:18:48.912  2581  2582 I Gralloc4: mapper 4.x is not supported
+11-28 01:18:48.922  2581  2582 D HostConnection: HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_has_shared_slots_host_memory_allocator ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_vulkan_queue_submit_with_commands ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_read_color_buffer_dma ANDROID_EMU_hwc_multi_configs ANDROID_EMU_hwc_color_transform ANDROID_EMU_hwc_display_power_mode GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0 
+11-28 01:18:49.005  2466  2485 D EGL_emulation: app_time_stats: avg=1632.29ms min=1632.29ms max=1632.29ms count=1
+11-28 01:18:49.349  2466  2466 I LayersKeys: état audio=3215 frames=1452480 midi=0 notes=29 images=146
+11-28 01:18:50.525  2591  2591 W ProcessState: Extra binder thread started, but 0 threads requested. Do not use *startThreadPool when zero threads are requested.
+11-28 01:18:50.529   210   210 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.mapper@4.0::IMapper/default in either framework or device VINTF manifest.
+11-28 01:18:50.529  2591  2592 I Gralloc4: mapper 4.x is not supported
+11-28 01:18:50.539  2591  2592 D HostConnection: HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_has_shared_slots_host_memory_allocator ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_vulkan_queue_submit_with_commands ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_read_color_buffer_dma ANDROID_EMU_hwc_multi_configs ANDROID_EMU_hwc_color_transform ANDROID_EMU_hwc_display_power_mode GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0 
+11-28 01:18:50.577   561   580 D AutofillManagerService: Close system dialogs
+11-28 01:18:50.578   561   581 I ActivityTaskManager: START u0 {act=android.intent.action.MAIN cat=[android.intent.category.HOME] flg=0x10000100 cmp=com.android.launcher3/.uioverrides.QuickstepLauncher (has extras)} from uid 0
+11-28 01:18:50.581   802   802 V ShadeControllerImpl: NotificationShadeWindow: com.android.systemui.shade.NotificationShadeWindowView{bfe8051 I.E...... ......ID 0,0-320,640} canPanelBeCollapsed(): false
+11-28 01:18:50.584   561   581 D CompatibilityChangeReporter: Compat change id reported: 197654537; UID 10126; state: ENABLED
+11-28 01:18:50.584  1048  1048 D TaplTarget: Launcher.onNewIntent: Intent { act=android.intent.action.MAIN cat=[android.intent.category.HOME] flg=0x10400100 cmp=com.android.launcher3/.uioverrides.QuickstepLauncher (has extras) }
+11-28 01:18:50.584  2466  2466 D AAudio  : AAudioStream_requestStop(s#1) called
+11-28 01:18:50.584  2466  2466 D AAudioStream: setState(s#1) from 4 to 9
+11-28 01:18:50.584  2466  2466 D AudioTrack: stop(16): called with 1512000 frames delivered
+11-28 01:18:50.585  2466  2466 D AAudio  : AAudioStream_close(s#1) called ---------------
+11-28 01:18:50.585  2466  2466 D AAudioStream: setState(s#1) from 9 to 11
+11-28 01:18:50.586  2466  2466 D AAudioStream: setState(s#1) from 11 to 12
+11-28 01:18:50.586  2466  2466 D AAudioStream: ~AudioStream(s#1) mPlayerBase strongCount = 2
+11-28 01:18:50.586  2466  2466 D AAudio  : AAudioStream_close(s#1) returned 0 ---------
+11-28 01:18:50.587   561   580 D AutofillManagerService: Close system dialogs
+11-28 01:18:50.588   802   802 V ShadeControllerImpl: NotificationShadeWindow: com.android.systemui.shade.NotificationShadeWindowView{bfe8051 I.E...... ......ID 0,0-320,640} canPanelBeCollapsed(): false
+11-28 01:18:50.599   438   438 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+11-28 01:18:50.609   438   798 D PermissionCache: checking android.permission.READ_FRAME_BUFFER for uid=1000 => granted (204 us)
+11-28 01:18:50.616   438   450 W TransactionTracing: Could not find layer handle 0x76af88a92190
+11-28 01:18:50.620   561   583 I ActivityTaskManager: Config changes=20000480 {1.0 310mcc260mnc [en_US] ldltr sw320dp w320dp h640dp 160dpi nrml long port finger qwerty/v/v -nav/h winConfig={ mBounds=Rect(0, 0 - 320, 640) mAppBounds=Rect(0, 0 - 320, 640) mMaxBounds=Rect(0, 0 - 320, 640) mDisplayRotation=ROTATION_0 mWindowingMode=fullscreen mDisplayWindowingMode=fullscreen mActivityType=undefined mAlwaysOnTop=undefined mRotation=ROTATION_0} as.2 s.157 fontWeightAdjustment=0}
+11-28 01:18:50.621   561   583 W ActivityTaskManager: Current config: {1.0 310mcc260mnc [en_US] ldltr sw320dp w640dp h320dp 160dpi nrml long land finger qwerty/v/v -nav/h winConfig={ mBounds=Rect(0, 0 - 640, 320) mAppBounds=Rect(0, 0 - 640, 320) mMaxBounds=Rect(0, 0 - 640, 320) mDisplayRotation=ROTATION_90 mWindowingMode=fullscreen mDisplayWindowingMode=fullscreen mActivityType=undefined mAlwaysOnTop=undefined mRotation=ROTATION_90} as.2 s.157 fontWeightAdjustment=0} unchanged for IME proc com.android.inputmethod.latin
+11-28 01:18:50.621   561   583 I WindowManager: Override config changes=20000480 {1.0 310mcc260mnc [en_US] ldltr sw320dp w320dp h640dp 160dpi nrml long port finger qwerty/v/v -nav/h winConfig={ mBounds=Rect(0, 0 - 320, 640) mAppBounds=Rect(0, 0 - 320, 640) mMaxBounds=Rect(0, 0 - 320, 640) mDisplayRotation=ROTATION_0 mWindowingMode=fullscreen mDisplayWindowingMode=fullscreen mActivityType=undefined mAlwaysOnTop=undefined mRotation=ROTATION_0} as.2 s.157 fontWeightAdjustment=0} for displayId=0
+11-28 01:18:50.622   561   583 V ActivityTaskManager: Sending to IME proc com.android.inputmethod.latin new config {1.0 310mcc260mnc [en_US] ldltr sw320dp w320dp h640dp 160dpi nrml long port finger qwerty/v/v -nav/h winConfig={ mBounds=Rect(0, 0 - 320, 640) mAppBounds=Rect(0, 0 - 320, 640) mMaxBounds=Rect(0, 0 - 320, 640) mDisplayRotation=ROTATION_0 mWindowingMode=fullscreen mDisplayWindowingMode=fullscreen mActivityType=undefined mAlwaysOnTop=undefined mRotation=ROTATION_0} as.2 s.201 fontWeightAdjustment=0}
+11-28 01:18:50.622   561   583 D CompatibilityChangeReporter: Compat change id reported: 174042980; UID 10126; state: DISABLED
+11-28 01:18:50.622   561   583 D CompatibilityChangeReporter: Compat change id reported: 184838306; UID 10126; state: DISABLED
+11-28 01:18:50.622   561   583 D CompatibilityChangeReporter: Compat change id reported: 185004937; UID 10126; state: DISABLED
+11-28 01:18:50.622   561   583 D CompatibilityChangeReporter: Compat change id reported: 181136395; UID 10126; state: DISABLED
+11-28 01:18:50.622   561   583 D CompatibilityChangeReporter: Compat change id reported: 174042936; UID 10126; state: DISABLED
+11-28 01:18:50.627   802   802 V WindowManagerShell: Display changed: 0
+11-28 01:18:50.627   561   583 I InputManager-JNI: Viewport [0] to add: local:4619827259835644672, isActive: true
+11-28 01:18:50.627   561   655 I InputReader: Reconfiguring input devices, changes=DISPLAY_INFO | 
+11-28 01:18:50.628   561   655 I InputReader: Touch device 'virtio_input_multi_touch_8' could not query the properties of its associated display.  The device will be inoperable until the display size becomes available.
+11-28 01:18:50.628   561   655 I InputReader: Touch device 'virtio_input_multi_touch_5' could not query the properties of its associated display.  The device will be inoperable until the display size becomes available.
+11-28 01:18:50.628   561   655 I InputReader: Touch device 'virtio_input_multi_touch_6' could not query the properties of its associated display.  The device will be inoperable until the display size becomes available.
+11-28 01:18:50.628   561   655 I InputReader: Touch device 'virtio_input_multi_touch_7' could not query the properties of its associated display.  The device will be inoperable until the display size becomes available.
+11-28 01:18:50.628   561   655 I InputReader: Touch device 'virtio_input_multi_touch_11' could not query the properties of its associated display.  The device will be inoperable until the display size becomes available.
+11-28 01:18:50.628   561   655 I InputReader: Touch device 'virtio_input_multi_touch_9' could not query the properties of its associated display.  The device will be inoperable until the display size becomes available.
+11-28 01:18:50.628   561   655 I InputReader: Touch device 'virtio_input_multi_touch_3' could not query the properties of its associated display.  The device will be inoperable until the display size becomes available.
+11-28 01:18:50.628   561   655 I InputReader: Touch device 'virtio_input_multi_touch_4' could not query the properties of its associated display.  The device will be inoperable until the display size becomes available.
+11-28 01:18:50.628   561   655 I InputReader: Touch device 'virtio_input_multi_touch_10' could not query the properties of its associated display.  The device will be inoperable until the display size becomes available.
+11-28 01:18:50.629   561   655 I InputReader: Touch device 'virtio_input_multi_touch_2' could not query the properties of its associated display.  The device will be inoperable until the display size becomes available.
+11-28 01:18:50.640   920   953 E SystemServiceRegistry: No service published for: ethernet
+11-28 01:18:50.640   920   953 E SystemServiceRegistry: android.os.ServiceManager$ServiceNotFoundException: No service published for: ethernet
+11-28 01:18:50.640   920   953 E SystemServiceRegistry: 	at android.os.ServiceManager.getServiceOrThrow(ServiceManager.java:166)
+11-28 01:18:50.640   920   953 E SystemServiceRegistry: 	at android.app.SystemServiceRegistry$137.createService(SystemServiceRegistry.java:1825)
+11-28 01:18:50.640   920   953 E SystemServiceRegistry: 	at android.app.SystemServiceRegistry$CachedServiceFetcher.getService(SystemServiceRegistry.java:1924)
+11-28 01:18:50.640   920   953 E SystemServiceRegistry: 	at android.app.SystemServiceRegistry.getSystemService(SystemServiceRegistry.java:1601)
+11-28 01:18:50.640   920   953 E SystemServiceRegistry: 	at android.app.ContextImpl.getSystemService(ContextImpl.java:2120)
+11-28 01:18:50.640   920   953 E SystemServiceRegistry: 	at android.content.ContextWrapper.getSystemService(ContextWrapper.java:900)
+11-28 01:18:50.640   920   953 E SystemServiceRegistry: 	at com.android.networkstack.tethering.Tethering.isEthernetSupported(Tethering.java:1550)
+11-28 01:18:50.640   920   953 E SystemServiceRegistry: 	at com.android.networkstack.tethering.Tethering.makeSupportedDownstreams(Tethering.java:2509)
+11-28 01:18:50.640   920   953 E SystemServiceRegistry: 	at com.android.networkstack.tethering.Tethering.updateSupportedDownstreams(Tethering.java:2483)
+11-28 01:18:50.640   920   953 E SystemServiceRegistry: 	at com.android.networkstack.tethering.Tethering.updateConfiguration(Tethering.java:504)
+11-28 01:18:50.640   920   953 E SystemServiceRegistry: 	at com.android.networkstack.tethering.Tethering.-$$Nest$mupdateConfiguration(Unknown Source:0)
+11-28 01:18:50.640   920   953 E SystemServiceRegistry: 	at com.android.networkstack.tethering.Tethering$StateReceiver.onReceive(Tethering.java:1141)
+11-28 01:18:50.640   920   953 E SystemServiceRegistry: 	at android.app.LoadedApk$ReceiverDispatcher$Args.lambda$getRunnable$0$android-app-LoadedApk$ReceiverDispatcher$Args(LoadedApk.java:1790)
+11-28 01:18:50.640   920   953 E SystemServiceRegistry: 	at android.app.LoadedApk$ReceiverDispatcher$Args$$ExternalSyntheticLambda0.run(Unknown Source:2)
+11-28 01:18:50.640   920   953 E SystemServiceRegistry: 	at android.os.Handler.handleCallback(Handler.java:942)
+11-28 01:18:50.640   920   953 E SystemServiceRegistry: 	at android.os.Handler.dispatchMessage(Handler.java:99)
+11-28 01:18:50.640   920   953 E SystemServiceRegistry: 	at android.os.Looper.loopOnce(Looper.java:201)
+11-28 01:18:50.640   920   953 E SystemServiceRegistry: 	at android.os.Looper.loop(Looper.java:288)
+11-28 01:18:50.640   920   953 E SystemServiceRegistry: 	at android.os.HandlerThread.run(HandlerThread.java:67)
+11-28 01:18:50.643   802   802 D CentralSurfaces: Received new disable state: enaihbcrso.qingr (unchanged)
+11-28 01:18:50.655   561  2601 D HostConnection: HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_has_shared_slots_host_memory_allocator ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_vulkan_queue_submit_with_commands ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_read_color_buffer_dma ANDROID_EMU_hwc_multi_configs ANDROID_EMU_hwc_color_transform ANDROID_EMU_hwc_display_power_mode GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0 
+11-28 01:18:50.657   561  2601 W OpenGLRenderer: Failed to initialize 101010-2 format, error = EGL_SUCCESS
+11-28 01:18:50.658   561  2601 D EGL_emulation: eglCreateContext: 0x7a5249cbce10: maj 3 min 0 rcv 3
+11-28 01:18:50.659   561  2601 D EGL_emulation: eglMakeCurrent: 0x7a5249cbce10: ver 3 0 (tinfo 0x7a546ae59100) (first time)
+11-28 01:18:50.666   438   450 W TransactionTracing: Could not find layer handle 0x76af88a907b0
+11-28 01:18:50.666   438   450 W TransactionTracing: Could not find layer handle 0x76af88a90a50
+11-28 01:18:50.775   438   450 W TransactionTracing: Could not find layer handle 0x76af88a966f0
+11-28 01:18:50.778   561  1508 W BatteryExternalStatsWorker: error reading Bluetooth stats: 11
+11-28 01:18:52.590   561   575 D CompatibilityChangeReporter: Compat change id reported: 161252188; UID 10126; state: ENABLED
+11-28 01:18:52.590   561   575 I ActivityTaskManager: START u0 {flg=0x10000000 cmp=com.jbpraise.layerskeys/.MainActivity} from uid 2000
+11-28 01:18:52.590   561   575 D CompatibilityChangeReporter: Compat change id reported: 194480991; UID 10126; state: ENABLED
+11-28 01:18:52.597   561   583 D OomAdjuster: Not killing cached processes
+11-28 01:18:52.598  2466  2466 I AAudio  : AAudioStreamBuilder_openStream() called ----------------------------------------
+11-28 01:18:52.598  2466  2466 I AudioStreamBuilder: rate   =      0, channels  = 2, channelMask = 0x80000003, format   = 5, sharing = SH, dir = OUTPUT
+11-28 01:18:52.598  2466  2466 I AudioStreamBuilder: device =      0, sessionId = -1, perfMode = 12, callback: ON with frames = 0
+11-28 01:18:52.598  2466  2466 I AudioStreamBuilder: usage  =      0, contentType = 0, inputPreset = 0, allowedCapturePolicy = 0
+11-28 01:18:52.598  2466  2466 I AudioStreamBuilder: privacy sensitive = false, opPackageName = (null), attributionTag = (null)
+11-28 01:18:52.598   561   575 D CompatibilityChangeReporter: Compat change id reported: 168419799; UID 10126; state: DISABLED
+11-28 01:18:52.606  2466  2466 D aise.layerskeys: PlayerBase::PlayerBase()
+11-28 01:18:52.606  2466  2466 D AudioStreamTrack: open(), request notificationFrames = -8, frameCount = 0
+11-28 01:18:52.609   561   583 I ActivityTaskManager: Config changes=20000480 {1.0 310mcc260mnc [en_US] ldltr sw320dp w640dp h320dp 160dpi nrml long land finger qwerty/v/v -nav/h winConfig={ mBounds=Rect(0, 0 - 640, 320) mAppBounds=Rect(0, 0 - 640, 320) mMaxBounds=Rect(0, 0 - 640, 320) mDisplayRotation=ROTATION_90 mWindowingMode=fullscreen mDisplayWindowingMode=fullscreen mActivityType=undefined mAlwaysOnTop=undefined mRotation=ROTATION_90} as.2 s.204 fontWeightAdjustment=0}
+11-28 01:18:52.610   561   583 W ActivityTaskManager: Current config: {1.0 310mcc260mnc [en_US] ldltr sw320dp w320dp h640dp 160dpi nrml long port finger qwerty/v/v -nav/h winConfig={ mBounds=Rect(0, 0 - 320, 640) mAppBounds=Rect(0, 0 - 320, 640) mMaxBounds=Rect(0, 0 - 320, 640) mDisplayRotation=ROTATION_0 mWindowingMode=fullscreen mDisplayWindowingMode=fullscreen mActivityType=undefined mAlwaysOnTop=undefined mRotation=ROTATION_0} as.2 s.204 fontWeightAdjustment=0} unchanged for IME proc com.android.inputmethod.latin
+11-28 01:18:52.611   561   583 I WindowManager: Override config changes=20000480 {1.0 310mcc260mnc [en_US] ldltr sw320dp w640dp h320dp 160dpi nrml long land finger qwerty/v/v -nav/h winConfig={ mBounds=Rect(0, 0 - 640, 320) mAppBounds=Rect(0, 0 - 640, 320) mMaxBounds=Rect(0, 0 - 640, 320) mDisplayRotation=ROTATION_90 mWindowingMode=fullscreen mDisplayWindowingMode=fullscreen mActivityType=undefined mAlwaysOnTop=undefined mRotation=ROTATION_90} as.2 s.204 fontWeightAdjustment=0} for displayId=0
+11-28 01:18:52.611   561   583 V ActivityTaskManager: Sending to IME proc com.android.inputmethod.latin new config {1.0 310mcc260mnc [en_US] ldltr sw320dp w640dp h320dp 160dpi nrml long land finger qwerty/v/v -nav/h winConfig={ mBounds=Rect(0, 0 - 640, 320) mAppBounds=Rect(0, 0 - 640, 320) mMaxBounds=Rect(0, 0 - 640, 320) mDisplayRotation=ROTATION_90 mWindowingMode=fullscreen mDisplayWindowingMode=fullscreen mActivityType=undefined mAlwaysOnTop=undefined mRotation=ROTATION_90} as.2 s.248 fontWeightAdjustment=0}
+11-28 01:18:52.614   802   802 D CentralSurfaces: Received new disable state: enaihbcrso.qingr (unchanged)
+11-28 01:18:52.616   438   438 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+11-28 01:18:52.623   561   583 I InputManager-JNI: Viewport [0] to add: local:4619827259835644672, isActive: true
+11-28 01:18:52.624   561   655 I InputReader: Reconfiguring input devices, changes=DISPLAY_INFO | 
+11-28 01:18:52.625   561   655 I InputReader: Touch device 'virtio_input_multi_touch_8' could not query the properties of its associated display.  The device will be inoperable until the display size becomes available.
+11-28 01:18:52.625   561   655 I InputReader: Touch device 'virtio_input_multi_touch_5' could not query the properties of its associated display.  The device will be inoperable until the display size becomes available.
+11-28 01:18:52.626   561   655 I InputReader: Touch device 'virtio_input_multi_touch_6' could not query the properties of its associated display.  The device will be inoperable until the display size becomes available.
+11-28 01:18:52.626   561   655 I InputReader: Touch device 'virtio_input_multi_touch_7' could not query the properties of its associated display.  The device will be inoperable until the display size becomes available.
+11-28 01:18:52.626   561   655 I InputReader: Touch device 'virtio_input_multi_touch_11' could not query the properties of its associated display.  The device will be inoperable until the display size becomes available.
+11-28 01:18:52.626   561   655 I InputReader: Touch device 'virtio_input_multi_touch_9' could not query the properties of its associated display.  The device will be inoperable until the display size becomes available.
+11-28 01:18:52.626   561   655 I InputReader: Touch device 'virtio_input_multi_touch_3' could not query the properties of its associated display.  The device will be inoperable until the display size becomes available.
+11-28 01:18:52.626   561   655 I InputReader: Touch device 'virtio_input_multi_touch_4' could not query the properties of its associated display.  The device will be inoperable until the display size becomes available.
+11-28 01:18:52.628   561   655 I InputReader: Touch device 'virtio_input_multi_touch_10' could not query the properties of its associated display.  The device will be inoperable until the display size becomes available.
+11-28 01:18:52.629   561   655 I InputReader: Touch device 'virtio_input_multi_touch_2' could not query the properties of its associated display.  The device will be inoperable until the display size becomes available.
+11-28 01:18:52.629   802   802 V WindowManagerShell: Display changed: 0
+11-28 01:18:52.630   420   420 W AudioFlinger: createTrack_l(): mismatch between requested flags (00000104) and output flags (00000002)
+11-28 01:18:52.630   420   420 D AudioFlinger: Client defaulted notificationFrames to 960 for frameCount 2116
+11-28 01:18:52.632   420   420 D AF::TrackHandle: OpPlayAudio: track:57 usage:1 not muted
+11-28 01:18:52.633   438   450 W TransactionTracing: Could not find layer handle 0x76af88a95430
+11-28 01:18:52.633   438   450 W TransactionTracing: Could not find layer handle 0x76af88a94050
+11-28 01:18:52.633   438   450 W TransactionTracing: Could not find layer handle 0x76af88a94050
+11-28 01:18:52.633   438   450 W TransactionTracing: Could not find layer handle 0x76af88a95430
+11-28 01:18:52.633   438   450 W TransactionTracing: Could not find layer handle 0x76af88a95430
+11-28 01:18:52.633   438   450 W TransactionTracing: Could not find layer handle 0x76af88a95430
+11-28 01:18:52.633   438   450 W TransactionTracing: Could not find layer handle 0x76af88a94050
+11-28 01:18:52.633   438   450 W TransactionTracing: Could not find layer handle 0x76af88a94050
+11-28 01:18:52.637  1048  1409 D EGL_emulation: app_time_stats: avg=676.73ms min=27.64ms max=1966.22ms count=3
+11-28 01:18:52.637   920   953 E SystemServiceRegistry: No service published for: ethernet
+11-28 01:18:52.637   920   953 E SystemServiceRegistry: android.os.ServiceManager$ServiceNotFoundException: No service published for: ethernet
+11-28 01:18:52.637   920   953 E SystemServiceRegistry: 	at android.os.ServiceManager.getServiceOrThrow(ServiceManager.java:166)
+11-28 01:18:52.637   920   953 E SystemServiceRegistry: 	at android.app.SystemServiceRegistry$137.createService(SystemServiceRegistry.java:1825)
+11-28 01:18:52.637   920   953 E SystemServiceRegistry: 	at android.app.SystemServiceRegistry$CachedServiceFetcher.getService(SystemServiceRegistry.java:1924)
+11-28 01:18:52.637   920   953 E SystemServiceRegistry: 	at android.app.SystemServiceRegistry.getSystemService(SystemServiceRegistry.java:1601)
+11-28 01:18:52.637   920   953 E SystemServiceRegistry: 	at android.app.ContextImpl.getSystemService(ContextImpl.java:2120)
+11-28 01:18:52.637   920   953 E SystemServiceRegistry: 	at android.content.ContextWrapper.getSystemService(ContextWrapper.java:900)
+11-28 01:18:52.637   920   953 E SystemServiceRegistry: 	at com.android.networkstack.tethering.Tethering.isEthernetSupported(Tethering.java:1550)
+11-28 01:18:52.637   920   953 E SystemServiceRegistry: 	at com.android.networkstack.tethering.Tethering.makeSupportedDownstreams(Tethering.java:2509)
+11-28 01:18:52.637   920   953 E SystemServiceRegistry: 	at com.android.networkstack.tethering.Tethering.updateSupportedDownstreams(Tethering.java:2483)
+11-28 01:18:52.637   920   953 E SystemServiceRegistry: 	at com.android.networkstack.tethering.Tethering.updateConfiguration(Tethering.java:504)
+11-28 01:18:52.637   920   953 E SystemServiceRegistry: 	at com.android.networkstack.tethering.Tethering.-$$Nest$mupdateConfiguration(Unknown Source:0)
+11-28 01:18:52.637   920   953 E SystemServiceRegistry: 	at com.android.networkstack.tethering.Tethering$StateReceiver.onReceive(Tethering.java:1141)
+11-28 01:18:52.637   920   953 E SystemServiceRegistry: 	at android.app.LoadedApk$ReceiverDispatcher$Args.lambda$getRunnable$0$android-app-LoadedApk$ReceiverDispatcher$Args(LoadedApk.java:1790)
+11-28 01:18:52.637   920   953 E SystemServiceRegistry: 	at android.app.LoadedApk$ReceiverDispatcher$Args$$ExternalSyntheticLambda0.run(Unknown Source:2)
+11-28 01:18:52.637   920   953 E SystemServiceRegistry: 	at android.os.Handler.handleCallback(Handler.java:942)
+11-28 01:18:52.637   920   953 E SystemServiceRegistry: 	at android.os.Handler.dispatchMessage(Handler.java:99)
+11-28 01:18:52.637   920   953 E SystemServiceRegistry: 	at android.os.Looper.loopOnce(Looper.java:201)
+11-28 01:18:52.637   920   953 E SystemServiceRegistry: 	at android.os.Looper.loop(Looper.java:288)
+11-28 01:18:52.637   920   953 E SystemServiceRegistry: 	at android.os.HandlerThread.run(HandlerThread.java:67)
+11-28 01:18:52.637  2466  2466 D AudioStreamTrack: open() flags changed from 0x00000104 to 0x00000000
+11-28 01:18:52.637  2466  2466 D AudioStreamTrack: open() perfMode changed from 12 to 10
+11-28 01:18:52.637  2466  2466 D AAudioStream: setState(s#2) from 0 to 2
+11-28 01:18:52.638  2466  2466 I AAudio  : AAudioStreamBuilder_openStream() returns 0 = AAUDIO_OK for s#2 ----------------
+11-28 01:18:52.638  2466  2466 D AAudio  : AAudioStream_requestStart(s#2) called --------------
+11-28 01:18:52.638  2466  2466 D AAudioStream: setState(s#2) from 2 to 3
+11-28 01:18:52.639  2466  2466 D AAudio  : AAudioStream_requestStart(s#2) returned 0 ---------
+11-28 01:18:52.639  2466  2466 I LayersKeys: audio ouvert : 48000 Hz, rafale 960, tampon 2116
+11-28 01:18:52.646   802   802 W View    : requestLayout() improperly called by com.android.keyguard.AlphaOptimizedLinearLayout{4e59880 V.E...... ......ID 3,0-18,22 #7f0a0742 app:id/wifi_group} during layout: running second layout pass
+11-28 01:18:52.648  2466  2483 D AudioStreamLegacy: onAudioDeviceUpdate(deviceId = 2)
+11-28 01:18:52.655  2466  2609 D AAudioStream: setState(s#2) from 3 to 4
+11-28 01:18:52.687   438   450 W TransactionTracing: Could not find layer handle 0x76af88a94bf0
+11-28 01:18:52.687   438   450 W TransactionTracing: Could not find layer handle 0x76af88a91350
+11-28 01:18:52.687   438   450 W TransactionTracing: Could not find layer handle 0x76af88a93a50
+11-28 01:18:52.687   438   450 W TransactionTracing: Could not find layer handle 0x76af88a93a50
+11-28 01:18:52.780   561  2391 W InputManager-JNI: Input channel object '28d0f76 SnapshotStartingWindow for taskId=10 (client)' was disposed without first being removed with the input manager!
+11-28 01:18:52.800   438   450 W TransactionTracing: Could not find layer handle 0x76af88a94dd0
+11-28 01:18:52.800   438   450 W TransactionTracing: Could not find layer handle 0x76af88a95e50
+11-28 01:18:52.800   438   450 W TransactionTracing: Could not find layer handle 0x76af88a932d0
+11-28 01:18:52.800   438   450 W TransactionTracing: Could not find layer handle 0x76af88a932d0
+11-28 01:18:52.800   438   450 W TransactionTracing: Could not find layer handle 0x76af88a932d0
+11-28 01:18:52.800   438   450 W TransactionTracing: Could not find layer handle 0x76af88a95e50
+11-28 01:18:53.215   438   450 W TransactionTracing: Could not find layer handle 0x76af88a936f0
+11-28 01:18:54.399  2466  2466 I LayersKeys: état audio=3536 frames=1598596 midi=0 notes=29 images=148
+11-28 01:18:55.598   561  1947 E TaskPersister: File error accessing recents directory (directory doesn't exist?).
+11-28 01:18:56.237  1277  2202 I Dialer  : OmtpVvmCarrierCfgHlpr - OmtpEvent:CONFIG_STATUS_SMS_TIME_OUT
+11-28 01:18:56.238  1277  1277 I Dialer  : RetryPolicy - discarding deferred status: configuration_state=4
+11-28 01:18:56.238  1277  1277 I Dialer  : VvmTaskExecutor - no more tasks, stopping service if no task are added in 5000 millis
+11-28 01:18:56.238  1277  1277 I Dialer  : VvmTaskReceiver - task received
+11-28 01:18:56.238  1277  1277 I Dialer  : VvmTaskReceiver - TaskExecutor already running
+11-28 01:18:56.238  1277  1277 I Dialer  : Task.createTask - create task:com.android.voicemail.impl.ActivationTask
+11-28 01:18:56.238  1277  1277 I Dialer  : RetryPolicy - retry #1 for com.android.voicemail.impl.ActivationTask@751ae2f queued, executing in 5000
+11-28 01:18:56.239  1277  1277 I Dialer  : VvmTaskExecutor - com.android.voicemail.impl.ActivationTask@751ae2f added
+11-28 01:18:56.239  1277  1277 I Dialer  : VvmTaskExecutor - minimal wait time:5000
+11-28 01:18:56.239  1277  1277 I Dialer  : VvmTaskExecutor - sleep for 5000 millis
+11-28 01:18:56.636  2614  2614 W ProcessState: Extra binder thread started, but 0 threads requested. Do not use *startThreadPool when zero threads are requested.
+11-28 01:18:56.639   210   210 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.mapper@4.0::IMapper/default in either framework or device VINTF manifest.
+11-28 01:18:56.639  2614  2615 I Gralloc4: mapper 4.x is not supported
+11-28 01:18:56.648  2614  2615 D HostConnection: HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_has_shared_slots_host_memory_allocator ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_vulkan_queue_submit_with_commands ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_read_color_buffer_dma ANDROID_EMU_hwc_multi_configs ANDROID_EMU_hwc_color_transform ANDROID_EMU_hwc_display_power_mode GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0 
+11-28 01:18:57.399  2466  2466 I LayersKeys: état audio=3855 frames=1742400 midi=0 notes=29 images=148
+11-28 01:18:58.355   561   580 D OomAdjuster: Not killing cached processes
+11-28 01:19:00.021   802   959 D EGL_emulation: app_time_stats: avg=3677.26ms min=12.99ms max=7341.53ms count=2
+11-28 01:19:00.474     0     0 I logd    : logdr: UID=2000 GID=2000 PID=2617 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns
+11-28 01:19:00.485     0     0 I logd    : logdr: UID=2000 GID=2000 PID=2620 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns
+11-28 01:19:00.496     0     0 I logd    : logdr: UID=2000 GID=2000 PID=2623 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns
