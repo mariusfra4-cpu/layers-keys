@@ -175,11 +175,13 @@ public class MainActivity extends Activity {
         // choix du logiciel
         LinearLayout seg = new LinearLayout(this);
         seg.setOrientation(LinearLayout.HORIZONTAL);
+        seg.setBaselineAligned(false);  // les trois boutons bien alignés, même si un nom tient sur deux lignes
         for (int i = 0; i < 3; i++) {
             final int p = i;
             Button b = button(KeyCore.SHORT[i], i == product);
             b.setTextSize(13);
-            LinearLayout.LayoutParams bp = new LinearLayout.LayoutParams(0, -2, 1);
+            b.setPadding(dp(4), 0, dp(4), 0);
+            LinearLayout.LayoutParams bp = new LinearLayout.LayoutParams(0, dp(54), 1);
             if (i > 0) bp.leftMargin = dp(6);
             seg.addView(b, bp);
             b.setOnClickListener(new View.OnClickListener() {
