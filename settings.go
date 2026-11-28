@@ -302,6 +302,7 @@ func (u *UI) OpenSettings() {
 	}
 	if u.Plugin && u.OnShowLog != nil {
 		items = append(items, olItem{text: T("Aide"), header: true})
+		items = append(items, olItem{text: "Layers Keys " + buildTag, sub: T("version de ce plugin"), action: func() {}})
 		items = append(items, olItem{text: T("Journal du plugin"), sub: T("à envoyer à JB Praise en cas de problème"), action: func() { u.ov = nil; u.OnShowLog() }})
 	}
 	u.ov = &overlay{title: T("Paramètres de Layers Keys"), items: items, hint: T("Clique sur un réglage · Échap pour fermer")}

@@ -9,6 +9,9 @@ import (
 	"strings"
 )
 
+// buildTag : version et date de la construction, affichées dans le plugin et les Paramètres
+const buildTag = "v1.1.1 · 28/11"
+
 const (
 	colBg      = 0x070b13
 	colHeader  = 0x0e1522
@@ -232,7 +235,7 @@ func (u *UI) drawHeader(c *Canvas) {
 		pn += " *"
 	}
 	if u.Plugin {
-		c.Text(72, 36, 150, 14, "Plugin", fontXs, colText2, 0)
+		c.Text(72, 36, 160, 14, "Plugin · "+buildTag, fontXs, colGold, 0) // version visible : on sait quel plugin le DAW a chargé
 	} else {
 		c.Text(72, 36, 150, 14, Tf("Projet : %s", pn), fontXs, colText2, 0)
 	}
